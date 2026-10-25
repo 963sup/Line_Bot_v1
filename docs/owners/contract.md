@@ -40,6 +40,28 @@ submission requires that revision to be the current ACTIVE head; review permits 
 state. Resource/Object-based payloads and persisted line shapes are rejected rather than interpreted
 through a compatibility model. Consumers use this public contract rather than private SQL.
 
+## Purchase-order documents
+
+Contract also owns a separate Repository-scoped `ContractDocument` aggregate. It keeps a complete,
+versioned purchase-order candidate in Contract's fixed schema: header, buyer/seller, every source
+line, totals, terms, field evidence and corrections. This is distinct from Engineering Contract; it
+does not create an agreement, Content plan, WBS baseline or Execution report.
+
+Each revision pins `{fileId, fileRevisionId, fileSha256}` after File requalifies that exact source
+inside Contract's transaction. Contract stores no original bytes. A candidate may be saved as DRAFT
+only through Contract's public intake command. Confirmation is an explicit Contract command; it
+requires the complete expected line count, no unresolved line uncertainty and any financial
+discrepancy acknowledgement. The source value is retained with diagnostics rather than silently
+rounded or replaced.
+
+Intelligence receives the target-owned extraction schema and can submit only a SAVE candidate
+through this public contract. Contract alone validates the candidate, rechecks Repository authority,
+enforces expected version and request fingerprints, writes immutable revision/head/receipt atomically,
+and reads a receipt back under current access. The current CLI exposes bounded document read, submit
+and receipt operations. Contract does not create Content or WBS records: Content separately reads one
+exact CONFIRMED revision through Contract's public reader, applies its fixed whole-document expansion,
+and WBS subsequently consumes that immutable Content revision.
+
 ## Delivery and evidence
 
 The authenticated operator entry is `pnpm contract:run`; bounded stdin carries identity proof,

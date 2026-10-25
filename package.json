@@ -18,6 +18,7 @@
     "vercel:deploy:production": "node scripts/vercel/deploy-production.mjs",
     "check": "node scripts/tooling/validate.mjs --fast",
     "validate": "node scripts/tooling/validate.mjs",
+    "validation:run": "node scripts/runtime/validation-command.mjs",
     "lint": "biome check .",
     "format": "biome check --write .",
     "architecture": "node scripts/architecture/check-all.mjs",
@@ -60,6 +61,7 @@
     "wbs:transfer": "node scripts/wbs/transfer.mjs",
     "project:imports": "node scripts/project/imports.mjs",
     "contract:run": "node scripts/contract/run.mjs",
+    "intelligence:run": "node scripts/intelligence/run.mjs",
     "execution:run": "node scripts/execution/run.mjs",
     "file:run": "node scripts/file/run.mjs",
     "file:reclaim": "node scripts/file/reclaim.mjs"

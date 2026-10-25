@@ -1,5 +1,5 @@
-import type { ContractReferenceReader } from "@line_bot_v1/contract/contracts/output/references";
-import type { WbsContractImportEvidence, WbsRevision } from "../../domain/content.js";
+import type { ContentWbsExpansionReader } from "@line_bot_v1/content/contracts/output/wbs-expansion";
+import type { WbsRevision } from "../../domain/content.js";
 import type { ProjectWbsRole } from "../../domain/policies/project-access.js";
 import type {
   ProjectWbsCommand,
@@ -15,11 +15,11 @@ export type ProjectWbsWriteScope = Readonly<{
 }>;
 export interface ProjectWbsContentTransaction {
   readonly scope: ProjectWbsWriteScope;
-  readonly contracts: ContractReferenceReader;
+  readonly content: ContentWbsExpansionReader;
   replay(): Promise<ProjectWbsReceipt | null>;
   load(): Promise<WbsRevision | null>;
   nextId(): string;
-  save(revision: WbsRevision, evidence?: WbsContractImportEvidence): Promise<ProjectWbsReceipt>;
+  save(revision: WbsRevision): Promise<ProjectWbsReceipt>;
 }
 export interface ProjectWbsStore {
   read(

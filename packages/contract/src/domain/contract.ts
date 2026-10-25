@@ -1,5 +1,3 @@
-import type { ContentPlanItemBasis } from "@line_bot_v1/content/domain/plan-reference";
-import { normalizeQuantity } from "@line_bot_v1/content/domain/quantity";
 import { normalizeContent } from "@line_bot_v1/platform/text";
 import { ContractError } from "./error.js";
 
@@ -13,9 +11,31 @@ export type ContractLineInput = Readonly<{
   agreedQuantity: string;
 }>;
 
+/** Immutable Contract-owned snapshot of a Content item; it is not a live Content model. */
+export type ContractPlanItemReference = Readonly<{
+  repositoryId: string;
+  planRevisionId: string;
+  planVersion: number;
+  node: Readonly<{
+    id: string;
+    kind: "WORK" | "TASK";
+    title: string;
+    body: string;
+    path: readonly Readonly<{
+      id: string;
+      kind: "SUBJECT" | "OBJECT" | "SUBOBJECT" | "WORK" | "TASK";
+      title: string;
+    }>[];
+    plannedQuantity: Readonly<{
+      value: string;
+      measure: Readonly<{ id: string; name: string; subject: string; unit: string }>;
+    }> | null;
+  }>;
+}>;
+
 export type ContentContractLine = Readonly<{
   lineId: string;
-  content: ContentPlanItemBasis;
+  content: ContractPlanItemReference;
   agreedQuantity: string;
 }>;
 
@@ -46,7 +66,7 @@ export type ContractEdit =
   | Readonly<{ action: "activate"; lines: readonly ContentContractLine[] }>
   | Readonly<{ action: "close" }>;
 
-function copyContent(content: ContentPlanItemBasis): ContentPlanItemBasis {
+function copyContent(content: ContractPlanItemReference): ContractPlanItemReference {
   return {
     repositoryId: content.repositoryId,
     planRevisionId: content.planRevisionId,
@@ -106,7 +126,7 @@ export function assertContractTransition(
 
 export function freezeContractLines(
   inputs: readonly ContractLineInput[],
-  contentItems: readonly ContentPlanItemBasis[],
+  contentItems: readonly ContractPlanItemReference[],
 ): ContentContractLine[] {
   if (inputs.length < 1 || inputs.length > 100 || contentItems.length !== inputs.length)
     throw new ContractError(400, "Contract must contain 1 to 100 lines.", "INVALID_INPUT");
@@ -150,7 +170,7 @@ function normalizeContentLines(
       throw new ContractError(409, "Contract Content plan item is not eligible.", "SOURCE_INVALID");
     let agreedQuantity: string;
     try {
-      agreedQuantity = normalizeQuantity(
+      agreedQuantity = normalizeAgreedQuantity(
         line.agreedQuantity,
         line.content.node.plannedQuantity.measure.unit,
       );
@@ -160,6 +180,22 @@ function normalizeContentLines(
     }
     return { lineId: line.lineId, content: copyContent(line.content), agreedQuantity };
   });
+}
+
+function normalizeAgreedQuantity(value: string, unit: string): string {
+  if (
+    typeof unit !== "string" ||
+    unit.length < 1 ||
+    unit.length > 32 ||
+    unit !== unit.trim() ||
+    /[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/u.test(unit) ||
+    !/^(0|[1-9][0-9]{0,14})(\.[0-9]{1,3})?$/.test(value)
+  )
+    throw new Error("invalid quantity");
+  if (unit === "pcs" && value.includes(".")) throw new Error("invalid pcs quantity");
+  const [whole, fraction = ""] = value.split(".");
+  const normalizedFraction = fraction.padEnd(3, "0").replace(/0+$/, "");
+  return `${whole}${normalizedFraction ? `.${normalizedFraction}` : ""}`;
 }
 
 function normalizedTerms(title: string, body: string) {

@@ -1,4 +1,3 @@
-import type { FileSavedResultReader } from "@line_bot_v1/file/contracts/output/saved-results";
 import type { ResourceReferenceReader } from "@line_bot_v1/resources/contracts/output/resource-references";
 import type { ContentPlanRevision } from "../../domain/plan.js";
 import type { ContentPlans } from "../repositories/plans.js";
@@ -15,11 +14,20 @@ export interface ContentPlanReads {
   ): Promise<{ revisions: readonly ContentPlanRevision[]; next: number | null }>;
 }
 
+export interface ContractDocumentExpansionReader {
+  readConfirmed(
+    actor: string,
+    repositoryId: string,
+    documentId: string,
+    revisionId: string,
+  ): Promise<import("../../domain/plan.js").ContractDocumentExpansion>;
+}
+
 export interface ContentPlanTransaction {
   readonly scope: { repositoryId: string; permissions: readonly string[]; archived: boolean };
   readonly plans: ContentPlans;
   readonly resources: ResourceReferenceReader;
-  readonly savedFileResults: FileSavedResultReader;
+  readonly contractDocuments: ContractDocumentExpansionReader;
   nextId(): string;
   replay(): Promise<{ requestId: string; revision: ContentPlanRevision } | null>;
   record(revision: ContentPlanRevision): Promise<void>;

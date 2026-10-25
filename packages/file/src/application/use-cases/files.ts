@@ -5,19 +5,11 @@ import type {
   FileTransactions,
 } from "../../contracts/output/files.js";
 import type { FileObjectStore } from "../../contracts/output/object-store.js";
-import type { FileProcessor } from "../../contracts/output/processor.js";
 import { FileError, fileErrorFromUnknown } from "../../domain/error.js";
 import { type FileRevision, type FileUploadIntent, nextFileRevision } from "../../domain/file.js";
-import {
-  beginProcessing,
-  finalizeProcessing,
-  finishProcessing,
-  type ProcessingOutput,
-  type ProcessingRevision,
-  processingOutput,
-} from "../../domain/processing-run.js";
 import { assertWritable, checkVersion, identifier, scopeId } from "../../domain/values.js";
-import { processingCommand, resultCommand, uploadCommand } from "../commands/files.js";
+import { uploadCommand } from "../commands/files.js";
+import { createFileSourceReader } from "./sources.js";
 
 function fileDto(r: FileRevision) {
   return {
@@ -34,43 +26,6 @@ function fileDto(r: FileRevision) {
     sha256: r.sha256,
   };
 }
-function outputDto(result: ProcessingOutput | null) {
-  return result === null
-    ? null
-    : {
-        documentKind: result.documentKind,
-        observations: result.observations.map((o) => ({
-          id: o.id,
-          label: o.label,
-          value: o.value,
-          uncertain: o.uncertain,
-          source: o.source === null ? null : { ...o.source },
-        })),
-      };
-}
-function processingDto(r: ProcessingRevision) {
-  return {
-    revisionId: r.id,
-    repositoryId: r.repositoryId,
-    runId: r.runId,
-    fileId: r.fileId,
-    fileRevisionId: r.fileRevisionId,
-    fileSha256: r.fileSha256,
-    version: r.version,
-    parentRevisionId: r.parentRevisionId,
-    actorUserId: r.actorUserId,
-    at: r.at,
-    state: r.state,
-    attemptId: r.attemptId,
-    processorId: r.processorId,
-    processorVersion: r.processorVersion,
-    processorKind: r.processorKind,
-    rawResult: outputDto(r.rawResult),
-    savedResult: outputDto(r.savedResult),
-    edits: r.edits.map((e) => ({ ...e })),
-    failure: r.failure,
-  };
-}
 function writable(tx: FileTransaction): void {
   assertWritable(tx.scope.permissions);
 }
@@ -85,6 +40,7 @@ export function createFiles(deps: {
   objects: () => FileObjectStore;
   now(): number;
 }) {
+  const sources = createFileSourceReader(deps);
   function context(tx: FileTransaction, actor: string) {
     return {
       id: tx.nextId(),
@@ -93,18 +49,10 @@ export function createFiles(deps: {
       at: deps.now(),
     };
   }
-  async function original(actor: string, scope: string, fileId: string, revisionId: string) {
-    const revision = await deps.reads.file(actor, scope, fileId, revisionId);
-    // The private provider read is outside PostgreSQL transaction/locks.
-    const bytes = await deps.objects().readVerified(revision);
-    // A revoked Repository grant cannot complete a read initiated while still authorized.
-    await deps.reads.file(actor, scope, fileId, revisionId);
-    return { revision, bytes };
-  }
   return {
     async source(actor: string, scope: string, id: string, revision: string) {
       try {
-        const result = await original(actor, scopeId(scope), identifier(id), identifier(revision));
+        const result = await sources.read(actor, scope, { fileId: id, fileRevisionId: revision });
         return { file: fileDto(result.revision), bytes: result.bytes };
       } catch (error) {
         throw fileErrorFromUnknown(error);
@@ -146,36 +94,10 @@ export function createFiles(deps: {
         throw fileErrorFromUnknown(error);
       }
     },
-    async processingsForFile(actor: string, scope: string, fileId: string, after?: string) {
-      try {
-        return await deps.reads.processingsForFile(
-          actor,
-          scopeId(scope),
-          identifier(fileId),
-          after === undefined ? undefined : identifier(after),
-        );
-      } catch (error) {
-        throw fileErrorFromUnknown(error);
-      }
-    },
     async file(actor: string, scope: string, id: string, revision?: string) {
       try {
         return fileDto(
           await deps.reads.file(
-            actor,
-            scopeId(scope),
-            identifier(id),
-            revision === undefined ? undefined : identifier(revision),
-          ),
-        );
-      } catch (error) {
-        throw fileErrorFromUnknown(error);
-      }
-    },
-    async processing(actor: string, scope: string, id: string, revision?: string) {
-      try {
-        return processingDto(
-          await deps.reads.processing(
             actor,
             scopeId(scope),
             identifier(id),
@@ -256,137 +178,6 @@ export function createFiles(deps: {
           await tx.record({ kind: "file", requestId: c.requestId, revision: next });
           return { requestId: c.requestId, file: fileDto(next) };
         });
-      } catch (error) {
-        throw fileErrorFromUnknown(error);
-      }
-    },
-    async run(actor: string, input: unknown, processor: FileProcessor) {
-      const c = processingCommand(input);
-      try {
-        const start = await deps.transactions.transact(
-          actor,
-          { repositoryId: c.repositoryId, kind: "processing", id: c.runId },
-          {
-            requestId: c.requestId,
-            payload: JSON.stringify({
-              ...c,
-              processorId: processor.id,
-              processorVersion: processor.version,
-            }),
-          },
-          async (tx) => {
-            writable(tx);
-            const replay = await tx.replay();
-            if (replay) {
-              if (replay.kind !== "processing")
-                throw new FileError(409, "Request identity reused.", "REQUEST_ID_REUSED");
-              // Never repeat a provider call just because its result was lost to the caller.
-              return { replayed: true as const, revision: replay.revision };
-            }
-            newWrite(tx);
-            const file = await tx.files.load(c.fileId, c.fileRevisionId);
-            if (!file) throw new FileError(404, "Source revision not found.", "NOT_FOUND");
-            if (!processor.supports(file.mediaType))
-              throw new FileError(
-                422,
-                "Processor does not support this media type.",
-                "UNSUPPORTED_MEDIA",
-              );
-            const next = beginProcessing(
-              await tx.processings.load(c.runId),
-              c.expectedVersion,
-              c.runId,
-              file,
-              processor,
-              context(tx, actor),
-            );
-            await tx.processings.save(next, c.expectedVersion);
-            await tx.record({ kind: "processing", requestId: c.requestId, revision: next });
-            return { replayed: false as const, revision: next, source: file };
-          },
-        );
-        if (start.replayed)
-          return {
-            requestId: c.requestId,
-            replayed: true,
-            processing: processingDto(start.revision),
-          };
-        // Reauthorize and verify the exact source before the selected provider sees bytes.
-        const source = await original(actor, c.repositoryId, c.fileId, c.fileRevisionId);
-        // No transaction or governance lock spans external processing.
-        let rawResult: ProcessingOutput | null = null;
-        try {
-          rawResult = processingOutput(await processor.run(source));
-        } catch {
-          /* Only sanitized failure evidence is persisted. */
-        }
-        const outcome = rawResult;
-        const finished = await deps.transactions.transact(
-          actor,
-          { repositoryId: c.repositoryId, kind: "processing", id: c.runId },
-          {
-            requestId: start.revision.attemptId,
-            payload: JSON.stringify({
-              action: "finish",
-              attemptId: start.revision.attemptId,
-              outcome,
-            }),
-          },
-          async (tx) => {
-            writable(tx);
-            const replay = await tx.replay();
-            if (replay) {
-              if (replay.kind !== "processing")
-                throw new FileError(409, "Request identity reused.", "REQUEST_ID_REUSED");
-              return replay.revision;
-            }
-            newWrite(tx);
-            const current = await tx.processings.load(c.runId);
-            if (!current) throw new FileError(404, "Processing not found.", "NOT_FOUND");
-            const next = finishProcessing(
-              current,
-              start.revision.attemptId,
-              outcome,
-              context(tx, actor),
-            );
-            await tx.processings.save(next, current.version);
-            await tx.record({
-              kind: "processing",
-              requestId: start.revision.attemptId,
-              revision: next,
-            });
-            return next;
-          },
-        );
-        return { requestId: c.requestId, replayed: false, processing: processingDto(finished) };
-      } catch (error) {
-        throw fileErrorFromUnknown(error);
-      }
-    },
-    async result(actor: string, input: unknown) {
-      const c = resultCommand(input);
-      try {
-        return await deps.transactions.transact(
-          actor,
-          { repositoryId: c.repositoryId, kind: "processing", id: c.runId },
-          { requestId: c.requestId, payload: JSON.stringify(c) },
-          async (tx) => {
-            writable(tx);
-            const replay = await tx.replay();
-            if (replay) {
-              if (replay.kind !== "processing")
-                throw new FileError(409, "Request identity reused.", "REQUEST_ID_REUSED");
-              return { requestId: c.requestId, processing: processingDto(replay.revision) };
-            }
-            newWrite(tx);
-            const current = await tx.processings.load(c.runId);
-            if (!current) throw new FileError(404, "Processing not found.", "NOT_FOUND");
-            const next = finalizeProcessing(current, c.expectedVersion, c, context(tx, actor));
-            await tx.processings.save(next, c.expectedVersion);
-            await tx.record({ kind: "processing", requestId: c.requestId, revision: next });
-            return { requestId: c.requestId, processing: processingDto(next) };
-          },
-        );
       } catch (error) {
         throw fileErrorFromUnknown(error);
       }

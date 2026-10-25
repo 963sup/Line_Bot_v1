@@ -258,7 +258,7 @@ function errorMessage(cause: unknown) {
   return cause instanceof Error ? cause.message : "File 操作暫不可用，請重新讀取後重試。";
 }
 
-/** Presentation progress only; File/ProcessingRun state remains owned by packages/file. */
+/** Presentation progress only; File supplies source storage while Intelligence owns ProcessingRuns. */
 export function fileIntakeStep(
   hasSelectedFile: boolean,
   state: Processing["state"] | null,
@@ -273,13 +273,11 @@ export default function FilesPanel({
   liffId,
   ownerLogin,
   repositoryName,
-  contentPath,
   onCanManageChange,
 }: {
   liffId: string;
   ownerLogin: string;
   repositoryName: string;
-  contentPath: string;
   onCanManageChange(value: boolean): void;
 }) {
   const [view, setView] = useState<View | null>(null);
@@ -328,6 +326,10 @@ export default function FilesPanel({
       if (ticket !== epoch.current) throw new StaleRequest();
       if (!session) throw new Error("請完成 LINE 登入後重試。");
       const search = new URLSearchParams({ owner: ownerLogin, name: repositoryName, ...query });
+      if (mutation && (mutation.kind === "run" || mutation.kind === "result"))
+        search.set("ownerKind", "intelligence");
+      if (!mutation && ["runs", "processing"].includes(query.view ?? ""))
+        search.set("ownerKind", "intelligence");
       const headers: Record<string, string> = { "X-App-Session-Generation": session };
       let body: BodyInit | undefined;
       if (mutation?.kind === "upload") {
@@ -1050,31 +1052,9 @@ export default function FilesPanel({
                 <div className="grid gap-1 rounded-lg border p-3 text-sm" role="status">
                   <p className="font-medium">File 解析結果已保存</p>
                   <p className="text-muted-foreground">
-                    此結果仍是 File-owned 候選資料，不會自動建立 Contract 或 Content。 下一階段請從
-                    Repository 導覽前往 Content，先建立並確認 Work／Task， 再由 Contracts 引用精確的
-                    Content Revision。
+                    此結果是 Intelligence-owned 候選資料，不會自動建立 Contract 或 Content。請在
+                    Contract 確認完整結構化文件，再由 Content 擴展該確認版本，最後供 WBS 投影使用。
                   </p>
-                </div>
-              )}
-              {processing.state === "SAVED" && saved && view?.canEdit && (
-                <div className="grid gap-2 rounded-lg border p-3 text-sm">
-                  <p className="font-medium">下一步：正式匯入 Content</p>
-                  <p className="text-muted-foreground">
-                    只傳遞 SavedResult Run／Revision 身分；Content 在正式交易中重驗 File
-                    來源與授權，並由你人工選擇 Work／Task、數量和單位。
-                  </p>
-                  <Button
-                    disabled={busy || !!pending}
-                    onClick={() => {
-                      const query = new URLSearchParams({
-                        sourceRunId: processing.runId,
-                        sourceRevisionId: processing.revisionId,
-                      });
-                      globalThis.window.location.assign(`${contentPath}?${query.toString()}`);
-                    }}
-                  >
-                    前往 Content 匯入已保存結果
-                  </Button>
                 </div>
               )}
               {processing.state === "DISCARDED" && (

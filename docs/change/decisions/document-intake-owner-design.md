@@ -1,6 +1,6 @@
 # Document intake owner decision
 
-Status: selected target direction, not current runtime capability. Source baseline:
+Status: selected end-to-end target direction. Original source baseline:
 `7539638b0b10a5917a115a6ac699207d816a7f4b` (2026-10-25).
 Implementation and evidence are tracked by
 [#375](https://github.com/963sup/Line_Bot_v1/issues/375),
@@ -10,6 +10,13 @@ Implementation and evidence are tracked by
 This decision does not override current source, canonical architecture or SQL. Promote the
 affected authority together with executable consumers and validation, then remove target-only
 text that no longer has migration or recovery value.
+
+The current source provides File's authorized original reader, Intelligence's durable technical
+intake attempt, Contract-owned purchase-order candidates and confirmation, and complete
+whole-revision Contract → Content → WBS expansion. Superseded File-processing and Content
+`import-file` records remain readable only as retained history; their current writers are removed.
+Local synthetic 54-line tests prove contract preservation, not live extraction of the supplied PDF.
+Current Owner documents and canonical models describe that exact implementation boundary.
 
 ## Result and responsibility
 
@@ -120,11 +127,12 @@ or a second generic authoritative structured-result store in Intelligence.
 
 ## Retained-data cutover and removal
 
-Current File source combines upload and processing. `615_files.sql` contains
+Historical File storage combined upload and processing. `615_files.sql` contains
 `file_processing_runs`, `file_processing_revisions` and `file_commands`; the latter has a shared
-`(actor_user_id, request_id)` key and both file/processing receipt branches. Content currently
-writes `import-file` evidence; WBS writes `import-contract` evidence. These are executable
-historical facts, not permission to keep the wrong new-write direction.
+`(actor_user_id, request_id)` key and both file/processing receipt branches. Content historical
+revisions may contain `import-file` evidence; WBS historical revisions may contain
+`import-contract` evidence. These are executable historical facts, not permission to restore the
+wrong new-write direction.
 
 The implementation must inventory all Web, CLI, package exports, schemas, source pins, readers,
 tests and generated projections before removal. Stop superseded new writes and replace their

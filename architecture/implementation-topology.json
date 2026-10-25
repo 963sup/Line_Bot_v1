@@ -122,9 +122,14 @@
     },
     "@line_bot_v1/intelligence": {
       "path": "packages/intelligence",
-      "moduleKind": "integration-adapter",
+      "moduleKind": "application-module",
       "semanticOwner": "intelligence",
-      "allowedWorkspaceDependencies": ["@line_bot_v1/file"]
+      "allowedWorkspaceDependencies": [
+        "@line_bot_v1/contract",
+        "@line_bot_v1/file",
+        "@line_bot_v1/platform",
+        "@line_bot_v1/repository"
+      ]
     },
     "@line_bot_v1/identity-access": {
       "path": "packages/identity-access",
@@ -250,7 +255,7 @@
       "moduleKind": "domain-module",
       "semanticOwner": "wbs",
       "allowedWorkspaceDependencies": [
-        "@line_bot_v1/contract",
+        "@line_bot_v1/content",
         "@line_bot_v1/platform",
         "@line_bot_v1/project",
         "@line_bot_v1/repository"
@@ -292,7 +297,6 @@
       "moduleKind": "domain-module",
       "semanticOwner": "content",
       "allowedWorkspaceDependencies": [
-        "@line_bot_v1/file",
         "@line_bot_v1/platform",
         "@line_bot_v1/repository",
         "@line_bot_v1/resources"
@@ -304,6 +308,7 @@
       "semanticOwner": "contract",
       "allowedWorkspaceDependencies": [
         "@line_bot_v1/content",
+        "@line_bot_v1/file",
         "@line_bot_v1/platform",
         "@line_bot_v1/repository"
       ]

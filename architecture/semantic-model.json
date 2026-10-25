@@ -362,7 +362,7 @@
       "id": "file-management",
       "classification": "supporting",
       "owners": ["file"],
-      "rationale": "Upload/List and user-selected processing are supporting capabilities; Run never follows Upload automatically, and Preview never saves or imports itself.",
+      "rationale": "Upload/List and authorized immutable source reads are supporting capabilities. Intelligence processing never follows Upload automatically and does not import itself.",
       "sources": ["docs/owners/file.md"]
     }
   ],
@@ -500,18 +500,12 @@
     {
       "id": "file",
       "owner": "file",
-      "status": "strong-candidate",
+      "status": "selected",
       "evidence": {
         "ownerContracts": ["docs/owners/file.md"],
-        "sourcePaths": [
-          "packages/file/src/domain/file.ts",
-          "packages/file/src/domain/processing-run.ts"
-        ],
-        "testPaths": [
-          "packages/file/test/domain.test.ts",
-          "packages/file/test/persistence.test.ts"
-        ],
-        "rationale": "File original evidence and user-triggered ProcessingRuns have independent source/result lifecycles. SavedResult is an immutable outcome within ProcessingRun, not a third Aggregate or downstream approval."
+        "sourcePaths": ["packages/file/src/domain/file.ts"],
+        "testPaths": ["packages/file/test/persistence.test.ts"],
+        "rationale": "File owns original source evidence and immutable bytes; Intelligence owns the separate processing lifecycle and retained interpretation evidence."
       }
     }
   ],
@@ -1133,6 +1127,7 @@
     {
       "id": "wbs",
       "canonicalName": "WBS",
+      "aliases": ["wbs expansion", "content wbs expansion"],
       "kind": "authoritative",
       "owner": "wbs",
       "lifecycle": "current",
@@ -1806,6 +1801,108 @@
       "persistenceExpectation": "relation"
     },
     {
+      "id": "contract-document",
+      "canonicalName": "ContractDocument",
+      "aliases": [
+        "purchase-order-document",
+        "structured-contract-document",
+        "contract-structured-data",
+        "structured contract data"
+      ],
+      "kind": "authoritative",
+      "owner": "contract",
+      "lifecycle": "current",
+      "definition": "Repository-scoped purchase-order document head selecting one complete structured candidate or confirmed document revision. It records a qualified immutable File source but does not own source bytes, Content structure, WBS or execution.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "contract-document-revision",
+      "canonicalName": "ContractDocumentRevision",
+      "kind": "authoritative",
+      "owner": "contract",
+      "lifecycle": "current",
+      "definition": "Immutable whole purchase-order extraction revision containing the target-owned schema version, source-qualified fields, complete line candidate, diagnostics, state, actor and timestamp. Confirmation never changes the source File revision or silently repairs a financial discrepancy.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "contract-document-command-receipt",
+      "canonicalName": "ContractDocumentCommandReceipt",
+      "kind": "authoritative",
+      "owner": "contract",
+      "lifecycle": "current",
+      "definition": "Immutable actor/request, intent and complete-payload fingerprints with the exact committed ContractDocument revision, supporting current-authorized readback and idempotent replay.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "intelligence-document-intake-attempt",
+      "canonicalName": "IntelligenceDocumentIntakeAttempt",
+      "aliases": ["document-intelligence-intake", "document intelligence"],
+      "kind": "authoritative",
+      "owner": "intelligence",
+      "lifecycle": "current",
+      "definition": "Durable technical intake-attempt state for one source-qualified, target-intent fingerprint. It records only source identity, target intent, lifecycle state and target receipt reference; it never stores the extracted candidate or becomes Contract business truth.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "intelligence-processing-run",
+      "canonicalName": "IntelligenceProcessingRun",
+      "aliases": [
+        "document-processing",
+        "document-understanding-run",
+        "intelligence document processing"
+      ],
+      "kind": "authoritative",
+      "owner": "intelligence",
+      "lifecycle": "current",
+      "definition": "Explicit document-understanding operation against one immutable File revision; its head selects one fenced Intelligence processing revision.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "intelligence-processing-revision",
+      "canonicalName": "IntelligenceProcessingRevision",
+      "kind": "authoritative",
+      "owner": "intelligence",
+      "lifecycle": "current",
+      "definition": "Immutable Intelligence-owned processing lifecycle revision containing provider identity, untrusted raw output, optional explicitly saved output, bounded edits and failure evidence.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "intelligence-processing-command-receipt",
+      "canonicalName": "IntelligenceProcessingCommandReceipt",
+      "kind": "authoritative",
+      "owner": "intelligence",
+      "lifecycle": "current",
+      "definition": "Immutable Intelligence actor/request fingerprint and exact processing revision receipt; it has no File upload request namespace.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "intelligence-legacy-processing-history",
+      "canonicalName": "IntelligenceLegacyProcessingHistory",
+      "kind": "historical-evidence",
+      "owner": "intelligence",
+      "lifecycle": "current-data-only",
+      "definition": "Immutable copies of pre-cutover File processing runs, revisions and request receipts. They are read-only Intelligence evidence in a separate legacy request namespace and never participate in current processing replay.",
+      "authorityMode": "reference-only",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "intelligence-processing-history-cutover",
+      "canonicalName": "IntelligenceProcessingHistoryCutover",
+      "kind": "historical-evidence",
+      "owner": "intelligence",
+      "lifecycle": "current-data-only",
+      "definition": "Immutable operator marker proving one File-to-Intelligence processing-history copy by exact release revision, counts and canonical SHA-256 readback.",
+      "authorityMode": "reference-only",
+      "persistenceExpectation": "relation"
+    },
+    {
       "id": "engineering-execution",
       "canonicalName": "EngineeringExecution",
       "kind": "authoritative",
@@ -1838,6 +1935,7 @@
     {
       "id": "content-plan",
       "canonicalName": "ContentPlan",
+      "aliases": ["contract-content-expansion", "content expansion"],
       "kind": "authoritative",
       "owner": "content",
       "lifecycle": "current",
@@ -1848,6 +1946,7 @@
     {
       "id": "content-plan-revision",
       "canonicalName": "ContentPlanRevision",
+      "aliases": ["content-expansion-revision"],
       "kind": "authoritative",
       "owner": "content",
       "lifecycle": "current",
@@ -2058,31 +2157,31 @@
     {
       "id": "file-processing-run",
       "canonicalName": "FileProcessingRun",
-      "kind": "authoritative",
+      "kind": "historical-evidence",
       "owner": "file",
       "lifecycle": "current",
-      "definition": "A single explicitly selected Parser/OCR/AI operation against an immutable File revision, with fenced attempts and Preview/Save/Discard lifecycle.",
-      "authorityMode": "authoritative",
+      "definition": "Legacy processing run storage retained only for historical read during controlled cutover; Intelligence owns all new runs.",
+      "authorityMode": "reference-only",
       "persistenceExpectation": "relation"
     },
     {
       "id": "file-processing-revision",
       "canonicalName": "FileProcessingRevision",
-      "kind": "authoritative",
+      "kind": "historical-evidence",
       "owner": "file",
       "lifecycle": "current",
-      "definition": "Immutable user-requested processing attempt, RawResult and optional SavedResult with bounded edits, uncertainty and source locators.",
-      "authorityMode": "authoritative",
+      "definition": "Immutable legacy processing revisions retained for historical reads during controlled cutover.",
+      "authorityMode": "reference-only",
       "persistenceExpectation": "relation"
     },
     {
       "id": "file-command-receipt",
       "canonicalName": "FileCommandReceipt",
-      "kind": "authoritative",
+      "kind": "historical-evidence",
       "owner": "file",
-      "lifecycle": "current",
-      "definition": "Immutable actor/request fingerprint and exact File or ProcessingRun revision receipt; reauthorization and fencing preserve recovery.",
-      "authorityMode": "authoritative",
+      "lifecycle": "current-data-only",
+      "definition": "Legacy File request receipt retained only for historical File storage evidence. Current processing receipts belong to Intelligence.",
+      "authorityMode": "reference-only",
       "persistenceExpectation": "relation"
     }
   ],
@@ -2763,11 +2862,20 @@
       "to": "contract",
       "kind": "reference",
       "owner": "wbs",
-      "meaning": "A Project WBS user explicitly maps an ACTIVE Repository Contract line into a Project WORK_PACKAGE, with Project and Repository rights both reverified in one transaction. WBS retains a private exact source pin in its immutable revision; the Contract remains the authority for agreed quantities and Content pins.",
+      "meaning": "Legacy Project WBS revisions may retain exact Contract and Content source pins from the retired per-line import command. New WBS writes do not consume Contract directly; the target flow is a complete Content expansion consumed as a Project-scoped WBS draft, with Project authorization and governance retained by their current owners.",
       "provider": "contract",
       "consumer": "wbs",
       "integrationMode": "stable-identity+query",
       "authority": "contract",
+      "consistency": "transaction-recheck+immutable-pin"
+    },
+    {
+      "id": "wbs-content-expansion",
+      "provider": "content",
+      "consumer": "wbs",
+      "meaning": "Project WBS consumes one immutable Content revision through Content's public expansion reader; Content retains plan and source-mapping authority while WBS creates its own draft and governance history.",
+      "integrationMode": "stable-identity+query",
+      "authority": "content",
       "consistency": "transaction-recheck+immutable-pin"
     },
     {
@@ -2998,6 +3106,51 @@
       "consistency": "pure-value"
     },
     {
+      "id": "contract-file-source",
+      "provider": "file",
+      "consumer": "contract",
+      "meaning": "Contract transactionally requalifies one exact authorized File revision and SHA-256 before persisting a ContractDocument revision. File retains original-byte, storage and access authority; Contract stores only the immutable source reference in its own revision.",
+      "integrationMode": "stable-identity+query",
+      "authority": "file",
+      "consistency": "transaction-recheck+immutable-pin"
+    },
+    {
+      "id": "intelligence-file-source",
+      "provider": "file",
+      "consumer": "intelligence",
+      "meaning": "Intelligence reads an exact File revision only through File's public source reader, which authorizes before and after private object I/O. Intelligence receives detached bytes and no File persistence or storage authority.",
+      "integrationMode": "query",
+      "authority": "file",
+      "consistency": "current-source-access"
+    },
+    {
+      "id": "repository-intelligence-processing-scope",
+      "provider": "repository",
+      "consumer": "intelligence",
+      "meaning": "Intelligence processing mutations recheck active User, current Repository write permission and archive state inside their transaction; Repository retains authorization authority.",
+      "integrationMode": "query",
+      "authority": "repository",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "intelligence-contract-document-intake",
+      "provider": "contract",
+      "consumer": "intelligence",
+      "meaning": "Contract supplies the versioned purchase-order target schema and public candidate command. Intelligence submits only an untrusted SAVE candidate; Contract owns validation, authorization, version/replay checks, durable revision and confirmation.",
+      "integrationMode": "command",
+      "authority": "contract",
+      "consistency": "idempotent-command"
+    },
+    {
+      "id": "intelligence-platform-persistence",
+      "provider": "platform",
+      "consumer": "intelligence",
+      "meaning": "Intelligence consumes neutral PostgreSQL transaction and value-decoding mechanisms for its technical attempt record. It retains only attempt recovery state; Contract remains the owner of candidate and business revision truth.",
+      "integrationMode": "query",
+      "authority": "platform",
+      "consistency": "transaction-bound"
+    },
+    {
       "id": "execution-contract-line-basis",
       "provider": "contract",
       "consumer": "execution",
@@ -3034,21 +3187,21 @@
       "consistency": "transaction-recheck+immutable-pin"
     },
     {
-      "id": "content-saved-file-evidence",
-      "provider": "file",
-      "consumer": "content",
-      "meaning": "A user-confirmed Content import pins one exact SAVED File observation inside Content's own transaction. File rechecks current protected source access; only immutable Content revision audit holds the source identifiers, never broad Content DTOs.",
-      "integrationMode": "stable-identity+query",
-      "authority": "file",
-      "consistency": "transaction-recheck+immutable-pin"
-    },
-    {
       "id": "contract-content-plan-basis",
       "provider": "content",
       "consumer": "contract",
       "meaning": "Formal commitments pin exact Work/Task plan items and freeze their content/measure basis; later plan edits never rewrite commitments.",
       "integrationMode": "stable-identity+query",
       "authority": "content",
+      "consistency": "transaction-recheck+immutable-pin"
+    },
+    {
+      "id": "contract-content-document-expansion",
+      "provider": "contract",
+      "consumer": "content",
+      "meaning": "Content reads one exact currently authorized CONFIRMED ContractDocument revision through an application-host-composed public Contract reader. Contract retains commercial fields, confirmation and source truth; Content applies the fixed whole-document purchase-order-content-v1 expansion and stores only its own immutable plan and provenance.",
+      "integrationMode": "stable-identity+query",
+      "authority": "contract",
       "consistency": "transaction-recheck+immutable-pin"
     },
     {
@@ -3086,24 +3239,6 @@
       "integrationMode": "query",
       "authority": "platform",
       "consistency": "transaction-bound"
-    },
-    {
-      "id": "file-intelligence-processor-contract",
-      "provider": "file",
-      "consumer": "intelligence",
-      "meaning": "Intelligence implements the File-owned processor port against an exact FileRevision source. The contract transfers no File authorization, persistence or lifecycle authority.",
-      "integrationMode": "reference",
-      "authority": "file",
-      "consistency": "pure-value"
-    },
-    {
-      "id": "intelligence-file-document-understanding",
-      "provider": "intelligence",
-      "consumer": "file",
-      "meaning": "File may invoke a configured Intelligence document-understanding processor only after authorizing and reading the exact source revision. Intelligence returns untrusted candidate output and owns only the provider protocol, prompt, schema and processor version identity.",
-      "integrationMode": "query",
-      "authority": "intelligence",
-      "consistency": "current-source-access"
     }
   ],
   "capabilities": [
@@ -5551,8 +5686,13 @@
       "id": "manage-content-plans",
       "owner": "content",
       "kind": "leaf",
-      "intent": "Manage Repository work definitions in a strict five-level hierarchy with coherent immutable plan revisions and physical resource pins.",
+      "intent": "Manage Repository work definitions in a strict five-level hierarchy with coherent immutable plan revisions and physical resource pins, including a fixed whole-document expansion of one confirmed ContractDocument revision.",
       "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
+      "consumes": [
+        "content-repository-scope",
+        "content-physical-resource-pins",
+        "contract-content-document-expansion"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -5563,7 +5703,7 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "Manage Repository work definitions in a strict five-level hierarchy with coherent immutable plan revisions and physical resource pins.",
+        "scope": "Manage Repository work definitions and one fixed purchase-order-content-v1 expansion of an exact confirmed ContractDocument into a complete immutable Content revision, including source-row coverage and provenance.",
         "sourcePaths": [
           "packages/content/src/domain/plan.ts",
           "packages/content/src/application/use-cases/plans.ts",
@@ -5572,9 +5712,12 @@
         ],
         "publicExports": [
           "./application/use-cases/plans",
+          "./contracts/output/plans",
           "./contracts/output/plan-references",
+          "./contracts/output/wbs-expansion",
           "./composition/bootstrap/plans",
           "./composition/bootstrap/plan-references",
+          "./composition/bootstrap/wbs-expansion",
           "./domain/plan-reference"
         ],
         "testPaths": [
@@ -5582,8 +5725,12 @@
           "packages/content/test/plans.test.ts",
           "packages/content/test/plans-postgres.test.ts"
         ],
-        "entrypoints": ["apps/web/src/app/api/repository-content/route.ts"],
-        "note": "Web consumes public owner application/composition contracts. Source implementation, local verification and production publication are separate evidence."
+        "entrypoints": [
+          "apps/web/src/app/api/repository-content/route.ts",
+          "apps/web/src/app/api/_composition/content-plans.server.ts",
+          "apps/web/src/app/api/_composition/contract-content-expansion.server.ts"
+        ],
+        "note": "The application host composes Contract's public confirmed-document reader with Content's injected port; Content owns only the deterministic whole-document purchase-order-content-v1 expansion and its immutable plan/provenance. It also provides the public immutable Content expansion reader used by WBS. Source implementation, local verification and production publication are separate evidence."
       }
     },
     {
@@ -5625,6 +5772,41 @@
       }
     },
     {
+      "id": "manage-contract-documents",
+      "owner": "contract",
+      "kind": "leaf",
+      "intent": "Persist, read and explicitly confirm a complete Contract-owned purchase-order document candidate from one exact authorized File revision.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6", "CONTRACT2"],
+      "consumes": ["contract-repository-scope", "contract-file-source"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Persist, read and explicitly confirm complete purchase-order candidates against a Contract-owned schema and exact File source reference.",
+        "sourcePaths": [
+          "packages/contract/src/domain/document-intake.ts",
+          "packages/contract/src/domain/document-intake-decoder.ts",
+          "packages/contract/src/application/use-cases/documents.ts",
+          "packages/contract/src/adapters/outbound/persistence/documents.ts",
+          "packages/contract/src/contracts/input/document-intake.ts"
+        ],
+        "publicExports": ["./contracts/input/document-intake", "./composition/bootstrap/documents"],
+        "entrypoints": ["scripts/contract/run.mjs"],
+        "testPaths": [
+          "packages/contract/test/document-intake-domain.test.ts",
+          "packages/contract/test/documents-postgres.test.ts",
+          "scripts/contract/run.test.mjs"
+        ],
+        "note": "The candidate is Contract truth only after Contract validation and a transaction-bound File source qualification. Intelligence may submit SAVE; confirmation requires an explicit Contract command. A separate Content capability may read one exact confirmed revision through Contract's public reader and apply its own fixed whole-document expansion; Contract never creates Content or WBS records."
+      }
+    },
+    {
       "id": "manage-files",
       "owner": "file",
       "kind": "leaf",
@@ -5645,16 +5827,18 @@
         "sourcePaths": [
           "packages/file/src/domain/file.ts",
           "packages/file/src/application/use-cases/files.ts",
+          "packages/file/src/application/use-cases/sources.ts",
           "packages/file/src/application/use-cases/reclaim.ts",
           "packages/file/src/adapters/outbound/persistence/files.ts",
           "packages/file/src/adapters/outbound/storage/supabase.ts",
-          "packages/file/src/contracts/output/object-store.ts"
+          "packages/file/src/contracts/output/object-store.ts",
+          "packages/file/src/contracts/output/references.ts"
         ],
         "publicExports": [
           "./application/use-cases/files",
           "./application/use-cases/reclaim",
           "./composition/bootstrap/files",
-          "./composition/bootstrap/processors",
+          "./contracts/output/references",
           "./domain/error",
           "./domain/file"
         ],
@@ -5665,25 +5849,26 @@
           "apps/web/src/app/(resource)/[login]/[repository]/files/page.tsx"
         ],
         "testPaths": [
-          "packages/file/test/domain.test.ts",
-          "packages/file/test/extractors.test.ts",
-          "packages/file/test/persistence.test.ts",
+          "packages/intelligence/test/gemini.test.ts",
+          "packages/intelligence/test/intake-document.test.ts",
+          "packages/intelligence/test/document-attempts-postgres.test.ts",
           "packages/file/test/object-store.test.ts",
+          "packages/file/test/sources.test.ts",
           "apps/web/test/files-owner-http.test.ts"
         ],
-        "note": "Authenticated CLI preserves originals up to 45 MiB. Web/LINE Repository Files transport supports explicit bounded 3 MB multipart Upload/Download and current-authorized File List/Run History; private Supabase Storage remains the only bytes store. No large-file Web transport, live device/production acceptance or business import is asserted."
+        "note": "Authenticated CLI preserves originals up to 45 MiB. Web/LINE Repository Files transport supports explicit bounded 3 MB multipart Upload/Download and current-authorized File List; private Supabase Storage remains the only bytes store. Processing lifecycle and result history are Intelligence-owned. No large-file Web transport, live device/production acceptance or business import is asserted."
       }
     },
     {
       "id": "run-file-processing",
-      "owner": "file",
+      "owner": "intelligence",
       "kind": "leaf",
       "intent": "Execute only the explicitly user-selected compatible processor against a pinned File revision and produce untrusted Preview without implicit fallback or Save.",
       "preserves": ["K1", "K2", "K3", "K4", "K5", "K6", "FILE1", "FILE2"],
       "consumes": [
-        "file-repository-scope",
-        "file-platform-persistence",
-        "intelligence-file-document-understanding"
+        "intelligence-file-source",
+        "repository-intelligence-processing-scope",
+        "intelligence-platform-persistence"
       ],
       "validationProfiles": [
         "semantic-architecture",
@@ -5695,20 +5880,20 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "Execute only the explicitly user-selected compatible processor against a pinned File revision and produce untrusted Preview without implicit fallback or Save.",
+        "scope": "Execute and persist an explicitly requested Intelligence processing lifecycle against a pinned File revision, retaining untrusted candidate and explicit save evidence.",
         "sourcePaths": [
-          "packages/file/src/domain/processing-run.ts",
-          "packages/file/src/contracts/output/processor.ts",
-          "packages/file/src/application/use-cases/files.ts",
-          "packages/file/src/adapters/outbound/processing/plain-text.ts"
+          "packages/intelligence/src/domain/processing.ts",
+          "packages/intelligence/src/domain/error.ts",
+          "packages/intelligence/src/application/use-cases/processing.ts",
+          "packages/intelligence/src/adapters/outbound/persistence/processing.ts",
+          "packages/intelligence/src/adapters/outbound/processing/plain-text.ts"
         ],
         "publicExports": [
-          "./application/use-cases/files",
-          "./composition/bootstrap/files",
-          "./composition/bootstrap/processors",
-          "./contracts/output/processor",
+          "./application/use-cases/processing",
           "./domain/error",
-          "./domain/file"
+          "./composition/bootstrap/processing",
+          "./composition/bootstrap/processors",
+          "./contracts/output/processing"
         ],
         "entrypoints": [
           "scripts/file/run.mjs",
@@ -5716,21 +5901,21 @@
           "apps/web/src/app/(resource)/[login]/[repository]/files/page.tsx"
         ],
         "testPaths": [
-          "packages/file/test/domain.test.ts",
-          "packages/file/test/extractors.test.ts",
-          "packages/file/test/persistence.test.ts",
+          "packages/intelligence/test/gemini.test.ts",
+          "packages/intelligence/test/intake-document.test.ts",
+          "packages/intelligence/test/document-attempts-postgres.test.ts",
           "apps/web/test/files-owner-http.test.ts"
         ],
-        "note": "File owns explicit processor selection, exact source authorization, output validation and the ProcessingRun lifecycle. Its native UTF-8 text Parser remains local; configured Intelligence adapters are injected by application hosts and return untrusted candidate output. No OCR or Excel/Word Parser, asynchronous worker, automatic fallback, live provider or LINE device acceptance is asserted."
+        "note": "Intelligence owns explicit processor selection, exact source authorization, output validation and its ProcessingRun lifecycle. Its native UTF-8 text Parser is local to Intelligence; configured provider adapters return untrusted candidate output. No OCR or Excel/Word Parser, asynchronous worker, automatic fallback, live provider or LINE device acceptance is asserted."
       }
     },
     {
       "id": "manage-file-result",
-      "owner": "file",
+      "owner": "intelligence",
       "kind": "leaf",
       "intent": "A user may locally edit Preview, then explicitly Save a version-bound result or Discard it; neither operation mutates downstream business owners.",
       "preserves": ["K1", "K2", "K3", "K4", "K5", "K6", "FILE1", "FILE2"],
-      "consumes": ["file-repository-scope", "file-platform-persistence"],
+      "consumes": ["repository-intelligence-processing-scope", "intelligence-platform-persistence"],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -5743,15 +5928,15 @@
         "status": "implemented",
         "scope": "A user may locally edit Preview, then explicitly Save a version-bound result or Discard it; neither operation mutates downstream business owners.",
         "sourcePaths": [
-          "packages/file/src/domain/processing-run.ts",
-          "packages/file/src/application/use-cases/files.ts"
+          "packages/intelligence/src/domain/processing.ts",
+          "packages/intelligence/src/application/use-cases/processing.ts",
+          "packages/intelligence/src/adapters/outbound/persistence/processing.ts"
         ],
         "publicExports": [
-          "./application/use-cases/files",
-          "./composition/bootstrap/files",
+          "./application/use-cases/processing",
+          "./composition/bootstrap/processing",
           "./composition/bootstrap/processors",
-          "./domain/error",
-          "./domain/file"
+          "./contracts/output/processing"
         ],
         "entrypoints": [
           "scripts/file/run.mjs",
@@ -5759,12 +5944,12 @@
           "apps/web/src/app/(resource)/[login]/[repository]/files/page.tsx"
         ],
         "testPaths": [
-          "packages/file/test/domain.test.ts",
-          "packages/file/test/extractors.test.ts",
-          "packages/file/test/persistence.test.ts",
+          "packages/intelligence/test/gemini.test.ts",
+          "packages/intelligence/test/intake-document.test.ts",
+          "packages/intelligence/test/document-attempts-postgres.test.ts",
           "apps/web/test/files-owner-http.test.ts"
         ],
-        "note": "CLI and Web provide explicit local Edit, Discard or version-bound Save of Ready ProcessingRun. RawResult remains unchanged; no downstream business import, live LINE device or production acceptance is asserted."
+        "note": "Intelligence provides explicit Edit, Discard or version-bound Save of a Ready ProcessingRun. RawResult remains unchanged; no downstream business import, live LINE device or production acceptance is asserted."
       }
     },
     {
@@ -5773,7 +5958,7 @@
       "kind": "leaf",
       "intent": "Map explicitly supplied PDF or image evidence through a configured Gemini model into bounded, source-located candidate observations without approving, persisting or importing business facts.",
       "preserves": ["K1", "K2", "K5", "FILE2", "INTELLIGENCE1"],
-      "consumes": ["file-intelligence-processor-contract"],
+      "consumes": ["intelligence-file-source"],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -5783,7 +5968,7 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "Gemini-backed PDF/image document understanding implementing the File-owned processor contract",
+        "scope": "Gemini-backed PDF/image document understanding consuming File's public authorized source reader; Intelligence owns processor selection and provider protocol.",
         "sourcePaths": [
           "packages/intelligence/src/adapters/outbound/processing/gemini.ts",
           "packages/intelligence/src/composition/bootstrap/processors.ts"
@@ -5795,6 +5980,59 @@
         ],
         "testPaths": ["packages/intelligence/test/gemini.test.ts"],
         "note": "The processor preserves observations-v1:<model> identity, performs one provider attempt without fallback and supports configured PDF/JPEG/PNG/WebP inputs. Output remains candidate evidence; simulated tests do not prove live provider accuracy or acceptance."
+      }
+    },
+    {
+      "id": "intake-contract-document",
+      "owner": "intelligence",
+      "kind": "leaf",
+      "intent": "Read an authorized File source, extract a complete purchase-order candidate using the target owner's schema, and submit it through the target's public SAVE command.",
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5",
+        "K6",
+        "INTELLIGENCE1",
+        "INTELLIGENCE2",
+        "CONTRACT2"
+      ],
+      "consumes": [
+        "intelligence-file-source",
+        "intelligence-contract-document-intake",
+        "intelligence-platform-persistence"
+      ],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Gemini-backed orchestration of exact File source read, target-owned schema extraction and Contract SAVE candidate submission.",
+        "sourcePaths": [
+          "packages/intelligence/src/application/use-cases/intake-document.ts",
+          "packages/intelligence/src/adapters/outbound/extraction/gemini-document.ts",
+          "packages/intelligence/src/adapters/outbound/persistence/document-attempts.ts",
+          "packages/intelligence/src/contracts/output/document-attempts.ts",
+          "packages/intelligence/src/contracts/output/document-intake.ts",
+          "packages/intelligence/src/composition/bootstrap/document-intake.ts"
+        ],
+        "publicExports": [
+          "./composition/bootstrap/document-intake",
+          "./contracts/output/document-intake",
+          "./contracts/output/document-attempts"
+        ],
+        "entrypoints": ["scripts/intelligence/run.mjs"],
+        "testPaths": [
+          "packages/intelligence/test/intake-document.test.ts",
+          "packages/intelligence/test/document-attempts-postgres.test.ts",
+          "scripts/intelligence/run.test.mjs"
+        ],
+        "note": "A single durable provider attempt may produce only an untrusted SAVE candidate. Its technical state preserves source/intent identity and target receipt reference, never the candidate. Provider failure, response loss and live extraction accuracy remain distinct evidence boundaries."
       }
     }
   ],
@@ -5911,6 +6149,21 @@
       "tags": ["ownership", "authorization", "immutable-history", "transaction", "replay"]
     },
     {
+      "id": "CONTRACT2",
+      "scope": "contract",
+      "statement": "ContractDocument revisions retain the complete target-owned structured candidate and an exact transaction-qualified File source. Current authorization precedes replay; expected version, aggregate head, immutable revision and command receipt commit atomically. Only an explicit Contract confirmation may confirm a candidate, and an acknowledged financial discrepancy is retained rather than silently normalized.",
+      "severity": "error",
+      "enforcement": ["semantic-policy", "source-code", "schema", "tests"],
+      "tags": [
+        "ownership",
+        "authorization",
+        "source-qualification",
+        "immutable-history",
+        "transaction",
+        "replay"
+      ]
+    },
+    {
       "id": "FILE1",
       "scope": "file",
       "statement": "Original file bytes reside in immutable private Storage objects keyed by exact Repository/File/Revision; an object never becomes a visible FileRevision before verified upload and transactional Finalize. Current Repository authorization precedes access/replay, and storage paths/keys do not grant access. Uncertain external outcome is resolved by explicit readback, never blind overwrite.",
@@ -5921,7 +6174,7 @@
     {
       "id": "FILE2",
       "scope": "file",
-      "statement": "Only an explicit authorized user Run invokes the chosen processor. Preview remains untrusted and only version-bound Save creates a SavedResult; Discard creates no SavedResult. Durable attempt identity, permission rechecks and fencing preserve completion without database locks.",
+      "statement": "File only owns original bytes and immutable file revisions. File does not invoke processors, persist processing runs/results, or own processing history.",
       "severity": "error",
       "enforcement": ["source-code", "schema", "tests"],
       "tags": ["file", "processing", "user-intent", "recovery", "trust"]
@@ -5929,10 +6182,18 @@
     {
       "id": "INTELLIGENCE1",
       "scope": "intelligence",
-      "statement": "Intelligence owns document-understanding provider protocol, extraction prompt/schema and processor version identity only. It receives an exact source through a consumer-owned contract, returns untrusted candidate output, persists no File or business truth, and cannot authorize Save or downstream Domain mutation.",
+      "statement": "Intelligence owns authorized processing lifecycle, provider protocol, immutable run revisions, saved extraction evidence and processing receipts. It reads exact File sources only through File's public reader; extracted data remains untrusted, and target business facts remain owned by their target contracts.",
       "severity": "error",
       "enforcement": ["semantic-policy", "source-code", "tests"],
       "tags": ["intelligence", "trust", "ownership", "provider-boundary"]
+    },
+    {
+      "id": "INTELLIGENCE2",
+      "scope": "intelligence",
+      "statement": "Before provider execution, Intelligence durably records one source-qualified target-intent attempt. Only a fresh STARTED attempt may call the provider; duplicate or UNKNOWN attempts never trigger a second provider call. Target receipt readback may complete the attempt, and the attempt never stores extracted candidate or assumes Contract confirmation.",
+      "severity": "error",
+      "enforcement": ["semantic-policy", "source-code", "schema", "tests"],
+      "tags": ["intelligence", "provider-attempt", "recovery", "replay", "trust"]
     }
   ],
   "truthRegistry": [
@@ -6269,6 +6530,11 @@
       "id": "reference",
       "authorityMode": "reference-only",
       "meaning": "Pointer to truth owned elsewhere; cannot rewrite provider truth."
+    },
+    {
+      "id": "historical-evidence",
+      "authorityMode": "reference-only",
+      "meaning": "Retained legacy evidence that may be read under current authorization but is not writable or current business authority."
     },
     {
       "id": "derived-projection",

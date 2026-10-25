@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import { createHash, randomUUID } from "node:crypto";
 import test from "node:test";
 import type { GenerateContentParameters } from "@google/genai";
-import { FileError } from "@line_bot_v1/file/domain/error";
 import { nextFileRevision } from "@line_bot_v1/file/domain/file";
 import { geminiFileProcessor } from "../src/adapters/outbound/processing/gemini.js";
 import { createGeminiFileProcessor } from "../src/composition/bootstrap/processors.js";
+import { IntelligenceError } from "../src/domain/error.js";
 
 function source() {
   const bytes = new TextEncoder().encode("%PDF-test-fixture");
@@ -77,7 +77,7 @@ test("Gemini preserves processor identity and sends exact bytes and schema once"
     assert.equal(adapter.supports(mediaType), false);
     await assert.rejects(
       adapter.run({ ...input, revision: { ...input.revision, mediaType } }),
-      (error: unknown) => error instanceof FileError && error.code === "UNSUPPORTED_MEDIA",
+      (error: unknown) => error instanceof IntelligenceError && error.code === "UNSUPPORTED_MEDIA",
     );
   }
   assert.equal(calls.length, 1);
@@ -130,7 +130,8 @@ test("operation deadline aborts one provider request without a retry", async (t)
   const result = adapter.run(source());
   const rejected = assert.rejects(
     result,
-    (error: unknown) => error instanceof FileError && error.code === "EXTRACTION_UNAVAILABLE",
+    (error: unknown) =>
+      error instanceof IntelligenceError && error.code === "EXTRACTION_UNAVAILABLE",
   );
   t.mock.timers.tick(20000);
   await rejected;
@@ -148,6 +149,7 @@ test("public composition preserves historical processor version and rejects miss
   assert.equal(processor.version, "observations-v1:configured-test-model");
   assert.throws(
     () => createGeminiFileProcessor({ apiKey: "offline-test-key", model: " " }),
-    (error: unknown) => error instanceof FileError && error.code === "EXTRACTION_UNAVAILABLE",
+    (error: unknown) =>
+      error instanceof IntelligenceError && error.code === "EXTRACTION_UNAVAILABLE",
   );
 });

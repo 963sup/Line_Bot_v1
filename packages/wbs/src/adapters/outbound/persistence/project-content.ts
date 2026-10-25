@@ -1,7 +1,12 @@
 import { createHash, randomUUID } from "node:crypto";
-import type { ContractReferenceReader } from "@line_bot_v1/contract/contracts/output/references";
 import { type Database, type Sql, type SqlRow } from "@line_bot_v1/platform/postgres";
-import { isRecord, numberValue, numericValue, stringValue } from "@line_bot_v1/platform/validation";
+import {
+  isRecord,
+  literalValue,
+  numberValue,
+  numericValue,
+  stringValue,
+} from "@line_bot_v1/platform/validation";
 import { createPostgresProjectContentScope } from "@line_bot_v1/project/composition/bootstrap/project-content-scope";
 import type {
   ProjectWbsCommand,
@@ -12,7 +17,7 @@ import type {
   ProjectWbsContentTransaction,
   ProjectWbsStore,
 } from "../../../contracts/repositories/project-content.js";
-import type { WbsContractImportEvidence, WbsRevision } from "../../../domain/content.js";
+import type { WbsContentImportEvidence, WbsRevision } from "../../../domain/content.js";
 import { parseWbsDocument, WbsError } from "../../../domain/document.js";
 import { canEditProjectWbs } from "../../../domain/policies/project-access.js";
 import { PostgresWbsScopeBoundary } from "./scope-boundary.js";
@@ -23,6 +28,7 @@ function revisionMetadata(row: SqlRow): Omit<WbsRevision, "document"> {
     action !== "initialize" &&
     action !== "create-node" &&
     action !== "import-contract" &&
+    action !== "import-content-document" &&
     action !== "update-node" &&
     action !== "move-node" &&
     action !== "delete-subtree"
@@ -39,10 +45,62 @@ function revisionMetadata(row: SqlRow): Omit<WbsRevision, "document"> {
 }
 function revision(row: SqlRow): WbsRevision {
   try {
-    return { ...revisionMetadata(row), document: parseWbsDocument(row.document) };
+    const metadata = revisionMetadata(row);
+    const contentImport =
+      row.content_import == null ? undefined : parseContentImport(row.content_import);
+    return {
+      ...metadata,
+      ...(contentImport ? { contentImport } : {}),
+      document: parseWbsDocument(row.document),
+    };
   } catch {
     throw new WbsError(503, "WBS 已保存內容格式不正確。");
   }
+}
+function parseContentImport(value: unknown): WbsContentImportEvidence {
+  const parsed = typeof value === "string" ? JSON.parse(value) : value;
+  if (
+    !isRecord(parsed) ||
+    parsed.mappingVersion !== "content-wbs-v1" ||
+    typeof parsed.repositoryId !== "string" ||
+    typeof parsed.contentRevisionId !== "string" ||
+    typeof parsed.contentVersion !== "number" ||
+    !Array.isArray(parsed.nodeCoverage) ||
+    !Array.isArray(parsed.sourceRows)
+  )
+    throw new WbsError(503, "WBS Content 來源證據格式不正確。");
+  return {
+    repositoryId: stringValue(parsed.repositoryId),
+    contentRevisionId: stringValue(parsed.contentRevisionId),
+    contentVersion: numberValue(parsed.contentVersion),
+    mappingVersion: "content-wbs-v1",
+    nodeCoverage: parsed.nodeCoverage.map((item) => {
+      if (!isRecord(item)) throw new WbsError(503, "WBS Content 來源證據格式不正確。");
+      return {
+        contentNodeId: stringValue(item.contentNodeId),
+        wbsNodeId: stringValue(item.wbsNodeId),
+        sourceKind: literalValue(item.sourceKind, [
+          "SUBJECT",
+          "OBJECT",
+          "SUBOBJECT",
+          "WORK",
+          "TASK",
+        ]),
+        targetKind: literalValue(item.targetKind, ["DELIVERABLE", "WORK_PACKAGE"]),
+      };
+    }),
+    sourceRows: parsed.sourceRows.map((item) => {
+      if (!isRecord(item) || !Array.isArray(item.wbsNodeIds))
+        throw new WbsError(503, "WBS Content 來源證據格式不正確。");
+      return {
+        documentId: stringValue(item.documentId),
+        revisionId: stringValue(item.revisionId),
+        sourceRowId: stringValue(item.sourceRowId),
+        disposition: literalValue(item.disposition, ["CONTENT_WORK", "COMMERCIAL_ONLY"]),
+        wbsNodeIds: item.wbsNodeIds.map(stringValue),
+      };
+    }),
+  };
 }
 function canonical(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(canonical);
@@ -57,7 +115,9 @@ function canonical(value: unknown): unknown {
 export class PostgresProjectWbsStore implements ProjectWbsStore {
   constructor(
     private readonly db: Database,
-    private readonly source: (sql: Sql) => ContractReferenceReader,
+    private readonly contentReader: (
+      sql: Sql,
+    ) => import("@line_bot_v1/content/contracts/output/wbs-expansion").ContentWbsExpansionReader,
   ) {}
   read(
     userId: string,
@@ -110,7 +170,7 @@ export class PostgresProjectWbsStore implements ProjectWbsStore {
       );
       const rows = (
         await sql.query(
-          "SELECT id,version,parent_revision_id,actor_user_id,action,at FROM project_wbs_revisions WHERE project_id=$1 AND ($2::integer IS NULL OR version<$2) ORDER BY version DESC LIMIT 21",
+          "SELECT id,version,parent_revision_id,actor_user_id,action,at,content_import FROM project_wbs_revisions WHERE project_id=$1 AND ($2::integer IS NULL OR version<$2) ORDER BY version DESC LIMIT 21",
           [project.id, before ?? null],
           revisionMetadata,
         )
@@ -135,7 +195,7 @@ export class PostgresProjectWbsStore implements ProjectWbsStore {
       await new PostgresWbsScopeBoundary(sql).projectWritable(project.id);
       return operation({
         scope: { projectId: project.id, closed, role },
-        contracts: this.source(sql),
+        content: this.contentReader(sql),
         nextId: randomUUID,
         replay: async () => {
           await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
@@ -224,14 +284,14 @@ export class PostgresProjectWbsStore implements ProjectWbsStore {
             throw new WbsError(503, "WBS 目前版本無法讀取。");
           return current;
         },
-        save: async (next, contractImport?: WbsContractImportEvidence) => {
+        save: async (next) => {
           if (next.parentRevisionId === null)
             await sql.query(
               "INSERT INTO project_wbs(project_id,version,head_revision_id) VALUES($1,$2,$3)",
               [project.id, next.version, next.id],
             );
           await sql.query(
-            "INSERT INTO project_wbs_revisions(id,project_id,version,parent_revision_id,actor_user_id,action,document,at,contract_import) VALUES($1,$2,$3,$4,$5,$6,$7::jsonb,$8,$9::jsonb)",
+            "INSERT INTO project_wbs_revisions(id,project_id,version,parent_revision_id,actor_user_id,action,document,at,contract_import,content_import) VALUES($1,$2,$3,$4,$5,$6,$7::jsonb,$8,$9::jsonb,$10::jsonb)",
             [
               next.id,
               project.id,
@@ -241,7 +301,8 @@ export class PostgresProjectWbsStore implements ProjectWbsStore {
               next.action,
               JSON.stringify(next.document),
               next.at,
-              contractImport ? JSON.stringify(contractImport) : null,
+              null,
+              next.contentImport ? JSON.stringify(next.contentImport) : null,
             ],
           );
           if (next.parentRevisionId !== null) {

@@ -1,7 +1,7 @@
 import type { WbsRevision } from "../../domain/content.js";
-import type { WbsEdit } from "../../domain/document.js";
+import type { WbsContentImportCommand, WbsEdit } from "../../domain/document.js";
 
-export type ProjectWbsCommand = WbsEdit &
+export type ProjectWbsCommand = (WbsEdit | WbsContentImportCommand) &
   Readonly<{ projectId: string; requestId: string; expectedVersion: number }>;
 export type ProjectWbsView = Readonly<{
   project: { id: string; title: string };

@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import type { ResourceBasis } from "@line_bot_v1/resources/domain/resource-reference";
 import type {
   ContentPlanHistory,
@@ -10,12 +11,20 @@ import { ContentError, contentErrorFromUnknown } from "../../domain/error.js";
 import {
   type ContentResourcePin,
   changedResourcePins,
-  importFileContentNode,
+  expandContractDocument,
   reviseContentPlan,
 } from "../../domain/plan.js";
 import { canEditContent } from "../../domain/policies/access.js";
 import { parseContentPlanCommand } from "../commands/plans.js";
 import { contentHistoryCursor, contentPlanQuery, contentRepositoryId } from "../queries/plans.js";
+
+function stableUuid(seed: string): string {
+  const bytes = createHash("sha256").update(seed).digest("hex").slice(0, 32).split("");
+  bytes[12] = "5";
+  bytes[16] = ((Number.parseInt(bytes[16] ?? "0", 16) & 3) | 8).toString(16);
+  const hex = bytes.join("");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
 
 function assertResourceBases(
   pins: readonly ContentResourcePin[],
@@ -92,20 +101,35 @@ export function createContentPlans(deps: {
               repositoryId: tx.scope.repositoryId,
               actorUserId: userId,
               at: deps.now(),
+              stableId: stableUuid,
             };
             const revision =
-              command.action === "import-file"
-                ? importFileContentNode(
-                    current,
-                    command.expectedVersion,
-                    command.target,
-                    await tx.savedFileResults.verifySaved(
+              command.action === "import-contract-document"
+                ? await (async () => {
+                    const expansion = await tx.contractDocuments.readConfirmed(
                       userId,
                       tx.scope.repositoryId,
-                      command.source,
-                    ),
-                    context,
-                  )
+                      command.contract.documentId,
+                      command.contract.revisionId,
+                    );
+                    if (
+                      await tx.plans.hasContractDocumentImport(
+                        command.contract.documentId,
+                        command.contract.revisionId,
+                      )
+                    )
+                      throw new ContentError(
+                        409,
+                        "Contract document revision already exists in Content.",
+                        "LIFECYCLE_CONFLICT",
+                      );
+                    return expandContractDocument(
+                      current,
+                      command.expectedVersion,
+                      expansion,
+                      context,
+                    );
+                  })()
                 : reviseContentPlan(
                     current,
                     command.expectedVersion,

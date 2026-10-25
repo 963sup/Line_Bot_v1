@@ -50,15 +50,22 @@ export type ContentFileImportEvidence = Readonly<{
   nodeId: string;
 }>;
 
-export type ContentFileImportTarget = Readonly<{
-  id: string;
-  parentId: string;
-  kind: "WORK" | "TASK";
+/** Fixed expansion of a complete confirmed Contract document into the Content hierarchy. */
+export type ContractDocumentExpansion = Readonly<{
+  documentId: string;
+  revisionId: string;
+  sourceFileId: string;
+  sourceFileRevisionId: string;
+  sourceFileSha256: string;
   title: string;
-  body: string;
-  measureId: string;
-  quantity: string;
-  newMeasure?: ContentMeasure;
+  lines: readonly Readonly<{
+    sourceRowId: string;
+    description: string | null;
+    quantity: string | null;
+    unit: string | null;
+    category: string | null;
+    uncertain: boolean;
+  }>[];
 }>;
 
 export type ContentPlanRevision = Readonly<{
@@ -68,9 +75,22 @@ export type ContentPlanRevision = Readonly<{
   parentRevisionId: string | null;
   actorUserId: string;
   at: number;
-  action: "initialize" | "replace" | "import-file";
+  action: "initialize" | "replace" | "import-file" | "import-contract-document";
   document: ContentPlanDocument;
   fileImport?: ContentFileImportEvidence;
+  contractDocumentImport?: Readonly<{
+    documentId: string;
+    revisionId: string;
+    fileId: string;
+    fileRevisionId: string;
+    fileSha256: string;
+    mappingVersion: "purchase-order-content-v1";
+    rows: readonly Readonly<{
+      sourceRowId: string;
+      disposition: "CONTENT_WORK" | "COMMERCIAL_ONLY";
+      nodeIds: readonly string[];
+    }>[];
+  }>;
 }>;
 
 function invalid(message: string): never {
@@ -245,7 +265,7 @@ export function changedResourcePins(
 export function reviseContentPlan(
   current: ContentPlanRevision | null,
   expectedVersion: number,
-  action: "initialize" | "replace" | "import-file",
+  action: "initialize" | "replace" | "import-file" | "import-contract-document",
   document: ContentPlanDocument,
   evidence: Readonly<{ id: string; repositoryId: string; actorUserId: string; at: number }>,
 ): ContentPlanRevision {
@@ -276,63 +296,167 @@ export function reviseContentPlan(
   };
 }
 
-/** A verified saved observation is only evidence; the user supplies the Content meaning. */
-export function importFileContentNode(
+/** Whole-document mapping. Material and service rows become planned work; freight/other remain commercial-only. */
+export function expandContractDocument(
   current: ContentPlanRevision | null,
   expectedVersion: number,
-  target: ContentFileImportTarget,
-  source: Omit<ContentFileImportEvidence, "nodeId">,
-  context: Readonly<{ id: string; repositoryId: string; actorUserId: string; at: number }>,
+  expansion: ContractDocumentExpansion,
+  context: Readonly<{
+    id: string;
+    repositoryId: string;
+    actorUserId: string;
+    at: number;
+    stableId(seed: string): string;
+  }>,
 ): ContentPlanRevision {
   if (!current)
     throw new ContentError(
       409,
-      "Create a Content plan before importing a File.",
+      "Create a Content plan before importing a Contract document.",
       "LIFECYCLE_CONFLICT",
     );
-  if (source.repositoryId !== context.repositoryId)
-    throw new ContentError(409, "File source belongs to another Repository.", "SOURCE_INVALID");
-  const parent = current.document.nodes.find((node) => node.id === target.parentId);
+  if (!expansion.lines.length || expansion.lines.length > 1000)
+    invalid("Contract document line count is outside Content limits.");
+  const documentId = expansion.documentId;
+  const sourcePin = `contract-document:${documentId}:${expansion.revisionId}`;
+  const subjectId = context.stableId(`${sourcePin}:subject`);
+  const objectId = context.stableId(`${sourcePin}:object`);
+  const subObjectId = context.stableId(`${sourcePin}:subobject`);
   if (
-    (target.kind === "WORK" && parent?.kind !== "SUBOBJECT") ||
-    (target.kind === "TASK" && parent?.kind !== "WORK")
+    [subjectId, objectId, subObjectId].some((id) =>
+      current.document.nodes.some((node) => node.id === id),
+    )
   )
-    invalid("Select an existing legal Content parent for the imported work.");
-  if (current.document.nodes.some((node) => node.id === target.id))
-    invalid("Imported Content node identity already exists.");
-  if (
-    target.newMeasure &&
-    (target.newMeasure.id !== target.measureId ||
-      current.document.measures.some((measure) => measure.id === target.newMeasure?.id))
-  )
-    invalid("Imported Content measure identity is not available.");
-  const position = current.document.nodes.filter(
-    (node) => node.parentId === target.parentId,
-  ).length;
-  const next = reviseContentPlan(
+    throw new ContentError(
+      409,
+      "Contract document revision already exists in Content.",
+      "LIFECYCLE_CONFLICT",
+    );
+  const sourceRows = new Set<string>();
+  const nodes = [...current.document.nodes];
+  const measures = [...current.document.measures];
+  const coverage: {
+    sourceRowId: string;
+    disposition: "CONTENT_WORK" | "COMMERCIAL_ONLY";
+    nodeIds: string[];
+  }[] = [];
+  let position = 0;
+  for (const line of expansion.lines) {
+    if (!line.sourceRowId || sourceRows.has(line.sourceRowId))
+      invalid("Duplicate or empty Contract source row.");
+    sourceRows.add(line.sourceRowId);
+    if (line.category === "freight" || line.category === "other") {
+      coverage.push({ sourceRowId: line.sourceRowId, disposition: "COMMERCIAL_ONLY", nodeIds: [] });
+      continue;
+    }
+    if (line.category !== "material" && line.category !== "service")
+      throw new ContentError(
+        409,
+        "Contract row has no fixed Content disposition.",
+        "SOURCE_INVALID",
+      );
+    if (line.uncertain || !line.description?.trim() || !line.quantity || !line.unit)
+      throw new ContentError(
+        409,
+        "Contract work row is incomplete for fixed Content mapping.",
+        "SOURCE_INVALID",
+      );
+    const unit = normalizeQuantityUnit(line.unit);
+    const quantity = normalizeQuantity(line.quantity, unit);
+    let measure = measures.find((item) => item.unit === unit);
+    if (!measure) {
+      measure = {
+        id: context.stableId(`${sourcePin}:measure:${unit}`),
+        name: unit.slice(0, 100),
+        subject: "Contract quantity",
+        unit,
+      };
+      measures.push(measure);
+    }
+    const workId = context.stableId(`${sourcePin}:row:${line.sourceRowId}:work`);
+    const taskId = context.stableId(`${sourcePin}:row:${line.sourceRowId}:task`);
+    if ([workId, taskId].some((id) => nodes.some((node) => node.id === id)))
+      throw new ContentError(
+        409,
+        "Contract source row identity already exists in Content.",
+        "LIFECYCLE_CONFLICT",
+      );
+    const title = line.description.trim();
+    const prefix = line.category === "material" ? "Supply" : "Service";
+    const taskVerb = line.category === "material" ? "Provide" : "Perform";
+    nodes.push({
+      id: workId,
+      parentId: subObjectId,
+      position: position++,
+      kind: "WORK",
+      title: `${prefix}: ${title}`,
+      body: "",
+      plannedQuantity: { measureId: measure.id, value: quantity },
+    });
+    nodes.push({
+      id: taskId,
+      parentId: workId,
+      position: 0,
+      kind: "TASK",
+      title: `${taskVerb}: ${title}`,
+      body: "",
+      plannedQuantity: { measureId: measure.id, value: quantity },
+    });
+    coverage.push({
+      sourceRowId: line.sourceRowId,
+      disposition: "CONTENT_WORK",
+      nodeIds: [workId, taskId],
+    });
+  }
+  if (coverage.length !== expansion.lines.length)
+    invalid("Every Contract source row must have a Content disposition.");
+  if (position > 0) {
+    nodes.push({
+      id: subjectId,
+      parentId: null,
+      position: nodes.filter((node) => node.parentId === null).length,
+      kind: "SUBJECT",
+      title: expansion.title || "Contract scope",
+      body: "",
+      plannedQuantity: null,
+    });
+    nodes.push({
+      id: objectId,
+      parentId: subjectId,
+      position: 0,
+      kind: "OBJECT",
+      title: "Contract scope",
+      body: "",
+      plannedQuantity: null,
+    });
+    nodes.push({
+      id: subObjectId,
+      parentId: objectId,
+      position: 0,
+      kind: "SUBOBJECT",
+      title: "Contract scope",
+      body: "",
+      plannedQuantity: null,
+    });
+  }
+  const revision = reviseContentPlan(
     current,
     expectedVersion,
-    "import-file",
-    {
-      schemaVersion: 1,
-      measures: target.newMeasure
-        ? [...current.document.measures, target.newMeasure]
-        : current.document.measures,
-      nodes: [
-        ...current.document.nodes,
-        {
-          id: target.id,
-          parentId: target.parentId,
-          kind: target.kind,
-          position,
-          title: target.title,
-          body: target.body,
-          plannedQuantity: { measureId: target.measureId, value: target.quantity },
-        },
-      ],
-      resourcePins: current.document.resourcePins,
-    },
+    "replace",
+    { schemaVersion: 1, measures, nodes, resourcePins: current.document.resourcePins },
     context,
   );
-  return { ...next, fileImport: { ...source, nodeId: target.id } };
+  return {
+    ...revision,
+    action: "import-contract-document",
+    contractDocumentImport: {
+      documentId,
+      revisionId: expansion.revisionId,
+      fileId: expansion.sourceFileId,
+      fileRevisionId: expansion.sourceFileRevisionId,
+      fileSha256: expansion.sourceFileSha256,
+      mappingVersion: "purchase-order-content-v1",
+      rows: coverage,
+    },
+  };
 }
