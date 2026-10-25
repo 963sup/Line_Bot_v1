@@ -7,4 +7,5 @@ Read [README.md](README.md) for launcher purpose and invocation flow. Scripts in
 - Keep launchers deterministic, worktree-relative, and least-privilege. Do not add credentials, product environment loading, dashboard/UI processes, or persistent agent memory without an explicit runtime contract.
 - Serena is a coding MCP transport. It is not a product index, a replacement for `pnpm semantic`, or a general agent role; each Atomic still defines its permitted use and evidence boundary.
 - Preserve failure diagnostics without emitting secrets or unbounded tool output.
+- `dispatch-task.mjs` is the sole repository adapter for CLI/automation dispatch. It must resolve only `enabled` Atomics, derive the catalog executor, pass the profile contract to a child Codex session, and emit a bounded receipt with the ignored full-log path.
 - Validate launcher changes with `pnpm tooling:check`; run the smallest relevant transport diagnosis only when the task explicitly requires runtime evidence.
