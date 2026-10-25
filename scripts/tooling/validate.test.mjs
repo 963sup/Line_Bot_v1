@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { runBoundedCommand, writeBoundedDiagnostic } from "../runtime/bounded-output.mjs";
+import { readBoundedFailure, runBoundedCommand, writeBoundedDiagnostic } from "../runtime/bounded-output.mjs";
 import {
   classifyChangedFiles,
   describeFastPlan,
@@ -62,6 +62,24 @@ test("in-process diagnostics preserve the full report and bound stderr excerpt",
   assert.match(report.diagnostic, /violation-299/);
   assert.ok(Buffer.byteLength(report.diagnostic) <= 8 * 1024);
   assert.ok(report.diagnostic.split(/\r?\n/).length <= 80);
+});
+
+test("failure diagnostics preserve bounded context around actionable error lines", (t) => {
+  const directory = mkdtempSync(join(tmpdir(), "line-bot-bounded-failure-context-"));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  const logPath = join(directory, "next.log");
+  writeFileSync(logPath, [
+    "Failed to compile.",
+    "./src/app/page.tsx",
+    "Unexpected token '<'",
+    "Syntax Error",
+    "generic trailing summary",
+  ].join("\n"));
+  const diagnostic = readBoundedFailure(logPath);
+  assert.match(diagnostic, /Failed to compile/);
+  assert.match(diagnostic, /\.\/src\/app\/page\.tsx/);
+  assert.match(diagnostic, /Unexpected token/);
+  assert.match(diagnostic, /Syntax Error/);
 });
 
 function git(directory, args) {

@@ -76,14 +76,23 @@ export function readBoundedTail(
 /** Preserve the first actionable compiler/provider errors before the final summary. */
 export function readBoundedFailure(path, options = {}) {
   const { maxBytes = diagnosticLimits.maxBytes, maxLines = diagnosticLimits.maxLines } = options;
-  const matches = readFileSync(path, "utf8")
-    .split(/\r?\n/)
-    .filter((line) => /error|failed|module not found|cannot find|not found/i.test(line))
-    .slice(0, maxLines)
-    .join("\n");
-  if (!matches) return readBoundedTail(path, options);
-  const bytes = Buffer.byteLength(matches);
-  return bytes <= maxBytes ? matches : `${utf8Tail(matches, maxBytes - 19)}\n[output truncated]`;
+  const lines = readFileSync(path, "utf8").split(/\r?\n/);
+  const matchIndexes = lines
+    .map((line, index) => (/error|failed|module not found|cannot find|not found/i.test(line) ? index : -1))
+    .filter((index) => index >= 0)
+    .slice(0, maxLines);
+  if (!matchIndexes.length) return readBoundedTail(path, options);
+
+  const selected = new Set();
+  for (const index of matchIndexes) {
+    for (let offset = -1; offset <= 1; offset += 1) {
+      const candidate = index + offset;
+      if (candidate >= 0 && candidate < lines.length) selected.add(candidate);
+    }
+  }
+  const excerpt = [...selected].sort((left, right) => left - right).map((index) => lines[index]).join("\n");
+  if (Buffer.byteLength(excerpt) <= maxBytes) return excerpt.trim();
+  return `${utf8Tail(excerpt, maxBytes - 19)}\n[output truncated]`;
 }
 
 export function boundedSpawnOptions(outputDirectory, label) {
