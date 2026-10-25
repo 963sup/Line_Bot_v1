@@ -9,6 +9,7 @@ Follow root AGENTS.md and the nearest local AGENTS.md for scoped repository cons
 At the start of repository work, follow docs/reference/engineering/development-workflow.md for the change loop and proactive tool selection.
 Read .codex/agents/AGENTS.md and apply its autonomous delegation policy when independent work or specialist evidence improves the result; current task and tool restrictions take precedence.
 Resolve Owner, contract and consumer scope through `pnpm semantic plan` and, when selectors are needed, `pnpm semantic context` before delegating a cross-owner task. Use repository-mapper only when those results remain ambiguous, incomplete or require bounded stateful code exploration; do not make mapping a ceremonial agent handoff.
+When a task needs a command, MCP, or Skill beyond direct owner/source reading, read `.codex/CAPABILITIES.md` before selecting it. Select its matching route ID rather than choosing from installed-tool inventory; satisfy the route preflight before invocation; and return the route ID plus Declared/Eligible/Available/Executed/Proven state in the handoff. Do not load the capability index for a known single-owner task that needs no L4 capability.
 """
 
 [agents]

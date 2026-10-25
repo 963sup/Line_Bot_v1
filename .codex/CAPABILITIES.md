@@ -39,6 +39,10 @@ broader tool.
 
 ## Selection protocol
 
+This protocol is an active routing instruction for Primary and every assigned
+role, not background documentation. The project configuration and
+`agents/AGENTS.md` require it whenever L4 capability selection is needed.
+
 1. Primary first resolves the task's Owner, contract, consumer, and evidence
    claim. A known single-owner task does not need capability ceremony.
 2. If one fact remains unresolved, choose the route below with the narrowest
@@ -46,8 +50,9 @@ broader tool.
 3. The selected role performs the stated preflight. On failure, report the
    gap and use only the listed fallback; it does not install, reconnect, or
    change transport without a separately authorized task.
-4. The role returns the route ID, state reached, target/revision, bounded
-   output, and what its result does not prove in its L5 handoff.
+4. The role returns the route ID, reached state (`Declared`, `Eligible`,
+   `Available`, `Executed`, or `Proven`), target/revision, bounded output, and
+   what its result does not prove in its L5 handoff.
 5. L6 assesses the result with the correct evidence owner. Provider, browser,
    deployment, and device evidence stay separate even when one task uses more
    than one route.

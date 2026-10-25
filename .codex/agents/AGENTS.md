@@ -8,6 +8,7 @@ Read [README.md](README.md) for the six-layer model, role index, capability matr
 - Profile names use `gpt-5.6-<luna|terra>-<subject>-<primary-role>.toml`; the `<subject>-<primary-role>` portion exactly matches TOML `name`. Use only the primary-role vocabulary documented in the README.
 - Role profiles inherit root and parent constraints. They cannot grant shell approval, sandbox escape, MCP access, provider write authority, or an exception to repository contracts.
 - Primary resolves Owner/contract/consumer scope first. Use `pnpm semantic plan` and then `pnpm semantic context` when needed; use `repository-mapper` only for unresolved or genuinely stateful repository exploration.
+- After role selection, any command, MCP, or Skill beyond direct owner/source reading must be selected from [../CAPABILITIES.md](../CAPABILITIES.md). Read the matching route, satisfy its preflight, and return its route ID plus reached state (`Declared`, `Eligible`, `Available`, `Executed`, or `Proven`) in the L5 handoff. Do not load the index for a known single-owner task with no L4 capability need.
 
 ## Autonomous delegation
 
