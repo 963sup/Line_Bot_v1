@@ -1,7 +1,11 @@
 import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
 import { join } from "node:path";
-import { boundedSpawnOptions, createOutputDirectory, readBoundedTail } from "./bounded-output.mjs";
+import {
+  boundedSpawnOptions,
+  createOutputDirectory,
+  readBoundedFailure,
+} from "./bounded-output.mjs";
 import { loadRootEnv, repositoryRoot } from "./load-env.mjs";
 
 loadRootEnv();
@@ -26,7 +30,7 @@ child.on("error", () => {
 child.on("exit", (code) => {
   output.close();
   if (code !== 0) {
-    console.error(readBoundedTail(output.logPath));
+    console.error(readBoundedFailure(output.logPath));
     console.error(`Full log: ${output.logPath}`);
   }
   process.exitCode = code ?? 1;

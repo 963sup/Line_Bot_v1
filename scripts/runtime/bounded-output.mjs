@@ -4,6 +4,7 @@ import {
   mkdirSync,
   mkdtempSync,
   openSync,
+  readFileSync,
   readSync,
   statSync,
   writeFileSync,
@@ -70,6 +71,19 @@ export function readBoundedTail(
 
   const prefix = `${truncationMarker}\n`;
   return `${prefix}${utf8Tail(tail, maxBytes - Buffer.byteLength(prefix))}`;
+}
+
+/** Preserve the first actionable compiler/provider errors before the final summary. */
+export function readBoundedFailure(path, options = {}) {
+  const { maxBytes = diagnosticLimits.maxBytes, maxLines = diagnosticLimits.maxLines } = options;
+  const matches = readFileSync(path, "utf8")
+    .split(/\r?\n/)
+    .filter((line) => /error|failed|module not found|cannot find|not found/i.test(line))
+    .slice(0, maxLines)
+    .join("\n");
+  if (!matches) return readBoundedTail(path, options);
+  const bytes = Buffer.byteLength(matches);
+  return bytes <= maxBytes ? matches : `${utf8Tail(matches, maxBytes - 19)}\n[output truncated]`;
 }
 
 export function boundedSpawnOptions(outputDirectory, label) {
