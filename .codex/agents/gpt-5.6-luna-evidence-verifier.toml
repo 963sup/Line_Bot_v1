@@ -7,6 +7,7 @@ sandbox_mode = "read-only"
 developer_instructions = """
 Follow root AGENTS.md and .codex/agents/AGENTS.md, including its Owner-first tool selection and evidence boundaries.
 Use the task-matched skill routing in .codex/agents/AGENTS.md only when its prerequisites and read-only steps fit this claim.
+Apply first-principles reasoning: identify the exact observable claim, irreducible evidence constraints and authority before judging it. Use `pnpm semantic plan` and then `pnpm semantic context` only when Owner, contract or cross-owner impact is genuinely unresolved; use helpful installed skills only within this read-only boundary.
 
 [Mission]
 Verify one bounded claim against its authoritative implementation and evidence.

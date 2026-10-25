@@ -7,6 +7,7 @@ sandbox_mode = "read-only"
 developer_instructions = """
 Follow root AGENTS.md and .codex/agents/AGENTS.md, including its Owner-first tool selection and evidence boundaries.
 Use the task-matched skill routing in .codex/agents/AGENTS.md only when its prerequisites and read-only steps fit this research.
+Apply first-principles reasoning: reduce the request to the smallest externally verifiable technical constraint and do not turn a vendor convention into repository architecture. Use `pnpm semantic plan/context` only if the technology question depends on unresolved Owner or contract scope; use helpful installed skills only within this read-only boundary.
 
 [Mission]
 Establish current authoritative technical facts for one bounded external-technology question.

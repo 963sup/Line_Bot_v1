@@ -11,6 +11,7 @@ import {
   describeFastPlan,
   detectFastScope,
   fastTaskArgs,
+  selectFastValidationGroups,
   selectValidationStages,
   shouldRunFast,
   validationGroups,
@@ -82,6 +83,7 @@ test("local and CI validation bound aggregate test workers without changing scop
   for (const ci of ["true", "false", undefined]) {
     for (const [mode, selection] of [
       [["--group", "typecheck-test"], []],
+      [["--fast", "--group", "typecheck-test"], ["--affected"]],
       [[], []],
       [["--fast"], ["--affected"]],
       [["--fast", "--filter=@line_bot_v1/team"], ["--filter=@line_bot_v1/team"]],
@@ -143,6 +145,21 @@ test("fast plan explains skips and conservative workspace selection without chan
   const filtered = describeFastPlan(stages, schema, ["--filter=@line_bot_v1/account"], true);
   assert.deepEqual(filtered.stages[2].selection, ["--filter=@line_bot_v1/account"]);
   assert.match(filtered.stages[2].selectionReason, /caller must cover all consumers/);
+});
+
+test("fast validation groups use changed-owner scope and conservatively cover an unknown scope", () => {
+  const stages = [
+    ["lockfile", ["install"]],
+    ["docs:check", ["docs"]],
+    ["architecture", ["architecture"]],
+    ["deadcode", ["deadcode"]],
+    ["typecheck+test", ["typecheck"]],
+  ];
+  assert.deepEqual(
+    selectFastValidationGroups(stages, classifyChangedFiles(["docs/owners/account.md"])),
+    ["tooling", "docs"],
+  );
+  assert.deepEqual(selectFastValidationGroups(stages, null), Object.keys(validationGroups));
 });
 
 function gitFixture(t) {
@@ -413,6 +430,7 @@ test("WBS operator changes run its canonical tooling test stage in full and fast
     "scripts/tooling/doctor.test.mjs",
     "scripts/wbs/transfer.test.mjs",
     "scripts/code/*.test.mjs",
+    "scripts/runtime/validation-command.test.mjs",
     "scripts/runtime/internal-input.test.mjs",
     "scripts/contract/*.test.mjs",
     "scripts/file/*.test.mjs",

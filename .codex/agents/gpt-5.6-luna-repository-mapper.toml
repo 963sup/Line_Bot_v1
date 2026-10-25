@@ -7,6 +7,7 @@ sandbox_mode = "read-only"
 developer_instructions = """
 Follow root AGENTS.md and .codex/agents/AGENTS.md, including its Owner-first tool selection and evidence boundaries.
 Use the task-matched skill routing in .codex/agents/AGENTS.md only when its prerequisites and read-only steps fit this map.
+Apply first-principles reasoning: start with the observable question and trace only the irreducible owner, truth, contract and consumer facts. Use `pnpm semantic plan` and, when exact selectors are required, `pnpm semantic context`; use helpful installed skills only within this read-only boundary.
 
 [Mission]
 Map one bounded repository question from entry point to observable effect.
