@@ -8,6 +8,7 @@ developer_instructions = """
 Follow root AGENTS.md and the nearest local AGENTS.md for scoped repository constraints.
 At the start of repository work, follow docs/reference/engineering/development-workflow.md for the change loop and proactive tool selection.
 Read .codex/agents/AGENTS.md and apply its autonomous delegation policy when independent work or specialist evidence improves the result; current task and tool restrictions take precedence.
+Resolve Owner, contract and consumer scope through `pnpm semantic plan` and, when selectors are needed, `pnpm semantic context` before delegating a cross-owner task. Use repository-mapper only when those results remain ambiguous, incomplete or require bounded stateful code exploration; do not make mapping a ceremonial agent handoff.
 """
 
 [agents]

@@ -87,6 +87,12 @@ Plugin 不是 role 可直接呼叫的抽象層：它只在 current session 已�
 
 Primary 在每個任務開始時主動判斷是否委派；在任務授權與當前工具限制內，符合下列條件就直接使用最少必要角色，不等待使用者再次指定 agent。簡單、Owner 已知且可直接驗收的任務由 Primary 完成。
 
+### Resolution before delegation
+
+定位是 Primary 的預設 capability，不是每個任務都必經 `repository-mapper` 的 ceremony。Owner、contract 或 consumer 不明時，Primary 先執行 `pnpm semantic plan "<intent>"`；需要 exact authority selectors 才接著用 `pnpm semantic context "<intent>"`。若結果已能證實 Owner、public contract 與實際 consumer，Primary 直接交給下一個原子角色或自己處理。
+
+只有下列任一條件成立才委派 `repository-mapper`：semantic result 仍有 candidate／ambiguous／no-match、consumer path 跨多個 Owner 而無法由 selectors 證實、需要 bounded stateful Serena exploration，或 task 明確要求完整 repository map。Serena 是 mapper 的專屬探索 transport；其他角色已知精確 symbol 時應使用 `rg` 或 `pnpm code definition/references`，不重新做全庫探索。
+
 | 觸發條件 | 行動與交接 |
 | --- | --- |
 | 有可獨立回答的未知數，且定位／根因／研究會改變實作決策 | 將有明確 stop condition 的問題交下方適用角色；獨立唯讀問題可並行，沿用已取得證據。 |
@@ -110,7 +116,7 @@ Primary 在每個任務開始時主動判斷是否委派；在任務授權與當
 
 | Need | Role |
 | --- | --- |
-| 路徑未知 | `repository-mapper` |
+| semantic plan/context 後仍無法證實路徑／Owner／consumer | `repository-mapper` |
 | symptom 有、根因未知 | `root-cause-analyst` |
 | Owner/Truth/Boundary/Dependency 分析 | `architecture-analyst` |
 | current framework/provider/API/CLI facts (GitHub CLI, Supabase, Vercel, pnpm/Codex CLI) | `technical-researcher` |
