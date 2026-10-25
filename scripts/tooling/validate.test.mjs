@@ -12,6 +12,7 @@ import {
   detectFastScope,
   fastTaskArgs,
   selectValidationStages,
+  selectFastValidationGroups,
   shouldRunFast,
   validationGroups,
 } from "./validate.mjs";
@@ -143,6 +144,21 @@ test("fast plan explains skips and conservative workspace selection without chan
   const filtered = describeFastPlan(stages, schema, ["--filter=@line_bot_v1/account"], true);
   assert.deepEqual(filtered.stages[2].selection, ["--filter=@line_bot_v1/account"]);
   assert.match(filtered.stages[2].selectionReason, /caller must cover all consumers/);
+});
+
+test("fast validation groups use changed-owner scope and conservatively cover an unknown scope", () => {
+  const stages = [
+    ["lockfile", ["install"]],
+    ["docs:check", ["docs"]],
+    ["architecture", ["architecture"]],
+    ["deadcode", ["deadcode"]],
+    ["typecheck+test", ["typecheck"]],
+  ];
+  assert.deepEqual(
+    selectFastValidationGroups(stages, classifyChangedFiles(["docs/owners/account.md"])),
+    ["tooling", "docs"],
+  );
+  assert.deepEqual(selectFastValidationGroups(stages, null), Object.keys(validationGroups));
 });
 
 function gitFixture(t) {

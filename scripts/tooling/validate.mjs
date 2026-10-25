@@ -5,10 +5,6 @@ import { createOutputDirectory, runBoundedCommand } from "../runtime/bounded-out
 
 const require = createRequire(import.meta.url);
 const root = fileURLToPath(new URL("../../", import.meta.url));
-const turbo = require.resolve("turbo/bin/turbo");
-const biome = fileURLToPath(
-  new URL("../../node_modules/@biomejs/biome/bin/biome", import.meta.url),
-);
 
 const fastTasks = new Set([
   "lockfile",
@@ -121,10 +117,14 @@ export function classifyChangedFiles(files) {
   return { codeAffected, docsAffected, schemaAffected, toolingAffected };
 }
 
-export function detectFastScope({ directory = root, baseRef = process.env.GITHUB_BASE_REF } = {}) {
+export function detectFastScope({
+  directory = root,
+  baseRef = process.env.VALIDATION_BASE_SHA ?? process.env.GITHUB_BASE_REF,
+} = {}) {
   if (baseRef) {
+    const base = /^[0-9a-f]{40}$/i.test(baseRef) ? baseRef : `origin/${baseRef}`;
     const changed = gitChangedFiles(
-      ["diff", "--name-only", "-z", "--diff-filter=ACMRD", `origin/${baseRef}...HEAD`],
+      ["diff", "--name-only", "-z", "--diff-filter=ACMRD", `${base}...HEAD`],
       directory,
     );
     if (changed?.length) return classifyChangedFiles(changed);
@@ -209,29 +209,21 @@ export function describeFastPlan(stages, scope, selection, explicitFilters = fal
   };
 }
 
-function main() {
-  const fast = process.argv[2] === "--fast";
-  const grouped = process.argv[2] === "--group";
-  const group = grouped ? process.argv[3] : null;
-  if (grouped && (!group || process.argv.length !== 4)) {
-    throw new Error("Usage: validate.mjs --group <name>");
-  }
-  const filters = grouped ? [] : process.argv.slice(fast ? 3 : 2);
-  if (filters.length && (!fast || filters.some((arg) => !/^--filter=.+/.test(arg)))) {
-    console.error("Usage: validate.mjs [--fast [--filter=<Turbo selector> ...]]");
-    process.exit(1);
-  }
-  const selection = filters.length ? filters : ["--affected"];
-  const scope = fast ? detectFastScope() : null;
-  const pnpmExecPath = process.env.npm_execpath;
-  if (!pnpmExecPath) {
-    console.error("Validation must run through the pinned pnpm command surface.");
-    process.exit(1);
-  }
+export function selectFastValidationGroups(stages, scope) {
+  if (scope === null) return Object.keys(validationGroups);
+  return Object.entries(validationGroups)
+    .filter(([, tasks]) =>
+      stages.some(([task]) => tasks.includes(task) && shouldRunFast(task, scope)),
+    )
+    .map(([group]) => group);
+}
 
-  // pnpm owns manifest/lockfile semantics. Frozen + lockfile-only keeps this preflight read-only.
-  // Sequential stages avoid Next.js type generation racing with its build.
-  const stages = [
+function validationStages(pnpmExecPath) {
+  const turbo = require.resolve("turbo/bin/turbo");
+  const biome = fileURLToPath(
+    new URL("../../node_modules/@biomejs/biome/bin/biome", import.meta.url),
+  );
+  return [
     [
       "lockfile",
       [pnpmExecPath, "install", "--lockfile-only", "--frozen-lockfile", "--ignore-scripts"],
@@ -279,13 +271,43 @@ function main() {
     ["schema:check", [turbo, "run", "schema:check"]],
     ["architecture", ["scripts/architecture/check-all.mjs"]],
     ["deadcode", ["node_modules/knip/bin/knip.js"]],
-    [
-      "typecheck+test",
-      // Each package may start two PGlite workers; bound aggregate native/WASM memory locally too.
-      [turbo, "run", "typecheck", "test", "--concurrency=2"],
-    ],
+    ["typecheck+test", [turbo, "run", "typecheck", "test", "--concurrency=2"]],
     ["build", [turbo, "run", "build"]],
   ];
+}
+
+function main() {
+  const args = process.argv.slice(2);
+  const fast = args[0] === "--fast";
+  const planOnly = fast && args[1] === "--plan";
+  const grouped = args[0] === "--group";
+  const group = grouped ? args[1] : null;
+  if (grouped && (!group || args.length !== 2)) {
+    throw new Error("Usage: validate.mjs --group <name>");
+  }
+  const filters = grouped ? [] : args.slice(fast ? (planOnly ? 2 : 1) : 0);
+  if (filters.length && (!fast || filters.some((arg) => !/^--filter=.+/.test(arg)))) {
+    console.error("Usage: validate.mjs [--fast [--plan | --filter=<Turbo selector> ...]]");
+    process.exit(1);
+  }
+  const selection = filters.length ? filters : ["--affected"];
+  const scope = fast ? detectFastScope() : null;
+  if (planOnly) {
+    const stages = Object.values(validationGroups)
+      .flat()
+      .map((task) => [task, []]);
+    console.log(JSON.stringify(selectFastValidationGroups(stages, scope)));
+    return;
+  }
+  const pnpmExecPath = process.env.npm_execpath;
+  if (!pnpmExecPath) {
+    console.error("Validation must run through the pinned pnpm command surface.");
+    process.exit(1);
+  }
+
+  // pnpm owns manifest/lockfile semantics. Frozen + lockfile-only keeps this preflight read-only.
+  // Sequential stages avoid Next.js type generation racing with its build.
+  const stages = validationStages(pnpmExecPath);
 
   const selectedStages = selectValidationStages(stages, group);
   if (fast) {

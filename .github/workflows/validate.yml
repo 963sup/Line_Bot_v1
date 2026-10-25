@@ -34,10 +34,7 @@ jobs:
         id: select
         env:
           VALIDATION_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
-        run: |
-          groups="$(pnpm --silent validate --fast --plan)"
-          if [ "$groups" = "[]" ]; then groups='["tooling"]'; fi
-          echo "groups=$groups" >> "$GITHUB_OUTPUT"
+        run: echo "groups=$(pnpm --silent validate --fast --plan)" >> "$GITHUB_OUTPUT"
 
   full-validate:
     needs: plan
