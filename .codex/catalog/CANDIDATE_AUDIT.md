@@ -8,77 +8,22 @@
 
 | Status | Count | Meaning |
 | --- | ---: | --- |
-| enabled | 55 | Has an enabled executor, packet/handoff contract, capability route when needed, and validation boundary |
-| candidate | 148 | Taxonomy and contract draft only; cannot be dispatched |
+| enabled | 22 | Has an enabled executor, packet/handoff contract, capability route when needed, and validation boundary |
+| candidate | 181 | Taxonomy and contract draft only; cannot be dispatched |
 | retired roles | 22 | Historical specialist labels absorbed by the seven executor families |
 
 The candidate catalog is intentionally broader than the current runtime. A
 candidate is not incomplete merely because it is not enabled; it becomes
 eligible only when a real repository task requires that bounded responsibility.
 
-The `prepare.repository-mapper` → `execute.repository-mapper` →
-`report.repository-mapper` triplet is enabled because the current repository
-architecture audit is its real consumer. All three reuse the existing
-`investigator` executor and have no additional capability route.
-
-The same audit also consumes the `prepare.contract-locator` →
-`execute.contract-locator` → `report.contract-locator` triplet to locate
-authority before interpreting it. These three entries reuse `investigator` and
-remain limited to source location, not product meaning.
-
-The current six-layer architecture adjustment also consumes the
-`prepare.architecture-analyst` → `execute.architecture-analyst` →
-`report.architecture-analyst` triplet. It reuses `analyst`; the result remains
-options and boundary evidence, not a final architecture decision.
-
-The audit documentation itself consumes the `prepare.documentation-writer` →
-`execute.documentation-writer` → `report.documentation-writer` triplet. It
-reuses `change-implementer` and is limited to synchronizing approved facts;
-`docs:check` supplies the corresponding document evidence.
-
-The promotion process itself consumes the `prepare.change-impact-analyst` →
-`execute.change-impact-analyst` → `report.change-impact-analyst` triplet to map
-affected consumers before each catalog change. It reuses `analyst` and does
-not authorize implementation.
-
-PR 400 itself is a real review consumer for the
-`prepare.diff-reviewer` → `execute.diff-reviewer` → `report.diff-reviewer`
-triplet. It reuses `reviewer` and remains read-only; it does not authorize
-merging or acceptance.
-
-The promotion workflow also consumes the `prepare.test-designer` →
-`execute.test-designer` → `report.test-designer` triplet to define the minimum
-discriminating checks for each catalog change. It reuses `analyst`; it does not
-execute tests or claim acceptance.
-
-PR 400 conflict diagnosis is a real consumer for the
-`prepare.root-cause-analyst` → `execute.root-cause-analyst` →
-`report.root-cause-analyst` triplet. It reuses `analyst` and stops at the
-evidenced trigger; implementation remains a separate responsibility.
-
-The promotion audit uses the `prepare.acceptance-decider` →
-`execute.acceptance-decider` → `report.acceptance-decider` triplet when a batch
-has complete independent evidence. It reuses `decider`; it does not create
-evidence or authorize a merge.
-
-The browser performance suite is a real consumer for the
-`prepare.performance-analyst` → `execute.performance-analyst` →
-`report.performance-analyst` triplet. `scripts/browser/measure-loading.mjs`
-produces bounded loading measurements consumed by the browser suite, while the
-engineering code-quality contract requires measured evidence before performance
-analysis. It reuses `analyst`; it does not optimize source, run validation, or
-accept a release.
-
-PR 400 authorization and isolation changes are a real consumer for the
-`prepare.authorization-reviewer` → `execute.authorization-reviewer` →
-`report.authorization-reviewer` triplet. The review traces the Identity/Access
-permission boundary through `PostgresPermissionStore`, its owner contract, and
-the affected tests. It reuses `reviewer`; it does not grant authorization,
-modify source, or make the final acceptance decision.
+The legacy `prepare.*` / `execute.*` / `report.*` entries are retained only as
+candidate taxonomy. No current task may dispatch them: a real task selects
+one direct Atomic, and L5 represents preparation and reporting in the task
+packet/handoff contract rather than as competing executor choices.
 
 ## Candidate families and executor readiness
 
-The remaining 148 candidates are mostly three-stage `prepare / execute / report` entries.
+The remaining 181 candidates include historical three-stage `prepare / execute / report` taxonomy entries.
 The current catalog projection is:
 
 | Candidate projection | Count | Existing executor mapping | Current decision |
@@ -117,10 +62,10 @@ Promote one candidate only when all of the following evidence exists:
 When concrete work arrives, use this order to minimize new surfaces:
 
 1. Reuse the seven existing executor profiles and promote only the exact
-   candidate needed by the task.
-2. Promote the matching `prepare`, `execute`, and `report` triplet only if
-   all three are actually consumed by the workflow; otherwise keep unused
-   stages as candidates.
+   direct Atomic needed by the task.
+2. Do not promote a lifecycle triplet. Preparation and reporting remain part
+   of the L5 packet/result contract; promote one direct Atomic only when its
+   bounded responsibility has a real consumer.
 3. Add a new profile only after an existing executor demonstrably cannot own
    the work without mixing analysis, implementation, review, validation, or
    runtime observation.

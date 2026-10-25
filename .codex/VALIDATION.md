@@ -10,7 +10,7 @@ Validation asks whether a specific claim is supported at a specific revision and
 | --- | --- | --- | --- |
 | Markdown links/structure | `change-implementer` / `validation-runner` | `pnpm docs:check` | Product behavior/deployment |
 | Source/contract/consumer correctness | Owner test + `validation-runner` | Selected `pnpm check` groups and tests | Provider/device state |
-| Declarative schema | Schema owner + `validation-runner` | `pnpm schema:check` | Remote Supabase state |
+| Declarative schema | Domain/schema Owner defines scope; `validation-runner` executes the evidence | `pnpm schema:check` | Remote Supabase state |
 | Synthetic web flow | `validation-runner` via `validate.synthetic-browser-flow` | Loopback screenshot, trace, browser script | Provider login, persistence, device acceptance |
 | Runtime exception incident | `runtime-diagnostician` via `diagnose.sentry-incident` | Read-only issue/event/release/source-map observation | Root cause or business acceptance |
 | Exact provider state | Assigned readback owner | Bounded API/provider readback | Unrelated business flow |

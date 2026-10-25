@@ -24,106 +24,20 @@ L1 Governance / Contract
 | L5 | 建立一個 task packet；implementation 與 review 分開 |
 | L6 | 依 source、test、schema、browser 或 provider claim 分別驗證 |
 
-## Repository mapping audit（已啟用 consumer）
+## Repository mapping and audit
 
-本專案的架構盤點與 candidate promotion audit 使用以下實際 workflow：
+Repository mapping 使用 `investigate.owner-source-consumer`；contract 定位
+仍由 L1/L2 authority resolution 負責。架構邊界分析使用
+`analyse.architecture-boundary`，root-cause 使用 `analyse.root-cause`，文件
+同步使用 `implement.documentation-facts`，diff review 使用
+`review.general-diff`，discriminating test design 使用
+`design.discriminating-tests`。
 
-```text
-prepare.repository-mapper
-  → execute.repository-mapper
-  → report.repository-mapper
-```
-
-三個 Atomic 共用 `investigator` executor，但各自保留不同的 input、deliverable
-與 stop condition。它們只負責建立 repository evidence，不負責產品決策、修改
-source 或接受最終結果；這也是目前第一組由真實 repository task 證明可啟用的
-specialised Atomic triplet。
-
-同一 audit 的 contract 定位子流程使用：
-
-```text
-prepare.contract-locator
-  → execute.contract-locator
-  → report.contract-locator
-```
-
-它只定位 authority，不解釋產品語意；語意判斷仍回到 L1/L2。
-
-本次六層架構調整的邊界分析使用：
-
-```text
-prepare.architecture-analyst
-  → execute.architecture-analyst
-  → report.architecture-analyst
-```
-
-分析結果只提供 Owner、truth、dependency 與 boundary 選項，不直接做最終
-architecture decision，也不直接修改 implementation。
-
-本次 audit 文件與路由文件的同步使用：
-
-```text
-prepare.documentation-writer
-  → execute.documentation-writer
-  → report.documentation-writer
-```
-
-它只同步已確認的 repository facts；`docs:check` 是文件結構證據，不代表
-產品行為或部署驗收。
-
-PR 400 的衝突整合與後續變更使用 bounded diff review：
-
-```text
-prepare.diff-reviewer
-  → execute.diff-reviewer
-  → report.diff-reviewer
-```
-
-reviewer 只回報具體 finding 或 clean review，不修改 diff，也不取代
-validation 或 acceptance。
-
-Promotion 的最小驗證設計使用：
-
-```text
-prepare.test-designer
-  → execute.test-designer
-  → report.test-designer
-```
-
-它只設計 discriminating tests，不執行測試；實際執行仍交給
-`validation-runner`。
-
-PR conflict diagnosis 使用：
-
-```text
-prepare.root-cause-analyst
-  → execute.root-cause-analyst
-  → report.root-cause-analyst
-```
-
-它只追蹤 symptom 到最早有證據的 trigger，不直接修改衝突檔案。
-
-Promotion batch 的獨立 acceptance decision 使用：
-
-```text
-prepare.acceptance-decider
-  → execute.acceptance-decider
-  → report.acceptance-decider
-```
-
-它只在 evidence 完整時做 acceptance decision，不執行 validation，也不取代
-branch protection 或使用者授權。
-
-Atomic promotion 的 consumer impact 使用：
-
-```text
-prepare.change-impact-analyst
-  → execute.change-impact-analyst
-  → report.change-impact-analyst
-```
-
-它只建立 consumer/impact map，不授權變更；實作、review 與 acceptance 仍由
-各自的 Atomic 負責。
+PR conflict diagnosis 使用 `analyse.root-cause`；acceptance 使用
+`decide.acceptance`；consumer/impact mapping 使用
+`investigate.owner-source-consumer` 或 `analyse.architecture-boundary`。
+Preparation 與 reporting 都由 L5 task packet/handoff result 表達，不再拆成
+`prepare.* → execute.* → report.*` 的 dispatch chain。
 
 ## Bug 修復
 
