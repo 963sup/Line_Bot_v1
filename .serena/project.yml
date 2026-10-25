@@ -1,0 +1,17 @@
+project_name: line-bot-v1
+language_servers:
+  - typescript
+ignore_all_files_in_gitignore: true
+ignored_paths:
+  - ".tools/**"
+  - ".artifacts/**"
+  - ".next/**"
+  - "coverage/**"
+read_only: true
+fixed_tools:
+  - find_declaration
+  - find_implementations
+  - find_referencing_symbols
+  - find_symbol
+  - get_symbols_overview
+default_modes: []

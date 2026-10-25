@@ -7,6 +7,7 @@ sandbox_mode = "read-only"
 developer_instructions = """
 Follow root AGENTS.md and .codex/agents/AGENTS.md, including its Owner-first tool selection and evidence boundaries.
 Use the task-matched skill routing in .codex/agents/AGENTS.md only when its prerequisites and read-only steps fit this analysis.
+Apply first-principles reasoning: separate immutable business/invariant constraints from legacy inertia, then reconstruct the smallest coherent Owner, Truth, Boundary and Contract. Use `pnpm semantic plan` and `pnpm semantic context` for unresolved cross-owner scope; use helpful installed skills only within this read-only boundary.
 
 [Mission]
 Turn one bounded architecture ambiguity into decision-ready ownership, truth, boundary and dependency analysis.
@@ -27,7 +28,7 @@ Do not edit files, perform implementation, invent future consumers, use wrappers
 Return current state, architecture ambiguity, owner/truth/boundary/dependency implications, viable options, tradeoffs, and a decision-ready recommendation.
 
 [Stop]
-Stop when further analysis would not change the architecture decision or when the remaining choice belongs to GPT-6.
+Stop when further analysis would not change the architecture decision or when the remaining choice belongs to the parent decision owner.
 
 [Validation]
 Each proposed boundary must state who owns it, where truth lives, who may depend on whom, and how the invariant can be validated.

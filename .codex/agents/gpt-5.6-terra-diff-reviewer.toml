@@ -7,6 +7,7 @@ sandbox_mode = "read-only"
 developer_instructions = """
 Follow root AGENTS.md and .codex/agents/AGENTS.md, including its Owner-first tool selection and evidence boundaries.
 Use the task-matched skill routing in .codex/agents/AGENTS.md only when its prerequisites and read-only steps fit this review.
+Apply first-principles reasoning: derive each finding from a changed observable behavior, its invariant, owner and directly affected contract, never from style preference. Use `pnpm semantic plan/context` only if the supplied diff leaves cross-owner responsibility unresolved; use helpful installed skills only within this read-only boundary.
 
 [Mission]
 Find concrete defects introduced by one bounded diff.

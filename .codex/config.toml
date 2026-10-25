@@ -3,7 +3,7 @@
 # Trusted project shell preapprovals load automatically from .codex/rules/*.rules.
 # Rules govern commands; MCP tool preapprovals are configured per server below.
 # Restart Codex after changes; live session and managed policies take precedence.
-# Primary model: GPT-6 Luna (gpt-6-luna).
+# Primary-model choice is session-owned; every repository subagent profile uses GPT-5.6.
 developer_instructions = """
 Follow root AGENTS.md and the nearest local AGENTS.md for scoped repository constraints.
 At the start of repository work, follow docs/reference/engineering/development-workflow.md for the change loop and proactive tool selection.
@@ -13,7 +13,7 @@ Read .codex/agents/AGENTS.md and apply its autonomous delegation policy when ind
 [agents]
 enabled = true
 # Default subagent model: GPT-5.6 Luna (gpt-5.6-luna).
-# Opt-in GPT-6 development roles set their own model in agents/*.toml.
+# Role profiles choose GPT-5.6 Luna or Terra by their bounded responsibility.
 default_subagent_model = "gpt-5.6-luna"
 default_subagent_reasoning_effort = "medium"
 # Excludes the primary agent: 1 primary + up to 5 subagents.
@@ -45,6 +45,13 @@ startup_timeout_sec = 60
 
 [mcp_servers.shadcn.tools.get_project_registries]
 approval_mode = "approve"
+
+[mcp_servers.serena]
+# Per-worktree semantic symbol retrieval; the launcher derives the checkout path.
+command = "node"
+args = [".codex/scripts/start-serena.mjs"]
+startup_timeout_sec = 90
+default_tools_approval_mode = "approve"
 
 [mcp_servers.sentry]
 # Official hosted MCP uses OAuth; request org:read,project:read,event:read scopes.
