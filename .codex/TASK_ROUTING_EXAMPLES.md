@@ -24,6 +24,21 @@ L1 Governance / Contract
 | L5 | 建立一個 task packet；implementation 與 review 分開 |
 | L6 | 依 source、test、schema、browser 或 provider claim 分別驗證 |
 
+## Repository mapping audit（已啟用 consumer）
+
+本專案的架構盤點與 candidate promotion audit 使用以下實際 workflow：
+
+```text
+prepare.repository-mapper
+  → execute.repository-mapper
+  → report.repository-mapper
+```
+
+三個 Atomic 共用 `investigator` executor，但各自保留不同的 input、deliverable
+與 stop condition。它們只負責建立 repository evidence，不負責產品決策、修改
+source 或接受最終結果；這也是目前第一組由真實 repository task 證明可啟用的
+specialised Atomic triplet。
+
 ## Bug 修復
 
 ```text

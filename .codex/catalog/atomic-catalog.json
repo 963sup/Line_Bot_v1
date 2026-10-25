@@ -576,10 +576,8 @@
     {
       "id": "execute.repository-mapper",
       "family": "locate-research",
-      "status": "candidate",
-      "candidateRoleIds": [
-        "investigator"
-      ],
+      "status": "enabled",
+      "executorRoleId": "investigator",
       "goal": "Map one bounded owner, source, or consumer path.",
       "input": [
         "resolved task intent"
@@ -601,10 +599,8 @@
     {
       "id": "prepare.repository-mapper",
       "family": "locate-research",
-      "status": "candidate",
-      "candidateRoleIds": [
-        "investigator"
-      ],
+      "status": "enabled",
+      "executorRoleId": "investigator",
       "goal": "Prepare one bounded repository-mapper task.",
       "input": [
         "approved scope"
@@ -626,10 +622,8 @@
     {
       "id": "report.repository-mapper",
       "family": "locate-research",
-      "status": "candidate",
-      "candidateRoleIds": [
-        "investigator"
-      ],
+      "status": "enabled",
+      "executorRoleId": "investigator",
       "goal": "Report one bounded repository-mapper result.",
       "input": [
         "role result"

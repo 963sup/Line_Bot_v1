@@ -9,12 +9,17 @@
 | Status | Count | Meaning |
 | --- | ---: | --- |
 | enabled | 22 | Has an enabled executor, packet/handoff contract, capability route when needed, and validation boundary |
-| candidate | 181 | Taxonomy and contract draft only; cannot be dispatched |
+| candidate | 178 | Taxonomy and contract draft only; cannot be dispatched |
 | retired roles | 22 | Historical specialist labels absorbed by the seven executor families |
 
 The candidate catalog is intentionally broader than the current runtime. A
 candidate is not incomplete merely because it is not enabled; it becomes
 eligible only when a real repository task requires that bounded responsibility.
+
+The `prepare.repository-mapper` → `execute.repository-mapper` →
+`report.repository-mapper` triplet is enabled because the current repository
+architecture audit is its real consumer. All three reuse the existing
+`investigator` executor and have no additional capability route.
 
 ## Candidate families and executor readiness
 
