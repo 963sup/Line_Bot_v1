@@ -10,6 +10,7 @@ export type Observation = Readonly<{
   id: string;
   label: string;
   value: string | null;
+  source?: Readonly<Record<string, unknown>> | null;
   uncertain: boolean;
 }>;
 export type ProcessingOutput = Readonly<{
@@ -99,6 +100,34 @@ export function finalizeProcessing(
   }>,
 ): ProcessingRevision {
   if (current.state !== "READY" || !current.rawResult) throw new Error("PROCESSING_NOT_READY");
+  const savedResult =
+    input.action === "save"
+      ? {
+          ...current.rawResult,
+          observations: current.rawResult.observations
+            .filter((observation) => {
+              const edit = input.edits.find(
+                (candidate) =>
+                  candidate &&
+                  typeof candidate === "object" &&
+                  Reflect.get(candidate, "observationId") === observation.id,
+              );
+              return !edit || Reflect.get(edit, "action") !== "exclude";
+            })
+            .map((observation) => {
+              const edit = input.edits.find(
+                (candidate) =>
+                  candidate &&
+                  typeof candidate === "object" &&
+                  Reflect.get(candidate, "observationId") === observation.id,
+              );
+              if (!edit || Reflect.get(edit, "action") !== "replace") return observation;
+              const value = Reflect.get(edit, "value");
+              if (typeof value !== "string") throw new Error("INVALID_PROCESSING_EDITS");
+              return { ...observation, value };
+            }),
+        }
+      : null;
   return {
     ...current,
     id: input.id,
@@ -107,7 +136,7 @@ export function finalizeProcessing(
     actorUserId: input.actorUserId,
     at: input.at,
     state: input.action === "save" ? "SAVED" : "DISCARDED",
-    savedResult: input.action === "save" ? current.rawResult : null,
+    savedResult,
     edits: input.edits,
   };
 }

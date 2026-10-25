@@ -41,6 +41,7 @@ function readOutput(value: unknown): ProcessingOutput | null {
         id: stringValue(observation.id),
         label: stringValue(observation.label),
         value: observation.value === null ? null : stringValue(observation.value),
+        source: observation.source == null ? null : record(observation.source),
         uncertain: booleanValue(observation.uncertain),
       };
     }),
@@ -186,7 +187,7 @@ export class PostgresIntelligenceProcessing implements IntelligenceProcessingSto
         replay: async () => {
           const prior = await selectReplay();
           if (!prior) return null;
-          const revision = decode(prior);
+          const revision = prior;
           if (revision.repositoryId !== command.repositoryId || revision.runId !== command.runId)
             throw new RepositoryError(409, "Request identity reused.");
           return { revision, exact: prior.receipt_fingerprint === payloadFingerprint };

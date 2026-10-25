@@ -21,7 +21,13 @@ export type IntelligenceProcessor = Readonly<{
   ): Promise<ProcessingOutput>;
 }>;
 function completionRequestId(requestId: string) {
-  return createHash("sha256").update(`intelligence-processing-complete:${requestId}`).digest("hex");
+  const bytes = createHash("sha256")
+    .update(`intelligence-processing-complete:${requestId}`)
+    .digest();
+  bytes[6] = (bytes.readUInt8(6) & 0x0f) | 0x50;
+  bytes[8] = (bytes.readUInt8(8) & 0x3f) | 0x80;
+  const hex = bytes.toString("hex");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
 }
 export function createIntelligenceProcessing(
   deps: Readonly<{ source: FileSourceReader; store: IntelligenceProcessingStore; now(): number }>,
@@ -160,7 +166,7 @@ export function createIntelligenceProcessing(
         runId: string;
         expectedVersion: number;
         action: "save" | "discard";
-        edits: readonly unknown[];
+        edits?: readonly unknown[];
       }>,
     ) {
       const processing = await deps.store.transact(
@@ -171,7 +177,7 @@ export function createIntelligenceProcessing(
           runId: command.runId,
           expectedVersion: command.expectedVersion,
           action: command.action,
-          edits: command.edits,
+          edits: command.edits ?? [],
         },
         async (tx) => {
           const replay = await tx.replay();
@@ -187,7 +193,7 @@ export function createIntelligenceProcessing(
             actorUserId: actor,
             at: deps.now(),
             action: command.action,
-            edits: command.edits,
+            edits: command.edits ?? [],
           });
           await tx.save(next, current.version);
           await tx.record(next);
