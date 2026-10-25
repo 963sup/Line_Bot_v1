@@ -8,8 +8,8 @@
 
 | Status | Count | Meaning |
 | --- | ---: | --- |
-| enabled | 22 | Has an enabled executor, packet/handoff contract, capability route when needed, and validation boundary |
-| candidate | 154 | Taxonomy and contract draft only; cannot be dispatched |
+| enabled | 52 | Has an enabled executor, packet/handoff contract, capability route when needed, and validation boundary |
+| candidate | 151 | Taxonomy and contract draft only; cannot be dispatched |
 | retired roles | 22 | Historical specialist labels absorbed by the seven executor families |
 
 The candidate catalog is intentionally broader than the current runtime. A
@@ -61,9 +61,17 @@ The promotion audit uses the `prepare.acceptance-decider` →
 has complete independent evidence. It reuses `decider`; it does not create
 evidence or authorize a merge.
 
+The browser performance suite is a real consumer for the
+`prepare.performance-analyst` → `execute.performance-analyst` →
+`report.performance-analyst` triplet. `scripts/browser/measure-loading.mjs`
+produces bounded loading measurements consumed by the browser suite, while the
+engineering code-quality contract requires measured evidence before performance
+analysis. It reuses `analyst`; it does not optimize source, run validation, or
+accept a release.
+
 ## Candidate families and executor readiness
 
-The 181 candidates are mostly three-stage `prepare / execute / report` entries.
+The remaining 151 candidates are mostly three-stage `prepare / execute / report` entries.
 Their role taxonomy currently falls into these groups:
 
 | Candidate group | Count | Existing executor mapping | Current decision |

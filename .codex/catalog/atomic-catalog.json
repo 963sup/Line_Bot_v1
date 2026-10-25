@@ -933,10 +933,8 @@
     {
       "id": "execute.performance-analyst",
       "family": "analyse-decide",
-      "status": "candidate",
-      "candidateRoleIds": [
-        "analyst"
-      ],
+      "status": "enabled",
+      "executorRoleId": "analyst",
       "goal": "Analyse one measured performance bottleneck.",
       "input": [
         "measurement evidence"
@@ -958,10 +956,8 @@
     {
       "id": "prepare.performance-analyst",
       "family": "analyse-decide",
-      "status": "candidate",
-      "candidateRoleIds": [
-        "analyst"
-      ],
+      "status": "enabled",
+      "executorRoleId": "analyst",
       "goal": "Prepare one bounded performance-analyst task.",
       "input": [
         "approved scope"
@@ -983,10 +979,8 @@
     {
       "id": "report.performance-analyst",
       "family": "analyse-decide",
-      "status": "candidate",
-      "candidateRoleIds": [
-        "analyst"
-      ],
+      "status": "enabled",
+      "executorRoleId": "analyst",
       "goal": "Report one bounded performance-analyst result.",
       "input": [
         "role result"

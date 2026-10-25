@@ -180,3 +180,15 @@ Local schema evidence 與 remote provider evidence 必須分開，migration、au
 ## 停止條件
 
 以下情況應回到最早能解決問題的 layer，而不是擴張 scope：缺少產品決策、Owner/consumer 語意衝突、provider target 不明、外部 mutation 未授權、驗證 claim 與 evidence 不匹配。
+
+## Measured performance
+
+```text
+scripts/browser/measure-loading.mjs measurement evidence
+ → analyst via performance-analyst Atomic
+ → smallest evidence-backed improvement
+```
+
+The performance analyst may identify the smallest justified change, but does not
+modify source, run broad validation, or make an acceptance decision. Without
+measurement evidence it stops and returns the gap.
