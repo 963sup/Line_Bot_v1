@@ -9,7 +9,7 @@
 | Status | Count | Meaning |
 | --- | ---: | --- |
 | enabled | 22 | Has an enabled executor, packet/handoff contract, capability route when needed, and validation boundary |
-| candidate | 172 | Taxonomy and contract draft only; cannot be dispatched |
+| candidate | 169 | Taxonomy and contract draft only; cannot be dispatched |
 | retired roles | 22 | Historical specialist labels absorbed by the seven executor families |
 
 The candidate catalog is intentionally broader than the current runtime. A
@@ -30,6 +30,11 @@ The current six-layer architecture adjustment also consumes the
 `prepare.architecture-analyst` → `execute.architecture-analyst` →
 `report.architecture-analyst` triplet. It reuses `analyst`; the result remains
 options and boundary evidence, not a final architecture decision.
+
+The audit documentation itself consumes the `prepare.documentation-writer` →
+`execute.documentation-writer` → `report.documentation-writer` triplet. It
+reuses `change-implementer` and is limited to synchronizing approved facts;
+`docs:check` supplies the corresponding document evidence.
 
 ## Candidate families and executor readiness
 

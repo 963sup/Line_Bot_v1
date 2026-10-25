@@ -1314,10 +1314,8 @@
     {
       "id": "execute.documentation-writer",
       "family": "implement-document",
-      "status": "candidate",
-      "candidateRoleIds": [
-        "change-implementer"
-      ],
+      "status": "enabled",
+      "executorRoleId": "change-implementer",
       "goal": "Synchronize one documentation surface from approved facts.",
       "input": [
         "approved repository facts"
@@ -1339,10 +1337,8 @@
     {
       "id": "prepare.documentation-writer",
       "family": "implement-document",
-      "status": "candidate",
-      "candidateRoleIds": [
-        "change-implementer"
-      ],
+      "status": "enabled",
+      "executorRoleId": "change-implementer",
       "goal": "Prepare one bounded documentation-writer task.",
       "input": [
         "approved scope"
@@ -1364,10 +1360,8 @@
     {
       "id": "report.documentation-writer",
       "family": "implement-document",
-      "status": "candidate",
-      "candidateRoleIds": [
-        "change-implementer"
-      ],
+      "status": "enabled",
+      "executorRoleId": "change-implementer",
       "goal": "Report one bounded documentation-writer result.",
       "input": [
         "role result"

@@ -60,6 +60,17 @@ prepare.architecture-analyst
 分析結果只提供 Owner、truth、dependency 與 boundary 選項，不直接做最終
 architecture decision，也不直接修改 implementation。
 
+本次 audit 文件與路由文件的同步使用：
+
+```text
+prepare.documentation-writer
+  → execute.documentation-writer
+  → report.documentation-writer
+```
+
+它只同步已確認的 repository facts；`docs:check` 是文件結構證據，不代表
+產品行為或部署驗收。
+
 ## Bug 修復
 
 ```text
