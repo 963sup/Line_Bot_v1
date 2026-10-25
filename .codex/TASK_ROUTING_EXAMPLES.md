@@ -82,6 +82,17 @@ prepare.diff-reviewer
 reviewer 只回報具體 finding 或 clean review，不修改 diff，也不取代
 validation 或 acceptance。
 
+Promotion 的最小驗證設計使用：
+
+```text
+prepare.test-designer
+  → execute.test-designer
+  → report.test-designer
+```
+
+它只設計 discriminating tests，不執行測試；實際執行仍交給
+`validation-runner`。
+
 Atomic promotion 的 consumer impact 使用：
 
 ```text

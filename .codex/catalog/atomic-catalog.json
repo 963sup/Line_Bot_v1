@@ -1164,10 +1164,8 @@
     {
       "id": "execute.test-designer",
       "family": "design-plan",
-      "status": "candidate",
-      "candidateRoleIds": [
-        "analyst"
-      ],
+      "status": "enabled",
+      "executorRoleId": "analyst",
       "goal": "Design minimum discriminating tests for one behavior.",
       "input": [
         "approved invariant"
@@ -1189,10 +1187,8 @@
     {
       "id": "prepare.test-designer",
       "family": "design-plan",
-      "status": "candidate",
-      "candidateRoleIds": [
-        "analyst"
-      ],
+      "status": "enabled",
+      "executorRoleId": "analyst",
       "goal": "Prepare one bounded test-designer task.",
       "input": [
         "approved scope"
@@ -1214,10 +1210,8 @@
     {
       "id": "report.test-designer",
       "family": "design-plan",
-      "status": "candidate",
-      "candidateRoleIds": [
-        "analyst"
-      ],
+      "status": "enabled",
+      "executorRoleId": "analyst",
       "goal": "Report one bounded test-designer result.",
       "input": [
         "role result"

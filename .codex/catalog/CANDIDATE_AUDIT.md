@@ -9,7 +9,7 @@
 | Status | Count | Meaning |
 | --- | ---: | --- |
 | enabled | 22 | Has an enabled executor, packet/handoff contract, capability route when needed, and validation boundary |
-| candidate | 163 | Taxonomy and contract draft only; cannot be dispatched |
+| candidate | 160 | Taxonomy and contract draft only; cannot be dispatched |
 | retired roles | 22 | Historical specialist labels absorbed by the seven executor families |
 
 The candidate catalog is intentionally broader than the current runtime. A
@@ -45,6 +45,11 @@ PR 400 itself is a real review consumer for the
 `prepare.diff-reviewer` → `execute.diff-reviewer` → `report.diff-reviewer`
 triplet. It reuses `reviewer` and remains read-only; it does not authorize
 merging or acceptance.
+
+The promotion workflow also consumes the `prepare.test-designer` →
+`execute.test-designer` → `report.test-designer` triplet to define the minimum
+discriminating checks for each catalog change. It reuses `analyst`; it does not
+execute tests or claim acceptance.
 
 ## Candidate families and executor readiness
 
