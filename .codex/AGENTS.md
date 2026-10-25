@@ -1,5 +1,7 @@
 # Codex runtime scope
 
+**Layer scope:** L2 Orchestration and L4 Capabilities/transports.
+
 Read [README.md](README.md) for the six-layer design and directory map. This file
 contains only the runtime constraints that apply to every child.
 

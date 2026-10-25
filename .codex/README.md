@@ -1,16 +1,18 @@
 # Codex runtime architecture
 
+**Layer coverage:** L2 Orchestration and L4 Capabilities/transports. L1 and L6 are intentionally owned outside `.codex`; this document routes to their repository authorities.
+
 `.codex/` owns local Codex runtime configuration and operational conventions. It is **not** a source of product behaviour, business facts, or external-platform authority. Product truth remains in the repository contracts, architecture inputs, source, schema, and tests named by the root [AGENTS.md](../AGENTS.md).
 
 ## Navigation
 
-| Path | Owner | Purpose |
-| --- | --- | --- |
-| [config.toml](config.toml) | Codex runtime configuration | Enables project agents and configures shared MCP transports. |
-| [agents/](agents/README.md) | Agent-routing documentation and role profiles | Defines atomic specialist roles, their handoffs, and their TOML profiles. |
-| [rules/](rules/) | Command-safety policy | Constrains shell command patterns; it does not authorize product or provider writes. |
-| [scripts/](scripts/) | Codex support scripts | Supports runtime configuration only. |
-| [AGENTS.md](AGENTS.md) | Runtime-scope instructions | Executable constraints and validation entry points. |
+| Path | Layer | Owner | Purpose |
+| --- | --- | --- | --- |
+| [config.toml](config.toml) | L2 + L4 | Codex runtime configuration | Enables project agents and configures shared MCP transports. |
+| [agents/](agents/README.md) | L3 + L5 | Agent-routing documentation and role profiles | Defines atomic specialist roles, their handoffs, and their TOML profiles. |
+| [rules/](rules/) | L4 | Command-safety policy | Constrains shell command patterns; it does not authorize product or provider writes. |
+| [scripts/](scripts/) | L4 | Codex support scripts | Supports runtime configuration only. |
+| [AGENTS.md](AGENTS.md) | L2 + L4 | Runtime-scope instructions | Executable constraints and validation entry points. |
 
 ## Context-loading policy
 
@@ -36,6 +38,39 @@ The system separates six different concerns. A role is an accountable worker, a 
 
 The normal evidence flow is `governance → orchestration → role → atomic work → evidence`. If a role discovers missing authority, an ambiguous owner, or an unverified premise, it returns to the earliest layer that can resolve the gap. It does not invent a contract or silently expand scope.
 
+## Layer handoff contracts
+
+The six layers are not a one-way hierarchy. They exchange a small, explicit
+contract and return to the earliest owner of a missing fact.
+
+| Handoff | Required input | Required output | Return path when insufficient |
+| --- | --- | --- | --- |
+| L1 → L2 | Business result, authoritative contracts, invariants, authorization boundary | Scoped task and applicable authorities | L1 when truth, policy, or ownership is ambiguous |
+| L2 → L3 / L4 | Atomic task packet and only necessary capabilities | Selected role plus verified capability/connection status | L2 when scope, delegation, or capability selection is unresolved |
+| L3 + L4 → L5 | Bounded specialist result and its tool evidence | Standard handoff result: facts, assumptions, deliverable, gaps, and evidence boundary | L3 for missing analysis; L4 for missing transport/tool evidence |
+| L5 → L6 | Candidate revision, claim, acceptance criterion, and evidence plan | Separated static/test/browser/provider/deployment/device evidence | L2 when the claim or validation owner is unclear |
+| L6 → L2 | Evidence outcome, exact revision/target, and unresolved gaps | Integrate, reject, or request the smallest earlier-layer correction | L1 for contract conflict; L3–L5 for a correctable evidence gap |
+
+L5 is the interface layer, not an extra worker. Its packet/result schemas live
+in [agents/README.md](agents/README.md); L6 proof boundaries remain
+authoritatively defined by the repository [validation rules](../docs/rules/validation-evidence.md).
+
+## L6 evidence routing index
+
+This is a routing index, not a second acceptance policy. Exact proof limits are
+owned by [validation rules](../docs/rules/validation-evidence.md).
+
+| Claim requiring evidence | First evidence owner | Evidence that supports it | Does not prove |
+| --- | --- | --- | --- |
+| Markdown structure or local links | `documentation-writer` / `validation-runner` | `pnpm docs:check` | Product behavior or deployment |
+| Source, contract, and transitive consumer correctness | Owner test + `validation-runner` | Selected `pnpm check` groups and relevant tests | Provider/device state |
+| Declarative schema contract | Schema owner + `validation-runner` | `pnpm schema:check` | Remote Supabase state |
+| Synthetic web flow | `browser-flow-verifier` | Loopback screenshot, trace, and browser script result | Backend persistence, provider login, or device acceptance |
+| Unexpected runtime exception incident | `sentry-incident-diagnostician` | Read-only issue/event/release/source-map evidence | Root cause, business audit truth, or acceptance |
+| Exact remote provider state | Assigned provider readback owner | Bounded provider/API readback | Unrelated business flow |
+| Production deployment target/alias | Release/deployment owner | Exact SHA plus deployment/provider readback | Browser/device acceptance |
+| Real device or physical environment | Explicit device acceptance owner | Observed device flow | Source/schema/provider correctness |
+
 ## Operating principles
 
 - A role owns one primary responsibility, not a product bounded context or an entire delivery lifecycle.
@@ -45,3 +80,32 @@ The normal evidence flow is `governance → orchestration → role → atomic wo
 - External writes require real provider authorization, an exact target, and readback; neither this directory nor a role profile grants them.
 
 For operational rules, role routing, and the command-output budget, read [.codex/AGENTS.md](AGENTS.md) and [agents/AGENTS.md](agents/AGENTS.md). Validate runtime changes with `pnpm tooling:check`; validate documentation links with `pnpm docs:check`.
+
+## Approval architecture
+
+This project supports approval-oriented sessions without turning every ordinary edit into a new product decision.
+
+| Boundary | Owner | What it decides | What it cannot decide |
+| --- | --- | --- | --- |
+| Host sandbox and approval UI | Current Codex session / user policy | Whether a tool may read, write, or execute now | Repository business authority or provider authorization |
+| `rules/*.rules` | Command-safety policy | Whether a matching shell command is routine (`allow`) or needs review (`prompt`) | Direct file-edit confirmations, MCP permissions, or external business writes |
+| Task authorization | User request + Primary scope | Whether an assigned writer may make reversible changes in the stated scope | Bypass host policy, deploy, publish, mutate provider data, or widen product meaning |
+
+Once the user has authorized a bounded repository change, the Primary does not request a second semantic confirmation for each reversible local edit. It still reports host-enforced prompts truthfully and pauses for unknown product semantics, destructive operations, external mutation, or a scope change.
+
+## Folder documentation contract
+
+Every direct `.codex/` child directory must have both `README.md` and
+`AGENTS.md`. The README is its durable specification and must state:
+
+| Required item | Purpose |
+| --- | --- |
+| Title and Owner | Names the bounded responsibility and the one authority for it. |
+| Function and use | Explains what the directory does, when it is entered, and its non-goals. |
+| Content catalog | Lists each maintained file with its primary role, caller/entry point, and effect boundary. |
+| Naming and change rule | Prevents unclear names, duplicate owners, and accidental new categories. |
+| Approval and validation | States which effects need host/provider confirmation and which checks demonstrate static correctness. |
+
+`AGENTS.md` repeats none of that catalog. It contains only the local constraints
+that must be loaded whenever work enters the directory. This keeps the active
+instruction chain small while preserving a complete, reviewable specification.

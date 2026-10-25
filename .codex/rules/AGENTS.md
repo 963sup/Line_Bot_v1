@@ -1,5 +1,7 @@
 # Command-safety policy constraints
 
+**Layer scope:** L4 Capabilities/transports — command-safety adapter.
+
 Read [README.md](README.md) for the rule catalog and policy design. These files only classify shell command patterns for Codex approval; they do not authorize a repository, provider, deployment, schema, or data operation.
 
 - Add or change a rule only when a real, recurring command pattern needs a narrower safety decision. Do not use rules to bypass approval or compensate for missing task authority.
