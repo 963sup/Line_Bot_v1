@@ -78,19 +78,19 @@ modify source, or make the final acceptance decision.
 
 ## Candidate families and executor readiness
 
-The remaining 151 candidates are mostly three-stage `prepare / execute / report` entries.
-Their role taxonomy currently falls into these groups:
+The remaining 148 candidates are mostly three-stage `prepare / execute / report` entries.
+The current catalog projection is:
 
-| Candidate group | Count | Existing executor mapping | Current decision |
+| Candidate projection | Count | Existing executor mapping | Current decision |
 | --- | ---: | --- | --- |
-| repository/technical/component/contract investigation | 14 | `investigator` | Candidate until a real packet and source-backed consumer exist |
-| root-cause/architecture/performance/database/schema/test/change analysis | 21 | `analyst` | Candidate until the concrete decision or design is used |
-| architecture/acceptance/threat decisions | 9 | `decider` | Candidate until independent evidence is supplied by a real workflow |
-| implementation/documentation | 6 | `change-implementer` | Candidate until an approved write surface consumes it |
-| diff/auth/persistence/UI/actions/dependency reviews | 21 | `reviewer` | Candidate until a review target and bounded finding contract exist |
-| Next/Sentry/LINE runtime diagnostics | 9 | `runtime-diagnostician` | Candidate until an exact runtime target is supplied |
-| validation/browser/evidence | 10 | `validation-runner` | Candidate until an assigned claim and command/flow exist |
-| specialised executor families without profiles | 91 | none | Requires a demonstrated independent effect boundary before a profile is added |
+| candidates mapped to `reviewer` | 15 | `reviewer` | Candidate until a real review target and bounded finding contract exist |
+| candidates mapped to `validation-runner` | 10 | `validation-runner` | Candidate until an assigned claim and command/flow exist |
+| candidates mapped to `runtime-diagnostician` | 9 | `runtime-diagnostician` | Candidate until an exact runtime target is supplied |
+| candidates mapped to `investigator` | 8 | `investigator` | Candidate until a real packet and source-backed consumer exist |
+| candidates mapped to `analyst` | 6 | `analyst` | Candidate until the concrete decision or design is used |
+| candidates mapped to `decider` | 6 | `decider` | Candidate until independent evidence is supplied by a real workflow |
+| candidates mapped to `change-implementer` | 3 | `change-implementer` | Candidate until an approved write surface consumes it |
+| specialised executor families without enabled profiles | 91 | none | Requires a demonstrated independent effect boundary before a profile is added |
 
 The counts above are a taxonomy projection of `atomic-catalog.json`; the JSON
 catalog remains authoritative.
@@ -130,3 +130,4 @@ When concrete work arrives, use this order to minimize new surfaces:
 No candidate is promoted by this audit alone. This preserves the repository
 contract that catalog status reflects real consumer and evidence state rather
 than desired taxonomy completeness.
+
