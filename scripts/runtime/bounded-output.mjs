@@ -47,6 +47,29 @@ function utf8Tail(content, maxBytes) {
   return characters.slice(start).join("");
 }
 
+function utf8Head(content, maxBytes) {
+  const characters = Array.from(content);
+  let end = 0;
+  let bytes = 0;
+  while (end < characters.length) {
+    const next = Buffer.byteLength(characters[end]);
+    if (bytes + next > maxBytes) break;
+    bytes += next;
+    end += 1;
+  }
+  return characters.slice(0, end).join("");
+}
+
+function boundFailureExcerpt(content, { maxBytes, maxLines }) {
+  const lines = content.trim().split(/\r?\n/);
+  const lineTruncated = lines.length > maxLines;
+  const lineBounded = lineTruncated ? [...lines.slice(0, maxLines - 1), truncationMarker] : lines;
+  const joined = lineBounded.join("\n");
+  if (Buffer.byteLength(joined) <= maxBytes) return joined;
+  const suffix = `\n${truncationMarker}`;
+  return `${utf8Head(joined, maxBytes - Buffer.byteLength(suffix))}${suffix}`;
+}
+
 export function readBoundedTail(
   path,
   { maxBytes = diagnosticLimits.maxBytes, maxLines = diagnosticLimits.maxLines } = {},
@@ -96,8 +119,7 @@ export function readBoundedFailure(path, options = {}) {
     .sort((left, right) => left - right)
     .map((index) => lines[index])
     .join("\n");
-  if (Buffer.byteLength(excerpt) <= maxBytes) return excerpt.trim();
-  return `${utf8Tail(excerpt, maxBytes - 19)}\n[output truncated]`;
+  return boundFailureExcerpt(excerpt, { maxBytes, maxLines });
 }
 
 export function boundedSpawnOptions(outputDirectory, label) {
