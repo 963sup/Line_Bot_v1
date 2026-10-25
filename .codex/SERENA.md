@@ -32,6 +32,30 @@ MCP 啟動保留 `--context=codex`、`--project-from-cwd` 與 `--open-web-dashbo
 
 ## Memories policy
 
+### 何時讀取 memory
+
+Serena 啟用 project 時會提供可用 memory 的名稱；Agent 應依名稱與任務關聯性選擇性讀取，不應把全部 memory 自動灌入上下文。
+
+- 專案首次 activation：先確認是否存在 memories；沒有才 onboarding。
+- 已有 project memories：只讀取與目前 Owner、模組、workflow 或決策直接相關的 memory。
+- 看到 `` `mem:NAME` `` 參照：優先讀取其目標，再按需要展開下一層。
+- 不確定某 memory 是否相關：先讀名稱，不要為了預防性完整而全部讀取。
+
+### 何時更新 memory
+
+只有當資訊會跨多次任務重複有用，且不屬於更高權威 source-of-truth 時，才更新 memory。以下情況通常應更新：
+
+- 新增或確認可重用的架構決策、Owner boundary 或 workflow 慣例。
+- 建立未來任務必須知道的穩定 build/test/tooling 流程。
+- 現有 memory 的規則、路徑或 `mem:` 參照已失效，需要修正、rename、split 或刪除。
+
+以下情況不要更新 memory：
+
+- 單次 bug 的暫時除錯紀錄、一次性 command output 或當前 WIP。
+- source、schema、AGENTS、architecture 文件已經是 authoritative source 的內容複製。
+- secret、credential、個資、provider response 或未驗證推測。
+- 只是本次對話的偏好，且沒有跨任務的穩定價值。
+
 需要新增或更新 memory 時，先讀取 `memory_maintenance`，並遵守：
 
 - 只保存可重用的專案慣例、架構決策與工作流程。
@@ -41,6 +65,22 @@ MCP 啟動保留 `--context=codex`、`--project-from-cwd` 與 `--open-web-dashbo
 - 完成異動後，必要時執行 `serena memories check`。
 
 全域設定位於 Windows `%USERPROFILE%\\.serena\\serena_config.yml`；專案設定位於 `.serena/project.yml`。個人環境設定不得提交進 repository。
+
+## Symbol tools 與程式碼更新
+
+Symbol tools 操作的是目前程式碼與 language-server index，不是另一套 symbol memory：
+
+| 目的 | 優先工具 | 結果 |
+| --- | --- | --- |
+| 看檔案有哪些 top-level symbols | `get_symbols_overview` | 結構摘要，不修改程式碼 |
+| 找 symbol 定義 | `find_symbol`、`find_declaration` | declaration/definition evidence |
+| 找 consumer | `find_referencing_symbols` | references evidence |
+| 找實作 | `find_implementations` | implementation evidence；能力依 language server 而定 |
+| 看診斷 | `get_diagnostics_for_file`、`get_diagnostics_for_symbol` | current diagnostics，不等於 acceptance |
+| 修改 symbol | `replace_symbol_body`、`insert_before_symbol`、`insert_after_symbol` | 直接修改 source，仍須 `git diff` 與 repository validation |
+| 安全移除/改名 | `safe_delete_symbol`、`rename_symbol` | language-server-aware refactor，仍須檢查 public consumers |
+
+程式碼修改後通常由 language server 自動更新索引；只有 diagnostics 或 references 明顯 stale、project configuration 改變或 language server 異常時，才使用 `restart_language_server`。重新索引或 restart 不會取代 tests、architecture checks 或 typecheck。
 
 ## 官方參考
 
