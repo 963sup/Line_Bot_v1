@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { closeSync, existsSync, mkdirSync, openSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -82,10 +82,7 @@ function parseHandoff(output, expectedAtomicId) {
   const raw = messages.at(-1)?.item?.text ?? output.trim();
   if (!raw) throw new Error("Executor did not return an agent_message handoff");
   const handoff = JSON.parse(raw);
-  const schema = loadJson(handoffSchemaPath);
-  for (const field of schema.required ?? []) {
-    if (!(field in handoff)) throw new Error(`Handoff missing required field: ${field}`);
-  }
+  validateHandoff(handoff);
   if (handoff.atomicId !== expectedAtomicId) {
     throw new Error(`Handoff atomicId mismatch: expected ${expectedAtomicId}`);
   }
@@ -96,6 +93,38 @@ function parseHandoff(output, expectedAtomicId) {
     throw new Error(`Invalid handoff status: ${handoff.status}`);
   }
   return handoff;
+}
+
+function validateHandoff(handoff) {
+  const schema = loadJson(handoffSchemaPath);
+  for (const field of schema.required ?? []) {
+    if (!(field in handoff)) throw new Error(`Handoff missing required field: ${field}`);
+  }
+  if (handoff.version !== 1) throw new Error("Handoff version must be 1");
+  if (!/^L[1-6]→L[1-6]: .+/.test(handoff.taskLayer)) throw new Error("Handoff taskLayer is invalid");
+  if (!["complete", "needs-decision", "blocked"].includes(handoff.status)) {
+    throw new Error(`Invalid handoff status: ${handoff.status}`);
+  }
+  for (const field of ["candidate", "deliverable", "evidenceBoundary", "unresolvedRisk"]) {
+    if (typeof handoff[field] !== "string" || !handoff[field].trim()) {
+      throw new Error(`Handoff ${field} must be a non-empty string`);
+    }
+  }
+  for (const field of ["verifiedFacts", "assumptions"]) {
+    if (!Array.isArray(handoff[field]) || handoff[field].some((item) => typeof item !== "string")) {
+      throw new Error(`Handoff ${field} must be an array of strings`);
+    }
+  }
+  if (handoff.route !== "none") {
+    if (!handoff.route || typeof handoff.route !== "object" || typeof handoff.route.id !== "string" ||
+      !["Declared", "Eligible", "Available", "Executed", "Proven"].includes(handoff.route.state)) {
+      throw new Error("Handoff route is invalid");
+    }
+  }
+  if (!handoff.nextHandoff || !["L1", "L2", "L3", "L4", "L5", "L6"].includes(handoff.nextHandoff.layer) ||
+    typeof handoff.nextHandoff.question !== "string" || !handoff.nextHandoff.question.trim()) {
+    throw new Error("Handoff nextHandoff is invalid");
+  }
 }
 
 function main() {
@@ -132,20 +161,21 @@ function main() {
   ].join("\n");
   const cli = process.env.CODEX_CLI || "codex";
   const handoffPath = resolve(outputRoot, `${stamp}.handoff.json`);
-  const result = spawnSync(cli, [
+  const descriptor = openSync(artifactPath, "w");
+  let result;
+  try {
+    result = spawnSync(cli, [
     "exec", "--json", "-o", handoffPath, "--sandbox", "read-only", "-C", root, prompt,
-  ], {
-    encoding: "utf8",
-    maxBuffer: 1024 * 1024,
-    windowsHide: true,
-  });
-  writeFileSync(artifactPath, `${result.stdout ?? ""}${result.stderr ?? ""}`, "utf8");
+    ], { stdio: ["ignore", descriptor, descriptor], windowsHide: true });
+  } finally {
+    closeSync(descriptor);
+  }
   let handoff = null;
   let handoffError = null;
   if (result.status === 0) {
     try {
       handoff = parseHandoff(
-        existsSync(handoffPath) ? readFileSync(handoffPath, "utf8") : result.stdout ?? "",
+        existsSync(handoffPath) ? readFileSync(handoffPath, "utf8") : "",
         dispatch.atomic.id,
       );
     } catch (error) {
