@@ -141,7 +141,7 @@ Primary 先確認 Owner、contract 與 scope；需要時由 MCP specialist 蒐�
 
 ## MCP permissions and evidence
 
-已設定的 MCP 是 Next DevTools、shadcn 與 Sentry。前兩者的自動核准由 `.codex/config.toml` 的 `mcp_servers.next-devtools.default_tools_approval_mode` 與 `mcp_servers.shadcn.default_tools_approval_mode` 設為 `approve`，parent 與子代理共用；per-tool override 優先。Sentry 使用 OAuth read scopes，未設定自動核准。維護設定只針對這些明列 server，不改全域 shell approval、sandbox 或其他 MCP。
+已設定的 MCP 是 Next DevTools、shadcn、Serena 與 Sentry。前三者的自動核准由 `.codex/config.toml` 的各自 `default_tools_approval_mode` 設為 `approve`，parent 與子代理共用；per-tool override 優先。Serena 固定公開唯讀符號查詢工具。Sentry 使用 OAuth read scopes，未設定自動核准。維護設定只針對這些明列 server，不改全域 shell approval、sandbox 或其他 MCP。
 
 MCP 工具免逐次確認不授予產品／provider 寫入權限。Specialist 仍按 role 限制使用觀察／查詢工具；安裝、codemod、cache mutation、瀏覽器業務寫入與外部操作由 Primary 依實際授權處理。角色指示中的唯讀是行為契約，不是獨立 OS sandbox；不要依賴角色檔的 `sandbox_mode`、`approval_policy` 或 `mcp_servers` 來隔離 parent 權限。
 

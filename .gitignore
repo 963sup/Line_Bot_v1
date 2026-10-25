@@ -13,6 +13,7 @@ coverage/
 .artifacts/
 .data/
 .pnpm-store/
+.tools/
 .codex-remote-attachments/
 .tmp_*/
 .tmp_*.zip

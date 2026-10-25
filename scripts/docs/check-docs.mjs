@@ -13,6 +13,7 @@ const generated = new Set([
   ".vercel",
   ".turbo",
   ".temp",
+  ".tools",
 ]);
 const errors = [];
 let links = 0;

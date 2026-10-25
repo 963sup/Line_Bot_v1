@@ -46,6 +46,13 @@ startup_timeout_sec = 60
 [mcp_servers.shadcn.tools.get_project_registries]
 approval_mode = "approve"
 
+[mcp_servers.serena]
+# Per-worktree semantic symbol retrieval; the launcher derives the checkout path.
+command = "node"
+args = [".codex/scripts/start-serena.mjs"]
+startup_timeout_sec = 90
+default_tools_approval_mode = "approve"
+
 [mcp_servers.sentry]
 # Official hosted MCP uses OAuth; request org:read,project:read,event:read scopes.
 # Project scoping supplies query defaults, not business write authorization.
