@@ -2577,10 +2577,8 @@
     {
       "id": "execute.change-impact-analyst",
       "family": "locate-research",
-      "status": "candidate",
-      "candidateRoleIds": [
-        "analyst"
-      ],
+      "status": "enabled",
+      "executorRoleId": "analyst",
       "goal": "Locate change impact consumers.",
       "input": [
         "approved change concept"
@@ -2602,10 +2600,8 @@
     {
       "id": "prepare.change-impact-analyst",
       "family": "locate-research",
-      "status": "candidate",
-      "candidateRoleIds": [
-        "analyst"
-      ],
+      "status": "enabled",
+      "executorRoleId": "analyst",
       "goal": "Prepare one bounded change-impact-analyst task.",
       "input": [
         "approved scope"
@@ -2627,10 +2623,8 @@
     {
       "id": "report.change-impact-analyst",
       "family": "locate-research",
-      "status": "candidate",
-      "candidateRoleIds": [
-        "analyst"
-      ],
+      "status": "enabled",
+      "executorRoleId": "analyst",
       "goal": "Report one bounded change-impact-analyst result.",
       "input": [
         "role result"

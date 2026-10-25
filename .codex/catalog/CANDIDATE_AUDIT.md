@@ -9,7 +9,7 @@
 | Status | Count | Meaning |
 | --- | ---: | --- |
 | enabled | 22 | Has an enabled executor, packet/handoff contract, capability route when needed, and validation boundary |
-| candidate | 169 | Taxonomy and contract draft only; cannot be dispatched |
+| candidate | 166 | Taxonomy and contract draft only; cannot be dispatched |
 | retired roles | 22 | Historical specialist labels absorbed by the seven executor families |
 
 The candidate catalog is intentionally broader than the current runtime. A
@@ -35,6 +35,11 @@ The audit documentation itself consumes the `prepare.documentation-writer` →
 `execute.documentation-writer` → `report.documentation-writer` triplet. It
 reuses `change-implementer` and is limited to synchronizing approved facts;
 `docs:check` supplies the corresponding document evidence.
+
+The promotion process itself consumes the `prepare.change-impact-analyst` →
+`execute.change-impact-analyst` → `report.change-impact-analyst` triplet to map
+affected consumers before each catalog change. It reuses `analyst` and does
+not authorize implementation.
 
 ## Candidate families and executor readiness
 

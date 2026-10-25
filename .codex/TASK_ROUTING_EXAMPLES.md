@@ -71,6 +71,17 @@ prepare.documentation-writer
 它只同步已確認的 repository facts；`docs:check` 是文件結構證據，不代表
 產品行為或部署驗收。
 
+Atomic promotion 的 consumer impact 使用：
+
+```text
+prepare.change-impact-analyst
+  → execute.change-impact-analyst
+  → report.change-impact-analyst
+```
+
+它只建立 consumer/impact map，不授權變更；實作、review 與 acceptance 仍由
+各自的 Atomic 負責。
+
 ## Bug 修復
 
 ```text
