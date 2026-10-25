@@ -134,7 +134,7 @@ function mcpFixture(t) {
     mkdirSync(join(target, ".."), { recursive: true });
     writeFileSync(target, typeof content === "string" ? content : JSON.stringify(content));
   }
-  const config = `[mcp_servers.next-devtools]\ncommand = "pnpm"\nargs = ["exec", "next-devtools-mcp"]\n[mcp_servers.next-devtools.env]\nNEXT_DEVTOOLS_HOST = "127.0.0.1"\n[mcp_servers.shadcn]\ncommand = "pnpm"\nargs = ["--dir", "apps/web", "exec", "shadcn", "mcp"]\n[mcp_servers.serena]\ncommand = "node"\nargs = [".codex/scripts/start-serena.mjs"]\nstartup_timeout_sec = 90\ndefault_tools_approval_mode = "approve"\n`;
+  const config = `[mcp_servers.next-devtools]\ncommand = "pnpm"\nargs = ["exec", "next-devtools-mcp"]\n[mcp_servers.next-devtools.env]\nNEXT_DEVTOOLS_HOST = "127.0.0.1"\n[mcp_servers.shadcn]\ncommand = "pnpm"\nargs = ["--dir", "apps/web", "exec", "shadcn", "mcp"]\n[mcp_servers.serena]\ncommand = "serena"\nargs = ["start-mcp-server", "--project-from-cwd", "--context=codex"]\nstartup_timeout_sec = 15\ndefault_tools_approval_mode = "approve"\n`;
   write(".codex/config.toml", config);
   write("package.json", { devDependencies: { "next-devtools-mcp": "0.4.0" } });
   write("node_modules/next-devtools-mcp/package.json", { version: "0.4.0" });
@@ -148,8 +148,8 @@ test("MCP configuration requires local locked executables in their owning worksp
   assert.equal(inspectMcpConfiguration(root).ok, true);
   const invalid = [
     config.replace('["exec", "next-devtools-mcp"]', '["dlx", "next-devtools-mcp@latest"]'),
-    config.replace(".codex/scripts/start-serena.mjs", ".codex/scripts/other.mjs"),
-    config.replace("startup_timeout_sec = 90", "startup_timeout_sec = 30"),
+    config.replace('command = "serena"', 'command = "other-serena"'),
+    config.replace("startup_timeout_sec = 15", "startup_timeout_sec = 30"),
     config.replace('["--dir", "apps/web", "exec", "shadcn", "mcp"]', '["exec", "shadcn", "mcp"]'),
     config.replace("[mcp_servers.shadcn]", "[mcp_servers.shadcn]\nenabled = false"),
     config.replace("[mcp_servers.shadcn]", '[mcp_servers.shadcn]\ncwd = "/another-checkout"'),

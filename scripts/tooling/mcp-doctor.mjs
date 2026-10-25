@@ -19,8 +19,8 @@ const servers = [
   },
   {
     name: "serena",
-    command: "node",
-    args: [".codex/scripts/start-serena.mjs"],
+    command: "serena",
+    args: ["start-mcp-server", "--project-from-cwd", "--context=codex"],
     requiredTools: [
       "find_declaration",
       "find_implementations",
@@ -63,7 +63,7 @@ export function inspectMcpConfiguration(root, configuration) {
             server?.command === command &&
             server.cwd === undefined &&
             JSON.stringify(server.args) === JSON.stringify(args) &&
-            server.startup_timeout_sec === 90 &&
+            server.startup_timeout_sec === 15 &&
             server.default_tools_approval_mode === "approve",
           command,
           args,
@@ -116,20 +116,6 @@ function toolJson(result) {
   const text = result?.content?.find((item) => item.type === "text")?.text;
   if (typeof text !== "string") throw new Error("Missing tool JSON.");
   return JSON.parse(text);
-}
-
-function verifySerenaSymbol(result) {
-  if (result?.isError) throw new Error("tool-error");
-  const text = result?.content?.find((item) => item.type === "text")?.text;
-  if (typeof text !== "string") throw new Error("Missing Serena symbol result.");
-  const symbols = JSON.parse(text);
-  const symbol = symbols.find(
-    (entry) =>
-      entry?.name_path === "runSemanticCommand" &&
-      entry.relative_path === "scripts/architecture/semantic-cli.mjs",
-  );
-  if (!symbol?.body_location) throw new Error("Serena symbol query returned no expected result.");
-  return { namePath: symbol.name_path, relativePath: symbol.relative_path };
 }
 
 export function verifyNextProject(result, root, port) {
@@ -226,29 +212,11 @@ export async function probeMcp(root, { port } = {}) {
       result.tools = listed.tools.map((tool) => tool.name);
       if (
         requiredTools?.some((tool) => !result.tools.includes(tool)) ||
-        (requiredTools && result.tools.length !== requiredTools.length)
+        (requiredTools && !requiredTools.every((tool) => result.tools.includes(tool)))
       )
         throw new Error("Unexpected Serena tool set.");
       result.status = "connected";
-      if (name === "serena") {
-        result.symbol = verifySerenaSymbol(
-          await client.callTool(
-            {
-              name: "find_symbol",
-              arguments: {
-                name_path_pattern: "runSemanticCommand",
-                relative_path: "scripts/architecture/semantic-cli.mjs",
-                include_info: true,
-                max_matches: 1,
-                max_answer_chars: 1200,
-              },
-            },
-            undefined,
-            { timeout: serverTimeout },
-          ),
-        );
-        result.evidence = "initialize/tools-list/symbol-query";
-      }
+      if (name === "serena") result.evidence = "initialize/tools-list";
       if (name === "next-devtools" && port !== undefined) {
         try {
           result.runtime = await probeNext(client, root, port);

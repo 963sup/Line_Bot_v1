@@ -39,9 +39,7 @@
 └── scripts/
     ├── AGENTS.md             # runtime support script constraints
     ├── README.md             # launcher / runtime helper catalog
-    ├── configure-serena.py   # 產生 Serena scoped runtime configuration
-    ├── serena-entry.py       # Serena entrypoint adapter
-    └── start-serena.mjs      # 以 current worktree 啟動 read-only Serena
+    └── README.md             # runtime support directory contract（Serena 使用官方 executable）
 ```
 
 ## 進入與驗證規則
