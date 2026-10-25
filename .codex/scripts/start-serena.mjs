@@ -17,7 +17,7 @@ if (!existsSync(python)) {
     [entry, "start-mcp-server", "--project", root, "--context", "chatgpt", "--mode", "no-memories", "--agent-interface", "tools", "--enable-web-dashboard", "False", "--open-web-dashboard", "False", "--enable-gui-log-window", "False"],
     {
       cwd: root,
-      env: { ...process.env, PATH: `${dirname(process.execPath)};${process.env.PATH ?? ""}`, SERENA_HOME: resolve(serenaRoot, "home") },
+      env: { ...process.env, PATH: `${resolve(serenaRoot, "node-bin")};${dirname(process.execPath)};${process.env.PATH ?? ""}`, SERENA_HOME: resolve(serenaRoot, "home") },
       stdio: "inherit",
     },
   );
