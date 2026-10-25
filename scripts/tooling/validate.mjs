@@ -279,14 +279,18 @@ function validationStages(pnpmExecPath) {
 
 function main() {
   const args = process.argv.slice(2);
-  const fast = args[0] === "--fast";
-  const planOnly = fast && args[1] === "--plan";
-  const grouped = args[0] === "--group";
-  const group = grouped ? args[1] : null;
-  if (grouped && (!group || args.length !== 2)) {
+  const fast = args.includes("--fast");
+  const planOnly = args.includes("--plan");
+  const groupIndex = args.indexOf("--group");
+  const grouped = groupIndex >= 0;
+  const group = grouped ? args[groupIndex + 1] : null;
+  if (planOnly && (!fast || grouped || args.length !== 2)) {
+    throw new Error("Usage: validate.mjs --fast --plan");
+  }
+  if (grouped && (!group || args.length !== (fast ? 3 : 2))) {
     throw new Error("Usage: validate.mjs --group <name>");
   }
-  const filters = grouped ? [] : args.slice(fast ? (planOnly ? 2 : 1) : 0);
+  const filters = grouped ? [] : args.filter((arg) => arg !== "--fast" && arg !== "--plan");
   if (filters.length && (!fast || filters.some((arg) => !/^--filter=.+/.test(arg)))) {
     console.error("Usage: validate.mjs [--fast [--plan | --filter=<Turbo selector> ...]]");
     process.exit(1);

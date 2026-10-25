@@ -83,6 +83,7 @@ test("local and CI validation bound aggregate test workers without changing scop
   for (const ci of ["true", "false", undefined]) {
     for (const [mode, selection] of [
       [["--group", "typecheck-test"], []],
+      [["--fast", "--group", "typecheck-test"], ["--affected"]],
       [[], []],
       [["--fast"], ["--affected"]],
       [["--fast", "--filter=@line_bot_v1/team"], ["--filter=@line_bot_v1/team"]],
