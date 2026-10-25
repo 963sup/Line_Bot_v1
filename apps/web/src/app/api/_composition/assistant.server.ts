@@ -1,5 +1,4 @@
 import { runIntakeAgent } from "@line_bot_v1/assistant/agents/intake";
-import { createIntelligenceTextGeneration } from "@line_bot_v1/intelligence/application/use-cases/generate-text";
 import { createVercelAiGateway } from "../../../../../../vercel/integrations/gateway.ts";
 import {
   type AssistantRuntimeDependencies,
@@ -20,7 +19,7 @@ const assistantRuntime = createAssistantRuntime({
   generate: async (input) => {
     const gateway = gatewayConfiguration();
     if (gateway) {
-      return createIntelligenceTextGeneration(createVercelAiGateway(gateway).text).generate({
+      return createVercelAiGateway(gateway).text({
         prompt: input,
         system:
           "你是繁體中文工作群組助手。只簡短回答使用者明確提問。不具備搜尋、查帳或執行動作能力，不聲稱已執行。含糊輸入問一句釐清問題。若要記帳請使用者 @助手 記帳後傳圖。",
@@ -36,7 +35,7 @@ const assistantRuntime = createAssistantRuntime({
   probe: async () => {
     const gateway = gatewayConfiguration();
     if (!gateway) throw new Error("AI Gateway is not configured");
-    return createIntelligenceTextGeneration(createVercelAiGateway(gateway).text).generate({
+    return createVercelAiGateway(gateway).text({
       prompt: "請用繁體中文的一句短句確認你是Line_Bot_v1，最多二十個字。",
       system: "Return one short Traditional Chinese confirmation only.",
     });

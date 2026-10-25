@@ -24,10 +24,6 @@
       "types": "./dist/application/use-cases/processing.d.ts",
       "default": "./dist/application/use-cases/processing.js"
     },
-    "./application/use-cases/generate-text": {
-      "types": "./dist/application/use-cases/generate-text.d.ts",
-      "default": "./dist/application/use-cases/generate-text.js"
-    },
     "./domain/error": {
       "types": "./dist/domain/error.d.ts",
       "default": "./dist/domain/error.js"

@@ -29,7 +29,14 @@ export function createVercelAiGateway(config: { model: string }) {
       },
     }),
     receipt: async (input: { prompt: string; image: Uint8Array; mimeType: "image/jpeg" | "image/png" }) => {
-      const result = await generateText({ model, messages: [{ role: "user" as const, content: [{ type: "text" as const, text: input.prompt }, { type: "file" as const, data: input.image, mediaType: input.mimeType }] }], maxOutputTokens: 1200, maxRetries: 0, abortSignal: AbortSignal.timeout(12_000) });
+      const result = await generateText({
+        model,
+        system: "Return only one JSON object with exactly these keys: isReceipt(boolean), merchant(string|null), date(string|null), amount(string|null), currency(string|null), invoiceNumber(string|null), uncertainFields(array of field names). Never return prose or markdown.",
+        messages: [{ role: "user" as const, content: [{ type: "text" as const, text: input.prompt }, { type: "file" as const, data: input.image, mediaType: input.mimeType }] }],
+        maxOutputTokens: 1200,
+        maxRetries: 0,
+        abortSignal: AbortSignal.timeout(12_000),
+      });
       return result.text;
     },
     fileProcessor: (): IntelligenceProcessor => ({
