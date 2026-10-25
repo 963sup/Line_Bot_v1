@@ -1,6 +1,6 @@
 import { FileError } from "./error.js";
 
-export function invalid(message = "Invalid File input."): never {
+function invalid(message = "Invalid File input."): never {
   throw new FileError(400, message, "INVALID_INPUT");
 }
 
@@ -57,17 +57,6 @@ export type RevisionContext = Readonly<{
   actorUserId: string;
   at: number;
 }>;
-
-export function revisionContext(value: RevisionContext, repositoryId: string): RevisionContext {
-  if (value.repositoryId !== repositoryId)
-    throw new FileError(409, "Foreign revision scope.", "SOURCE_INVALID");
-  return {
-    id: identifier(value.id),
-    repositoryId: scopeId(value.repositoryId),
-    actorUserId: text(value.actorUserId, 128),
-    at: integer(value.at, 0, Number.MAX_SAFE_INTEGER),
-  };
-}
 
 export function checkVersion(current: { version: number } | null, expected: number): void {
   version(expected);
