@@ -525,9 +525,25 @@ export function validate(root) {
     }
     for (const packageDir of files("packages/*").filter((path) => statSync(path).isDirectory())) {
       const packagePath = relative(root, packageDir).split(sep).join("/");
-      for (const name of ["AGENTS.md", "README.md"]) {
+      for (const name of ["AGENTS.md", "README.md", "SEMANTICS.md"]) {
         if (!existsSync(resolve(packageDir, name)))
           errors.push(`${packagePath}/${name}: package scope entrypoint is required`);
+      }
+    }
+    const topologyPath = resolve(root, "architecture/implementation-topology.json");
+    const semanticPath = resolve(root, "architecture/semantic-model.json");
+    if (existsSync(topologyPath) && existsSync(semanticPath)) {
+      const topology = JSON.parse(read(topologyPath));
+      const owners = new Map(
+        JSON.parse(read(semanticPath)).semanticOwners.map((owner) => [owner.id, owner.doc]),
+      );
+      for (const module of Object.values(topology.modules)) {
+        if (!module.path?.startsWith("packages/")) continue;
+        const ownerDoc = owners.get(module.semanticOwner);
+        const readmePath = resolve(root, module.path, "README.md");
+        if (!ownerDoc || !existsSync(readmePath)) continue;
+        if (!read(readmePath).includes(`../../${ownerDoc}`))
+          errors.push(`${module.path}/README.md: must link its ${module.semanticOwner} owner contract`);
       }
     }
 

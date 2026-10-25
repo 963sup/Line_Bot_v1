@@ -104,6 +104,7 @@ function fixture(t) {
   write("scripts/tooling/README.md", "# Tooling scripts\\n");
   write("packages/demo/AGENTS.md", "# @line_bot_v1/demo\\n");
   write("packages/demo/README.md", "# @line_bot_v1/demo\\n");
+  write("packages/demo/SEMANTICS.md", "# generated\\n");
   write(".node-version", `${exactNodeVersion}\n`);
   write(
     "package.json",
@@ -725,6 +726,7 @@ test("multi-session test consumers declare their environment and cannot replay c
   );
   write("packages/platform/AGENTS.md", "# Platform\n");
   write("packages/platform/README.md", "# Platform\n");
+  write("packages/platform/SEMANTICS.md", "# generated\n");
   write("packages/platform/src/testing/postgres-sessions.ts", "export {};\n");
   write(
     "packages/platform/test/concurrency.test.ts",
@@ -1305,11 +1307,28 @@ test("required AGENTS scopes exist and root routes to each owner", (t) => {
   rejects(root, "root must route to scripts/AGENTS.md");
 });
 
-test("every package scope has AGENTS and README entrypoints", (t) => {
+test("every package scope has AGENTS, README and generated semantics entrypoints", (t) => {
   const { root, write } = fixture(t);
   write("packages/missing-readme/AGENTS.md", "# missing-readme\\n");
   rejects(root, "packages/missing-readme/README.md: package scope entrypoint is required");
   write("packages/missing-readme/README.md", "# missing-readme\\n");
+  rejects(root, "packages/missing-readme/SEMANTICS.md: package scope entrypoint is required");
+  write("packages/missing-readme/SEMANTICS.md", "# generated\\n");
+  assert.deepEqual(validate(root), []);
+});
+
+test("topology-owned package README links its canonical owner contract", (t) => {
+  const { root, write } = fixture(t);
+  write(
+    "architecture/implementation-topology.json",
+    JSON.stringify({ modules: { "@line_bot_v1/demo": { path: "packages/demo", semanticOwner: "demo" } } }),
+  );
+  write("architecture/semantic-model.json", JSON.stringify({ semanticOwners: [{ id: "demo", doc: "docs/owners/demo.md" }] }));
+  write("packages/demo/AGENTS.md", "# demo\\n");
+  write("packages/demo/README.md", "# demo\\n");
+  write("packages/demo/SEMANTICS.md", "# generated\\n");
+  rejects(root, "packages/demo/README.md: must link its demo owner contract");
+  write("packages/demo/README.md", "[Owner](../../docs/owners/demo.md)\\n");
   assert.deepEqual(validate(root), []);
 });
 
@@ -1319,6 +1338,7 @@ test("package AGENTS use parent scope instead of duplicated boilerplate", (t) =>
     "packages/demo/AGENTS.md",
     "# @line_bot_v1/demo\n\n- 本 package 是 owning context 的公開入口；Web 與其他 consumer 只可使用 package.json 已宣告 exports。\n- domain / application / contracts / adapters / agents surface 依需求存在，不預建空 layer。\n- 目前 facade 只為無行為變更遷移；新增功能直接放入此 context，禁止新增 legacy horizontal export。\n- 移除 facade 前必須保留型別、授權、交易、重播、隔離與既有測試。\n",
   );
+  write("packages/demo/SEMANTICS.md", "# generated\\n");
   rejects(root, "duplicated package boilerplate belongs in packages/AGENTS.md");
 });
 
@@ -1376,6 +1396,7 @@ test("AGENTS hot path rejects target or proposal sections", (t) => {
   rejects(root, "target/proposal design belongs in docs/change");
 
   write("packages/demo/AGENTS.md", "# @line_bot_v1/demo\n\n- Current local invariant only.\n");
+  write("packages/demo/SEMANTICS.md", "# generated\n");
   assert.deepEqual(validate(root), []);
 });
 
