@@ -46,7 +46,7 @@ function utf8Tail(content, maxBytes) {
   return characters.slice(start).join("");
 }
 
-function readBoundedTail(
+export function readBoundedTail(
   path,
   { maxBytes = diagnosticLimits.maxBytes, maxLines = diagnosticLimits.maxLines } = {},
 ) {
@@ -70,6 +70,22 @@ function readBoundedTail(
 
   const prefix = `${truncationMarker}\n`;
   return `${prefix}${utf8Tail(tail, maxBytes - Buffer.byteLength(prefix))}`;
+}
+
+export function boundedSpawnOptions(outputDirectory, label) {
+  const logPath = join(outputDirectory, `${safeLabel(label)}.log`);
+  const descriptor = openSync(logPath, "w");
+  let closed = false;
+  return {
+    logPath,
+    stdio: ["ignore", descriptor, descriptor],
+    close() {
+      if (!closed) {
+        closeSync(descriptor);
+        closed = true;
+      }
+    },
+  };
 }
 
 export function runBoundedCommand(

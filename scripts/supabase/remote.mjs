@@ -375,8 +375,9 @@ function redact(value, secrets) {
 function run(args, { capture = false, secrets = [] } = {}) {
   const result = spawnSync(process.execPath, [cli, ...args], {
     cwd: fileURLToPath(root),
-    encoding: capture ? "utf8" : undefined,
-    stdio: capture ? ["ignore", "pipe", "pipe"] : "inherit",
+    encoding: "utf8",
+    maxBuffer: 64 * 1024,
+    stdio: ["ignore", "pipe", "pipe"],
     env: process.env,
   });
   if (result.error) throw result.error;

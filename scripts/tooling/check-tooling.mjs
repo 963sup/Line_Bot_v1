@@ -448,6 +448,17 @@ export function validate(root) {
       errors.push(
         "scripts/tooling/validate.mjs: validation must not stream unbounded subprocess output",
       );
+    for (const file of files("scripts/**/*.mjs").filter(
+      (candidate) => !candidate.endsWith(".test.mjs"),
+    )) {
+      const source = read(file);
+      if (/stdio\s*:\s*["']inherit["']/.test(source))
+        errors.push(
+          `${relative(root, file)}: production subprocess output must be artifact-backed`,
+        );
+      if (/process\.stdout\.write\(chunk\)|process\.stderr\.write\(chunk\)/.test(source))
+        errors.push(`${relative(root, file)}: child stream chunks must not be forwarded unbounded`);
+    }
     for (const mutableCommand of [
       "schema:local",
       "schema:remote",
