@@ -71,6 +71,17 @@ prepare.documentation-writer
 它只同步已確認的 repository facts；`docs:check` 是文件結構證據，不代表
 產品行為或部署驗收。
 
+PR 400 的衝突整合與後續變更使用 bounded diff review：
+
+```text
+prepare.diff-reviewer
+  → execute.diff-reviewer
+  → report.diff-reviewer
+```
+
+reviewer 只回報具體 finding 或 clean review，不修改 diff，也不取代
+validation 或 acceptance。
+
 Atomic promotion 的 consumer impact 使用：
 
 ```text

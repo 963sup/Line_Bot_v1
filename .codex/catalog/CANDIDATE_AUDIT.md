@@ -9,7 +9,7 @@
 | Status | Count | Meaning |
 | --- | ---: | --- |
 | enabled | 22 | Has an enabled executor, packet/handoff contract, capability route when needed, and validation boundary |
-| candidate | 166 | Taxonomy and contract draft only; cannot be dispatched |
+| candidate | 163 | Taxonomy and contract draft only; cannot be dispatched |
 | retired roles | 22 | Historical specialist labels absorbed by the seven executor families |
 
 The candidate catalog is intentionally broader than the current runtime. A
@@ -40,6 +40,11 @@ The promotion process itself consumes the `prepare.change-impact-analyst` →
 `execute.change-impact-analyst` → `report.change-impact-analyst` triplet to map
 affected consumers before each catalog change. It reuses `analyst` and does
 not authorize implementation.
+
+PR 400 itself is a real review consumer for the
+`prepare.diff-reviewer` → `execute.diff-reviewer` → `report.diff-reviewer`
+triplet. It reuses `reviewer` and remains read-only; it does not authorize
+merging or acceptance.
 
 ## Candidate families and executor readiness
 

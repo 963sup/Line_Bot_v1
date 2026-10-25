@@ -1383,10 +1383,8 @@
     {
       "id": "execute.diff-reviewer",
       "family": "review",
-      "status": "candidate",
-      "candidateRoleIds": [
-        "reviewer"
-      ],
+      "status": "enabled",
+      "executorRoleId": "reviewer",
       "goal": "Review one bounded diff for concrete defects.",
       "input": [
         "candidate diff"
@@ -1408,10 +1406,8 @@
     {
       "id": "prepare.diff-reviewer",
       "family": "review",
-      "status": "candidate",
-      "candidateRoleIds": [
-        "reviewer"
-      ],
+      "status": "enabled",
+      "executorRoleId": "reviewer",
       "goal": "Prepare one bounded diff-reviewer task.",
       "input": [
         "approved scope"
@@ -1433,10 +1429,8 @@
     {
       "id": "report.diff-reviewer",
       "family": "review",
-      "status": "candidate",
-      "candidateRoleIds": [
-        "reviewer"
-      ],
+      "status": "enabled",
+      "executorRoleId": "reviewer",
       "goal": "Report one bounded diff-reviewer result.",
       "input": [
         "role result"
