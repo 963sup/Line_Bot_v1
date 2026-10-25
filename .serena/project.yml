@@ -64,7 +64,7 @@ ignored_paths:
 # whether the project is in read-only mode
 # If set to true, all editing tools will be disabled and attempts to use them will result in an error
 # Added on 2025-04-18
-read_only: true
+read_only: false
 
 # fixed set of tools to use as the base tool set (if non-empty), replacing Serena's default set of tools.
 # This cannot be combined with non-empty excluded_tools or included_optional_tools.
@@ -75,6 +75,9 @@ fixed_tools:
 - find_referencing_symbols
 - find_symbol
 - get_symbols_overview
+- read_memory
+- rename_memory
+- write_memory
 
 # list of mode names that are to be activated by default, overriding the setting in the global configuration.
 # The full set of modes to be activated is base_modes (from global config) + default_modes + added_modes.
@@ -114,19 +117,19 @@ included_optional_tools: []
 # such as docstrings or parameter information.
 # This overrides the corresponding setting in the global configuration; see the documentation there.
 # If null or missing, use the setting from the global configuration.
-symbol_info_budget:
+symbol_info_budget: 5
 
 # The language backend to use for this project.
 # If not set, the global setting from serena_config.yml is used.
 # Valid values: LSP, JetBrains
 # Note: the backend is fixed at startup. If a project with a different backend
 # is activated post-init, an error will be returned.
-language_backend:
+language_backend: LSP
 
 # The interface through which the agent (LLM) accesses Serena's functionality (overrides the global setting).
 # Valid values: tools, REPL (see the global configuration for details); leave empty to use the global setting.
 # Note: the interface is fixed at startup. If a project is activated post-init, its setting is not applied.
-agent_interface:
+agent_interface: tools
 
 # line ending convention to use when writing source files.
 # Possible values: unset (use global setting), "lf", "crlf", or "native" (platform default)

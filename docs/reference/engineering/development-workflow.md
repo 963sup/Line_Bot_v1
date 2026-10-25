@@ -112,7 +112,7 @@ pnpm tooling:doctor --mcp
 pnpm tooling:doctor --mcp --next-port 3000
 ```
 
-第一個命令只檢查本地 toolchain、project MCP 設定與已安裝版本。`--mcp` 才啟動兩個已配置的本地 MCP，使用 SDK 的安全預設環境取得 initialize／完整 tools list；不下載套件、不傳遞 provider credentials、不列印 server logs 或 tool descriptions。`--next-port` 使用明確的 loopback port，經已配置的 Next DevTools 檢查 runtime tools 與 project identity；請替換成實際 banner port。診斷結束即關閉其 MCP processes，不啟停應用程式。
+第一個命令只檢查本地 toolchain、project MCP 設定與已安裝版本。`--mcp` 才啟動三個已配置的本地 MCP，使用 SDK 的安全預設環境取得 initialize／完整 tools list；Serena 另以受限的 `find_symbol` 查詢固定 source symbol，確認 worktree-local TypeScript transport。診斷不下載套件、不傳遞 provider credentials、不列印 server logs、tool descriptions 或 source body。`--next-port` 使用明確的 loopback port，經已配置的 Next DevTools 檢查 runtime tools 與 project identity；請替換成實際 banner port。診斷結束即關閉其 MCP processes，不啟停應用程式。
 
 以上分別證明 configuration、MCP transport 與 runtime project identity。一般 offline validation 不執行 live probes；診斷不證明目前 Codex session 已重新載入設定、registry 認證或瀏覽器行為。設定變更後重新載入 MCP／開新 session，確認工具可呼叫；UI 變更仍需瀏覽器驗證，再執行 canonical `pnpm check`，merge 前以 exact head 執行 `pnpm validate`。若使用 `next-dev-loop`，先滿足該 skill 的 framework／browser 版本與 preflight。
 
