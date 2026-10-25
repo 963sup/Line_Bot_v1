@@ -62,7 +62,10 @@ function readBoundedTail(
   const content = buffer.toString("utf8");
   const lines = content.split(/\r?\n/);
   const truncated = size > maxBytes || lines.length > maxLines;
-  const tail = lines.slice(-(maxLines - Number(truncated))).join("\n").trim();
+  const tail = lines
+    .slice(-(maxLines - Number(truncated)))
+    .join("\n")
+    .trim();
   if (!truncated) return tail;
 
   const prefix = `${truncationMarker}\n`;

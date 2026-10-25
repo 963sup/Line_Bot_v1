@@ -1,0 +1,5103 @@
+{
+  "version": 2,
+  "atomics": [
+    {
+      "id": "investigate.owner-source-consumer",
+      "family": "locate-research",
+      "status": "enabled",
+      "executorRoleId": "investigator",
+      "goal": "Map one unresolved owner, source, or consumer path.",
+      "input": [
+        "exact bounded scope and already verified evidence"
+      ],
+      "must": [
+        "Use authoritative sources and distinguish facts from gaps."
+      ],
+      "mustNot": [
+        "Do not decide, implement, or authorize a change."
+      ],
+      "deliverable": "bounded result defined by this Atomic",
+      "stopCondition": "the stated result is complete or a prerequisite is missing",
+      "evidenceBoundary": "proves only the bounded deliverable and explicitly excludes unexercised behavior",
+      "requiredCapabilityRouteIds": [
+        "semantic-scope"
+      ],
+      "activationCriteria": [
+        "real core profile exists",
+        "L5 packet declares this Atomic",
+        "L4 preflight succeeds when a route is required"
+      ]
+    },
+    {
+      "id": "investigate.external-technical-fact",
+      "family": "locate-research",
+      "status": "enabled",
+      "executorRoleId": "investigator",
+      "goal": "Verify one current provider, framework, or API fact.",
+      "input": [
+        "exact bounded scope and already verified evidence"
+      ],
+      "must": [
+        "Use authoritative sources and distinguish facts from gaps."
+      ],
+      "mustNot": [
+        "Do not decide, implement, or authorize a change."
+      ],
+      "deliverable": "bounded result defined by this Atomic",
+      "stopCondition": "the stated result is complete or a prerequisite is missing",
+      "evidenceBoundary": "proves only the bounded deliverable and explicitly excludes unexercised behavior",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real core profile exists",
+        "L5 packet declares this Atomic",
+        "L4 preflight succeeds when a route is required"
+      ]
+    },
+    {
+      "id": "analyse.root-cause",
+      "family": "analyse-decide",
+      "status": "enabled",
+      "executorRoleId": "analyst",
+      "goal": "Trace one bounded symptom to its earliest evidenced trigger.",
+      "input": [
+        "exact bounded scope and already verified evidence"
+      ],
+      "must": [
+        "Preserve stated invariants and distinguish evidence from options."
+      ],
+      "mustNot": [
+        "Do not make a final decision or implement."
+      ],
+      "deliverable": "bounded result defined by this Atomic",
+      "stopCondition": "the stated result is complete or a prerequisite is missing",
+      "evidenceBoundary": "proves only the bounded deliverable and explicitly excludes unexercised behavior",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real core profile exists",
+        "L5 packet declares this Atomic",
+        "L4 preflight succeeds when a route is required"
+      ]
+    },
+    {
+      "id": "analyse.architecture-boundary",
+      "family": "analyse-decide",
+      "status": "enabled",
+      "executorRoleId": "analyst",
+      "goal": "Analyse one owner, truth, boundary, or dependency question.",
+      "input": [
+        "exact bounded scope and already verified evidence"
+      ],
+      "must": [
+        "Preserve stated invariants and distinguish evidence from options."
+      ],
+      "mustNot": [
+        "Do not make a final decision or implement."
+      ],
+      "deliverable": "bounded result defined by this Atomic",
+      "stopCondition": "the stated result is complete or a prerequisite is missing",
+      "evidenceBoundary": "proves only the bounded deliverable and explicitly excludes unexercised behavior",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real core profile exists",
+        "L5 packet declares this Atomic",
+        "L4 preflight succeeds when a route is required"
+      ]
+    },
+    {
+      "id": "design.persistence-boundary",
+      "family": "design-plan",
+      "status": "enabled",
+      "executorRoleId": "analyst",
+      "goal": "Design one persistence, RLS, transaction, or recovery boundary.",
+      "input": [
+        "exact bounded scope and already verified evidence"
+      ],
+      "must": [
+        "Preserve stated invariants and distinguish evidence from options."
+      ],
+      "mustNot": [
+        "Do not make a final decision or implement."
+      ],
+      "deliverable": "bounded result defined by this Atomic",
+      "stopCondition": "the stated result is complete or a prerequisite is missing",
+      "evidenceBoundary": "proves only the bounded deliverable and explicitly excludes unexercised behavior",
+      "requiredCapabilityRouteIds": [
+        "supabase-design-guidance"
+      ],
+      "activationCriteria": [
+        "real core profile exists",
+        "L5 packet declares this Atomic",
+        "L4 preflight succeeds when a route is required"
+      ]
+    },
+    {
+      "id": "design.schema-transition",
+      "family": "design-plan",
+      "status": "enabled",
+      "executorRoleId": "analyst",
+      "goal": "Plan one declarative schema or data transition.",
+      "input": [
+        "exact bounded scope and already verified evidence"
+      ],
+      "must": [
+        "Preserve stated invariants and distinguish evidence from options."
+      ],
+      "mustNot": [
+        "Do not make a final decision or implement."
+      ],
+      "deliverable": "bounded result defined by this Atomic",
+      "stopCondition": "the stated result is complete or a prerequisite is missing",
+      "evidenceBoundary": "proves only the bounded deliverable and explicitly excludes unexercised behavior",
+      "requiredCapabilityRouteIds": [
+        "supabase-design-guidance"
+      ],
+      "activationCriteria": [
+        "real core profile exists",
+        "L5 packet declares this Atomic",
+        "L4 preflight succeeds when a route is required"
+      ]
+    },
+    {
+      "id": "design.discriminating-tests",
+      "family": "design-plan",
+      "status": "enabled",
+      "executorRoleId": "analyst",
+      "goal": "Design minimum discriminating tests for one approved behavior.",
+      "input": [
+        "exact bounded scope and already verified evidence"
+      ],
+      "must": [
+        "Preserve stated invariants and distinguish evidence from options."
+      ],
+      "mustNot": [
+        "Do not make a final decision or implement."
+      ],
+      "deliverable": "bounded result defined by this Atomic",
+      "stopCondition": "the stated result is complete or a prerequisite is missing",
+      "evidenceBoundary": "proves only the bounded deliverable and explicitly excludes unexercised behavior",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real core profile exists",
+        "L5 packet declares this Atomic",
+        "L4 preflight succeeds when a route is required"
+      ]
+    },
+    {
+      "id": "decide.architecture",
+      "family": "analyse-decide",
+      "status": "enabled",
+      "executorRoleId": "decider",
+      "goal": "Choose one architecture option from complete evidence.",
+      "input": [
+        "exact bounded scope and already verified evidence"
+      ],
+      "must": [
+        "Choose only from supplied complete evidence and state the decisive invariant."
+      ],
+      "mustNot": [
+        "Do not gather new evidence or implement."
+      ],
+      "deliverable": "bounded result defined by this Atomic",
+      "stopCondition": "the stated result is complete or a prerequisite is missing",
+      "evidenceBoundary": "proves only the bounded deliverable and explicitly excludes unexercised behavior",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real core profile exists",
+        "L5 packet declares this Atomic",
+        "L4 preflight succeeds when a route is required"
+      ]
+    },
+    {
+      "id": "decide.acceptance",
+      "family": "validate-accept",
+      "status": "enabled",
+      "executorRoleId": "decider",
+      "goal": "Decide whether a high-risk candidate meets stated acceptance criteria.",
+      "input": [
+        "exact bounded scope and already verified evidence"
+      ],
+      "must": [
+        "Choose only from supplied complete evidence and state the decisive invariant."
+      ],
+      "mustNot": [
+        "Do not gather new evidence or implement."
+      ],
+      "deliverable": "bounded result defined by this Atomic",
+      "stopCondition": "the stated result is complete or a prerequisite is missing",
+      "evidenceBoundary": "proves only the bounded deliverable and explicitly excludes unexercised behavior",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real core profile exists",
+        "L5 packet declares this Atomic",
+        "L4 preflight succeeds when a route is required"
+      ]
+    },
+    {
+      "id": "implement.approved-change",
+      "family": "implement-document",
+      "status": "enabled",
+      "executorRoleId": "change-implementer",
+      "goal": "Apply one approved bounded source, schema, test, or configuration change.",
+      "input": [
+        "exact bounded scope and already verified evidence"
+      ],
+      "must": [
+        "Change only authorized paths and preserve owner contracts."
+      ],
+      "mustNot": [
+        "Do not review or accept the same candidate."
+      ],
+      "deliverable": "bounded result defined by this Atomic",
+      "stopCondition": "the stated result is complete or a prerequisite is missing",
+      "evidenceBoundary": "proves only the bounded deliverable and explicitly excludes unexercised behavior",
+      "requiredCapabilityRouteIds": [
+        "change-application"
+      ],
+      "activationCriteria": [
+        "real core profile exists",
+        "L5 packet declares this Atomic",
+        "L4 preflight succeeds when a route is required"
+      ]
+    },
+    {
+      "id": "implement.documentation-facts",
+      "family": "implement-document",
+      "status": "enabled",
+      "executorRoleId": "change-implementer",
+      "goal": "Synchronize one documentation surface from decided facts.",
+      "input": [
+        "exact bounded scope and already verified evidence"
+      ],
+      "must": [
+        "Change only authorized paths and preserve owner contracts."
+      ],
+      "mustNot": [
+        "Do not review or accept the same candidate."
+      ],
+      "deliverable": "bounded result defined by this Atomic",
+      "stopCondition": "the stated result is complete or a prerequisite is missing",
+      "evidenceBoundary": "proves only the bounded deliverable and explicitly excludes unexercised behavior",
+      "requiredCapabilityRouteIds": [
+        "static-contract-check"
+      ],
+      "activationCriteria": [
+        "real core profile exists",
+        "L5 packet declares this Atomic",
+        "L4 preflight succeeds when a route is required"
+      ]
+    },
+    {
+      "id": "review.general-diff",
+      "family": "review",
+      "status": "enabled",
+      "executorRoleId": "reviewer",
+      "goal": "Review one bounded candidate diff for concrete defects.",
+      "input": [
+        "exact bounded scope and already verified evidence"
+      ],
+      "must": [
+        "Report only concrete, reproducible findings."
+      ],
+      "mustNot": [
+        "Do not edit, execute broad validation, or accept."
+      ],
+      "deliverable": "bounded result defined by this Atomic",
+      "stopCondition": "the stated result is complete or a prerequisite is missing",
+      "evidenceBoundary": "proves only the bounded deliverable and explicitly excludes unexercised behavior",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real core profile exists",
+        "L5 packet declares this Atomic",
+        "L4 preflight succeeds when a route is required"
+      ]
+    },
+    {
+      "id": "review.authorization-boundary",
+      "family": "review",
+      "status": "enabled",
+      "executorRoleId": "reviewer",
+      "goal": "Review one authorization, scope, or tenant-isolation boundary.",
+      "input": [
+        "exact bounded scope and already verified evidence"
+      ],
+      "must": [
+        "Report only concrete, reproducible findings."
+      ],
+      "mustNot": [
+        "Do not edit, execute broad validation, or accept."
+      ],
+      "deliverable": "bounded result defined by this Atomic",
+      "stopCondition": "the stated result is complete or a prerequisite is missing",
+      "evidenceBoundary": "proves only the bounded deliverable and explicitly excludes unexercised behavior",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real core profile exists",
+        "L5 packet declares this Atomic",
+        "L4 preflight succeeds when a route is required"
+      ]
+    },
+    {
+      "id": "review.persistence-boundary",
+      "family": "review",
+      "status": "enabled",
+      "executorRoleId": "reviewer",
+      "goal": "Review one schema, RLS, transaction, or recovery boundary.",
+      "input": [
+        "exact bounded scope and already verified evidence"
+      ],
+      "must": [
+        "Report only concrete, reproducible findings."
+      ],
+      "mustNot": [
+        "Do not edit, execute broad validation, or accept."
+      ],
+      "deliverable": "bounded result defined by this Atomic",
+      "stopCondition": "the stated result is complete or a prerequisite is missing",
+      "evidenceBoundary": "proves only the bounded deliverable and explicitly excludes unexercised behavior",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real core profile exists",
+        "L5 packet declares this Atomic",
+        "L4 preflight succeeds when a route is required"
+      ]
+    },
+    {
+      "id": "review.accessibility",
+      "family": "review",
+      "status": "enabled",
+      "executorRoleId": "reviewer",
+      "goal": "Review one accessible UI change.",
+      "input": [
+        "exact bounded scope and already verified evidence"
+      ],
+      "must": [
+        "Report only concrete, reproducible findings."
+      ],
+      "mustNot": [
+        "Do not edit, execute broad validation, or accept."
+      ],
+      "deliverable": "bounded result defined by this Atomic",
+      "stopCondition": "the stated result is complete or a prerequisite is missing",
+      "evidenceBoundary": "proves only the bounded deliverable and explicitly excludes unexercised behavior",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real core profile exists",
+        "L5 packet declares this Atomic",
+        "L4 preflight succeeds when a route is required"
+      ]
+    },
+    {
+      "id": "review.github-actions-security",
+      "family": "review",
+      "status": "enabled",
+      "executorRoleId": "reviewer",
+      "goal": "Review one GitHub Actions trust boundary.",
+      "input": [
+        "exact bounded scope and already verified evidence"
+      ],
+      "must": [
+        "Report only concrete, reproducible findings."
+      ],
+      "mustNot": [
+        "Do not edit, execute broad validation, or accept."
+      ],
+      "deliverable": "bounded result defined by this Atomic",
+      "stopCondition": "the stated result is complete or a prerequisite is missing",
+      "evidenceBoundary": "proves only the bounded deliverable and explicitly excludes unexercised behavior",
+      "requiredCapabilityRouteIds": [
+        "actions-security-guidance"
+      ],
+      "activationCriteria": [
+        "real core profile exists",
+        "L5 packet declares this Atomic",
+        "L4 preflight succeeds when a route is required"
+      ]
+    },
+    {
+      "id": "review.dependency-supply-chain",
+      "family": "review",
+      "status": "enabled",
+      "executorRoleId": "reviewer",
+      "goal": "Review one manifest or lockfile supply-chain risk.",
+      "input": [
+        "exact bounded scope and already verified evidence"
+      ],
+      "must": [
+        "Report only concrete, reproducible findings."
+      ],
+      "mustNot": [
+        "Do not edit, execute broad validation, or accept."
+      ],
+      "deliverable": "bounded result defined by this Atomic",
+      "stopCondition": "the stated result is complete or a prerequisite is missing",
+      "evidenceBoundary": "proves only the bounded deliverable and explicitly excludes unexercised behavior",
+      "requiredCapabilityRouteIds": [
+        "dependency-risk-guidance"
+      ],
+      "activationCriteria": [
+        "real core profile exists",
+        "L5 packet declares this Atomic",
+        "L4 preflight succeeds when a route is required"
+      ]
+    },
+    {
+      "id": "diagnose.next-runtime",
+      "family": "runtime-diagnose",
+      "status": "enabled",
+      "executorRoleId": "runtime-diagnostician",
+      "goal": "Observe one local Next.js runtime symptom.",
+      "input": [
+        "exact bounded scope and already verified evidence"
+      ],
+      "must": [
+        "Observe the supplied target without changing it."
+      ],
+      "mustNot": [
+        "Do not patch, restart, or make provider writes."
+      ],
+      "deliverable": "bounded result defined by this Atomic",
+      "stopCondition": "the stated result is complete or a prerequisite is missing",
+      "evidenceBoundary": "proves only the bounded deliverable and explicitly excludes unexercised behavior",
+      "requiredCapabilityRouteIds": [
+        "next-runtime-observation"
+      ],
+      "activationCriteria": [
+        "real core profile exists",
+        "L5 packet declares this Atomic",
+        "L4 preflight succeeds when a route is required"
+      ]
+    },
+    {
+      "id": "diagnose.sentry-incident",
+      "family": "runtime-diagnose",
+      "status": "enabled",
+      "executorRoleId": "runtime-diagnostician",
+      "goal": "Observe one read-only Sentry incident.",
+      "input": [
+        "exact bounded scope and already verified evidence"
+      ],
+      "must": [
+        "Observe the supplied target without changing it."
+      ],
+      "mustNot": [
+        "Do not patch, restart, or make provider writes."
+      ],
+      "deliverable": "bounded result defined by this Atomic",
+      "stopCondition": "the stated result is complete or a prerequisite is missing",
+      "evidenceBoundary": "proves only the bounded deliverable and explicitly excludes unexercised behavior",
+      "requiredCapabilityRouteIds": [
+        "sentry-incident-observation"
+      ],
+      "activationCriteria": [
+        "real core profile exists",
+        "L5 packet declares this Atomic",
+        "L4 preflight succeeds when a route is required"
+      ]
+    },
+    {
+      "id": "validate.assigned-command",
+      "family": "validate-accept",
+      "status": "enabled",
+      "executorRoleId": "validation-runner",
+      "goal": "Run one assigned validation command with bounded output.",
+      "input": [
+        "exact bounded scope and already verified evidence"
+      ],
+      "must": [
+        "Return bounded evidence for exactly the assigned claim."
+      ],
+      "mustNot": [
+        "Do not redesign, implement, or accept."
+      ],
+      "deliverable": "bounded result defined by this Atomic",
+      "stopCondition": "the stated result is complete or a prerequisite is missing",
+      "evidenceBoundary": "proves only the bounded deliverable and explicitly excludes unexercised behavior",
+      "requiredCapabilityRouteIds": [
+        "bounded-validation"
+      ],
+      "activationCriteria": [
+        "real core profile exists",
+        "L5 packet declares this Atomic",
+        "L4 preflight succeeds when a route is required"
+      ]
+    },
+    {
+      "id": "validate.synthetic-browser-flow",
+      "family": "validate-accept",
+      "status": "enabled",
+      "executorRoleId": "validation-runner",
+      "goal": "Execute one defined loopback browser flow.",
+      "input": [
+        "exact bounded scope and already verified evidence"
+      ],
+      "must": [
+        "Return bounded evidence for exactly the assigned claim."
+      ],
+      "mustNot": [
+        "Do not redesign, implement, or accept."
+      ],
+      "deliverable": "bounded result defined by this Atomic",
+      "stopCondition": "the stated result is complete or a prerequisite is missing",
+      "evidenceBoundary": "proves only the bounded deliverable and explicitly excludes unexercised behavior",
+      "requiredCapabilityRouteIds": [
+        "synthetic-browser-flow"
+      ],
+      "activationCriteria": [
+        "real core profile exists",
+        "L5 packet declares this Atomic",
+        "L4 preflight succeeds when a route is required"
+      ]
+    },
+    {
+      "id": "validate.evidence-claim",
+      "family": "validate-accept",
+      "status": "enabled",
+      "executorRoleId": "validation-runner",
+      "goal": "Assess whether supplied evidence supports one explicit claim.",
+      "input": [
+        "exact bounded scope and already verified evidence"
+      ],
+      "must": [
+        "Return bounded evidence for exactly the assigned claim."
+      ],
+      "mustNot": [
+        "Do not redesign, implement, or accept."
+      ],
+      "deliverable": "bounded result defined by this Atomic",
+      "stopCondition": "the stated result is complete or a prerequisite is missing",
+      "evidenceBoundary": "proves only the bounded deliverable and explicitly excludes unexercised behavior",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real core profile exists",
+        "L5 packet declares this Atomic",
+        "L4 preflight succeeds when a route is required"
+      ]
+    },
+    {
+      "id": "execute.repository-mapper",
+      "family": "locate-research",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "investigator"
+      ],
+      "goal": "Map one bounded owner, source, or consumer path.",
+      "input": [
+        "resolved task intent"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded repository map",
+      "stopCondition": "owner and consumer path are evidenced",
+      "evidenceBoundary": "does not decide product meaning",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.repository-mapper",
+      "family": "locate-research",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "investigator"
+      ],
+      "goal": "Prepare one bounded repository-mapper task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.repository-mapper",
+      "family": "locate-research",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "investigator"
+      ],
+      "goal": "Report one bounded repository-mapper result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.technical-researcher",
+      "family": "locate-research",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "investigator"
+      ],
+      "goal": "Research one current external technical fact.",
+      "input": [
+        "bounded provider or framework question"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "primary-source fact",
+      "stopCondition": "source answers the question",
+      "evidenceBoundary": "does not implement or authorize use",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.technical-researcher",
+      "family": "locate-research",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "investigator"
+      ],
+      "goal": "Prepare one bounded technical-researcher task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.technical-researcher",
+      "family": "locate-research",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "investigator"
+      ],
+      "goal": "Report one bounded technical-researcher result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.root-cause-analyst",
+      "family": "analyse-decide",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "analyst"
+      ],
+      "goal": "Trace one symptom to its original trigger.",
+      "input": [
+        "bounded symptom evidence"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "root-cause analysis",
+      "stopCondition": "trigger or evidence gap is identified",
+      "evidenceBoundary": "does not patch the defect",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.root-cause-analyst",
+      "family": "analyse-decide",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "analyst"
+      ],
+      "goal": "Prepare one bounded root-cause-analyst task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.root-cause-analyst",
+      "family": "analyse-decide",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "analyst"
+      ],
+      "goal": "Report one bounded root-cause-analyst result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.architecture-analyst",
+      "family": "analyse-decide",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "analyst"
+      ],
+      "goal": "Analyse one owner, truth, boundary, or dependency question.",
+      "input": [
+        "bounded architecture question"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "options and evidence",
+      "stopCondition": "decision inputs are complete",
+      "evidenceBoundary": "does not make the final architecture decision",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.architecture-analyst",
+      "family": "analyse-decide",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "analyst"
+      ],
+      "goal": "Prepare one bounded architecture-analyst task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.architecture-analyst",
+      "family": "analyse-decide",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "analyst"
+      ],
+      "goal": "Report one bounded architecture-analyst result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.architecture-decider",
+      "family": "analyse-decide",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "decider"
+      ],
+      "goal": "Choose one evidence-backed architecture option.",
+      "input": [
+        "established options and tradeoffs"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded decision",
+      "stopCondition": "one option is selected or a premise is missing",
+      "evidenceBoundary": "does not implement the decision",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.architecture-decider",
+      "family": "analyse-decide",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "decider"
+      ],
+      "goal": "Prepare one bounded architecture-decider task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.architecture-decider",
+      "family": "analyse-decide",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "decider"
+      ],
+      "goal": "Report one bounded architecture-decider result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.performance-analyst",
+      "family": "analyse-decide",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "analyst"
+      ],
+      "goal": "Analyse one measured performance bottleneck.",
+      "input": [
+        "measurement evidence"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "smallest evidence-backed improvement",
+      "stopCondition": "measurement cannot support a change",
+      "evidenceBoundary": "does not optimize source",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.performance-analyst",
+      "family": "analyse-decide",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "analyst"
+      ],
+      "goal": "Prepare one bounded performance-analyst task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.performance-analyst",
+      "family": "analyse-decide",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "analyst"
+      ],
+      "goal": "Report one bounded performance-analyst result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.supabase-postgresql-designer",
+      "family": "design-plan",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "analyst"
+      ],
+      "goal": "Design one bounded PostgreSQL persistence boundary.",
+      "input": [
+        "known owner and policy"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "relation and recovery design",
+      "stopCondition": "policy or authority is missing",
+      "evidenceBoundary": "does not apply schema changes",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.supabase-postgresql-designer",
+      "family": "design-plan",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "analyst"
+      ],
+      "goal": "Prepare one bounded supabase-postgresql-designer task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.supabase-postgresql-designer",
+      "family": "design-plan",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "analyst"
+      ],
+      "goal": "Report one bounded supabase-postgresql-designer result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.schema-transition-planner",
+      "family": "design-plan",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "analyst"
+      ],
+      "goal": "Plan one declarative schema or data transition.",
+      "input": [
+        "approved target schema"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "safe transition plan",
+      "stopCondition": "cutover authority is missing",
+      "evidenceBoundary": "does not execute the transition",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.schema-transition-planner",
+      "family": "design-plan",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "analyst"
+      ],
+      "goal": "Prepare one bounded schema-transition-planner task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.schema-transition-planner",
+      "family": "design-plan",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "analyst"
+      ],
+      "goal": "Report one bounded schema-transition-planner result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.test-designer",
+      "family": "design-plan",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "analyst"
+      ],
+      "goal": "Design minimum discriminating tests for one behavior.",
+      "input": [
+        "approved invariant"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "test design",
+      "stopCondition": "behavior remains ambiguous",
+      "evidenceBoundary": "does not run tests",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.test-designer",
+      "family": "design-plan",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "analyst"
+      ],
+      "goal": "Prepare one bounded test-designer task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.test-designer",
+      "family": "design-plan",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "analyst"
+      ],
+      "goal": "Report one bounded test-designer result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.change-implementer",
+      "family": "implement-document",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "change-implementer"
+      ],
+      "goal": "Implement one approved bounded change.",
+      "input": [
+        "approved task packet"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded source change",
+      "stopCondition": "scope or contract becomes ambiguous",
+      "evidenceBoundary": "does not accept or deploy",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.change-implementer",
+      "family": "implement-document",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "change-implementer"
+      ],
+      "goal": "Prepare one bounded change-implementer task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.change-implementer",
+      "family": "implement-document",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "change-implementer"
+      ],
+      "goal": "Report one bounded change-implementer result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.documentation-writer",
+      "family": "implement-document",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "change-implementer"
+      ],
+      "goal": "Synchronize one documentation surface from approved facts.",
+      "input": [
+        "approved repository facts"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded documentation update",
+      "stopCondition": "facts are unresolved",
+      "evidenceBoundary": "does not change product semantics",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.documentation-writer",
+      "family": "implement-document",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "change-implementer"
+      ],
+      "goal": "Prepare one bounded documentation-writer task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.documentation-writer",
+      "family": "implement-document",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "change-implementer"
+      ],
+      "goal": "Report one bounded documentation-writer result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.diff-reviewer",
+      "family": "review",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "reviewer"
+      ],
+      "goal": "Review one bounded diff for concrete defects.",
+      "input": [
+        "candidate diff"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "findings or clean review",
+      "stopCondition": "direct consumers are reviewed",
+      "evidenceBoundary": "does not modify the diff",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.diff-reviewer",
+      "family": "review",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "reviewer"
+      ],
+      "goal": "Prepare one bounded diff-reviewer task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.diff-reviewer",
+      "family": "review",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "reviewer"
+      ],
+      "goal": "Report one bounded diff-reviewer result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.authorization-reviewer",
+      "family": "review",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "reviewer"
+      ],
+      "goal": "Review one authorization boundary diff.",
+      "input": [
+        "bounded authorization diff"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "scope and isolation findings",
+      "stopCondition": "trust path is traced",
+      "evidenceBoundary": "does not grant authorization",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.authorization-reviewer",
+      "family": "review",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "reviewer"
+      ],
+      "goal": "Prepare one bounded authorization-reviewer task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.authorization-reviewer",
+      "family": "review",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "reviewer"
+      ],
+      "goal": "Report one bounded authorization-reviewer result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.database-boundary-reviewer",
+      "family": "review",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "reviewer"
+      ],
+      "goal": "Review one persistence boundary diff.",
+      "input": [
+        "bounded schema or persistence diff"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "relation and recovery findings",
+      "stopCondition": "data boundary is traced",
+      "evidenceBoundary": "does not alter schema",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.database-boundary-reviewer",
+      "family": "review",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "reviewer"
+      ],
+      "goal": "Prepare one bounded database-boundary-reviewer task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.database-boundary-reviewer",
+      "family": "review",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "reviewer"
+      ],
+      "goal": "Report one bounded database-boundary-reviewer result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.accessibility-reviewer",
+      "family": "review",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "reviewer"
+      ],
+      "goal": "Review one bounded UI accessibility change.",
+      "input": [
+        "bounded UI diff"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "accessibility findings",
+      "stopCondition": "keyboard and semantic paths are assessed",
+      "evidenceBoundary": "does not implement UI changes",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.accessibility-reviewer",
+      "family": "review",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "reviewer"
+      ],
+      "goal": "Prepare one bounded accessibility-reviewer task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.accessibility-reviewer",
+      "family": "review",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "reviewer"
+      ],
+      "goal": "Report one bounded accessibility-reviewer result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.github-actions-security-reviewer",
+      "family": "review",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "reviewer"
+      ],
+      "goal": "Review one GitHub Actions trust boundary.",
+      "input": [
+        "bounded workflow diff"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "workflow security findings",
+      "stopCondition": "trigger and secret paths are traced",
+      "evidenceBoundary": "does not run or alter CI",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.github-actions-security-reviewer",
+      "family": "review",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "reviewer"
+      ],
+      "goal": "Prepare one bounded github-actions-security-reviewer task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.github-actions-security-reviewer",
+      "family": "review",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "reviewer"
+      ],
+      "goal": "Report one bounded github-actions-security-reviewer result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.dependency-supply-chain-reviewer",
+      "family": "review",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "reviewer"
+      ],
+      "goal": "Review one dependency risk boundary.",
+      "input": [
+        "manifest and lockfile candidate"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "provenance findings",
+      "stopCondition": "consumer path is assessed",
+      "evidenceBoundary": "does not install dependencies",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.dependency-supply-chain-reviewer",
+      "family": "review",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "reviewer"
+      ],
+      "goal": "Prepare one bounded dependency-supply-chain-reviewer task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.dependency-supply-chain-reviewer",
+      "family": "review",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "reviewer"
+      ],
+      "goal": "Report one bounded dependency-supply-chain-reviewer result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.nextjs-runtime-diagnostician",
+      "family": "runtime-diagnose",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "runtime-diagnostician"
+      ],
+      "goal": "Diagnose one Next.js runtime symptom.",
+      "input": [
+        "known local runtime target"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "runtime observation",
+      "stopCondition": "target or port is unavailable",
+      "evidenceBoundary": "does not restart the server",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.nextjs-runtime-diagnostician",
+      "family": "runtime-diagnose",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "runtime-diagnostician"
+      ],
+      "goal": "Prepare one bounded nextjs-runtime-diagnostician task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.nextjs-runtime-diagnostician",
+      "family": "runtime-diagnose",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "runtime-diagnostician"
+      ],
+      "goal": "Report one bounded nextjs-runtime-diagnostician result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.component-researcher",
+      "family": "runtime-diagnose",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "investigator"
+      ],
+      "goal": "Research one component or registry compatibility question.",
+      "input": [
+        "existing UI contract"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "compatible option",
+      "stopCondition": "registry evidence is unavailable",
+      "evidenceBoundary": "does not install components",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.component-researcher",
+      "family": "runtime-diagnose",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "investigator"
+      ],
+      "goal": "Prepare one bounded component-researcher task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.component-researcher",
+      "family": "runtime-diagnose",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "investigator"
+      ],
+      "goal": "Report one bounded component-researcher result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.sentry-incident-diagnostician",
+      "family": "runtime-diagnose",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "runtime-diagnostician"
+      ],
+      "goal": "Diagnose one Sentry incident from read-only evidence.",
+      "input": [
+        "incident target and time window"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "incident observation",
+      "stopCondition": "target evidence is unavailable",
+      "evidenceBoundary": "does not change telemetry",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.sentry-incident-diagnostician",
+      "family": "runtime-diagnose",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "runtime-diagnostician"
+      ],
+      "goal": "Prepare one bounded sentry-incident-diagnostician task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.sentry-incident-diagnostician",
+      "family": "runtime-diagnose",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "runtime-diagnostician"
+      ],
+      "goal": "Report one bounded sentry-incident-diagnostician result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.validation-runner",
+      "family": "validate-accept",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "validation-runner"
+      ],
+      "goal": "Execute one assigned validation plan.",
+      "input": [
+        "exact candidate and command plan"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded validation record",
+      "stopCondition": "first reproducible failure or plan completion",
+      "evidenceBoundary": "does not implement fixes",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.validation-runner",
+      "family": "validate-accept",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "validation-runner"
+      ],
+      "goal": "Prepare one bounded validation-runner task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.validation-runner",
+      "family": "validate-accept",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "validation-runner"
+      ],
+      "goal": "Report one bounded validation-runner result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.browser-flow-verifier",
+      "family": "validate-accept",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "validation-runner"
+      ],
+      "goal": "Execute one assigned synthetic browser flow.",
+      "input": [
+        "known loopback flow"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded browser evidence",
+      "stopCondition": "first broken boundary",
+      "evidenceBoundary": "does not change implementation",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.browser-flow-verifier",
+      "family": "validate-accept",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "validation-runner"
+      ],
+      "goal": "Prepare one bounded browser-flow-verifier task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.browser-flow-verifier",
+      "family": "validate-accept",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "validation-runner"
+      ],
+      "goal": "Report one bounded browser-flow-verifier result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.evidence-verifier",
+      "family": "validate-accept",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "validation-runner"
+      ],
+      "goal": "Verify one claim against supplied evidence.",
+      "input": [
+        "claim and evidence"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "evidence assessment",
+      "stopCondition": "claim boundary is determined",
+      "evidenceBoundary": "does not create new evidence",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.evidence-verifier",
+      "family": "validate-accept",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "validation-runner"
+      ],
+      "goal": "Prepare one bounded evidence-verifier task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.evidence-verifier",
+      "family": "validate-accept",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "validation-runner"
+      ],
+      "goal": "Report one bounded evidence-verifier result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.acceptance-decider",
+      "family": "validate-accept",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "decider"
+      ],
+      "goal": "Decide one high-risk acceptance from complete evidence.",
+      "input": [
+        "candidate and independent evidence"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "acceptance decision",
+      "stopCondition": "required evidence is absent",
+      "evidenceBoundary": "does not execute validation",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.acceptance-decider",
+      "family": "validate-accept",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "decider"
+      ],
+      "goal": "Prepare one bounded acceptance-decider task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.acceptance-decider",
+      "family": "validate-accept",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "decider"
+      ],
+      "goal": "Report one bounded acceptance-decider result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.contract-locator",
+      "family": "locate-research",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "investigator"
+      ],
+      "goal": "Locate one contract authority.",
+      "input": [
+        "bounded term"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "contract locator",
+      "stopCondition": "authority is unresolved",
+      "evidenceBoundary": "does not interpret business meaning",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.contract-locator",
+      "family": "locate-research",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "investigator"
+      ],
+      "goal": "Prepare one bounded contract-locator task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.contract-locator",
+      "family": "locate-research",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "investigator"
+      ],
+      "goal": "Report one bounded contract-locator result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.dependency-tracer",
+      "family": "locate-research",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "dependency-tracer"
+      ],
+      "goal": "Trace one dependency direction.",
+      "input": [
+        "module or symbol"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "dependency path",
+      "stopCondition": "path boundary is found",
+      "evidenceBoundary": "does not approve dependency",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.dependency-tracer",
+      "family": "locate-research",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "dependency-tracer"
+      ],
+      "goal": "Prepare one bounded dependency-tracer task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.dependency-tracer",
+      "family": "locate-research",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "dependency-tracer"
+      ],
+      "goal": "Report one bounded dependency-tracer result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.test-surface-mapper",
+      "family": "locate-research",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "test-surface-mapper"
+      ],
+      "goal": "Map tests covering one contract.",
+      "input": [
+        "contract scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "test surface map",
+      "stopCondition": "coverage boundary is known",
+      "evidenceBoundary": "does not assess test adequacy",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.test-surface-mapper",
+      "family": "locate-research",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "test-surface-mapper"
+      ],
+      "goal": "Prepare one bounded test-surface-mapper task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.test-surface-mapper",
+      "family": "locate-research",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "test-surface-mapper"
+      ],
+      "goal": "Report one bounded test-surface-mapper result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.change-impact-analyst",
+      "family": "locate-research",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "analyst"
+      ],
+      "goal": "Locate change impact consumers.",
+      "input": [
+        "approved change concept"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "impact map",
+      "stopCondition": "consumer boundary is known",
+      "evidenceBoundary": "does not authorize changes",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.change-impact-analyst",
+      "family": "locate-research",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "analyst"
+      ],
+      "goal": "Prepare one bounded change-impact-analyst task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.change-impact-analyst",
+      "family": "locate-research",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "analyst"
+      ],
+      "goal": "Report one bounded change-impact-analyst result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.evidence-source-researcher",
+      "family": "locate-research",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "evidence-source-researcher"
+      ],
+      "goal": "Locate the source for one evidence claim.",
+      "input": [
+        "claim"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "evidence source",
+      "stopCondition": "source is absent",
+      "evidenceBoundary": "does not verify the claim",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.evidence-source-researcher",
+      "family": "locate-research",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "evidence-source-researcher"
+      ],
+      "goal": "Prepare one bounded evidence-source-researcher task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.evidence-source-researcher",
+      "family": "locate-research",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "evidence-source-researcher"
+      ],
+      "goal": "Report one bounded evidence-source-researcher result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.threat-model-analyst",
+      "family": "analyse-decide",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "decider"
+      ],
+      "goal": "Analyse one bounded threat model.",
+      "input": [
+        "trust boundary"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "threat analysis",
+      "stopCondition": "assets or actor model is missing",
+      "evidenceBoundary": "does not remediate findings",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.threat-model-analyst",
+      "family": "analyse-decide",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "decider"
+      ],
+      "goal": "Prepare one bounded threat-model-analyst task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.threat-model-analyst",
+      "family": "analyse-decide",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "decider"
+      ],
+      "goal": "Report one bounded threat-model-analyst result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.concurrency-analyst",
+      "family": "analyse-decide",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "concurrency-analyst"
+      ],
+      "goal": "Analyse one concurrency invariant.",
+      "input": [
+        "mutable transition"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "race analysis",
+      "stopCondition": "transition is unresolved",
+      "evidenceBoundary": "does not change transaction code",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.concurrency-analyst",
+      "family": "analyse-decide",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "concurrency-analyst"
+      ],
+      "goal": "Prepare one bounded concurrency-analyst task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.concurrency-analyst",
+      "family": "analyse-decide",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "concurrency-analyst"
+      ],
+      "goal": "Report one bounded concurrency-analyst result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.recovery-analyst",
+      "family": "analyse-decide",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "recovery-analyst"
+      ],
+      "goal": "Analyse one failure recovery boundary.",
+      "input": [
+        "side effect and failure state"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "recovery analysis",
+      "stopCondition": "durable identity is unknown",
+      "evidenceBoundary": "does not execute recovery",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.recovery-analyst",
+      "family": "analyse-decide",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "recovery-analyst"
+      ],
+      "goal": "Prepare one bounded recovery-analyst task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.recovery-analyst",
+      "family": "analyse-decide",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "recovery-analyst"
+      ],
+      "goal": "Report one bounded recovery-analyst result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.domain-model-analyst",
+      "family": "analyse-decide",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "domain-model-analyst"
+      ],
+      "goal": "Analyse one domain-model ambiguity.",
+      "input": [
+        "business term"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "domain model options",
+      "stopCondition": "owner authority is missing",
+      "evidenceBoundary": "does not redefine product truth",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.domain-model-analyst",
+      "family": "analyse-decide",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "domain-model-analyst"
+      ],
+      "goal": "Prepare one bounded domain-model-analyst task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.domain-model-analyst",
+      "family": "analyse-decide",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "domain-model-analyst"
+      ],
+      "goal": "Report one bounded domain-model-analyst result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.workflow-analyst",
+      "family": "analyse-decide",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "workflow-analyst"
+      ],
+      "goal": "Analyse one workflow composition gap.",
+      "input": [
+        "observed handoff"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "workflow analysis",
+      "stopCondition": "responsibility boundary is unclear",
+      "evidenceBoundary": "does not create profiles",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.workflow-analyst",
+      "family": "analyse-decide",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "workflow-analyst"
+      ],
+      "goal": "Prepare one bounded workflow-analyst task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.workflow-analyst",
+      "family": "analyse-decide",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "workflow-analyst"
+      ],
+      "goal": "Report one bounded workflow-analyst result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.release-risk-analyst",
+      "family": "analyse-decide",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "release-risk-analyst"
+      ],
+      "goal": "Analyse one release risk.",
+      "input": [
+        "release candidate"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "risk assessment",
+      "stopCondition": "release target is unknown",
+      "evidenceBoundary": "does not release",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.release-risk-analyst",
+      "family": "analyse-decide",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "release-risk-analyst"
+      ],
+      "goal": "Prepare one bounded release-risk-analyst task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.release-risk-analyst",
+      "family": "analyse-decide",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "release-risk-analyst"
+      ],
+      "goal": "Report one bounded release-risk-analyst result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.api-contract-designer",
+      "family": "design-plan",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "api-contract-designer"
+      ],
+      "goal": "Design one public API contract.",
+      "input": [
+        "approved owner boundary"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "API contract design",
+      "stopCondition": "consumer is unknown",
+      "evidenceBoundary": "does not implement API",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.api-contract-designer",
+      "family": "design-plan",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "api-contract-designer"
+      ],
+      "goal": "Prepare one bounded api-contract-designer task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.api-contract-designer",
+      "family": "design-plan",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "api-contract-designer"
+      ],
+      "goal": "Report one bounded api-contract-designer result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.event-contract-designer",
+      "family": "design-plan",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "event-contract-designer"
+      ],
+      "goal": "Design one event contract.",
+      "input": [
+        "approved event need"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "event contract design",
+      "stopCondition": "event owner is unknown",
+      "evidenceBoundary": "does not publish events",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.event-contract-designer",
+      "family": "design-plan",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "event-contract-designer"
+      ],
+      "goal": "Prepare one bounded event-contract-designer task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.event-contract-designer",
+      "family": "design-plan",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "event-contract-designer"
+      ],
+      "goal": "Report one bounded event-contract-designer result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.data-retention-planner",
+      "family": "design-plan",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "data-retention-planner"
+      ],
+      "goal": "Plan one data retention boundary.",
+      "input": [
+        "data authority and policy"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "retention plan",
+      "stopCondition": "policy is missing",
+      "evidenceBoundary": "does not delete data",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.data-retention-planner",
+      "family": "design-plan",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "data-retention-planner"
+      ],
+      "goal": "Prepare one bounded data-retention-planner task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.data-retention-planner",
+      "family": "design-plan",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "data-retention-planner"
+      ],
+      "goal": "Report one bounded data-retention-planner result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.authorization-policy-designer",
+      "family": "design-plan",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "authorization-policy-designer"
+      ],
+      "goal": "Design one authorization policy boundary.",
+      "input": [
+        "owner and actor scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "policy design",
+      "stopCondition": "product authorization is unknown",
+      "evidenceBoundary": "does not grant permissions",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.authorization-policy-designer",
+      "family": "design-plan",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "authorization-policy-designer"
+      ],
+      "goal": "Prepare one bounded authorization-policy-designer task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.authorization-policy-designer",
+      "family": "design-plan",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "authorization-policy-designer"
+      ],
+      "goal": "Report one bounded authorization-policy-designer result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.observability-designer",
+      "family": "design-plan",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "observability-designer"
+      ],
+      "goal": "Design one observability boundary.",
+      "input": [
+        "diagnostic question"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "observability design",
+      "stopCondition": "privacy policy is missing",
+      "evidenceBoundary": "does not emit telemetry",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.observability-designer",
+      "family": "design-plan",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "observability-designer"
+      ],
+      "goal": "Prepare one bounded observability-designer task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.observability-designer",
+      "family": "design-plan",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "observability-designer"
+      ],
+      "goal": "Report one bounded observability-designer result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.migration-implementer",
+      "family": "implement-document",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "migration-implementer"
+      ],
+      "goal": "Implement one approved data migration step.",
+      "input": [
+        "approved transition plan"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "migration change",
+      "stopCondition": "remote authority is missing",
+      "evidenceBoundary": "does not publish migration",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.migration-implementer",
+      "family": "implement-document",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "migration-implementer"
+      ],
+      "goal": "Prepare one bounded migration-implementer task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.migration-implementer",
+      "family": "implement-document",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "migration-implementer"
+      ],
+      "goal": "Report one bounded migration-implementer result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.workflow-implementer",
+      "family": "implement-document",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "workflow-implementer"
+      ],
+      "goal": "Implement one approved workflow composition.",
+      "input": [
+        "approved workflow"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "workflow change",
+      "stopCondition": "role contract conflicts",
+      "evidenceBoundary": "does not accept outcome",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.workflow-implementer",
+      "family": "implement-document",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "workflow-implementer"
+      ],
+      "goal": "Prepare one bounded workflow-implementer task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.workflow-implementer",
+      "family": "implement-document",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "workflow-implementer"
+      ],
+      "goal": "Report one bounded workflow-implementer result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.integration-implementer",
+      "family": "implement-document",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "integration-implementer"
+      ],
+      "goal": "Implement one approved integration adapter.",
+      "input": [
+        "approved provider contract"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "adapter change",
+      "stopCondition": "provider authorization is missing",
+      "evidenceBoundary": "does not mutate provider",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.integration-implementer",
+      "family": "implement-document",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "integration-implementer"
+      ],
+      "goal": "Prepare one bounded integration-implementer task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.integration-implementer",
+      "family": "implement-document",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "integration-implementer"
+      ],
+      "goal": "Report one bounded integration-implementer result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.test-fixture-implementer",
+      "family": "implement-document",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "test-fixture-implementer"
+      ],
+      "goal": "Implement one approved test fixture.",
+      "input": [
+        "approved test design"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "fixture change",
+      "stopCondition": "behavior is ambiguous",
+      "evidenceBoundary": "does not accept feature",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.test-fixture-implementer",
+      "family": "implement-document",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "test-fixture-implementer"
+      ],
+      "goal": "Prepare one bounded test-fixture-implementer task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.test-fixture-implementer",
+      "family": "implement-document",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "test-fixture-implementer"
+      ],
+      "goal": "Report one bounded test-fixture-implementer result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.release-notes-writer",
+      "family": "implement-document",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "release-notes-writer"
+      ],
+      "goal": "Write one evidence-backed release note.",
+      "input": [
+        "approved change evidence"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "release note",
+      "stopCondition": "evidence is incomplete",
+      "evidenceBoundary": "does not release",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.release-notes-writer",
+      "family": "implement-document",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "release-notes-writer"
+      ],
+      "goal": "Prepare one bounded release-notes-writer task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.release-notes-writer",
+      "family": "implement-document",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "release-notes-writer"
+      ],
+      "goal": "Report one bounded release-notes-writer result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.privacy-reviewer",
+      "family": "review",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "reviewer"
+      ],
+      "goal": "Review one privacy disclosure boundary.",
+      "input": [
+        "bounded data-flow diff"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "privacy findings",
+      "stopCondition": "data classification is missing",
+      "evidenceBoundary": "does not approve processing",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.privacy-reviewer",
+      "family": "review",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "reviewer"
+      ],
+      "goal": "Prepare one bounded privacy-reviewer task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.privacy-reviewer",
+      "family": "review",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "reviewer"
+      ],
+      "goal": "Report one bounded privacy-reviewer result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.performance-reviewer",
+      "family": "review",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "performance-reviewer"
+      ],
+      "goal": "Review one measured performance change.",
+      "input": [
+        "candidate diff and measurement"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "performance findings",
+      "stopCondition": "measurement is absent",
+      "evidenceBoundary": "does not benchmark runtime",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.performance-reviewer",
+      "family": "review",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "performance-reviewer"
+      ],
+      "goal": "Prepare one bounded performance-reviewer task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.performance-reviewer",
+      "family": "review",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "performance-reviewer"
+      ],
+      "goal": "Report one bounded performance-reviewer result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.api-contract-reviewer",
+      "family": "review",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "api-contract-reviewer"
+      ],
+      "goal": "Review one public contract diff.",
+      "input": [
+        "provider and consumer diff"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "contract findings",
+      "stopCondition": "consumer is unknown",
+      "evidenceBoundary": "does not approve rollout",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.api-contract-reviewer",
+      "family": "review",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "api-contract-reviewer"
+      ],
+      "goal": "Prepare one bounded api-contract-reviewer task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.api-contract-reviewer",
+      "family": "review",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "api-contract-reviewer"
+      ],
+      "goal": "Report one bounded api-contract-reviewer result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.concurrency-reviewer",
+      "family": "review",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "concurrency-reviewer"
+      ],
+      "goal": "Review one concurrency-sensitive diff.",
+      "input": [
+        "transition diff"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "race findings",
+      "stopCondition": "invariant is unknown",
+      "evidenceBoundary": "does not run load tests",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.concurrency-reviewer",
+      "family": "review",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "concurrency-reviewer"
+      ],
+      "goal": "Prepare one bounded concurrency-reviewer task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.concurrency-reviewer",
+      "family": "review",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "concurrency-reviewer"
+      ],
+      "goal": "Report one bounded concurrency-reviewer result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.recovery-reviewer",
+      "family": "review",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "recovery-reviewer"
+      ],
+      "goal": "Review one recovery-sensitive diff.",
+      "input": [
+        "failure and retry diff"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "recovery findings",
+      "stopCondition": "failure states are unknown",
+      "evidenceBoundary": "does not perform recovery",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.recovery-reviewer",
+      "family": "review",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "recovery-reviewer"
+      ],
+      "goal": "Prepare one bounded recovery-reviewer task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.recovery-reviewer",
+      "family": "review",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "recovery-reviewer"
+      ],
+      "goal": "Report one bounded recovery-reviewer result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.line-device-diagnostician",
+      "family": "runtime-diagnose",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "runtime-diagnostician"
+      ],
+      "goal": "Observe one LINE device flow.",
+      "input": [
+        "authorized device target"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "device observation",
+      "stopCondition": "device authorization is absent",
+      "evidenceBoundary": "does not change LINE state",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.line-device-diagnostician",
+      "family": "runtime-diagnose",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "runtime-diagnostician"
+      ],
+      "goal": "Prepare one bounded line-device-diagnostician task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.line-device-diagnostician",
+      "family": "runtime-diagnose",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "runtime-diagnostician"
+      ],
+      "goal": "Report one bounded line-device-diagnostician result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.provider-integration-diagnostician",
+      "family": "runtime-diagnose",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "provider-integration-diagnostician"
+      ],
+      "goal": "Diagnose one provider integration symptom.",
+      "input": [
+        "provider target and evidence"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "integration observation",
+      "stopCondition": "provider read access is absent",
+      "evidenceBoundary": "does not mutate provider",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.provider-integration-diagnostician",
+      "family": "runtime-diagnose",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "provider-integration-diagnostician"
+      ],
+      "goal": "Prepare one bounded provider-integration-diagnostician task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.provider-integration-diagnostician",
+      "family": "runtime-diagnose",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "provider-integration-diagnostician"
+      ],
+      "goal": "Report one bounded provider-integration-diagnostician result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.deployment-diagnostician",
+      "family": "runtime-diagnose",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "deployment-diagnostician"
+      ],
+      "goal": "Diagnose one deployment symptom.",
+      "input": [
+        "deployment target and revision"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "deployment observation",
+      "stopCondition": "target identity is missing",
+      "evidenceBoundary": "does not deploy",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.deployment-diagnostician",
+      "family": "runtime-diagnose",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "deployment-diagnostician"
+      ],
+      "goal": "Prepare one bounded deployment-diagnostician task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.deployment-diagnostician",
+      "family": "runtime-diagnose",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "deployment-diagnostician"
+      ],
+      "goal": "Report one bounded deployment-diagnostician result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.storage-diagnostician",
+      "family": "runtime-diagnose",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "storage-diagnostician"
+      ],
+      "goal": "Diagnose one storage boundary symptom.",
+      "input": [
+        "storage target and access evidence"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "storage observation",
+      "stopCondition": "scope is missing",
+      "evidenceBoundary": "does not alter storage",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.storage-diagnostician",
+      "family": "runtime-diagnose",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "storage-diagnostician"
+      ],
+      "goal": "Prepare one bounded storage-diagnostician task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.storage-diagnostician",
+      "family": "runtime-diagnose",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "storage-diagnostician"
+      ],
+      "goal": "Report one bounded storage-diagnostician result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.schema-validation-runner",
+      "family": "validate-accept",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "schema-validation-runner"
+      ],
+      "goal": "Execute one assigned schema validation.",
+      "input": [
+        "exact schema candidate"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "schema validation record",
+      "stopCondition": "first reproducible failure",
+      "evidenceBoundary": "does not apply schema",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.schema-validation-runner",
+      "family": "validate-accept",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "schema-validation-runner"
+      ],
+      "goal": "Prepare one bounded schema-validation-runner task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.schema-validation-runner",
+      "family": "validate-accept",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "schema-validation-runner"
+      ],
+      "goal": "Report one bounded schema-validation-runner result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.integration-validation-runner",
+      "family": "validate-accept",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "integration-validation-runner"
+      ],
+      "goal": "Execute one assigned integration validation.",
+      "input": [
+        "exact integration candidate"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "integration validation record",
+      "stopCondition": "first broken boundary",
+      "evidenceBoundary": "does not change integration",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.integration-validation-runner",
+      "family": "validate-accept",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "integration-validation-runner"
+      ],
+      "goal": "Prepare one bounded integration-validation-runner task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.integration-validation-runner",
+      "family": "validate-accept",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "integration-validation-runner"
+      ],
+      "goal": "Report one bounded integration-validation-runner result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.provider-readback-verifier",
+      "family": "validate-accept",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "provider-readback-verifier"
+      ],
+      "goal": "Verify one provider readback claim.",
+      "input": [
+        "authorized provider target"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "readback evidence",
+      "stopCondition": "target authority is absent",
+      "evidenceBoundary": "does not mutate provider",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.provider-readback-verifier",
+      "family": "validate-accept",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "provider-readback-verifier"
+      ],
+      "goal": "Prepare one bounded provider-readback-verifier task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.provider-readback-verifier",
+      "family": "validate-accept",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "provider-readback-verifier"
+      ],
+      "goal": "Report one bounded provider-readback-verifier result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "execute.release-evidence-analyst",
+      "family": "validate-accept",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "release-evidence-analyst"
+      ],
+      "goal": "Assess evidence for one release claim.",
+      "input": [
+        "release candidate and evidence"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "release evidence assessment",
+      "stopCondition": "claim boundary is unclear",
+      "evidenceBoundary": "does not release",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "prepare.release-evidence-analyst",
+      "family": "validate-accept",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "release-evidence-analyst"
+      ],
+      "goal": "Prepare one bounded release-evidence-analyst task.",
+      "input": [
+        "approved scope"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "task-ready input",
+      "stopCondition": "required input is missing",
+      "evidenceBoundary": "does not execute the role mission",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "report.release-evidence-analyst",
+      "family": "validate-accept",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "release-evidence-analyst"
+      ],
+      "goal": "Report one bounded release-evidence-analyst result.",
+      "input": [
+        "role result"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "bounded result record",
+      "stopCondition": "result boundary is unknown",
+      "evidenceBoundary": "does not verify or accept the result",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "resolve.authority",
+      "family": "locate-research",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "investigator"
+      ],
+      "goal": "Complete resolve.authority for one bounded catalog decision.",
+      "input": [
+        "bounded catalog decision"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "catalog decision record",
+      "stopCondition": "consumer or evidence is missing",
+      "evidenceBoundary": "does not grant runtime authority",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "select.role",
+      "family": "analyse-decide",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "workflow-analyst"
+      ],
+      "goal": "Complete select.role for one bounded catalog decision.",
+      "input": [
+        "bounded catalog decision"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "catalog decision record",
+      "stopCondition": "consumer or evidence is missing",
+      "evidenceBoundary": "does not grant runtime authority",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "select.capability",
+      "family": "locate-research",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "investigator"
+      ],
+      "goal": "Complete select.capability for one bounded catalog decision.",
+      "input": [
+        "bounded catalog decision"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "catalog decision record",
+      "stopCondition": "consumer or evidence is missing",
+      "evidenceBoundary": "does not grant runtime authority",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "issue.task-packet",
+      "family": "implement-document",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "workflow-implementer"
+      ],
+      "goal": "Complete issue.task-packet for one bounded catalog decision.",
+      "input": [
+        "bounded catalog decision"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "catalog decision record",
+      "stopCondition": "consumer or evidence is missing",
+      "evidenceBoundary": "does not grant runtime authority",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "evaluate.evidence",
+      "family": "validate-accept",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "validation-runner"
+      ],
+      "goal": "Complete evaluate.evidence for one bounded catalog decision.",
+      "input": [
+        "bounded catalog decision"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "catalog decision record",
+      "stopCondition": "consumer or evidence is missing",
+      "evidenceBoundary": "does not grant runtime authority",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "promote.role",
+      "family": "analyse-decide",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "workflow-analyst"
+      ],
+      "goal": "Complete promote.role for one bounded catalog decision.",
+      "input": [
+        "bounded catalog decision"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "catalog decision record",
+      "stopCondition": "consumer or evidence is missing",
+      "evidenceBoundary": "does not grant runtime authority",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    },
+    {
+      "id": "retire.catalog-entry",
+      "family": "analyse-decide",
+      "status": "candidate",
+      "candidateRoleIds": [
+        "workflow-analyst"
+      ],
+      "goal": "Complete retire.catalog-entry for one bounded catalog decision.",
+      "input": [
+        "bounded catalog decision"
+      ],
+      "must": [
+        "Keep one bounded responsibility and return an explicit evidence boundary."
+      ],
+      "mustNot": [
+        "Do not dispatch, grant a capability, or perform an unapproved external write."
+      ],
+      "deliverable": "catalog decision record",
+      "stopCondition": "consumer or evidence is missing",
+      "evidenceBoundary": "does not grant runtime authority",
+      "requiredCapabilityRouteIds": [],
+      "activationCriteria": [
+        "real consumer and executor mapping exist"
+      ]
+    }
+  ]
+}
+

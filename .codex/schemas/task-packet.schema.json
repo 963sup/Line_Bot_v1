@@ -8,6 +8,7 @@
   "properties": {
     "version": { "const": 1 },
     "goal": { "type": "string", "minLength": 1 },
+    "atomicId": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*\\.[a-z0-9]+(?:-[a-z0-9]+)*$" },
     "scope": {
       "type": "object",
       "additionalProperties": false,

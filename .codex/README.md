@@ -10,6 +10,7 @@
 | --- | --- | --- | --- |
 | [ORCHESTRATION.md](ORCHESTRATION.md) | L2 | Primary orchestration | Routes governance input to the minimum role, capability, workflow, and evidence loop. |
 | [agents/](agents/README.md) | L3 | Specialist roles | Defines atomic TOML responsibilities, profile naming, and role admission. |
+| [catalog/](catalog/README.md) | L3/L5 | Role taxonomy and Atomic dispatch | Keeps candidate work non-dispatchable; enabled Atomics derive one executor profile. |
 | [CAPABILITIES.md](CAPABILITIES.md) | L4 | Capability routing | Routes only actually consumed commands, MCPs, and Skills to roles and evidence boundaries. |
 | [rules/](rules/) | L4 | Command-safety policy | Constrains shell command patterns; it does not authorize product or provider writes. |
 | [scripts/](scripts/) | L4 | Codex support scripts | Supports runtime configuration only. |
@@ -30,7 +31,8 @@ Atomic handoff work reads `HANDOFF_PROTOCOL.md`; acceptance routing reads
 `rules/AGENTS.md` and the affected `.rules` file. A Serena launcher change
 reads `scripts/AGENTS.md` and its launcher. README files provide routing and
 rationale only; `AGENTS.md` contains the constraints that must apply during
-work in that subtree.
+work in that subtree. Candidate classification reads `catalog/AGENTS.md` and
+the exact catalog JSON; it does not make a candidate role dispatchable.
 
 ## Six-layer agent architecture
 

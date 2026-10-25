@@ -9,7 +9,8 @@ Follow root AGENTS.md and the nearest local AGENTS.md for scoped repository cons
 At the start of repository work, follow docs/reference/engineering/development-workflow.md for the change loop and proactive tool selection.
 Read .codex/agents/AGENTS.md and apply its autonomous delegation policy when independent work or specialist evidence improves the result; current task and tool restrictions take precedence.
 For a multi-layer task, use `.codex/SYSTEM_ARCHITECTURE.md` to select the minimum layer path, then load only its matching contract: `ORCHESTRATION.md` for L2, `AGENT_ROLES.md` for L3, `CAPABILITIES.md` for L4, `WORKFLOWS.md` and `HANDOFF_PROTOCOL.md` for L5, or `VALIDATION.md` for L6. Use `.codex/schemas/` only when a packet, handoff, route, or evidence plan needs a machine-readable artifact.
-Resolve Owner, contract and consumer scope through `pnpm semantic plan` and, when selectors are needed, `pnpm semantic context` before delegating a cross-owner task. Use repository-mapper only when those results remain ambiguous, incomplete or require bounded stateful code exploration; do not make mapping a ceremonial agent handoff.
+For every cross-role L5 handoff, choose one `enabled` entry from `.codex/catalog/atomic-catalog.json`, derive its sole `executorRoleId`, record its `atomicId` in the packet and result, and never dispatch a `candidate` entry. Direct single-owner work omits `atomicId`.
+Resolve Owner, contract and consumer scope through `pnpm semantic plan` and, when selectors are needed, `pnpm semantic context` before delegating a cross-owner task. Use investigator only when those results remain ambiguous, incomplete or require bounded stateful code exploration; do not make investigation a ceremonial handoff.
 When a task needs a command, MCP, or Skill beyond direct owner/source reading, read `.codex/CAPABILITIES.md` before selecting it. Select its matching route ID rather than choosing from installed-tool inventory; satisfy the route preflight before invocation; and return the route ID plus Declared/Eligible/Available/Executed/Proven state in the handoff. Do not load the capability index for a known single-owner task that needs no L4 capability.
 """
 
@@ -19,9 +20,9 @@ enabled = true
 # Role profiles choose GPT-5.6 Luna or Terra by their bounded responsibility.
 default_subagent_model = "gpt-5.6-luna"
 default_subagent_reasoning_effort = "medium"
-# Excludes the primary agent: 1 primary + up to 5 subagents.
+# Excludes the primary agent: 1 primary + up to 4 subagents.
 # Ceiling, not target team size; only parallelize independent, bounded work.
-max_concurrent_threads_per_session = 5
+max_concurrent_threads_per_session = 4
 
 [mcp_servers.next-devtools]
 # Shared by the parent and its subagents; per-tool overrides take precedence.

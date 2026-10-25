@@ -52,6 +52,205 @@ const repositoryTextPatterns = [
   "supabase/**/*.{md,sql,toml}",
 ];
 const table = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
+const catalogFamilies = new Set([
+  "locate-research",
+  "analyse-decide",
+  "design-plan",
+  "implement-document",
+  "review",
+  "runtime-diagnose",
+  "validate-accept",
+]);
+const catalogStatuses = new Set(["candidate", "enabled", "retired"]);
+const roleCatalogFields = [
+  "id",
+  "family",
+  "status",
+  "mission",
+  "input",
+  "deliverable",
+  "stopCondition",
+  "evidenceBoundary",
+  "activationCriteria",
+];
+const atomicCatalogFields = [
+  "id",
+  "family",
+  "status",
+  "goal",
+  "input",
+  "must",
+  "mustNot",
+  "deliverable",
+  "stopCondition",
+  "evidenceBoundary",
+  "requiredCapabilityRouteIds",
+  "activationCriteria",
+];
+const roleIdPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const atomicIdPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*\.[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+function validateCandidateCatalog(root, agents, errors) {
+  const catalog = ".codex/catalog";
+  const rolePath = resolve(root, catalog, "role-catalog.json");
+  const atomicPath = resolve(root, catalog, "atomic-catalog.json");
+  const schemas = [
+    ".codex/schemas/role-catalog.schema.json",
+    ".codex/schemas/atomic-catalog.schema.json",
+  ];
+  const present = [rolePath, atomicPath, ...schemas.map((path) => resolve(root, path))].filter(
+    existsSync,
+  );
+  if (!present.length) return;
+  if (present.length !== 4) {
+    errors.push(".codex/catalog: role/atomic catalogs and their schemas must appear together");
+    return;
+  }
+  let roles;
+  let atomics;
+  try {
+    const roleCatalog = JSON.parse(read(rolePath));
+    const atomicCatalog = JSON.parse(read(atomicPath));
+    ({ roles } = roleCatalog);
+    ({ atomics } = atomicCatalog);
+    if (roleCatalog.version !== 2 || atomicCatalog.version !== 2)
+      throw new Error("catalog version must be 2");
+    for (const path of schemas) {
+      const schema = JSON.parse(read(resolve(root, path)));
+      if (typeof schema.$id !== "string" || schema.type !== "object")
+        throw new Error("invalid schema");
+    }
+    for (const path of [
+      ".codex/schemas/task-packet.schema.json",
+      ".codex/schemas/handoff-result.schema.json",
+    ]) {
+      const schema = JSON.parse(read(resolve(root, path)));
+      if (schema.properties?.atomicId?.pattern !== atomicIdPattern.source)
+        throw new Error("missing atomicId packet contract");
+    }
+    const config = parse(read(resolve(root, ".codex/config.toml")));
+    if (
+      typeof config.developer_instructions !== "string" ||
+      !config.developer_instructions.includes(".codex/catalog/atomic-catalog.json") ||
+      !config.developer_instructions.includes("atomicId")
+    )
+      throw new Error("missing catalog handoff instruction");
+    const roleScope = read(resolve(root, ".codex/agents/AGENTS.md"));
+    if (!roleScope.includes("atomicId") || !roleScope.includes("../catalog/atomic-catalog.json"))
+      throw new Error("missing role catalog handoff instruction");
+  } catch {
+    errors.push(".codex/catalog: catalogs, schemas, and atomic handoff instructions must be valid");
+    return;
+  }
+  if (!Array.isArray(roles) || roles.length < 58)
+    errors.push(".codex/catalog/role-catalog.json: at least 58 roles are required");
+  if (!Array.isArray(atomics) || atomics.length < 181)
+    errors.push(".codex/catalog/atomic-catalog.json: at least 181 atomics are required");
+  if (!Array.isArray(roles) || !Array.isArray(atomics)) return;
+  const roleIds = new Map();
+  for (const role of roles) {
+    if (!table(role) || roleCatalogFields.some((field) => !(field in role))) {
+      errors.push(".codex/catalog/role-catalog.json: every role needs all required fields");
+      continue;
+    }
+    if (!roleIdPattern.test(role.id))
+      errors.push(`.codex/catalog/role-catalog.json: invalid role id ${role.id}`);
+    if (roleIds.has(role.id))
+      errors.push(`.codex/catalog/role-catalog.json: duplicate role id ${role.id}`);
+    roleIds.set(role.id, role);
+    if (!catalogFamilies.has(role.family))
+      errors.push(`.codex/catalog/role-catalog.json: invalid family for ${role.id}`);
+    if (!catalogStatuses.has(role.status))
+      errors.push(`.codex/catalog/role-catalog.json: invalid status for ${role.id}`);
+    for (const field of ["mission", "deliverable", "stopCondition", "evidenceBoundary"]) {
+      if (typeof role[field] !== "string" || !role[field].trim())
+        errors.push(`.codex/catalog/role-catalog.json: ${role.id} needs ${field}`);
+    }
+    for (const field of ["input", "activationCriteria"]) {
+      if (!Array.isArray(role[field]) || !role[field].length)
+        errors.push(`.codex/catalog/role-catalog.json: ${role.id} needs ${field}`);
+    }
+    if (role.status === "enabled") {
+      if (
+        !agents.has(role.id) ||
+        typeof role.profilePath !== "string" ||
+        !existsSync(resolve(root, role.profilePath))
+      )
+        errors.push(`.codex/catalog/role-catalog.json: enabled role ${role.id} lacks a profile`);
+    } else if (agents.has(role.id) || Object.hasOwn(role, "profilePath")) {
+      errors.push(
+        `.codex/catalog/role-catalog.json: non-enabled role ${role.id} cannot have a profile`,
+      );
+    }
+  }
+  for (const agent of agents) {
+    if (roleIds.get(agent)?.status !== "enabled")
+      errors.push(`.codex/catalog/role-catalog.json: profile ${agent} needs one enabled role`);
+  }
+  const atomicIds = new Set();
+  const enabledExecutors = new Set();
+  for (const atomic of atomics) {
+    if (!table(atomic) || atomicCatalogFields.some((field) => !(field in atomic))) {
+      errors.push(".codex/catalog/atomic-catalog.json: every atomic needs all required fields");
+      continue;
+    }
+    if (!atomicIdPattern.test(atomic.id))
+      errors.push(`.codex/catalog/atomic-catalog.json: invalid atomic id ${atomic.id}`);
+    if (atomicIds.has(atomic.id))
+      errors.push(`.codex/catalog/atomic-catalog.json: duplicate atomic id ${atomic.id}`);
+    atomicIds.add(atomic.id);
+    if (!catalogFamilies.has(atomic.family))
+      errors.push(`.codex/catalog/atomic-catalog.json: invalid family for ${atomic.id}`);
+    if (!catalogStatuses.has(atomic.status))
+      errors.push(`.codex/catalog/atomic-catalog.json: invalid status for ${atomic.id}`);
+    for (const field of [
+      "input",
+      "must",
+      "mustNot",
+      "requiredCapabilityRouteIds",
+      "activationCriteria",
+    ]) {
+      if (
+        !Array.isArray(atomic[field]) ||
+        (!atomic[field].length && field !== "requiredCapabilityRouteIds")
+      )
+        errors.push(`.codex/catalog/atomic-catalog.json: ${atomic.id} needs ${field}`);
+    }
+    if (atomic.status === "enabled") {
+      if (typeof atomic.executorRoleId !== "string" || Object.hasOwn(atomic, "candidateRoleIds")) {
+        errors.push(
+          `.codex/catalog/atomic-catalog.json: enabled ${atomic.id} needs exactly one executorRoleId`,
+        );
+        continue;
+      }
+      const executor = roleIds.get(atomic.executorRoleId);
+      if (!executor || executor.status !== "enabled" || !agents.has(atomic.executorRoleId))
+        errors.push(
+          `.codex/catalog/atomic-catalog.json: enabled ${atomic.id} needs an enabled executor profile`,
+        );
+      else enabledExecutors.add(atomic.executorRoleId);
+    } else {
+      if (Object.hasOwn(atomic, "executorRoleId"))
+        errors.push(
+          `.codex/catalog/atomic-catalog.json: ${atomic.status} ${atomic.id} cannot dispatch`,
+        );
+      if (!Array.isArray(atomic.candidateRoleIds) || !atomic.candidateRoleIds.length)
+        errors.push(`.codex/catalog/atomic-catalog.json: ${atomic.id} needs candidateRoleIds`);
+      for (const roleId of atomic.candidateRoleIds ?? []) {
+        if (!roleIds.has(roleId))
+          errors.push(
+            `.codex/catalog/atomic-catalog.json: ${atomic.id} references missing ${roleId}`,
+          );
+      }
+    }
+  }
+  for (const agent of agents) {
+    if (!enabledExecutors.has(agent))
+      errors.push(
+        `.codex/catalog/atomic-catalog.json: enabled profile ${agent} needs an enabled atomic`,
+      );
+  }
+}
 const codexInstructionReferences = [
   { label: "root AGENTS.md", path: "AGENTS.md" },
   {
@@ -1290,23 +1489,9 @@ export function validate(root) {
         if (agents.has(data.name)) throw new Error("duplicate agent name");
         agents.add(data.name);
         if (
-          [
-            "repository-mapper",
-            "root-cause-analyst",
-            "architecture-analyst",
-            "technical-researcher",
-            "diff-reviewer",
-            "authorization-reviewer",
-            "database-boundary-reviewer",
-            "supabase-postgresql-designer",
-            "schema-transition-planner",
-            "github-actions-security-reviewer",
-            "dependency-supply-chain-reviewer",
-            "accessibility-reviewer",
-            "evidence-verifier",
-            "architecture-decider",
-            "acceptance-decider",
-          ].includes(data.name) &&
+          ["investigator", "analyst", "decider", "reviewer", "runtime-diagnostician"].includes(
+            data.name,
+          ) &&
           data.sandbox_mode !== "read-only"
         )
           throw new Error("review/navigation role must remain read-only");
@@ -1319,6 +1504,7 @@ export function validate(root) {
       errors.push(`${relative(root, file)}: ${error.message}`);
     }
   }
+  validateCandidateCatalog(root, agents, errors);
   const copilotReviewers = [
     "architecture-reviewer.agent.md",
     "database-reviewer.agent.md",

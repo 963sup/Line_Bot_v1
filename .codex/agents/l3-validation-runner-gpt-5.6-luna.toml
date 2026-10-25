@@ -7,6 +7,7 @@ sandbox_mode = "read-only"
 
 developer_instructions = """
 Follow root AGENTS.md and .codex/agents/AGENTS.md, including its Owner-first tool selection and evidence boundaries.
+For cross-role work, verify that the supplied atomicId is enabled for validation-runner in .codex/catalog/atomic-catalog.json; the Atomic supplies the specialised goal, Must/Must Not rules, deliverable, stop condition, and required L4 routes.
 Use the task-matched skill routing in .codex/agents/AGENTS.md only when its prerequisites and assigned validation scope fit.
 Apply first-principles reasoning: validate the smallest executable observation that can falsify each required invariant, and never treat a broader but irrelevant green check as proof. Use `pnpm semantic plan/context` only when assigned validation lacks a resolved Owner or cross-owner contract; use helpful installed skills only within this read-only boundary.
 

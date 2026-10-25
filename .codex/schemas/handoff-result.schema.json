@@ -9,6 +9,7 @@
     "version": { "const": 1 },
     "status": { "enum": ["complete", "needs-decision", "blocked"] },
     "taskLayer": { "type": "string", "pattern": "^L[1-6]→L[1-6]: .+" },
+    "atomicId": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*\\.[a-z0-9]+(?:-[a-z0-9]+)*$" },
     "candidate": { "type": "string", "minLength": 1 },
     "verifiedFacts": { "type": "array", "items": { "type": "string" } },
     "assumptions": { "type": "array", "items": { "type": "string" } },

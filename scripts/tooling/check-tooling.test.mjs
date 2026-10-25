@@ -1458,18 +1458,77 @@ test("external skills are outside repository checks; adjacent governance remains
   write(".agents/skills-local/README.md", "# Repository content\n");
   assert.deepEqual(validate(root), []);
 });
-for (const role of [
-  "diff-reviewer",
-  "authorization-reviewer",
-  "database-boundary-reviewer",
-  "supabase-postgresql-designer",
-  "schema-transition-planner",
-  "github-actions-security-reviewer",
-  "dependency-supply-chain-reviewer",
-  "accessibility-reviewer",
-  "architecture-decider",
-  "acceptance-decider",
-]) {
+function writeCandidateCatalog(
+  write,
+  { enabledRole = false, invalidAtomicReference = false, candidateDispatch = false } = {},
+) {
+  write(
+    ".codex/config.toml",
+    `developer_instructions = ${JSON.stringify(
+      `${rootDeveloperInstructions}\nFor every cross-role handoff, select \`.codex/catalog/atomic-catalog.json\` and record \`atomicId\`.`,
+    )}\n`,
+  );
+  write(
+    ".codex/agents/AGENTS.md",
+    `${roleGuidance}\nUse ../catalog/atomic-catalog.json and atomicId for handoffs.\n`,
+  );
+  const roles = Array.from({ length: 58 }, (_, index) => ({
+    id: `candidate-role-${index}`,
+    family: "review",
+    status: index === 0 && enabledRole ? "enabled" : "candidate",
+    mission: "Review one bounded candidate.",
+    input: ["bounded input"],
+    deliverable: "bounded finding",
+    stopCondition: "boundary is known",
+    evidenceBoundary: "does not change source",
+    activationCriteria: ["real consumer exists"],
+    ...(index === 0 && enabledRole
+      ? { profilePath: ".codex/agents/l3-candidate-role-0-gpt-5.6-luna.toml" }
+      : {}),
+  }));
+  const atomics = Array.from({ length: 181 }, (_, index) => ({
+    id: `review.candidate-${index}`,
+    family: "review",
+    status: "candidate",
+    candidateRoleIds: [invalidAtomicReference && index === 0 ? "missing-role" : "candidate-role-0"],
+    goal: "Review one bounded candidate.",
+    input: ["bounded input"],
+    must: ["preserve the boundary"],
+    mustNot: ["do not dispatch"],
+    deliverable: "bounded finding",
+    stopCondition: "boundary is known",
+    evidenceBoundary: "does not change source",
+    requiredCapabilityRouteIds: [],
+    activationCriteria: ["real consumer exists"],
+    ...(candidateDispatch && index === 0 ? { executorRoleId: "candidate-role-0" } : {}),
+  }));
+  write(".codex/catalog/role-catalog.json", JSON.stringify({ version: 2, roles }));
+  write(".codex/catalog/atomic-catalog.json", JSON.stringify({ version: 2, atomics }));
+  for (const name of ["role-catalog", "atomic-catalog"])
+    write(`.codex/schemas/${name}.schema.json`, JSON.stringify({ $id: name, type: "object" }));
+  for (const name of ["task-packet", "handoff-result"])
+    write(
+      `.codex/schemas/${name}.schema.json`,
+      JSON.stringify({
+        type: "object",
+        properties: {
+          atomicId: { pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*\\.[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        },
+      }),
+    );
+}
+test("candidate catalogs keep profiles and enabled atomics explicit", (t) => {
+  const { root, write } = fixture(t);
+  writeCandidateCatalog(write);
+  assert.deepEqual(validate(root), []);
+  writeCandidateCatalog(write, { enabledRole: true });
+  rejects(root, "enabled role candidate-role-0 lacks a profile");
+  writeCandidateCatalog(write, { invalidAtomicReference: true });
+  rejects(root, "references missing missing-role");
+  writeCandidateCatalog(write, { candidateDispatch: true });
+  rejects(root, "candidate review.candidate-0 cannot dispatch");
+});
+for (const role of ["investigator", "analyst", "decider", "reviewer", "runtime-diagnostician"]) {
   test(`${role} cannot gain write access`, (t) => {
     const { root, write } = fixture(t);
     write(

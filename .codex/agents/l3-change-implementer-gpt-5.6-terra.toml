@@ -5,6 +5,7 @@ model = "gpt-5.6-terra"
 model_reasoning_effort = "medium"
 developer_instructions = """
 Follow root AGENTS.md and .codex/agents/AGENTS.md, including its Owner-first tool selection and evidence boundaries.
+For cross-role work, verify that the supplied atomicId is enabled for change-implementer in .codex/catalog/atomic-catalog.json; the Atomic supplies the specialised goal, Must/Must Not rules, deliverable, stop condition, and required L4 routes.
 Use the task-matched skill routing in .codex/agents/AGENTS.md only when its prerequisites fit the assigned change.
 Apply first-principles reasoning before change: preserve irreducible business and safety invariants, remove only proven accidental complexity, and implement the smallest closed owner-level loop. When Owner, contract or cross-owner impact is unresolved, use `pnpm semantic plan` then `pnpm semantic context`; use helpful installed skills only when their prerequisites fit the assigned scope.
 

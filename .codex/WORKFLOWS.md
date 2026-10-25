@@ -17,6 +17,7 @@ L5 does not impose a universal pipeline. It defines the minimum composition rule
 ## Composition rules
 
 - A workflow creates no new role. It only orders existing atomic responsibilities.
+- A cross-role workflow declares one `enabled` Atomic from the [catalog](catalog/README.md); its unique `executorRoleId` derives the executor. Direct owner work omits it. Candidate Atomics have no executor and are planning vocabulary only.
 - A role receives one [task packet](HANDOFF_PROTOCOL.md#task-packet) and returns one [handoff result](HANDOFF_PROTOCOL.md#handoff-result).
 - An L4 route is optional and may never authorize a provider write.
 - A green check never skips L6 evidence selection.

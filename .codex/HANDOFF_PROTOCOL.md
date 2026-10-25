@@ -9,6 +9,7 @@ Use this protocol whenever work moves between Primary, a role, and validation. I
 | Field | Required meaning |
 | --- | --- |
 | `goal` | One observable question or result |
+| `atomicId` | Optional enabled catalog Atomic for a cross-role task; it derives the unique executor and records one responsibility, but grants no capability or authority |
 | `scope` | Allowed/excluded paths, Owners, and provider boundaries |
 | `inputs` | Candidate revision/WIP and already verified evidence |
 | `invariants` | Contracts that must not be weakened |
@@ -24,6 +25,7 @@ The machine-readable form is [task-packet.schema.json](schemas/task-packet.schem
 | --- | --- |
 | `status` | `complete`, `needs-decision`, or `blocked` |
 | `taskLayer` | Bounded goal plus producing layer |
+| `atomicId` | Optional enabled Atomic echoed from the task packet; its executor is derived from the catalog, never independently chosen |
 | `candidate` | Revision and relevant working-tree state |
 | `verifiedFacts` / `assumptions` | Facts separated from unverified premises |
 | `route` | L4 route ID + highest reached capability state, or `none` |
@@ -37,6 +39,7 @@ The machine-readable form is [handoff-result.schema.json](schemas/handoff-result
 ## Rules
 
 - `blocked` requires a real missing prerequisite, not incomplete effort.
+- `atomicId` is omitted for direct owner work. When present, it must name an `enabled` entry in the [catalog](catalog/README.md), whose sole `executorRoleId` selects the profile. A `candidate` Atomic has no executor and cannot be dispatched.
 - A role reports a gap rather than changes another role's responsibility.
 - High-output execution additionally returns command, exit code, duration, and ignored artifact path; full logs are not handoff payload.
 - The protocol never grants an external write, changes a contract, or accepts a product outcome.

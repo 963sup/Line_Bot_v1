@@ -20,7 +20,7 @@ automation belongs under repository `scripts/`, not here.
 
 `config.toml` registers `start-serena.mjs`. The launcher resolves the current checkout and its local Serena installation, then starts the MCP entry point. When Serena is absent, it fails with a bounded diagnostic rather than downloading or configuring a global tool.
 
-Serena is supplementary symbol exploration. Primary first uses `pnpm semantic plan/context` for owner and contract resolution; `repository-mapper` may use Serena only when that resolution remains insufficient. See [agents/README.md](../agents/README.md) for the role boundary.
+Serena is supplementary symbol exploration. Primary first uses `pnpm semantic plan/context` for owner and contract resolution; `investigator` may use Serena only when that resolution remains insufficient. See [agents/README.md](../agents/README.md) for the executor boundary.
 
 ## Change and validation
 

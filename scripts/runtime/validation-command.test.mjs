@@ -46,7 +46,10 @@ test("validation command preserves large failed output and returns an 8 KiB, 80-
   const cwd = mkdtempSync(join(tmpdir(), "line-bot-validation-command-failure-"));
   t.after(() => rmSync(cwd, { recursive: true, force: true }));
   const result = executeValidationCommand({
-    command: ["-e", "for(let i=0;i<200;i++) console.error(`line-${i}:` + 'x'.repeat(128)); process.exit(7)"],
+    command: [
+      "-e",
+      "for(let i=0;i<200;i++) console.error(`line-${i}:` + 'x'.repeat(128)); process.exit(7)",
+    ],
     cwd,
     label: "failure",
     pnpmExecPath: fixturePnpm(cwd),
