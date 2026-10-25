@@ -192,3 +192,15 @@ scripts/browser/measure-loading.mjs measurement evidence
 The performance analyst may identify the smallest justified change, but does not
 modify source, run broad validation, or make an acceptance decision. Without
 measurement evidence it stops and returns the gap.
+
+## Authorization review
+
+```text
+permission/isolation diff + owner contract + affected tests
+ → reviewer via authorization-reviewer Atomic
+ → scope and isolation findings
+```
+
+The reviewer traces proof, principal, qualification, scope, policy owner and
+mutation boundary. It does not grant authorization, edit source, or make the
+final acceptance decision.

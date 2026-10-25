@@ -1434,10 +1434,8 @@
     {
       "id": "execute.authorization-reviewer",
       "family": "review",
-      "status": "candidate",
-      "candidateRoleIds": [
-        "reviewer"
-      ],
+      "status": "enabled",
+      "executorRoleId": "reviewer",
       "goal": "Review one authorization boundary diff.",
       "input": [
         "bounded authorization diff"
@@ -1459,10 +1457,8 @@
     {
       "id": "prepare.authorization-reviewer",
       "family": "review",
-      "status": "candidate",
-      "candidateRoleIds": [
-        "reviewer"
-      ],
+      "status": "enabled",
+      "executorRoleId": "reviewer",
       "goal": "Prepare one bounded authorization-reviewer task.",
       "input": [
         "approved scope"
@@ -1484,10 +1480,8 @@
     {
       "id": "report.authorization-reviewer",
       "family": "review",
-      "status": "candidate",
-      "candidateRoleIds": [
-        "reviewer"
-      ],
+      "status": "enabled",
+      "executorRoleId": "reviewer",
       "goal": "Report one bounded authorization-reviewer result.",
       "input": [
         "role result"

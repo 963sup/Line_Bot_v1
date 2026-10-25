@@ -8,8 +8,8 @@
 
 | Status | Count | Meaning |
 | --- | ---: | --- |
-| enabled | 52 | Has an enabled executor, packet/handoff contract, capability route when needed, and validation boundary |
-| candidate | 151 | Taxonomy and contract draft only; cannot be dispatched |
+| enabled | 55 | Has an enabled executor, packet/handoff contract, capability route when needed, and validation boundary |
+| candidate | 148 | Taxonomy and contract draft only; cannot be dispatched |
 | retired roles | 22 | Historical specialist labels absorbed by the seven executor families |
 
 The candidate catalog is intentionally broader than the current runtime. A
@@ -68,6 +68,13 @@ produces bounded loading measurements consumed by the browser suite, while the
 engineering code-quality contract requires measured evidence before performance
 analysis. It reuses `analyst`; it does not optimize source, run validation, or
 accept a release.
+
+PR 400 authorization and isolation changes are a real consumer for the
+`prepare.authorization-reviewer` → `execute.authorization-reviewer` →
+`report.authorization-reviewer` triplet. The review traces the Identity/Access
+permission boundary through `PostgresPermissionStore`, its owner contract, and
+the affected tests. It reuses `reviewer`; it does not grant authorization,
+modify source, or make the final acceptance decision.
 
 ## Candidate families and executor readiness
 
