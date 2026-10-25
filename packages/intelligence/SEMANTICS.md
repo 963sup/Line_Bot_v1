@@ -23,7 +23,9 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | Term | Concept ID | Kind | Lifecycle | Definition |
 | --- | --- | --- | --- | --- |
 | IntelligenceDocumentIntakeAttempt | intelligence-document-intake-attempt | authoritative | current | Durable technical intake-attempt state for one source-qualified, target-intent fingerprint. It records only source identity, target intent, lifecycle state and target receipt reference; it never stores the extracted candidate or becomes Contract business truth. |
+| IntelligenceLegacyProcessingHistory | intelligence-legacy-processing-history | historical-evidence | current-data-only | Immutable copies of pre-cutover File processing runs, revisions and request receipts. They are read-only Intelligence evidence in a separate legacy request namespace and never participate in current processing replay. |
 | IntelligenceProcessingCommandReceipt | intelligence-processing-command-receipt | authoritative | current | Immutable Intelligence actor/request fingerprint and exact processing revision receipt; it has no File upload request namespace. |
+| IntelligenceProcessingHistoryCutover | intelligence-processing-history-cutover | historical-evidence | current-data-only | Immutable operator marker proving one File-to-Intelligence processing-history copy by exact release revision, counts and canonical SHA-256 readback. |
 | IntelligenceProcessingRevision | intelligence-processing-revision | authoritative | current | Immutable Intelligence-owned processing lifecycle revision containing provider identity, untrusted raw output, optional explicitly saved output, bounded edits and failure evidence. |
 | IntelligenceProcessingRun | intelligence-processing-run | authoritative | current | Explicit document-understanding operation against one immutable File revision; its head selects one fenced Intelligence processing revision. |
 

@@ -5883,12 +5883,14 @@
         "scope": "Execute and persist an explicitly requested Intelligence processing lifecycle against a pinned File revision, retaining untrusted candidate and explicit save evidence.",
         "sourcePaths": [
           "packages/intelligence/src/domain/processing.ts",
+          "packages/intelligence/src/domain/error.ts",
           "packages/intelligence/src/application/use-cases/processing.ts",
           "packages/intelligence/src/adapters/outbound/persistence/processing.ts",
           "packages/intelligence/src/adapters/outbound/processing/plain-text.ts"
         ],
         "publicExports": [
           "./application/use-cases/processing",
+          "./domain/error",
           "./composition/bootstrap/processing",
           "./composition/bootstrap/processors",
           "./contracts/output/processing"
