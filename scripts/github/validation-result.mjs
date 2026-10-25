@@ -2,7 +2,13 @@ import { pathToFileURL } from "node:url";
 
 export function requireValidationSuccess(result) {
   if (result !== "success") {
-    throw new Error(`Validation did not succeed: ${result || "missing result"}`);
+    const normalized = result || "missing result";
+    if (normalized === "cancelled") {
+      throw new Error(
+        "Validation was cancelled before every group completed; inspect the latest run because a newer revision may have superseded this run.",
+      );
+    }
+    throw new Error(`Validation did not succeed: ${normalized}`);
   }
 }
 
