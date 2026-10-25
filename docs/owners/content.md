@@ -9,16 +9,13 @@ identity. Existing `pcs` quantities remain integers; other units accept exact de
 three places. Contract agreed and Execution actual quantities reuse the pinned Content measure
 without silently converting units.
 
-A user may explicitly import one retained observation from a File-owned SAVED ProcessingRun into
-an existing Content plan. The user must choose an existing legal SubObject/Work parent, supply the
-new Work/Task meaning, measure and quantity, and confirm that protected File evidence may become
-Content-readable plan data. Content requalifies the exact File processing revision and observation
-under current File authorization **inside the same Content transaction** before appending the node,
-head revision and receipt. This is not automatic extraction, a Contract or WBS write. The immutable
-Content revision records the File ID/revisions, SHA-256 and observation mapping only as a private
-audit pin; general Content DTOs do not disclose private File source IDs. The File owner retains
-the original observation and its uncertainty/source locator. Existing manual plans and historical
-revisions remain unchanged.
+Content imports one complete accepted Contract revision into an existing Content plan. The fixed
+`purchase-order-content-v1` expansion reads that exact authorized revision inside the same Content
+transaction, preserves complete Contract line coverage and records the Contract revision/source-row
+evidence in its immutable Content revision. The user confirms the whole-document disclosure; they
+do not map rows individually or select a File processing observation. Content may add engineering
+planning facts but never rewrites Contract commercial facts. Historical `import-file` revisions
+remain readable as evidence only and cannot be newly written.
 
 One Repository plan head selects a complete immutable document revision. Replacing the document
 validates the entire hierarchy under its observed version and appends a revision. Historical plans

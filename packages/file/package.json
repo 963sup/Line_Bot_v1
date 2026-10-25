@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./contracts/output/references": {
+      "types": "./dist/contracts/output/references.d.ts",
+      "default": "./dist/contracts/output/references.js"
+    },
     "./application/use-cases/files": {
       "types": "./dist/application/use-cases/files.d.ts",
       "default": "./dist/application/use-cases/files.js"
@@ -16,10 +20,6 @@
       "types": "./dist/composition/bootstrap/files.d.ts",
       "default": "./dist/composition/bootstrap/files.js"
     },
-    "./composition/bootstrap/processors": {
-      "types": "./dist/composition/bootstrap/processors.d.ts",
-      "default": "./dist/composition/bootstrap/processors.js"
-    },
     "./domain/error": {
       "types": "./dist/domain/error.d.ts",
       "default": "./dist/domain/error.js"
@@ -27,14 +27,6 @@
     "./domain/file": {
       "types": "./dist/domain/file.d.ts",
       "default": "./dist/domain/file.js"
-    },
-    "./contracts/output/saved-results": {
-      "types": "./dist/contracts/output/saved-results.d.ts",
-      "default": "./dist/contracts/output/saved-results.js"
-    },
-    "./contracts/output/processor": {
-      "types": "./dist/contracts/output/processor.d.ts",
-      "default": "./dist/contracts/output/processor.js"
     }
   },
   "files": [

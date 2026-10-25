@@ -6,17 +6,19 @@ import type {
   ProjectWbsHistory,
   ProjectWbsView,
 } from "@line_bot_v1/wbs/contracts/dto/project-content";
-import type { WbsEdit, WbsNode } from "@line_bot_v1/wbs/domain/document";
+import type { WbsContentImportCommand, WbsEdit, WbsNode } from "@line_bot_v1/wbs/domain/document";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
-import ProjectWbsContractImport from "./project-wbs-contract-import";
 import ProjectWbsGovernancePanel from "./project-wbs-governance-panel";
 import ProjectWbsMetrics from "./project-wbs-metrics";
 import styles from "./project-wbs-panel.module.css";
 import { projectWbsHistory, projectWbsReceipt, projectWbsView } from "./project-wbs-response";
 
 type Pending = { actor: string; command: ProjectWbsCommand };
+type NewWbsCommand =
+  | WbsEdit
+  | Omit<WbsContentImportCommand, "projectId" | "requestId" | "expectedVersion">;
 export default function ProjectWbsPanel({
   liffId,
   projectId,
@@ -30,6 +32,9 @@ export default function ProjectWbsPanel({
   const [history, setHistory] = useState<ProjectWbsHistory | null>(null);
   const [historical, setHistorical] = useState(false);
   const [moveParent, setMoveParent] = useState("");
+  const [contentRepositoryId, setContentRepositoryId] = useState("");
+  const [contentRevisionId, setContentRevisionId] = useState("");
+  const [contentDisclosureConfirmed, setContentDisclosureConfirmed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -151,7 +156,7 @@ export default function ProjectWbsPanel({
     }
   }, [endpoint, liffId, storageKey]);
 
-  async function execute(edit?: WbsEdit) {
+  async function execute(edit?: NewWbsCommand) {
     const source = current.current;
     if (!source || locked.current || historical) return;
     locked.current = true;
@@ -196,6 +201,9 @@ export default function ProjectWbsPanel({
       remember(null);
       setDraft(null);
       setHistory(null);
+      setContentRepositoryId("");
+      setContentRevisionId("");
+      setContentDisclosureConfirmed(false);
       setNotice("草稿已儲存；正式範圍須經提案審查後發布。");
       await load();
     } catch (cause) {
@@ -383,9 +391,52 @@ export default function ProjectWbsPanel({
       {view && !view.revision && (
         <div className={styles.panel}>
           <h2>尚未建立 WBS</h2>
-          <p>建立工作分解結構，定義交付成果與驗收要求。</p>
+          <p>WBS 可由完整 Content 版本一次展開，或從空白結構開始建立。</p>
           {editable && (
-            <button onClick={() => void execute({ action: "initialize" })}>建立 WBS</button>
+            <>
+              <form
+                className={styles.form}
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void execute({
+                    action: "import-content-document",
+                    repositoryId: contentRepositoryId,
+                    contentRevisionId,
+                    confirmedDisclosure: true,
+                  });
+                }}
+              >
+                <label>
+                  Content 所屬 Repository ID
+                  <input
+                    required
+                    maxLength={128}
+                    value={contentRepositoryId}
+                    onChange={(event) => setContentRepositoryId(event.target.value)}
+                  />
+                </label>
+                <label>
+                  Content 版本 ID
+                  <input
+                    required
+                    inputMode="text"
+                    value={contentRevisionId}
+                    onChange={(event) => setContentRevisionId(event.target.value)}
+                  />
+                </label>
+                <label>
+                  <input
+                    required
+                    type="checkbox"
+                    checked={contentDisclosureConfirmed}
+                    onChange={(event) => setContentDisclosureConfirmed(event.target.checked)}
+                  />
+                  我確認此 Content 的完整結構可作為此 Project 的 WBS 基線。
+                </label>
+                <button type="submit">從 Content 建立完整 WBS</button>
+              </form>
+              <button onClick={() => void execute({ action: "initialize" })}>建立空白 WBS</button>
+            </>
           )}
         </div>
       )}
@@ -593,17 +644,6 @@ export default function ProjectWbsPanel({
             </section>
           </div>
         </>
-      )}
-      {view?.revision && !historical && view.canEdit && (
-        <ProjectWbsContractImport
-          key={view.actorUserId + ":" + view.project.id}
-          liffId={liffId}
-          projectId={view.project.id}
-          actorUserId={view.actorUserId}
-          nodes={nodes}
-          disabled={!editable}
-          onImport={(edit) => void execute(edit)}
-        />
       )}
       {view?.revision && !historical && (
         <ProjectWbsGovernancePanel

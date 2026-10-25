@@ -4,6 +4,34 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./contracts/output/document-intake": {
+      "types": "./dist/contracts/output/document-intake.d.ts",
+      "default": "./dist/contracts/output/document-intake.js"
+    },
+    "./contracts/output/document-attempts": {
+      "types": "./dist/contracts/output/document-attempts.d.ts",
+      "default": "./dist/contracts/output/document-attempts.js"
+    },
+    "./contracts/output/processing": {
+      "types": "./dist/contracts/output/processing.d.ts",
+      "default": "./dist/contracts/output/processing.js"
+    },
+    "./application/use-cases/processing": {
+      "types": "./dist/application/use-cases/processing.d.ts",
+      "default": "./dist/application/use-cases/processing.js"
+    },
+    "./domain/error": {
+      "types": "./dist/domain/error.d.ts",
+      "default": "./dist/domain/error.js"
+    },
+    "./composition/bootstrap/processing": {
+      "types": "./dist/composition/bootstrap/processing.d.ts",
+      "default": "./dist/composition/bootstrap/processing.js"
+    },
+    "./composition/bootstrap/document-intake": {
+      "types": "./dist/composition/bootstrap/document-intake.d.ts",
+      "default": "./dist/composition/bootstrap/document-intake.js"
+    },
     "./composition/bootstrap/processors": {
       "types": "./dist/composition/bootstrap/processors.d.ts",
       "default": "./dist/composition/bootstrap/processors.js"
@@ -15,11 +43,14 @@
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
-    "test": "node --import tsx --test test/*.test.ts"
+    "test": "node --no-wasm-code-gc --import tsx --test --test-concurrency=2 test/*.test.ts"
   },
   "dependencies": {
     "@google/genai": "catalog:",
-    "@line_bot_v1/file": "workspace:*"
+    "@line_bot_v1/contract": "workspace:*",
+    "@line_bot_v1/file": "workspace:*",
+    "@line_bot_v1/platform": "workspace:*",
+    "@line_bot_v1/repository": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:",

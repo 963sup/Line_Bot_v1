@@ -2,9 +2,11 @@ import type { Database, Sql } from "@line_bot_v1/platform/postgres";
 import { filePayloadInspector } from "../../adapters/outbound/binary/payloads.js";
 import {
   PostgresFiles,
-  createPostgresFileSavedResultReader as postgresSavedResults,
+  PostgresLegacyProcessingHistory,
+  createPostgresFileRevisionQualifier as postgresRevisionQualifier,
 } from "../../adapters/outbound/persistence/files.js";
 import { supabaseFileObjects } from "../../adapters/outbound/storage/supabase.js";
+import { createFileSourceReader } from "../../application/use-cases/sources.js";
 import type {
   FilePayloadInspector,
   FileReads,
@@ -12,7 +14,11 @@ import type {
   FileTransactions,
 } from "../../contracts/output/files.js";
 import type { FileObjectRemoval, FileObjectStore } from "../../contracts/output/object-store.js";
-import type { FileSavedResultReader } from "../../contracts/output/saved-results.js";
+import type {
+  FileRevisionQualifier,
+  FileSourceReader,
+  LegacyProcessingHistory,
+} from "../../contracts/output/references.js";
 
 /** One technical provider, initialized only when the requested operation requires bytes. */
 function lazyPrivateObjects() {
@@ -59,7 +65,18 @@ export function createPostgresFileReclamationDependencies(
   };
 }
 
-/** Content receives only this read capability bound to its own transaction. */
-export function createPostgresSavedFileResults(sql: Sql): FileSavedResultReader {
-  return postgresSavedResults(sql);
+export function createPostgresFileSourceReader(
+  db?: Database,
+  objects?: FileObjectStore,
+): FileSourceReader {
+  const dependencies = createPostgresFileDependencies(db, objects);
+  return createFileSourceReader({ reads: dependencies.reads, objects: dependencies.objects });
+}
+
+export function createPostgresFileRevisionQualifier(sql: Sql): FileRevisionQualifier {
+  return postgresRevisionQualifier(sql);
+}
+
+export function createPostgresLegacyProcessingHistory(db?: Database): LegacyProcessingHistory {
+  return new PostgresLegacyProcessingHistory(db);
 }

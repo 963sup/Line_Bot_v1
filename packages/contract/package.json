@@ -24,6 +24,14 @@
       "types": "./dist/contracts/output/references.d.ts",
       "default": "./dist/contracts/output/references.js"
     },
+    "./contracts/input/document-intake": {
+      "types": "./dist/contracts/input/document-intake.d.ts",
+      "default": "./dist/contracts/input/document-intake.js"
+    },
+    "./composition/bootstrap/documents": {
+      "types": "./dist/composition/bootstrap/documents.d.ts",
+      "default": "./dist/composition/bootstrap/documents.js"
+    },
     "./composition/bootstrap/contracts": {
       "types": "./dist/composition/bootstrap/contracts.d.ts",
       "default": "./dist/composition/bootstrap/contracts.js"
@@ -48,7 +56,8 @@
   "dependencies": {
     "@line_bot_v1/platform": "workspace:*",
     "@line_bot_v1/repository": "workspace:*",
-    "@line_bot_v1/content": "workspace:*"
+    "@line_bot_v1/content": "workspace:*",
+    "@line_bot_v1/file": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:",

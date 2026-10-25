@@ -1,5 +1,6 @@
--- File owns immutable revisions with external object bytes, durable upload intents, explicitly selected ProcessingRuns and exact receipts.
--- Upload does not Run; Run does not Save; Save never mutates another business owner.
+-- File owns immutable revisions with external object bytes, durable upload intents and File receipts.
+-- file_processing_* and processing-kind receipts are retained historical rows; Intelligence is their
+-- current authorized reader and File no longer writes ProcessingRuns.
 create table app_private.repository_files (
  id uuid primary key,
  repository_id text not null references app_private.repositories(id),

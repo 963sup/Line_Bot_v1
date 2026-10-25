@@ -208,6 +208,10 @@
       "role": "authoritative"
     },
     {
+      "path": "supabase/schemas/619_intelligence_processing.sql",
+      "role": "authoritative"
+    },
+    {
       "path": "supabase/schemas/616_contracts.sql",
       "role": "authoritative"
     },
@@ -221,6 +225,14 @@
     },
     {
       "path": "supabase/schemas/619_resources.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/619_contract_documents.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "supabase/schemas/619_intelligence_intakes.sql",
       "role": "authoritative"
     },
     {
@@ -1922,6 +1934,38 @@
       "concept": "engineering-contract-command-receipt"
     },
     {
+      "name": "contract_documents",
+      "kind": "table",
+      "path": "supabase/schemas/619_contract_documents.sql",
+      "authority": true,
+      "semanticOwner": "contract",
+      "concept": "contract-document"
+    },
+    {
+      "name": "contract_document_revisions",
+      "kind": "table",
+      "path": "supabase/schemas/619_contract_documents.sql",
+      "authority": true,
+      "semanticOwner": "contract",
+      "concept": "contract-document-revision"
+    },
+    {
+      "name": "contract_document_commands",
+      "kind": "table",
+      "path": "supabase/schemas/619_contract_documents.sql",
+      "authority": true,
+      "semanticOwner": "contract",
+      "concept": "contract-document-command-receipt"
+    },
+    {
+      "name": "intelligence_document_intakes",
+      "kind": "table",
+      "path": "supabase/schemas/619_intelligence_intakes.sql",
+      "authority": true,
+      "semanticOwner": "intelligence",
+      "concept": "intelligence-document-intake-attempt"
+    },
+    {
       "name": "engineering_executions",
       "kind": "table",
       "path": "supabase/schemas/617_executions.sql",
@@ -2024,6 +2068,62 @@
       "authority": true,
       "semanticOwner": "execution",
       "concept": "task-dependency-command-receipt"
+    },
+    {
+      "name": "intelligence_processing_runs",
+      "kind": "table",
+      "path": "supabase/schemas/619_intelligence_processing.sql",
+      "authority": true,
+      "semanticOwner": "intelligence",
+      "concept": "intelligence-processing-run"
+    },
+    {
+      "name": "intelligence_processing_revisions",
+      "kind": "table",
+      "path": "supabase/schemas/619_intelligence_processing.sql",
+      "authority": true,
+      "semanticOwner": "intelligence",
+      "concept": "intelligence-processing-revision"
+    },
+    {
+      "name": "intelligence_processing_commands",
+      "kind": "table",
+      "path": "supabase/schemas/619_intelligence_processing.sql",
+      "authority": true,
+      "semanticOwner": "intelligence",
+      "concept": "intelligence-processing-command-receipt"
+    },
+    {
+      "name": "intelligence_legacy_processing_runs",
+      "kind": "table",
+      "path": "supabase/schemas/619_intelligence_processing.sql",
+      "authority": true,
+      "semanticOwner": "intelligence",
+      "concept": "intelligence-legacy-processing-history"
+    },
+    {
+      "name": "intelligence_legacy_processing_revisions",
+      "kind": "table",
+      "path": "supabase/schemas/619_intelligence_processing.sql",
+      "authority": true,
+      "semanticOwner": "intelligence",
+      "concept": "intelligence-legacy-processing-history"
+    },
+    {
+      "name": "intelligence_legacy_processing_commands",
+      "kind": "table",
+      "path": "supabase/schemas/619_intelligence_processing.sql",
+      "authority": true,
+      "semanticOwner": "intelligence",
+      "concept": "intelligence-legacy-processing-history"
+    },
+    {
+      "name": "intelligence_processing_history_cutovers",
+      "kind": "table",
+      "path": "supabase/schemas/619_intelligence_processing.sql",
+      "authority": true,
+      "semanticOwner": "intelligence",
+      "concept": "intelligence-processing-history-cutover"
     },
     {
       "name": "repository_files",

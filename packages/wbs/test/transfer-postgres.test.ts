@@ -380,6 +380,98 @@ test("PGlite transfers exact history and receipts, then enforces the one-way aut
   );
 });
 
+test("PGlite rolls back the entire transfer when replay evidence persistence fails", async (t) => {
+  const { pg, db } = await postgresFixture();
+  t.after(() => pg.close());
+  const built = await buildSourceAndTarget({
+    db,
+    provisionRepository: (sql) => pg.query(sql),
+  });
+  const operatorDb = operatorDatabase((work) =>
+    pg.transaction(async (tx) => {
+      await tx.exec("SET LOCAL search_path=app_private,pg_catalog");
+      return work(
+        createSql(async (text, values) => {
+          if (text.includes("INSERT INTO legacy_wbs_command_evidence")) {
+            throw new Error("injected replay evidence write failure");
+          }
+          const result = await tx.query<SqlRow>(text, values);
+          return { rows: result.rows, rowCount: result.affectedRows ?? null };
+        }),
+      );
+    }),
+  );
+  const store = transferStore(db, operatorDb);
+  const { command } = await requestTransfer(store, built.projectId, built.head);
+
+  await assert.rejects(
+    executeWbsScopeTransfer(
+      store,
+      {
+        transferId: command.transferId,
+        currentMainSha: releaseSha,
+        deployedSha: releaseSha,
+        providerRecoveryReady: true,
+      },
+      300,
+    ),
+    /injected replay evidence write failure/,
+  );
+
+  assert.equal(
+    Number(
+      (
+        await pg.query<{ count: string }>(
+          "SELECT count(*) FROM app_private.project_wbs WHERE project_id=$1",
+          [built.projectId],
+        )
+      ).rows[0]?.count,
+    ),
+    0,
+  );
+  assert.equal(
+    Number(
+      (
+        await pg.query<{ count: string }>(
+          "SELECT count(*) FROM app_private.project_wbs_revisions WHERE project_id=$1",
+          [built.projectId],
+        )
+      ).rows[0]?.count,
+    ),
+    0,
+  );
+  assert.equal(
+    Number(
+      (
+        await pg.query<{ count: string }>(
+          "SELECT count(*) FROM app_private.legacy_wbs_command_evidence WHERE project_id=$1",
+          [built.projectId],
+        )
+      ).rows[0]?.count,
+    ),
+    0,
+  );
+  assert.equal(
+    (
+      await pg.query<{ state: string }>(
+        "SELECT state FROM app_private.wbs_scope_transfers WHERE id=$1",
+        [command.transferId],
+      )
+    ).rows[0]?.state,
+    "REQUESTED",
+  );
+  assert.equal(
+    Number(
+      (
+        await pg.query<{ count: string }>(
+          "SELECT count(*) FROM app_private.repository_wbs_revisions WHERE repository_id='repo'",
+        )
+      ).rows[0]?.count,
+    ),
+    5,
+  );
+});
+
 test("PGlite aborts atomically when source history or governance changes after REQUESTED", async (t) => {
   for (const change of ["content", "governance", "additional-root"] as const) {
     const { pg, db } = await postgresFixture();

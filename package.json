@@ -61,6 +61,7 @@
     "wbs:transfer": "node scripts/wbs/transfer.mjs",
     "project:imports": "node scripts/project/imports.mjs",
     "contract:run": "node scripts/contract/run.mjs",
+    "intelligence:run": "node scripts/intelligence/run.mjs",
     "execution:run": "node scripts/execution/run.mjs",
     "file:run": "node scripts/file/run.mjs",
     "file:reclaim": "node scripts/file/reclaim.mjs"
