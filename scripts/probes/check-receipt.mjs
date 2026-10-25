@@ -13,8 +13,8 @@ if (process.argv.slice(2).join(" ") !== "--live") {
 } else {
   try {
     const require = createRequire(new URL("../../apps/web/package.json", import.meta.url));
-    const { recognizeReceiptImage } = await import(
-      require.resolve("@line_bot_v1/expense/adapters/outbound/recognition/receipt-recognizer")
+    const { createReceiptRecognizer } = await import(
+      require.resolve("@line_bot_v1/expense/composition/bootstrap/receipt-recognizer")
     );
     const { createVercelAiGateway } = await import("../../vercel/integrations/ai-gateway.mjs");
     loadRootEnv();
@@ -24,18 +24,11 @@ if (process.argv.slice(2).join(" ") !== "--live") {
     const model = process.env.AI_GATEWAY_MODEL;
     if (!model) throw new Error("Missing AI Gateway configuration");
     const gateway = createVercelAiGateway(model);
-    const result = await recognizeReceiptImage({
-      image,
-      mimeType: "image/png",
-      generate: ({ prompt, image: bytes, mimeType }) =>
-        gateway.file({
-          prompt,
-          bytes,
-          mediaType: mimeType,
-          maxOutputTokens: 1200,
-          timeoutMs: 12_000,
-        }),
+    const recognize = createReceiptRecognizer({
+      downloadImage: async () => ({ image, mimeType: "image/png" }),
+      generate: (input) => gateway.receipt(input),
     });
+    const result = await recognize("synthetic-receipt");
     assert.equal(result.isReceipt, true);
     assert.equal(Number(result.amount), 1260);
     assert.equal(result.currency, "TWD");
