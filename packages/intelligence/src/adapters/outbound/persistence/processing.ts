@@ -42,6 +42,7 @@ function readOutput(value: unknown): ProcessingOutput | null {
         label: stringValue(observation.label),
         value: observation.value === null ? null : stringValue(observation.value),
         uncertain: booleanValue(observation.uncertain),
+        source: observation.source == null ? null : record(observation.source),
       };
     }),
   };
@@ -64,7 +65,7 @@ function decode(row: SqlRow): ProcessingRevision {
     version: numberValue(row.version),
     parentRevisionId: row.parent_revision_id == null ? null : stringValue(row.parent_revision_id),
     actorUserId: stringValue(row.actor_user_id),
-    at: numberValue(row.at),
+    at: numberValue(Number(row.at)),
     state: literalValue(row.state, ["RUNNING", "FAILED", "READY", "SAVED", "DISCARDED"]),
     attemptId: stringValue(row.attempt_id),
     processorId: stringValue(row.processor_id),
@@ -142,7 +143,7 @@ export class PostgresIntelligenceProcessing implements IntelligenceProcessingSto
     actor: string,
     command: ProcessingCommand,
     work: (tx: ProcessingTransaction) => Promise<ProcessingRevision>,
-  ): Promise<ProcessingRevision> {
+  ): Promise<Readonly<{ revision: ProcessingRevision; replayed: boolean }>> {
     return this.db.transaction(async (sql) => {
       let scope: Awaited<ReturnType<typeof repositoryContentScope>>;
       try {
@@ -186,7 +187,7 @@ export class PostgresIntelligenceProcessing implements IntelligenceProcessingSto
         replay: async () => {
           const prior = await selectReplay();
           if (!prior) return null;
-          const revision = decode(prior);
+          const revision = prior;
           if (revision.repositoryId !== command.repositoryId || revision.runId !== command.runId)
             throw new RepositoryError(409, "Request identity reused.");
           return { revision, exact: prior.receipt_fingerprint === payloadFingerprint };
@@ -274,10 +275,10 @@ export class PostgresIntelligenceProcessing implements IntelligenceProcessingSto
       const prior = await tx.replay();
       if (prior) {
         if (!prior.exact) throw new RepositoryError(409, "Request identity reused.");
-        return prior.revision;
+        return { revision: prior.revision, replayed: true };
       }
       try {
-        return await work(tx);
+        return { revision: await work(tx), replayed: false };
       } catch (error) {
         return mapError(error);
       }

@@ -43,5 +43,5 @@ export interface IntelligenceProcessingStore {
     actor: string,
     command: ProcessingCommand,
     work: (transaction: ProcessingTransaction) => Promise<ProcessingRevision>,
-  ): Promise<ProcessingRevision>;
+  ): Promise<Readonly<{ revision: ProcessingRevision; replayed: boolean }>>;
 }

@@ -15,7 +15,9 @@ export const plainTextProcessor: IntelligenceProcessor = {
       const value = line.replace(/\r$/, "");
       if (!value.trim()) return [];
       if (value.length > observationLimits.valueLength) throw new Error("INVALID_INPUT");
-      return [{ id: `line-${index + 1}`, label: "Source line", value, uncertain: false }];
+      return [
+        { id: `line-${index + 1}`, label: "Source line", value, uncertain: false, source: null },
+      ];
     });
     if (observations.length > observationLimits.count) throw new Error("INVALID_INPUT");
     return { documentKind: "plain-text", observations };

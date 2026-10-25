@@ -21,7 +21,14 @@ export type IntelligenceProcessor = Readonly<{
   ): Promise<ProcessingOutput>;
 }>;
 function completionRequestId(requestId: string) {
-  return createHash("sha256").update(`intelligence-processing-complete:${requestId}`).digest("hex");
+  const bytes = createHash("sha256")
+    .update(`intelligence-processing-complete:${requestId}`)
+    .digest()
+    .subarray(0, 16);
+  bytes[6] = ((bytes[6] ?? 0) & 0x0f) | 0x50;
+  bytes[8] = ((bytes[8] ?? 0) & 0x3f) | 0x80;
+  const hex = bytes.toString("hex");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 export function createIntelligenceProcessing(
   deps: Readonly<{ source: FileSourceReader; store: IntelligenceProcessingStore; now(): number }>,
@@ -120,13 +127,16 @@ export function createIntelligenceProcessing(
         await tx.record(next);
         return next;
       });
+      if (started.replayed) return { requestId: command.requestId, processing: started.revision };
       let output: ProcessingOutput | null = null;
       try {
         output = await processor.run(source);
       } catch {}
-      if (started.state !== "RUNNING") return { requestId: command.requestId, processing: started };
+      if (started.revision.state !== "RUNNING")
+        return { requestId: command.requestId, processing: started.revision };
       const latest = await deps.store.read(actor, command.repositoryId, command.runId);
-      if (!latest || latest.attemptId !== started.attemptId) throw new Error("PROCESSING_FENCED");
+      if (!latest || latest.attemptId !== started.revision.attemptId)
+        throw new Error("PROCESSING_FENCED");
       const completionCommand = {
         ...input,
         expectedVersion: latest.version,
@@ -137,7 +147,7 @@ export function createIntelligenceProcessing(
         { ...completionCommand, requestId: completionRequestId(command.requestId) },
         async (tx) => {
           const current = await tx.load();
-          if (!current || current.attemptId !== started.attemptId)
+          if (!current || current.attemptId !== started.revision.attemptId)
             throw new Error("PROCESSING_FENCED");
           const done = finishProcessing(current, {
             id: tx.nextId(),
@@ -150,7 +160,7 @@ export function createIntelligenceProcessing(
           return done;
         },
       );
-      return { requestId: command.requestId, processing };
+      return { requestId: command.requestId, processing: processing.revision };
     },
     async result(
       actor: string,
@@ -194,7 +204,7 @@ export function createIntelligenceProcessing(
           return next;
         },
       );
-      return { requestId: command.requestId, processing };
+      return { requestId: command.requestId, processing: processing.revision };
     },
   };
 }
