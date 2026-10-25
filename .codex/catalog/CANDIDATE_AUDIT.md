@@ -9,7 +9,7 @@
 | Status | Count | Meaning |
 | --- | ---: | --- |
 | enabled | 22 | Has an enabled executor, packet/handoff contract, capability route when needed, and validation boundary |
-| candidate | 178 | Taxonomy and contract draft only; cannot be dispatched |
+| candidate | 175 | Taxonomy and contract draft only; cannot be dispatched |
 | retired roles | 22 | Historical specialist labels absorbed by the seven executor families |
 
 The candidate catalog is intentionally broader than the current runtime. A
@@ -20,6 +20,11 @@ The `prepare.repository-mapper` → `execute.repository-mapper` →
 `report.repository-mapper` triplet is enabled because the current repository
 architecture audit is its real consumer. All three reuse the existing
 `investigator` executor and have no additional capability route.
+
+The same audit also consumes the `prepare.contract-locator` →
+`execute.contract-locator` → `report.contract-locator` triplet to locate
+authority before interpreting it. These three entries reuse `investigator` and
+remain limited to source location, not product meaning.
 
 ## Candidate families and executor readiness
 

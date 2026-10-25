@@ -2370,10 +2370,8 @@
     {
       "id": "execute.contract-locator",
       "family": "locate-research",
-      "status": "candidate",
-      "candidateRoleIds": [
-        "investigator"
-      ],
+      "status": "enabled",
+      "executorRoleId": "investigator",
       "goal": "Locate one contract authority.",
       "input": [
         "bounded term"
@@ -2395,10 +2393,8 @@
     {
       "id": "prepare.contract-locator",
       "family": "locate-research",
-      "status": "candidate",
-      "candidateRoleIds": [
-        "investigator"
-      ],
+      "status": "enabled",
+      "executorRoleId": "investigator",
       "goal": "Prepare one bounded contract-locator task.",
       "input": [
         "approved scope"
@@ -2420,10 +2416,8 @@
     {
       "id": "report.contract-locator",
       "family": "locate-research",
-      "status": "candidate",
-      "candidateRoleIds": [
-        "investigator"
-      ],
+      "status": "enabled",
+      "executorRoleId": "investigator",
       "goal": "Report one bounded contract-locator result.",
       "input": [
         "role result"

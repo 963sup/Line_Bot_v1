@@ -39,6 +39,16 @@ prepare.repository-mapper
 source 或接受最終結果；這也是目前第一組由真實 repository task 證明可啟用的
 specialised Atomic triplet。
 
+同一 audit 的 contract 定位子流程使用：
+
+```text
+prepare.contract-locator
+  → execute.contract-locator
+  → report.contract-locator
+```
+
+它只定位 authority，不解釋產品語意；語意判斷仍回到 L1/L2。
+
 ## Bug 修復
 
 ```text
