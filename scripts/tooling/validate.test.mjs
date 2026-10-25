@@ -5,7 +5,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { readBoundedFailure, runBoundedCommand, writeBoundedDiagnostic } from "../runtime/bounded-output.mjs";
+import {
+  readBoundedFailure,
+  runBoundedCommand,
+  writeBoundedDiagnostic,
+} from "../runtime/bounded-output.mjs";
 import {
   classifyChangedFiles,
   describeFastPlan,
@@ -68,13 +72,16 @@ test("failure diagnostics preserve bounded context around actionable error lines
   const directory = mkdtempSync(join(tmpdir(), "line-bot-bounded-failure-context-"));
   t.after(() => rmSync(directory, { recursive: true, force: true }));
   const logPath = join(directory, "next.log");
-  writeFileSync(logPath, [
-    "Failed to compile.",
-    "./src/app/page.tsx",
-    "Unexpected token '<'",
-    "Syntax Error",
-    "generic trailing summary",
-  ].join("\n"));
+  writeFileSync(
+    logPath,
+    [
+      "Failed to compile.",
+      "./src/app/page.tsx",
+      "Unexpected token '<'",
+      "Syntax Error",
+      "generic trailing summary",
+    ].join("\n"),
+  );
   const diagnostic = readBoundedFailure(logPath);
   assert.match(diagnostic, /Failed to compile/);
   assert.match(diagnostic, /\.\/src\/app\/page\.tsx/);

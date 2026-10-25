@@ -78,7 +78,9 @@ export function readBoundedFailure(path, options = {}) {
   const { maxBytes = diagnosticLimits.maxBytes, maxLines = diagnosticLimits.maxLines } = options;
   const lines = readFileSync(path, "utf8").split(/\r?\n/);
   const matchIndexes = lines
-    .map((line, index) => (/error|failed|module not found|cannot find|not found/i.test(line) ? index : -1))
+    .map((line, index) =>
+      /error|failed|module not found|cannot find|not found/i.test(line) ? index : -1,
+    )
     .filter((index) => index >= 0)
     .slice(0, maxLines);
   if (!matchIndexes.length) return readBoundedTail(path, options);
@@ -90,7 +92,10 @@ export function readBoundedFailure(path, options = {}) {
       if (candidate >= 0 && candidate < lines.length) selected.add(candidate);
     }
   }
-  const excerpt = [...selected].sort((left, right) => left - right).map((index) => lines[index]).join("\n");
+  const excerpt = [...selected]
+    .sort((left, right) => left - right)
+    .map((index) => lines[index])
+    .join("\n");
   if (Buffer.byteLength(excerpt) <= maxBytes) return excerpt.trim();
   return `${utf8Tail(excerpt, maxBytes - 19)}\n[output truncated]`;
 }
