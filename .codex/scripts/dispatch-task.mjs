@@ -1,7 +1,7 @@
-import { closeSync, existsSync, mkdirSync, openSync, readFileSync } from "node:fs";
+import { createWriteStream, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
-import { spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 
 const root = fileURLToPath(new URL("../..", import.meta.url));
 const atomicCatalogPath = resolve(root, ".codex/catalog/atomic-catalog.json");
@@ -109,10 +109,13 @@ function validateHandoff(handoff) {
   if (!["complete", "needs-decision", "blocked"].includes(handoff.status)) {
     throw new Error(`Invalid handoff status: ${handoff.status}`);
   }
-  for (const field of ["candidate", "deliverable", "evidenceBoundary", "unresolvedRisk"]) {
+  for (const field of ["candidate", "deliverable", "evidenceBoundary"]) {
     if (typeof handoff[field] !== "string" || !handoff[field].trim()) {
       throw new Error(`Handoff ${field} must be a non-empty string`);
     }
+  }
+  if (typeof handoff.unresolvedRisk !== "string") {
+    throw new Error("Handoff unresolvedRisk must be a string");
   }
   for (const field of ["verifiedFacts", "assumptions"]) {
     if (!Array.isArray(handoff[field]) || handoff[field].some((item) => typeof item !== "string")) {
@@ -134,7 +137,22 @@ function validateHandoff(handoff) {
   }
 }
 
-function main() {
+function runExecutor(cli, args, artifactPath) {
+  return new Promise((resolve, reject) => {
+    const artifact = createWriteStream(artifactPath, { flags: "w" });
+    const child = spawn(cli, args, { stdio: ["ignore", "pipe", "pipe"], windowsHide: true });
+    child.stdout.pipe(artifact, { end: false });
+    child.stderr.pipe(artifact, { end: false });
+    child.on("error", (error) => {
+      artifact.end(() => reject(error));
+    });
+    child.on("close", (status) => {
+      artifact.end(() => resolve({ status }));
+    });
+  });
+}
+
+async function main() {
   const packetPath = required(arg("--packet"), "--packet <path>");
   const packet = loadJson(resolve(process.cwd(), packetPath));
   validatePacket(packet);
@@ -168,15 +186,11 @@ function main() {
   ].join("\n");
   const cli = process.env.CODEX_CLI || "codex";
   const handoffPath = resolve(outputRoot, `${stamp}.handoff.json`);
-  const descriptor = openSync(artifactPath, "w");
-  let result;
-  try {
-    result = spawnSync(cli, [
-    "exec", "--json", "-o", handoffPath, "--sandbox", "read-only", "-C", root, prompt,
-    ], { stdio: ["ignore", descriptor, descriptor], windowsHide: true });
-  } finally {
-    closeSync(descriptor);
-  }
+  const result = await runExecutor(
+    cli,
+    ["exec", "--json", "-o", handoffPath, "--sandbox", "read-only", "-C", root, prompt],
+    artifactPath,
+  );
   let handoff = null;
   let handoffError = null;
   if (result.status === 0) {
@@ -198,12 +212,9 @@ function main() {
     handoffError,
   };
   console.log(JSON.stringify(receipt));
-  if (result.error) throw result.error;
   if (result.status !== 0 || handoffError || handoff.status !== "complete") process.exitCode = result.status || 2;
 }
 
-try {
-  main();
-} catch (error) {
+main().catch((error) => {
   fail(error instanceof Error ? error.message : String(error));
-}
+});
