@@ -64,7 +64,11 @@ export function selectValidationStages(stages, group) {
 }
 
 function gitChangedFiles(args, directory = root) {
-  const result = spawnSync("git", args, { cwd: directory, encoding: "utf8" });
+  const result = spawnSync("git", args, {
+    cwd: directory,
+    encoding: "utf8",
+    env: { ...process.env, GIT_CONFIG_NOSYSTEM: "1" },
+  });
   if (result.error || result.status !== 0) return null;
   return result.stdout.split("\0").filter(Boolean);
 }
