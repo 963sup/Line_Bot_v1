@@ -11,8 +11,8 @@ import {
   describeFastPlan,
   detectFastScope,
   fastTaskArgs,
-  selectValidationStages,
   selectFastValidationGroups,
+  selectValidationStages,
   shouldRunFast,
   validationGroups,
 } from "./validate.mjs";
