@@ -113,9 +113,9 @@ earliest layer that owns the missing fact.
 Skills, MCPs, plugins, and CLIs belong to layer 4. A profile may use them only when the current session exposes them and its instructions permit use. For example, `repository-mapper` may use Serena after semantic resolution is insufficient; that does not make Serena a separate role. Likewise, `validation-runner` owns bounded execution evidence, but not test design or acceptance.
 
 The complete, consumer-based capability registry is maintained in
-[`.codex/README.md`](../README.md#effective-capability-registry). A profile
-names a capability again only when its mission needs additional role-specific
-preconditions or prohibitions; it must not create a second catalog.
+[CAPABILITIES.md](../CAPABILITIES.md). A profile names a capability again only
+when its mission needs additional role-specific preconditions or prohibitions;
+it must not create a second catalog.
 
 High-volume commands follow the [routing and command-output protocol](#routing-and-command-output-protocol). Provider readback, browser/device evidence, local tests, static checks, and deployment are separate evidence types under the repository [validation rules](../../docs/rules/validation-evidence.md).
 

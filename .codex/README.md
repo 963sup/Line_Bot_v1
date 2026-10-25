@@ -9,6 +9,7 @@
 | Path | Layer | Owner | Purpose |
 | --- | --- | --- | --- |
 | [config.toml](config.toml) | L2 + L4 | Codex runtime configuration | Enables project agents and configures shared MCP transports. |
+| [CAPABILITIES.md](CAPABILITIES.md) | L4 | Capability routing contract | Routes only actually consumed commands, MCPs, and Skills to their roles and evidence boundaries. |
 | [agents/](agents/README.md) | L3 + L5 | Agent-routing documentation and role profiles | Defines atomic specialist roles, their handoffs, and their TOML profiles. |
 | [rules/](rules/) | L4 | Command-safety policy | Constrains shell command patterns; it does not authorize product or provider writes. |
 | [scripts/](scripts/) | L4 | Codex support scripts | Supports runtime configuration only. |
@@ -40,29 +41,12 @@ The normal evidence flow is `governance → orchestration → role → atomic wo
 
 ## Effective capability registry
 
-Layer 4 records only a capability with a current consumer, a distinct decision it
-can answer, and a bounded effect. Installed-but-unused tools are deliberately
-absent: their presence neither improves routing nor grants authority.
-
-| Capability | Concrete consumer | Use only when | What it produces | Boundary |
-| --- | --- | --- | --- | --- |
-| `pnpm semantic plan` / `pnpm semantic context` | Primary; `repository-mapper` when still needed | Owner, contract, consumer, or cross-owner impact is unresolved | Scoped authority selectors and repository navigation inputs | Query evidence; never mutation authority |
-| `pnpm code` (`facts`, `definition`, `references`) | `repository-mapper` | A bounded symbol/import/export path needs static evidence after semantic resolution | Source-snapshot navigation evidence | Cannot prove runtime flow, business ownership, or full-repository coverage |
-| `pnpm validation:run --label …` | `validation-runner`; `browser-flow-verifier` for its assigned flow | A task packet names commands, expected effects, and an evidence owner | Bounded command result and ignored full-log artifact | Validation is not design, provider readback, or acceptance |
-| `pnpm docs:check`, `tooling:check`, `tooling:rules` | `documentation-writer`; `validation-runner` | Documentation or Codex runtime policy changed | Static documentation/runtime-policy evidence | Does not prove a new session loaded the configuration |
-| Serena MCP | `repository-mapper` | Semantic and direct static queries leave a bounded stateful exploration gap | Read-only symbol navigation within this worktree | Supplementary only; not a role or business truth |
-| Next DevTools MCP | `nextjs-runtime-diagnostician` | An explicit local Next.js port and matching checkout are available | Read-only runtime observation and installed-version documentation | Does not prove browser/user-flow acceptance |
-| shadcn MCP | `component-researcher` | A UI composition/registry compatibility question is unresolved | Registry/project compatibility research | Never installs or authorizes generated changes |
-| Sentry MCP | `sentry-incident-diagnostician` | An exact read-only incident/project/environment target is supplied | Exception event, release, and source-map correlation | Incident observation is not root-cause or business truth |
-| `supabase` and `supabase-postgres-best-practices` Skills | `supabase-postgresql-designer`; `schema-transition-planner` | A bounded persistence design or transition needs current provider guidance | Read-only design/planning input | Not remote schema/data execution or migration history |
-| `agentic-actions-auditor` and `github-actions` Skills | `github-actions-security-reviewer` | A GitHub Actions trust boundary is under review | Read-only workflow-security analysis input | Not CI execution, secret access, or workflow edits |
-| `supply-chain-risk-auditor` Skill | `dependency-supply-chain-reviewer` | A manifest/lockfile candidate needs current provenance/advisory evidence | Read-only dependency-risk analysis input | Not dependency installation or runtime exploit proof |
-
-Plugins are **not** a separate routing category. They distribute a Skill, MCP,
-or app capability; record the actual consumed capability above (or in the role
-profile), not a plugin name. Add a row only after a real role has a concrete
-task it improves, its prerequisite can be checked, and its evidence boundary is
-known. Remove the row when its last consumer is retired.
+Layer 4 records only a capability with a current consumer, a distinct decision
+it can answer, and a bounded effect. The complete contract is
+[CAPABILITIES.md](CAPABILITIES.md): it carries route IDs, current authority,
+consumer role, preflight, evidence boundary, prohibition, and fallback.
+Installed-but-unused tools are deliberately absent; a Plugin is recorded only
+through the concrete Skill, MCP, or command that a role actually consumes.
 
 ## Layer handoff contracts
 
