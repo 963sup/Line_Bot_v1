@@ -1221,8 +1221,9 @@ test("changed-owner validation preserves planner routing and an unconditional fa
   }
   for (const run of ['test "$RESULT" != failure', "echo success"]) {
     const data = YAML.parse(source);
-    data.jobs.validate.steps.find((step) => step.name === "Require every validation group to succeed").run =
-      run;
+    data.jobs.validate.steps.find(
+      (step) => step.name === "Require every validation group to succeed",
+    ).run = run;
     write(".github/workflows/validate.yml", YAML.stringify(data));
     rejects(root, "reject failed, cancelled or skipped groups");
   }
