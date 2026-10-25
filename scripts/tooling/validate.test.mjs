@@ -445,6 +445,7 @@ test("WBS operator changes run its canonical tooling test stage in full and fast
     "scripts/tooling/doctor.test.mjs",
     "scripts/wbs/transfer.test.mjs",
     "scripts/code/*.test.mjs",
+    "scripts/runtime/validation-command.test.mjs",
     "scripts/runtime/internal-input.test.mjs",
     "scripts/contract/*.test.mjs",
     "scripts/file/*.test.mjs",

@@ -1280,6 +1280,7 @@ export function validate(root) {
             "diff-reviewer",
             "authorization-reviewer",
             "database-boundary-reviewer",
+            "supabase-postgresql-designer",
             "accessibility-reviewer",
             "evidence-verifier",
             "architecture-decider",

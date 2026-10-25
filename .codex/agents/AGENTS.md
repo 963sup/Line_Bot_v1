@@ -35,6 +35,7 @@ Primary 的派工若已列明 goal、允許路徑、排除範圍與驗收條件�
 | `diff-reviewer` | `differential-review`（安全相關 diff）、`nextjs-code-review`（Next.js diff） |
 | `authorization-reviewer` | `attack-path-analysis`、`security-diff-scan`（只讀安全審查） |
 | `database-boundary-reviewer` | `supabase-postgres-best-practices`（只讀資料邊界審查） |
+| `supabase-postgresql-designer` | `supabase`、`supabase-postgres-best-practices`（只輸出資料庫設計） |
 | `accessibility-reviewer` | `accessibility-audit`（只讀可近用性審查） |
 | `evidence-verifier` | `spec-to-code-compliance`（文件與實作契約比對） |
 | `acceptance-decider` | `post-patch-validation`（安全修補驗收；只讀已執行證據） |
@@ -62,6 +63,7 @@ Primary 的派工若已列明 goal、允許路徑、排除範圍與驗收條件�
 | `diff-reviewer` | Sentry（已指派的 production evidence） | `differential-review`、`nextjs-code-review` | — | `git diff`、直接 consumer／contract 唯讀查詢 |
 | `authorization-reviewer` | — | `attack-path-analysis`、`security-diff-scan` | — | diff、authorization contract 與 policy 的唯讀查詢 |
 | `database-boundary-reviewer` | — | `supabase-postgres-best-practices` | — | schema／SQL／data topology 的唯讀查詢 |
+| `supabase-postgresql-designer` | — | `supabase`、`supabase-postgres-best-practices` | Supabase 官方文件，僅在當前連線可用時 | schema／data topology／current docs 的唯讀查詢；不得執行 schema command |
 | `accessibility-reviewer` | — | `accessibility-audit` | — | UI diff、component contract 與必要唯讀 runtime observation |
 | `nextjs-runtime-diagnostician` | Next DevTools（只讀 runtime diagnosis） | `next-dev-loop`（只讀步驟） | — | 先確認 port／checkout，再 discover live tools；不得啟停 server |
 | `component-researcher` | shadcn（registry lookup only） | `shadcn`（只讀查詢） | — | 讀 `components.json`、現有 UI 與 registry search/view/example |
@@ -109,6 +111,7 @@ Primary 在每個任務開始時主動判斷是否委派；在任務授權與當
 | concrete diff defect/regression review | `diff-reviewer` |
 | authorization／scope／tenant isolation diff review | `authorization-reviewer` |
 | schema／RLS／transaction data-boundary diff review | `database-boundary-reviewer` |
+| Supabase PostgreSQL relation／RLS／index／recovery design | `supabase-postgresql-designer` |
 | UI accessibility diff review | `accessibility-reviewer` |
 | 執行已指定的一個 validation plan | `validation-runner` |
 | Next.js 執行期症狀的根因定位 | `nextjs-runtime-diagnostician` |
@@ -130,8 +133,9 @@ Primary 可直接做 final decision；不為形式重派。只使用會改變決
 | 執行一個已指定 validation plan | `validation-runner` | high | exact revision、結果與 evidence boundary |
 | 定位一個 Next.js runtime 根因 | `nextjs-runtime-diagnostician` | high | 正確 checkout/port 的 runtime evidence 與根因 |
 | 研究一個元件/registry 相容性問題 | `component-researcher` | high | 符合現有 UI contract 的選項、來源與預期 diff |
+| 設計一個 Supabase PostgreSQL persistence boundary | `supabase-postgresql-designer` | high | relation、RLS、index、transaction/recovery 設計與未決 policy |
 
-Primary 先確認 Owner、contract 與 scope；需要時由 MCP specialist 蒐證，再交給單一 change implementer。Diff review 可指出需修正處；修正完成後由指定 validation owner 執行 gates。`evidence-verifier` 檢查 claim 是否被結果支持，仍不執行測試。這是選擇流程，不要求每次啟用所有角色。
+Primary 先確認 Owner、contract 與 scope；需要時由 MCP specialist 蒐證，再交給單一 change implementer。Supabase PostgreSQL 設計交給 designer、遷移順序交給 planner、candidate boundary 交給 reviewer；remote publication 仍只由 current-main GitHub Release workflow 擁有。Diff review 可指出需修正處；修正完成後由指定 validation owner 執行 gates。`evidence-verifier` 檢查 claim 是否被結果支持，仍不執行測試。這是選擇流程，不要求每次啟用所有角色。
 
 沒有第二個「實作」或「差異審查」角色：同一種原子工作只保留一個角色。專項角色只在其工具或證據邊界不同時存在。
 

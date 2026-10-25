@@ -5,6 +5,8 @@
 | Script | 用途 |
 | --- | --- |
 | `bounded-output.mjs` | 共用 repository command 的完整 ignored log 保存與固定上限診斷片段；命令摘要由各 Owner 決定。 |
+| `validation-command.mjs` | `pnpm validation:run --label <label> -- <pnpm arguments>`：執行 task packet 已明列的一組 pnpm arguments，完整 log 寫入 `.artifacts/validation-command-*`，終端只輸出 JSON 摘要或有界失敗診斷。 |
+| `validation-command.test.mjs` | 驗證 validation command 的 argv boundary、成功摘要與失敗診斷上限。 |
 | `load-env.mjs` | 從 repository root 載入允許的 environment files，提供 scripts 共用 deterministic env bootstrap。 |
 | `load-env.test.mjs` | 驗證 env load precedence、path 與禁止覆寫等行為。 |
 | `next.mjs` | Next.js runtime wrapper，確保 Web command 在 repository 約定的 environment/bootstrap 下啟動。 |

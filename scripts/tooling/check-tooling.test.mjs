@@ -1436,6 +1436,7 @@ for (const role of [
   "diff-reviewer",
   "authorization-reviewer",
   "database-boundary-reviewer",
+  "supabase-postgresql-designer",
   "accessibility-reviewer",
   "architecture-decider",
   "acceptance-decider",
