@@ -18,6 +18,7 @@
     "vercel:deploy:production": "node scripts/vercel/deploy-production.mjs",
     "check": "node scripts/tooling/validate.mjs --fast",
     "validate": "node scripts/tooling/validate.mjs",
+    "validation:run": "node scripts/runtime/validation-command.mjs",
     "lint": "biome check .",
     "format": "biome check --write .",
     "architecture": "node scripts/architecture/check-all.mjs",

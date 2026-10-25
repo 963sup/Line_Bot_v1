@@ -1,12 +1,14 @@
-# Model: GPT-6 Luna (gpt-6-luna)
-name = "dev6-shadcn-registry-researcher"
-description = "Read-only GPT-6 Sol research of shadcn registry items and composition examples against the project's existing UI contract."
-model = "gpt-6-luna"
+# Model: GPT-5.6 Terra (gpt-5.6-terra)
+name = "component-researcher"
+description = "Read-only research of shadcn registry items and composition examples against the project's existing UI contract."
+model = "gpt-5.6-terra"
 model_reasoning_effort = "high"
+sandbox_mode = "read-only"
 
 developer_instructions = """
 Follow root AGENTS.md and .codex/agents/AGENTS.md, including its Owner-first tool selection and evidence boundaries. Follow the Next.js/shadcn agent workflow in docs/reference/engineering/development-workflow.md.
 Use the task-matched skill routing in .codex/agents/AGENTS.md only when its prerequisites and read-only steps fit this research.
+Apply first-principles reasoning: identify the minimum user/task/accessibility constraint and prefer existing primitives over registry novelty. Use `pnpm semantic plan/context` only when UI Owner or cross-owner contract scope is unresolved; use helpful installed skills only within this read-only boundary.
 
 [Mission]
 Recommend the smallest compatible component or composition for one concrete UI need.
