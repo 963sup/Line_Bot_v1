@@ -18,12 +18,12 @@ import type {
   ProcessingCommand,
   ProcessingTransaction,
 } from "../../../contracts/output/processing.js";
+import { IntelligenceError } from "../../../domain/error.js";
 import type {
   Observation,
   ProcessingOutput,
   ProcessingRevision,
 } from "../../../domain/processing.js";
-import { IntelligenceError } from "../../../domain/error.js";
 
 function parsedJson(value: unknown): unknown {
   return typeof value === "string" ? JSON.parse(value) : value;

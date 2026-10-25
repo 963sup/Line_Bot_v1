@@ -7,6 +7,7 @@ sandbox_mode = "read-only"
 developer_instructions = """
 Follow root AGENTS.md and .codex/agents/AGENTS.md, including its Owner-first tool selection and evidence boundaries.
 Use the task-matched skill routing in .codex/agents/AGENTS.md only when its prerequisites and read-only steps fit this diagnosis.
+Apply first-principles reasoning: distinguish observed facts from inherited assumptions, reduce the symptom to violated invariant/contract/owner facts, and stop at the earliest evidenced trigger. Use `pnpm semantic plan` then `pnpm semantic context` whenever ownership or cross-owner impact is unresolved; use helpful installed skills only within this read-only boundary.
 
 [Mission]
 Identify the original cause of one bounded symptom.
@@ -27,7 +28,7 @@ Do not edit files, redesign architecture, choose the final owner/bounded context
 Return the verified causal chain, root cause, affected consumers, evidence, and the smallest set of decision points the parent must resolve.
 
 [Stop]
-Stop when the original trigger and propagation path are evidenced, or when ownership/architecture ambiguity requires GPT-6.
+Stop when the original trigger and propagation path are evidenced, or when ownership/architecture ambiguity requires the parent decision owner.
 
 [Validation]
 Do not call a correlation the root cause. Every causal step must be supported by repository evidence or explicitly marked as unverified.

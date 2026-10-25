@@ -4,13 +4,19 @@
 
 ## Models
 
-模型版本上限為 GPT-6；角色模型、名稱與檔名須保持一致，不得配置高於 GPT-6 的版本。
+角色統一使用 GPT-5.6；角色模型、名稱與檔名須保持一致。
 
-- GPT-6 Luna (`gpt-6-luna`)：Primary orchestration、獨立 architecture / acceptance decision 與 `dev6-*` 開發角色組。
-- GPT-5.6 Terra (`gpt-5.6-terra`)：root cause、architecture analysis、technical research、bounded implementation、diff review。
-- GPT-5.6 Luna (`gpt-5.6-luna`)：repository mapping、evidence verification；也是預設子代理模型。
+- GPT-5.6 Terra (`gpt-5.6-terra`)：root cause、architecture analysis/decision、technical research、bounded implementation、diff review，以及深度框架診斷角色。
+- GPT-5.6 Luna (`gpt-5.6-luna`)：repository mapping、documentation writing、evidence verification、validation 與 acceptance；也是預設子代理模型。
 
 每個 role 只擁有一個 Primary Responsibility；新增 role 必須有獨立問題、deliverable、stop condition、validation。
+
+## Naming
+
+角色與檔名一律用 `<subject>-<role>`：subject 是被處理的明確對象，role 是唯一可觀察的動作。
+允許的 role 為 `mapper`、`analyst`、`researcher`、`planner`、`designer`、`implementer`、`reviewer`、`runner`、`verifier`、`decider`、`writer`、`diagnostician`。不得用 `worker`、模型版本、工具名稱或歷史批次名稱表達責任；檔名必須為 `gpt-5.6-<model>-<subject>-<role>.toml`，且 `<subject>-<role>` 必須與 TOML `name` 完全相同。
+
+一個 role 的 Input、Owns、Deliverable 與 Stop 必須描述同一個動作。若兩個 role 的輸入、輸出和權限相同，保留一個；只有工具邊界或可驗證輸出不同，才可新增專項角色。
 
 ## Autonomous delegation
 
@@ -24,15 +30,22 @@ Primary 的派工若已列明 goal、允許路徑、排除範圍與驗收條件�
 | --- | --- |
 | `repository-mapper` | 一般定位直接使用 repository 工具；涉及第一性原理結構檢視才選 `code` |
 | `root-cause-analyst` | `diagnosing-bugs` |
-| `architecture-analyst`、`architecture-decider` | `architecture`；需要比較方案時 `framing-decisions` |
-| `implementation-worker`、`dev6-implementation-worker` | `diagnosing-bugs`（bug）、`shadcn`（UI 元件）、`next-dev-loop`（已啟動的 Next.js runtime） |
-| `diff-reviewer`、`dev6-diff-reviewer` | `differential-review`（安全相關 diff）、`nextjs-code-review`（Next.js diff） |
+| `architecture-analyst`、`architecture-decider` | `first-principles-thinking`、`architecture`；需要比較方案時 `framing-decisions` |
+| `change-implementer` | `diagnosing-bugs`（bug）、`shadcn`（UI 元件）、`next-dev-loop`（已啟動的 Next.js runtime） |
+| `diff-reviewer` | `differential-review`（安全相關 diff）、`nextjs-code-review`（Next.js diff） |
+| `authorization-reviewer` | `attack-path-analysis`、`security-diff-scan`（只讀安全審查） |
+| `database-boundary-reviewer` | `supabase-postgres-best-practices`（只讀資料邊界審查） |
+| `accessibility-reviewer` | `accessibility-audit`（只讀可近用性審查） |
 | `evidence-verifier` | `spec-to-code-compliance`（文件與實作契約比對） |
 | `acceptance-decider` | `post-patch-validation`（安全修補驗收；只讀已執行證據） |
 | `technical-researcher` | 依具體技術選適用技能；外部事實仍以版本對應的官方來源為準 |
-| `dev6-nextjs-runtime-analyst` | `next-dev-loop`（只採觀察步驟） |
-| `dev6-shadcn-registry-researcher` | `shadcn`（只採查詢與組合建議） |
-| `dev6-validation-runner` | `verification`（實際端到端驗收）、`post-patch-validation`（安全修補） |
+| `nextjs-runtime-diagnostician` | `next-dev-loop`（只採觀察步驟） |
+| `component-researcher` | `shadcn`（只採查詢與組合建議） |
+| `validation-runner` | `verification`（實際端到端驗收）、`post-patch-validation`（安全修補） |
+| `test-designer` | `tdd`、`property-based-testing`（只產出測試設計） |
+| `schema-migration-planner` | `supabase-postgres-best-practices`（只產出遷移設計） |
+| `documentation-writer` | `documentation-writer`（只更新已決定事實） |
+| `performance-analyst` | `vercel-optimize`、`web-perf`（只分析效能瓶頸） |
 
 Primary 在每個任務開始時主動判斷是否委派；在任務授權與當前工具限制內，符合下列條件就直接使用最少必要角色，不等待使用者再次指定 agent。簡單、Owner 已知且可直接驗收的任務由 Primary 完成。
 
@@ -64,33 +77,35 @@ Primary 在每個任務開始時主動判斷是否委派；在任務授權與當
 | Owner/Truth/Boundary/Dependency 分析 | `architecture-analyst` |
 | current framework/provider/API/CLI facts (GitHub CLI, Supabase, Vercel, pnpm/Codex CLI) | `technical-researcher` |
 | tooling / command-policy failure with unknown cause | `root-cause-analyst` |
-| 已決定的 bounded source/schema/workflow/Codex-config change | `implementation-worker` |
+| 已決定的 bounded source/schema/workflow/Codex-config change | `change-implementer` |
 | concrete diff defect/regression review | `diff-reviewer` |
+| authorization／scope／tenant isolation diff review | `authorization-reviewer` |
+| schema／RLS／transaction data-boundary diff review | `database-boundary-reviewer` |
+| UI accessibility diff review | `accessibility-reviewer` |
+| 執行已指定的一個 validation plan | `validation-runner` |
+| Next.js 執行期症狀的根因定位 | `nextjs-runtime-diagnostician` |
+| 元件/registry 的相容性研究 | `component-researcher` |
+| 為既定行為設計測試案例 | `test-designer` |
+| 規劃已決定的 schema/data migration | `schema-migration-planner` |
+| 將已決定事實同步到文件 | `documentation-writer` |
+| 分析一個已量測的效能瓶頸 | `performance-analyst` |
 | completion/evidence claim verification | `evidence-verifier` |
 | 獨立最終 architecture decision | `architecture-decider` |
 | 高風險最終 acceptance | `acceptance-decider` |
 
-Primary GPT-6 可直接做 final decision；不為形式重派。只使用會改變決策或提升 acceptance confidence 的最少 roles。
+Primary 可直接做 final decision；不為形式重派。只使用會改變決策或提升 acceptance confidence 的最少 roles。
 
-## GPT-6 development
+## Atomic specialist roles
 
 | Need | Role | Reasoning | Deliverable |
 | --- | --- | --- | --- |
-| 已決定的 bounded change，指定 6 實作 | `dev6-implementation-worker` | medium | 最小充分實作、相關驗證與未解決事項 |
-| 指定 6 審查 concrete diff | `dev6-diff-reviewer` | high | 有 trigger、位置與影響的 defect findings |
-| 執行已指定的 check、test、build 或 runtime smoke | `dev6-validation-runner` | high | exact revision、命令結果與 evidence boundary |
-| Next.js route、hydration、compilation 或 runtime 根因 | `dev6-nextjs-runtime-analyst` | high | 正確 checkout/port 的 runtime evidence 與根因 |
-| shadcn registry item、範例或組合選擇 | `dev6-shadcn-registry-researcher` | high | 符合現有 UI contract 的選項、來源與預期 diff |
+| 執行一個已指定 validation plan | `validation-runner` | high | exact revision、結果與 evidence boundary |
+| 定位一個 Next.js runtime 根因 | `nextjs-runtime-diagnostician` | high | 正確 checkout/port 的 runtime evidence 與根因 |
+| 研究一個元件/registry 相容性問題 | `component-researcher` | high | 符合現有 UI contract 的選項、來源與預期 diff |
 
-Primary 先確認 Owner、contract 與 scope；需要時由 MCP specialist 蒐證，再交給單一 implementation worker。Diff review 可指出需修正處；修正完成後由指定 validation owner 執行 gates。`evidence-verifier` 檢查 claim 是否被結果支持，仍不執行測試。高風險決策沿用既有 Astra decision roles。這是選擇流程，不要求每次啟用所有角色。
+Primary 先確認 Owner、contract 與 scope；需要時由 MCP specialist 蒐證，再交給單一 change implementer。Diff review 可指出需修正處；修正完成後由指定 validation owner 執行 gates。`evidence-verifier` 檢查 claim 是否被結果支持，仍不執行測試。這是選擇流程，不要求每次啟用所有角色。
 
-指定 `dev6-*` role 時，角色檔的模型與 effort 生效；不要派原本有固定模型的角色再期待 spawn model 覆蓋它。若主代理也要使用 6，可從 repository 根目錄啟動：
-
-```sh
-codex -m gpt-6-luna -c model_reasoning_effort=high
-```
-
-上述命令只選擇該次 CLI session 的主模型；專案角色需由新 session 載入，帳號仍須有模型使用權限。桌面版在模型選單選擇 GPT-6 Luna，並在任務中指定所需 `dev6-*` role。
+沒有第二個「實作」或「差異審查」角色：同一種原子工作只保留一個角色。專項角色只在其工具或證據邊界不同時存在。
 
 ## MCP permissions and evidence
 
@@ -102,7 +117,7 @@ MCP 工具免逐次確認不授予產品／provider 寫入權限。Specialist �
 
 ## Constraints
 
-- `repository-mapper` / `implementation-worker` / `dev6-implementation-worker` 預設 medium reasoning；其餘 analysis/review/evidence/decision/validation roles high。
+- `repository-mapper` / `change-implementer` 預設 medium reasoning；其餘 analysis/review/evidence/decision/validation roles high。
 - 最多 5 個 subagents；只並行可獨立驗收且不競爭同一寫入面的工作。
 - 子代理不自行擴 scope 或再派工；owner/permission/research 缺口回報 Primary。
 - 寫入代理保留他人修改；同 checkout 不並行寫同一檔案、migration order 或 generated output。

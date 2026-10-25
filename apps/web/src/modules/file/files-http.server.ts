@@ -1,8 +1,8 @@
 import { UserError } from "@line_bot_v1/account/domain/user";
 import type { createFiles } from "@line_bot_v1/file/application/use-cases/files";
 import { FileError } from "@line_bot_v1/file/domain/error";
-import { IntelligenceError } from "@line_bot_v1/intelligence/domain/error";
 import type { createIntelligenceProcessing } from "@line_bot_v1/intelligence/application/use-cases/processing";
+import { IntelligenceError } from "@line_bot_v1/intelligence/domain/error";
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
 import { RepositoryError } from "@line_bot_v1/repository/contracts/errors/repository-error";
 import { normalizeRepositoryName } from "@line_bot_v1/repository/domain/repository/value-objects/repository-name";

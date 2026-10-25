@@ -1432,7 +1432,14 @@ test("external skills are outside repository checks; adjacent governance remains
   write(".agents/skills-local/README.md", "# Repository content\n");
   assert.deepEqual(validate(root), []);
 });
-for (const role of ["diff-reviewer", "architecture-decider", "acceptance-decider"]) {
+for (const role of [
+  "diff-reviewer",
+  "authorization-reviewer",
+  "database-boundary-reviewer",
+  "accessibility-reviewer",
+  "architecture-decider",
+  "acceptance-decider",
+]) {
   test(`${role} cannot gain write access`, (t) => {
     const { root, write } = fixture(t);
     write(
@@ -1512,17 +1519,17 @@ test("canonical Codex guidance keeps non-empty active sections", (t) => {
 });
 test("custom roles keep repository governance pointers", (t) => {
   const { root, write } = fixture(t);
-  const path = ".codex/agents/implementation-worker.toml";
+  const path = ".codex/agents/change-implementer.toml";
   for (const reference of ["root AGENTS.md", ".codex/agents/AGENTS.md"]) {
     write(
       path,
-      `name = "implementation-worker"\ndescription = "fixture"\ndeveloper_instructions = ${JSON.stringify(roleDeveloperInstructions.replace(reference, "missing.md"))}\n`,
+      `name = "change-implementer"\ndescription = "fixture"\ndeveloper_instructions = ${JSON.stringify(roleDeveloperInstructions.replace(reference, "missing.md"))}\n`,
     );
     rejects(root, `developer_instructions must reference ${reference}`);
 
     write(
       path,
-      `name = "implementation-worker"\ndescription = "fixture"\ndeveloper_instructions = ${JSON.stringify(roleDeveloperInstructions)}\n`,
+      `name = "change-implementer"\ndescription = "fixture"\ndeveloper_instructions = ${JSON.stringify(roleDeveloperInstructions)}\n`,
     );
     assert.deepEqual(validate(root), []);
   }

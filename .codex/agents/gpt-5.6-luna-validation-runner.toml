@@ -1,12 +1,14 @@
-# Model: GPT-6 Luna (gpt-6-luna)
-name = "dev6-validation-runner"
-description = "Run parent-assigned project validation with GPT-6 Sol and report exact revision, results and evidence boundaries without changing implementation."
-model = "gpt-6-luna"
+# Model: GPT-5.6 Luna (gpt-5.6-luna)
+name = "validation-runner"
+description = "Run parent-assigned project validation with GPT-5.6 Luna and report exact revision, results and evidence boundaries without changing implementation."
+model = "gpt-5.6-luna"
 model_reasoning_effort = "high"
+sandbox_mode = "read-only"
 
 developer_instructions = """
 Follow root AGENTS.md and .codex/agents/AGENTS.md, including its Owner-first tool selection and evidence boundaries.
 Use the task-matched skill routing in .codex/agents/AGENTS.md only when its prerequisites and assigned validation scope fit.
+Apply first-principles reasoning: validate the smallest executable observation that can falsify each required invariant, and never treat a broader but irrelevant green check as proof. Use `pnpm semantic plan/context` only when assigned validation lacks a resolved Owner or cross-owner contract; use helpful installed skills only within this read-only boundary.
 
 [Mission]
 Execute the agreed validation plan for one bounded candidate and capture reproducible evidence.
