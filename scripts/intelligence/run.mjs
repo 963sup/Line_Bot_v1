@@ -7,12 +7,13 @@ import {
 import { ContractError } from "@line_bot_v1/contract/domain/error";
 import { createPostgresFileSourceReader } from "@line_bot_v1/file/composition/bootstrap/files";
 import { FileError } from "@line_bot_v1/file/domain/error";
-import { createGeminiDocumentIntake } from "@line_bot_v1/intelligence/composition/bootstrap/document-intake";
-import { createPostgresDocumentAttempts } from "@line_bot_v1/intelligence/adapters/outbound/persistence/document-attempts";
+import {
+  createGeminiDocumentIntake,
+  createPostgresDocumentIntakeAttempts,
+} from "@line_bot_v1/intelligence/composition/bootstrap/document-intake";
 import { DocumentAttemptError } from "@line_bot_v1/intelligence/contracts/output/document-attempts";
 import { IntakeError } from "@line_bot_v1/intelligence/contracts/output/document-intake";
 import { PostgresDatabase } from "@line_bot_v1/platform/postgres";
-import { createPostgresFileRevisionQualifier } from "@line_bot_v1/file/composition/bootstrap/files";
 import { classifyInternalFailure } from "../runtime/internal-failure.mjs";
 import {
   InternalInputError,
@@ -64,7 +65,7 @@ try {
     const intake = createGeminiDocumentIntake({
       apiKey: process.env.GEMINI_API_KEY,
       model: process.env.GEMINI_MODEL,
-      attempts: createPostgresDocumentAttempts(createPostgresFileRevisionQualifier, db),
+      attempts: createPostgresDocumentIntakeAttempts(db),
       reader: createPostgresFileSourceReader(db),
       target,
       onTargetSubmit: () => {

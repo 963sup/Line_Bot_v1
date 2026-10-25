@@ -104,6 +104,7 @@ function sourceFor(url) {
       import { FileError } from "@line_bot_v1/file/domain/error";
       import { IntakeError } from "@line_bot_v1/intelligence/contracts/output/document-intake";
       import { DocumentAttemptError } from "@line_bot_v1/intelligence/contracts/output/document-attempts";
+      export function createPostgresDocumentIntakeAttempts() { return {}; }
       export function createGeminiDocumentIntake(config) {
         if(process.env.CLI_SCENARIO === "factory-error") throw new Error("TOP_SECRET");
         return async (actor, command) => {
