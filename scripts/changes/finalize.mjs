@@ -1,28 +1,40 @@
 import { spawnSync } from "node:child_process";
+import {
+  createOutputDirectory,
+  readBoundedFailure,
+  runBoundedCommand,
+} from "../runtime/bounded-output.mjs";
 import { collectChangeState, evaluatePreflight, repositoryRoot } from "./state.mjs";
 
 export function validateCommandSurface({
   npmExecPath = process.env.npm_execpath,
   spawn = spawnSync,
   cwd = repositoryRoot,
+  outputDirectory,
 } = {}) {
   if (!npmExecPath) {
     throw new Error("change:finalize must run through the pinned pnpm command surface.");
   }
-  const result = spawn(process.execPath, [npmExecPath, "validate"], {
+  const artifacts = outputDirectory ?? createOutputDirectory(cwd, "change-finalize-");
+  const result = runBoundedCommand(process.execPath, [npmExecPath, "validate"], {
     cwd,
-    encoding: "utf8",
-    maxBuffer: 64 * 1024,
-    stdio: ["ignore", "pipe", "pipe"],
     env: {
       ...process.env,
       NEXT_TELEMETRY_DISABLED: "1",
       TURBO_TELEMETRY_DISABLED: "1",
     },
+    label: "validate",
+    outputDirectory: artifacts,
+    spawn,
   });
-  if (result.error) throw result.error;
-  if (result.status !== 0) {
-    throw new Error(`pnpm validate failed with status ${result.status ?? "unknown"}.`);
+  if (result.error || result.status !== 0) {
+    const diagnostic = readBoundedFailure(result.logPath);
+    throw new Error(
+      `pnpm validate failed with status ${result.status ?? "unknown"}.` +
+        (result.error ? ` Spawn error: ${result.error.message}.` : "") +
+        (diagnostic ? `\n${diagnostic}` : "") +
+        `\nFull output: ${result.logPath}`,
+    );
   }
 }
 
