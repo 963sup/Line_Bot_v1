@@ -32,12 +32,12 @@ Review agents receive only read/search tools. The root-cause debugger also recei
 
 ```text
 main push (exact SHA)
-  ├─ scripts/tooling/validate.mjs → all groups success
-  └─ scripts/github/release-plan.mjs → pending sources per operation
-       ├─ Rich Menu assets/code → current-main → scripts/line/rich-menu/sync.ts
-       ├─ packages/integration-supabase/src/schemas SQL → current-main → scripts/supabase/remote.mjs
-       └─ Web build inputs → required schema success → scripts/vercel/deploy-production.mjs
-            └─ required schema/Web success → scripts/attendance/scheduler.mjs
+  ├─ scripts/governance/tooling/validate.mjs → all groups success
+  └─ scripts/providers/github/release-plan.mjs → pending sources per operation
+       ├─ Rich Menu assets/code → current-main → scripts/providers/line/rich-menu/sync.ts
+       ├─ packages/integration-supabase/src/schemas SQL → current-main → scripts/providers/supabase/remote.mjs
+       └─ Web build inputs → required schema success → scripts/providers/vercel/deploy-production.mjs
+            └─ required schema/Web success → scripts/operations/attendance/scheduler.mjs
 ```
 
 每個 external operation 都要求相同 SHA 的 validation 與 planning 成功。Rich Menu 不等待 Supabase、Web 或 Scheduler；圖片推到 main 後自動發布，無需手動 dispatch。「立即」表示自動觸發，實際時間包含 runner 排隊、驗證與 LINE API。

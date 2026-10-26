@@ -1,5 +1,5 @@
 import { fileURLToPath } from "node:url";
-import { createOutputDirectory, writeBoundedDiagnostic } from "../runtime/bounded-output.mjs";
+import { createOutputDirectory, writeBoundedDiagnostic } from "../core/runtime/bounded-output.mjs";
 
 const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
 

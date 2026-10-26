@@ -220,6 +220,7 @@ export class PostgresContentPlans implements ContentPlanReads, ContentPlanTransa
         await sql.query(
           `SELECT revision.id,revision.repository_id,revision.version,revision.parent_revision_id,
                   revision.actor_user_id,revision.at,revision.action,revision.file_import,
+                  revision.contract_document_import,
                   jsonb_set(revision.document,'{resourcePins}',coalesce((
                     SELECT jsonb_agg(jsonb_build_object(
                       'nodeId',pin.node_id,'resourceId',pin.resource_id,

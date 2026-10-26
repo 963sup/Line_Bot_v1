@@ -1,0 +1,229 @@
+import { spawn, spawnSync } from "node:child_process";
+import { once } from "node:events";
+import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { createRequire } from "node:module";
+import { createServer } from "node:net";
+import path from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
+import { fileURLToPath } from "node:url";
+import { boundedSpawnOptions } from "../../core/runtime/bounded-output.mjs";
+
+const root = fileURLToPath(new URL("../../../", import.meta.url));
+const web = path.join(root, "apps/web");
+const require = createRequire(path.join(web, "package.json"));
+const rootRequire = createRequire(path.join(root, "package.json"));
+const next = require.resolve("next/dist/bin/next");
+const turbo = rootRequire.resolve("turbo/bin/turbo");
+const exactNodeVersion = readFileSync(path.join(root, ".node-version"), "utf8").trim();
+if (process.versions.node !== exactNodeVersion) {
+  throw new Error(`Expected Node ${exactNodeVersion}; got ${process.versions.node}.`);
+}
+// Next reads env files from its working directory. Never load repository secrets.
+if (readdirSync(web).some((name) => name === ".env" || name.startsWith(".env."))) {
+  throw new Error("Remove apps/web env files before running the isolated browser test.");
+}
+const port = 4117;
+const base = `http://127.0.0.1:${port}`;
+const output = path.join(
+  root,
+  ".artifacts/browser",
+  new Date().toISOString().replace(/[:.]/g, "-"),
+);
+mkdirSync(output, { recursive: true });
+const env = {};
+for (const [key, value] of Object.entries(process.env)) {
+  if (
+    /^(path|pathext|systemroot|windir|comspec|temp|tmp|userprofile|home|localappdata|appdata)$/i.test(
+      key,
+    )
+  ) {
+    env[key] = value;
+  }
+}
+Object.assign(env, {
+  NODE_ENV: "production",
+  NEXT_TELEMETRY_DISABLED: "1",
+  NEXT_PUBLIC_SUPABASE_URL: "https://local-auth.example.test",
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "synthetic-browser-test-key",
+  NEXT_PUBLIC_BROWSER_TEST_HARNESS: "true",
+  GOOGLE_MAPS_API_KEY: "synthetic-google-maps-browser-key",
+  NAVIGATION_BASE: base,
+  NAVIGATION_ARTIFACT_DIR: output,
+});
+for (const key of [
+  "PLAYWRIGHT_PACKAGE_PATH",
+  "NAVIGATION_BROWSER_CHANNEL",
+  "REPOSITORY_BENCHMARK",
+]) {
+  if (process.env[key]) env[key] = process.env[key];
+}
+const report = {
+  startedAt: new Date().toISOString(),
+  commit: spawnSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).stdout?.trim(),
+  workingTree: spawnSync("git", ["status", "--short"], {
+    cwd: root,
+    encoding: "utf8",
+  }).stdout?.trim(),
+  node: process.version,
+  base,
+  scope:
+    "Real Next.js production build and browser; synthetic LIFF/API with isolated local PGlite owner use cases; no remote database or mobile LINE.",
+  status: "failed",
+};
+let server;
+let serverExit;
+let active;
+function launch(args, cwd, logfile, extraEnv = {}) {
+  const boundedOutput = boundedSpawnOptions(output, logfile.replace(/\.log$/, ""));
+  const child = spawn(process.execPath, args, {
+    cwd,
+    env: { ...env, ...extraEnv },
+    stdio: boundedOutput.stdio,
+    windowsHide: true,
+  });
+  child.once("exit", () => boundedOutput.close());
+  return child;
+}
+async function command(args, cwd, logfile, extraEnv = {}) {
+  active = launch(args, cwd, logfile, extraEnv);
+  const [code] = await once(active, "exit");
+  active = undefined;
+  if (code !== 0) throw new Error(`${logfile} failed with exit code ${code}.`);
+}
+function stop() {
+  active?.kill();
+  server?.kill();
+}
+async function startServer(logfile, extraEnv = {}) {
+  server = launch(
+    [next, "start", "--hostname", "127.0.0.1", "--port", String(port)],
+    web,
+    logfile,
+    extraEnv,
+  );
+  serverExit = once(server, "exit");
+  for (let attempt = 0; attempt < 60; attempt++) {
+    if (server.exitCode !== null) throw new Error("Local server exited before readiness.");
+    try {
+      const response = await fetch(base, { signal: AbortSignal.timeout(1000) });
+      if (response.ok) return;
+    } catch {
+      // Readiness polling only; test assertions use Playwright's observable state.
+    }
+    await delay(500);
+  }
+  throw new Error("Local Web did not become ready.");
+}
+process.once("SIGINT", stop);
+process.once("SIGTERM", stop);
+try {
+  const probe = createServer();
+  probe.listen(port, "127.0.0.1");
+  await once(probe, "listening");
+  await new Promise((resolve, reject) =>
+    probe.close((error) => (error ? reject(error) : resolve())),
+  );
+  console.log(`Artifacts: ${output}\nBuilding workspace dependencies for isolated Web…`);
+  await command(
+    [turbo, "run", "build", "--filter=@line_bot_v1/web^..."],
+    root,
+    "dependencies-build.log",
+  );
+  report.workspaceDependenciesBuild = "passed";
+  console.log("Building isolated local Web…");
+  await command([next, "build"], web, "build.log");
+  report.build = "passed";
+  await startServer("server.log");
+  await command(
+    ["--no-wasm-code-gc", path.join(root, "scripts/providers/browser/check-work-content.mjs")],
+    root,
+    "work-content.log",
+  );
+  await command(
+    [path.join(root, "scripts/providers/browser/check-navigation.mjs")],
+    root,
+    "browser.log",
+  );
+  await command(
+    ["--no-wasm-code-gc", path.join(root, "scripts/providers/browser/check-project-imports.mjs")],
+    root,
+    "project-imports.log",
+  );
+  await command(
+    [path.join(root, "scripts/providers/browser/measure-loading.mjs")],
+    root,
+    "loading.log",
+  );
+  await command(
+    [path.join(root, "scripts/providers/browser/check-profile.mjs")],
+    root,
+    "profile.log",
+  );
+  await command(
+    ["--no-wasm-code-gc", path.join(root, "scripts/providers/browser/check-wbs.mjs")],
+    root,
+    "wbs.log",
+  );
+  await command(
+    ["--no-wasm-code-gc", path.join(root, "scripts/providers/browser/check-project-wbs.mjs")],
+    root,
+    "project-wbs.log",
+  );
+  await command(
+    [path.join(root, "scripts/providers/browser/check-repository-resources.mjs")],
+    root,
+    "repository-resources.log",
+  );
+  await command(
+    [path.join(root, "scripts/providers/browser/check-membership.mjs")],
+    root,
+    "membership.log",
+  );
+  await command(
+    [path.join(root, "scripts/providers/browser/check-auto-clock.mjs")],
+    root,
+    "auto-clock.log",
+  );
+  await command(
+    [path.join(root, "scripts/providers/browser/check-repository-address.mjs")],
+    root,
+    "repository-address.log",
+  );
+  await command(
+    [path.join(root, "scripts/providers/browser/check-partner-management.mjs")],
+    root,
+    "partner-management.log",
+  );
+  await command(
+    [path.join(root, "scripts/providers/browser/check-member-management.mjs")],
+    root,
+    "member-management.log",
+  );
+  await command(
+    [path.join(root, "scripts/providers/browser/check-permissions.mjs")],
+    root,
+    "permissions.log",
+  );
+  server.kill();
+  await serverExit;
+  server = undefined;
+  serverExit = undefined;
+  await startServer("server-no-maps.log", { GOOGLE_MAPS_API_KEY: "" });
+  await command(
+    [path.join(root, "scripts/providers/browser/check-repository-address.mjs")],
+    root,
+    "repository-address-no-maps.log",
+    { NAVIGATION_NO_MAPS_KEY: "1" },
+  );
+  report.status = "passed";
+} catch (error) {
+  report.error = error.message;
+  console.error(error);
+  process.exitCode = 1;
+} finally {
+  stop();
+  if (serverExit) await serverExit;
+  report.finishedAt = new Date().toISOString();
+  writeFileSync(path.join(output, "report.json"), `${JSON.stringify(report, null, 2)}\n`);
+  console.log(`Browser test ${report.status}: ${output}`);
+}

@@ -3,7 +3,7 @@ import {
   createOutputDirectory,
   readBoundedFailure,
   runBoundedCommand,
-} from "../runtime/bounded-output.mjs";
+} from "../core/runtime/bounded-output.mjs";
 import { collectChangeState, evaluatePreflight, repositoryRoot } from "./state.mjs";
 
 export function validateCommandSurface({

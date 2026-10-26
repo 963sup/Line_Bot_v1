@@ -24,6 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@v6
         with:
@@ -33,5 +34,16 @@ jobs:
           run_install: false
           cache: true
           cache_dependency_path: pnpm-lock.yaml
+      - name: Restore workspace build cache
+        uses: actions/cache@v6
+        with:
+          path: |
+            .turbo
+            apps/web/.next/cache
+          key: copilot-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.node-version', 'package.json', 'pnpm-lock.yaml', 'turbo.json') }}
+          restore-keys: |
+            copilot-${{ runner.os }}-${{ runner.arch }}-
       - name: Install workspace dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --prefer-offline
+      - name: Verify development tooling
+        run: pnpm tooling:doctor

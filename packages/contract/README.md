@@ -19,4 +19,4 @@ diagnostics before confirming; discrepancy acknowledgement reasons must come fro
 review and must never be generated from provider output.
 
 Read the [owner contract](../../docs/owners/contract.md), [local constraints](AGENTS.md),
-[generated semantics](SEMANTICS.md) and [authenticated CLI](../../scripts/contract/README.md).
+[generated semantics](SEMANTICS.md) and [authenticated CLI](../../scripts/README.md).

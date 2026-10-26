@@ -43,7 +43,7 @@ LINE Rich Menu provider capability
 → packages/line
 
 Rich Menu repository operations
-→ scripts/line/rich-menu
+→ scripts/providers/line/rich-menu
 
 Release orchestration
 → .github/workflows/release.yml

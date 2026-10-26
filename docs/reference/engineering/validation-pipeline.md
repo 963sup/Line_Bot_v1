@@ -19,7 +19,7 @@ Repository validation 使用既有 scripts 作單一入口；不要把 typecheck
 | `check` | 日常 fast feedback，含 lint、architecture 與 affected type/test |
 | `validate` | 明確要求時的完整 tooling/docs/lint/architecture/deadcode/type/test/build |
 
-實際順序由 `scripts/tooling/validate.mjs` 與 package scripts 擁有；文件不複製 implementation 細節作 second source。VS Code workspace 使用 `.vscode/settings.json` 在 save 時套用同一 Biome formatter / organize imports；Agent／CLI 產出使用 `pnpm format`，CI 仍只做 read-only `pnpm lint`。
+實際順序由 `scripts/governance/tooling/validate.mjs` 與 package scripts 擁有；文件不複製 implementation 細節作 second source。VS Code workspace 使用 `.vscode/settings.json` 在 save 時套用同一 Biome formatter / organize imports；Agent／CLI 產出使用 `pnpm format`，CI 仍只做 read-only `pnpm lint`。
 
 Biome 同時涵蓋 `knip.jsonc` 與 `architecture/**/*.json`，React Hooks 的呼叫位置與 effect dependencies 也納入 correctness gate。Knip 對 private workspace package 的 entry exports 檢查實際 repository consumer；未使用 export 應先區分內部宣告、必要公開契約與真正死碼，再收斂 public surface。
 ## Fast vs full validation
@@ -70,9 +70,11 @@ TypeScript 的共用編譯契約由 `tsconfig.base.json` 擁有，workspace sour
 
 Web build 同時承擔 Sentry sourcemap 上傳，因此 `@line_bot_v1/web#build` 停用 Turbo 快取，避免重播產物而跳過上傳；其他 package build 仍可使用快取。`SENTRY_AUTH_TOKEN` 保留 passthrough，不納入 cache hash。未提供 Sentry 配置的本機 build 不證明上傳成功。
 
+CI 的 validation 與 Copilot setup 共用 pnpm store、Turbo cache 與 Next cache；快取 key 只由 Node／manifest／lockfile／Turbo 設定決定，不綁定 commit SHA，讓不同 revision 重用內容雜湊相同的產物。測試結果本身仍不直接快取，避免資料庫與外部狀態被錯誤重播。
+
 Type generation、test/build artifact 與 dependency install 在同一 checkout 可能競爭。驗證流程預設按 repository runner 順序執行；不要同時手動跑另一套會寫相同產物的 command。
 
-`check`／`validate` 的 typecheck/test stage 在本地與 CI 都限制最多兩個 Turbo tasks；單一 package 的 Node test runner 仍最多兩個 workers，避免跨套件並行相乘而同時初始化過多 PGlite／WASM instances。這是 aggregate resource budget，不縮小 package、test 或 schema coverage，也不修改 `CI`：真 PostgreSQL service 的 CI 必填檢查與本地條件維持原契約。保留 Node 24 的 `--no-wasm-code-gc` 保護；PGlite 的 native／WASM 記憶體不能靠提高 JS heap 上限當作根因修復。直接執行其他 Turbo test 命令時也須設定適當的 `--concurrency`，不要假設 package 內的 worker 上限會限制跨套件總量。
+`check`／`validate` 的 typecheck、test-unit 與 test-database 在 CI 分成獨立 validation groups，可平行執行並分別定位失敗。typecheck 使用 4 個 Turbo tasks；兩個測試 groups 各自最多 2 個 Turbo tasks。test-database 才啟動 PostgreSQL 17，test-unit 不啟動資料庫。單一 package 的 Node test runner 仍最多兩個 workers，避免跨套件並行相乘而同時初始化過多 PGlite／WASM instances。這是 aggregate resource budget，不縮小 package、test 或 schema coverage，也不修改 `CI`：真 PostgreSQL service 的 CI 必填檢查與本地條件維持原契約。保留 Node 24 的 `--no-wasm-code-gc` 保護；PGlite 的 native／WASM 記憶體不能靠提高 JS heap 上限當作根因修復。直接執行其他 Turbo test 命令時也須設定適當的 `--concurrency`，不要假設 package 內的 worker 上限會限制跨套件總量。
 ## External-effect tools
 以下可能需要明確環境／授權，不屬一般 offline validate：
 

@@ -4,7 +4,13 @@
     "githubActionsRemoteBaseRefFallback": true
   },
   "globalPassThroughEnv": ["npm_config_store_dir"],
-  "globalDependencies": ["tsconfig.base.json"],
+  "globalDependencies": [
+    "tsconfig.base.json",
+    "tsconfig.tools.json",
+    "biome.json",
+    "knip.jsonc",
+    ".dependency-cruiser.mjs"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
@@ -38,9 +44,9 @@
         "$TURBO_DEFAULT$",
         "$TURBO_ROOT$/.env.local",
         "$TURBO_ROOT$/.vercelignore",
-        "$TURBO_ROOT$/scripts/runtime/load-env.mjs",
-        "$TURBO_ROOT$/scripts/runtime/next.mjs",
-        "$TURBO_ROOT$/scripts/runtime/bounded-output.mjs"
+        "$TURBO_ROOT$/scripts/core/runtime/load-env.mjs",
+        "$TURBO_ROOT$/scripts/core/runtime/next.mjs",
+        "$TURBO_ROOT$/scripts/core/runtime/bounded-output.mjs"
       ]
     },
     "@line_bot_v1/web#typecheck": {
@@ -48,9 +54,9 @@
       "outputs": [],
       "inputs": [
         "$TURBO_DEFAULT$",
-        "$TURBO_ROOT$/scripts/runtime/load-env.mjs",
-        "$TURBO_ROOT$/scripts/runtime/next.mjs",
-        "$TURBO_ROOT$/scripts/runtime/bounded-output.mjs"
+        "$TURBO_ROOT$/scripts/core/runtime/load-env.mjs",
+        "$TURBO_ROOT$/scripts/core/runtime/next.mjs",
+        "$TURBO_ROOT$/scripts/core/runtime/bounded-output.mjs"
       ]
     },
     "@line_bot_v1/namespace#test": {
@@ -84,9 +90,9 @@
       "inputs": [
         "$TURBO_DEFAULT$",
         "$TURBO_ROOT$/packages/integration-supabase/src/schemas/*.sql",
-        "$TURBO_ROOT$/scripts/runtime/load-env.mjs",
-        "$TURBO_ROOT$/scripts/runtime/load-env.test.mjs",
-        "$TURBO_ROOT$/scripts/probes/*.mjs"
+        "$TURBO_ROOT$/scripts/core/runtime/load-env.mjs",
+        "$TURBO_ROOT$/scripts/core/runtime/load-env.test.mjs",
+        "$TURBO_ROOT$/scripts/providers/probes/*.mjs"
       ]
     },
     "@line_bot_v1/platform#schema:check": {
@@ -96,7 +102,7 @@
         "$TURBO_DEFAULT$",
         "$TURBO_ROOT$/packages/integration-supabase/src/config.toml",
         "$TURBO_ROOT$/packages/integration-supabase/src/schemas/*.sql",
-        "$TURBO_ROOT$/scripts/supabase/*.mjs"
+        "$TURBO_ROOT$/scripts/providers/supabase/*.mjs"
       ]
     },
     "@line_bot_v1/wiki#test": {
@@ -156,7 +162,7 @@
       "inputs": [
         "$TURBO_DEFAULT$",
         "$TURBO_ROOT$/packages/integration-supabase/src/schemas/*.sql",
-        "$TURBO_ROOT$/scripts/actions/*.mjs"
+        "$TURBO_ROOT$/scripts/operations/actions/*.mjs"
       ]
     },
     "@line_bot_v1/resources#test": {

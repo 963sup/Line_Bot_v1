@@ -5103,7 +5103,7 @@
         "entrypoints": [
           "apps/web/src/app/api/repository-wbs/transfer/route.ts",
           "apps/web/src/app/api/repository-wbs/transfer/cancel/route.ts",
-          "scripts/wbs/transfer.mjs"
+          "scripts/operations/wbs/transfer.mjs"
         ],
         "testPaths": [
           "packages/wbs/test/transfer.test.ts",
@@ -5296,7 +5296,7 @@
           "./application/commands/pages"
         ],
         "entrypoints": [
-          "scripts/wiki/run.mjs",
+          "scripts/operations/wiki/run.mjs",
           "apps/web/src/app/api/repository-wiki/route.ts",
           "apps/web/src/app/(resource)/[login]/[repository]/wiki/page.tsx",
           "apps/web/src/app/(resource)/[login]/[repository]/wiki/[pageId]/page.tsx"
@@ -5327,7 +5327,7 @@
           "./contracts/dto/repository-pulse"
         ],
         "entrypoints": [
-          "scripts/insights/run.mjs",
+          "scripts/analysis/insights/run.mjs",
           "apps/web/src/app/api/repository-insights/route.ts",
           "apps/web/src/app/(resource)/[login]/[repository]/insights/page.tsx"
         ],
@@ -5351,7 +5351,7 @@
         "scope": "Repository-scoped issue metrics through an owner public query.",
         "sourcePaths": ["packages/issue/src/adapters/outbound/persistence/metrics.ts"],
         "publicExports": ["./contracts/output/metrics", "./composition/bootstrap/metrics"],
-        "entrypoints": ["scripts/insights/run.mjs"],
+        "entrypoints": ["scripts/analysis/insights/run.mjs"],
         "testPaths": ["packages/issue/test/metrics.test.ts"],
         "note": "Owner query performs current Repository qualification/access checks; composition does not acquire business truth."
       }
@@ -5447,7 +5447,10 @@
           "./contracts/output/fixed-steps",
           "./composition/bootstrap/automation"
         ],
-        "entrypoints": ["scripts/actions/run.mjs", "scripts/actions/worker.mjs"],
+        "entrypoints": [
+          "scripts/operations/actions/run.mjs",
+          "scripts/operations/actions/worker.mjs"
+        ],
         "testPaths": [
           "packages/actions/test/actions.test.ts",
           "packages/actions/test/actions-postgres.test.ts"
@@ -5655,7 +5658,7 @@
           "./domain/line-reference"
         ],
         "entrypoints": [
-          "scripts/contract/run.mjs",
+          "scripts/operations/contract/run.mjs",
           "apps/web/src/app/api/repository-contracts/route.ts"
         ],
         "testPaths": [
@@ -5701,7 +5704,7 @@
           "./composition/bootstrap/task-dependencies"
         ],
         "entrypoints": [
-          "scripts/execution/run.mjs",
+          "scripts/operations/execution/run.mjs",
           "apps/web/src/app/api/repository-executions/route.ts"
         ],
         "testPaths": [
@@ -5827,11 +5830,11 @@
           "packages/contract/src/contracts/input/document-intake.ts"
         ],
         "publicExports": ["./contracts/input/document-intake", "./composition/bootstrap/documents"],
-        "entrypoints": ["scripts/contract/run.mjs"],
+        "entrypoints": ["scripts/operations/contract/run.mjs"],
         "testPaths": [
           "packages/contract/test/document-intake-domain.test.ts",
           "packages/contract/test/documents-postgres.test.ts",
-          "scripts/contract/run.test.mjs"
+          "scripts/operations/contract/run.test.mjs"
         ],
         "note": "The candidate is Contract truth only after Contract validation and a transaction-bound File source qualification. Intelligence may submit SAVE; confirmation requires an explicit Contract command. A separate Content capability may read one exact confirmed revision through Contract's public reader and apply its own fixed whole-document expansion; Contract never creates Content or WBS records."
       }
@@ -5873,8 +5876,8 @@
           "./domain/file"
         ],
         "entrypoints": [
-          "scripts/file/run.mjs",
-          "scripts/file/reclaim.mjs",
+          "scripts/operations/file/run.mjs",
+          "scripts/operations/file/reclaim.mjs",
           "apps/web/src/app/api/repository-files/route.ts",
           "apps/web/src/app/(resource)/[login]/[repository]/files/page.tsx"
         ],
@@ -5926,7 +5929,7 @@
           "./contracts/output/processing"
         ],
         "entrypoints": [
-          "scripts/file/run.mjs",
+          "scripts/operations/file/run.mjs",
           "apps/web/src/app/api/repository-files/route.ts",
           "apps/web/src/app/(resource)/[login]/[repository]/files/page.tsx"
         ],
@@ -5969,7 +5972,7 @@
           "./contracts/output/processing"
         ],
         "entrypoints": [
-          "scripts/file/run.mjs",
+          "scripts/operations/file/run.mjs",
           "apps/web/src/app/api/repository-files/route.ts",
           "apps/web/src/app/(resource)/[login]/[repository]/files/page.tsx"
         ],
@@ -6005,10 +6008,13 @@
         ],
         "publicExports": ["./composition/bootstrap/processors"],
         "entrypoints": [
-          "scripts/file/run.mjs",
+          "scripts/operations/file/run.mjs",
           "apps/web/src/app/api/_composition/files.server.ts"
         ],
-        "testPaths": ["packages/intelligence/test/processing.test.ts", "scripts/file/run.test.mjs"],
+        "testPaths": [
+          "packages/intelligence/test/processing.test.ts",
+          "scripts/operations/file/run.test.mjs"
+        ],
         "note": "The processor preserves observations-v1:<model> identity, performs one provider attempt without fallback and supports configured PDF/JPEG/PNG/WebP inputs. Output remains candidate evidence; simulated tests do not prove live provider accuracy or acceptance."
       }
     },
@@ -6055,11 +6061,11 @@
           "./contracts/output/document-intake",
           "./contracts/output/document-attempts"
         ],
-        "entrypoints": ["scripts/intelligence/run.mjs"],
+        "entrypoints": ["scripts/operations/intelligence/run.mjs"],
         "testPaths": [
           "packages/intelligence/test/intake-document.test.ts",
           "packages/intelligence/test/document-attempts-postgres.test.ts",
-          "scripts/intelligence/run.test.mjs"
+          "scripts/operations/intelligence/run.test.mjs"
         ],
         "note": "A single durable provider attempt may produce only an untrusted SAVE candidate. Its technical state preserves source/intent identity and target receipt reference, never the candidate. Provider failure, response loss and live extraction accuracy remain distinct evidence boundaries."
       }

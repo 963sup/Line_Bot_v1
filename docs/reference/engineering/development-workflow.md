@@ -39,7 +39,7 @@ Agent 修改前仍須按 repository source priority 檢查 code / manifest / sch
 8. **Exact-head 驗證**：整理 logical commits、push 並建立／更新 PR，明確 fetch main、同步 base；PR 與 main 對 exact head 使用同一 changed-owner selection contract，基準遺失時保守展開全部 groups。`pnpm validate` 保留給明確要求的全庫稽核，不能把未選 Owner 的重跑當作較強的必要證據，並拒絕驗證期間 branch/HEAD/base/upstream 變動。
 9. **PR → main**：確認本地、remote branch、PR head 與 CI aggregate `validate` 是相同 SHA；合併前重新確認遠端 base，前進就同步並重驗。按下方 merge 契約交付，讀回 PR merged 狀態與 main commit。明示的唯讀、push-only 或其他交付限制優先。
 
-工具介面與例子見 [source operations](../../../scripts/code/README.md)。`pnpm code` 只查詢／產生計畫；在其批次計畫流程內，來源寫入仍由 [patch application](../../../scripts/changes/README.md) 擁有。結構已知的單一 symbol 編輯可依 `.codex/SERENA.md` 使用 Serena；規則／計畫放忽略的 `.artifacts/`，不新增每次任務的永久紀錄。每個寫入面由一位負責者處理；只有獨立 scope 或唯讀分析才並行，需要隔離時使用 worktree。
+工具介面與例子見 [source operations](../../../scripts/README.md)。`pnpm code` 只查詢／產生計畫；在其批次計畫流程內，來源寫入仍由 [patch application](../../../scripts/README.md) 擁有。結構已知的單一 symbol 編輯可依 `.codex/SERENA.md` 使用 Serena；規則／計畫放忽略的 `.artifacts/`，不新增每次任務的永久紀錄。每個寫入面由一位負責者處理；只有獨立 scope 或唯讀分析才並行，需要隔離時使用 worktree。
 
 AGENTS 約束代理行為，CLI 檢查輸入／前置條件，CI 驗證提交結果；三者不互相冒充證據。最終回報 changed behavior/Owner、驗證命令與 SHA、結果及未驗證範圍。開新 Codex 工作階段後，用簡短任務確認能讀到 root AGENTS、本節與工具入口；既有 session 中修改文件或靜態檢查成功不證明新 session 載入。指令探索契約見 [Codex AGENTS](https://learn.chatgpt.com/docs/agent-configuration/agents-md)。
 

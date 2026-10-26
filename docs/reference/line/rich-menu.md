@@ -21,7 +21,7 @@ home、四類子選單的 -out aliases，以及 pre-Line_Bot_v1 aliases 已退�
 | `pnpm line:rich-menu preflight all` | 對 LINE definitions／current aliases/default 做 read-only preflight；不建立 menu、不改 alias/default |
 | `pnpm line:rich-menu publish all` | 在單一 process 內重新做 LINE preflight，依序 create／upload／definition readback，再更新 aliases、切 default 並 readback；中途失敗依已知 LINE remote state rollback |
 
-Rich Menu 圖片、發布程式或其執行依賴有待發布變更，且同 SHA 的 main Validate 成功後，Release 才執行單一 `pnpm line:rich-menu publish all`。來源分類由 `scripts/github/release-plan.mjs` 與測試維護；文件與測試本身不觸發發布。每個操作使用自己最近成功的 ancestor job 作 baseline，失敗不推進游標，首次無 baseline 時完整發布。Rich Menu 不等待 Supabase／Vercel；publisher 在單一 process 完成 preflight／create／upload／activate／readback。LINE token 只注入 publish step，current-main 在寫入前驗證；stage 與 MINI App URL 仍由現有 source 決定，不讀 Attendance／Supabase business state。
+Rich Menu 圖片、發布程式或其執行依賴有待發布變更，且同 SHA 的 main Validate 成功後，Release 才執行單一 `pnpm line:rich-menu publish all`。來源分類由 `scripts/providers/github/release-plan.mjs` 與測試維護；文件與測試本身不觸發發布。每個操作使用自己最近成功的 ancestor job 作 baseline，失敗不推進游標，首次無 baseline 時完整發布。Rich Menu 不等待 Supabase／Vercel；publisher 在單一 process 完成 preflight／create／upload／activate／readback。LINE token 只注入 publish step，current-main 在寫入前驗證；stage 與 MINI App URL 仍由現有 source 決定，不讀 Attendance／Supabase business state。
 
 Publication 不建立 `.artifacts/rich-menu*.json`，Rich Menu ID 只在單次 process 記憶體中傳遞；LINE remote definition／alias／default readback 才是 publication evidence。Create request 若未取得 ID 就失敗，可能是 unknown result；不得盲目重跑。Activation 若失敗，依記憶體 snapshot 回復 default／aliases；本次新建 menus 不自動刪除，避免短暫 alias 可見期間未知好友已切換後被誤刪。需要人工 reconcile 時，非敏感的 retained Rich Menu IDs 與 rollback failure 類別直接留在 workflow log，不另建 receipt source of truth。
 

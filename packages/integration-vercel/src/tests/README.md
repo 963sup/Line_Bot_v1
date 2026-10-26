@@ -7,7 +7,7 @@
 | README / links | `pnpm docs:check` |
 | Repository / build | exact-head `pnpm change:finalize` 執行完整 `pnpm validate` |
 | Local Web | `pnpm test:browser`；只證明其 synthetic／local 範圍 |
-| Deployment operator | 既有 `scripts/vercel/deploy-production.test.mjs`，由 canonical validation routing 執行 |
+| Deployment operator | 既有 `scripts/providers/vercel/deploy-production.test.mjs`，由 canonical validation routing 執行 |
 | Provider deployment | exact project、target、Git SHA、READY、alias readback |
 | Routing / security | callback、redirect、private request、provider protection 與真實 credential 邊界 |
 | Cache / runtime | scope isolation、撤權、timeout、cold start 與資料庫連線壓力 |

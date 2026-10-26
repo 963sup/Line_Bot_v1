@@ -10,4 +10,4 @@ Business-day/reward policy, qualification recheck and atomic claim remain in `@l
 - Provider profile, UI animation and browser state never determine reward, actor, day or credit.
 - Unknown result preserves the original business day and reads back before any explicit retry.
 ## Validation
-Keep server/domain replay tests and `scripts/browser/check-membership.mjs` aligned with this surface. Browser evidence must cover committed-result recovery, uncommitted retry, rejected result, reduced motion and 320/390px layout.
+Keep server/domain replay tests and `scripts/providers/browser/check-membership.mjs` aligned with this surface. Browser evidence must cover committed-result recovery, uncommitted retry, rejected result, reduced motion and 320/390px layout.

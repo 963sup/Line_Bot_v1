@@ -65,7 +65,7 @@ and WBS subsequently consumes that immutable Content revision.
 ## Delivery and evidence
 
 The authenticated operator entry is `pnpm contract:run`; bounded stdin carries identity proof,
-never a trusted actor ID or role. See the [CLI contract](../../scripts/contract/README.md).
+never a trusted actor ID or role. See the [CLI contract](../../scripts/README.md).
 Server timestamps record commands, not inferred work occurrence dates. [Payroll](payroll.md)
 retains its existing responsibility.
 

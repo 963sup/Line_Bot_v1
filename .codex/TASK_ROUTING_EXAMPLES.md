@@ -98,7 +98,7 @@ Local schema evidence 與 remote provider evidence 必須分開，migration、au
 ## Measured performance
 
 ```text
-scripts/browser/measure-loading.mjs measurement evidence
+scripts/providers/browser/measure-loading.mjs measurement evidence
  → analyst via performance-analyst Atomic
  → smallest evidence-backed improvement
 ```

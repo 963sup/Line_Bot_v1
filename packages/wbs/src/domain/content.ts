@@ -70,13 +70,47 @@ export function assertContentImportCoverage(lineage: readonly WbsRevision[]): vo
   const candidate = lineage[0];
   if (!evidence || !candidate)
     throw new WbsError(503, "WBS content import evidence is unavailable.");
+  const importedNodes = new Map(imported.document.nodes.map((node) => [node.id, node]));
+  const mappedContentNodeIds = new Set<string>();
+  const mappedWbsNodeIds = new Set<string>();
+  const importedContentNodeIds = new Set(imported.document.nodes.map((node) => node.id));
+  if (evidence.nodeCoverage.length !== imported.document.nodes.length)
+    throw new WbsError(503, "WBS content node coverage is incomplete.");
+  for (const mapping of evidence.nodeCoverage) {
+    if (mappedContentNodeIds.has(mapping.contentNodeId))
+      throw new WbsError(503, "WBS content node coverage is contradictory.");
+    if (!importedContentNodeIds.has(mapping.contentNodeId))
+      throw new WbsError(503, "WBS content node coverage points outside the imported revision.");
+    if (mappedWbsNodeIds.has(mapping.wbsNodeId))
+      throw new WbsError(503, "WBS target node coverage is contradictory.");
+    const targetNode = importedNodes.get(mapping.wbsNodeId);
+    const expectedTargetKind = mapping.sourceKind === "TASK" ? "WORK_PACKAGE" : "DELIVERABLE";
+    if (
+      !targetNode ||
+      mapping.targetKind !== expectedTargetKind ||
+      targetNode.kind !== expectedTargetKind
+    )
+      throw new WbsError(503, "WBS content node coverage has an invalid target kind.");
+    mappedContentNodeIds.add(mapping.contentNodeId);
+    mappedWbsNodeIds.add(mapping.wbsNodeId);
+  }
   const nodes = new Map(candidate.document.nodes.map((node) => [node.id, node]));
-  const sourceKeys = new Set<string>();
+  const sourceDefinitions = new Map<string, string>();
+  const coveredNodeIds = new Set<string>();
   for (const row of evidence.sourceRows) {
     const key = `${row.documentId}:${row.revisionId}:${row.sourceRowId}`;
-    if (sourceKeys.has(key))
-      throw new WbsError(503, "WBS source coverage contains duplicate source evidence.");
-    sourceKeys.add(key);
+    const definition = JSON.stringify({
+      disposition: row.disposition,
+      wbsNodeIds: [...row.wbsNodeIds].sort(),
+    });
+    const previousDefinition = sourceDefinitions.get(key);
+    if (previousDefinition !== undefined && previousDefinition !== definition)
+      throw new WbsError(503, "WBS source coverage contains contradictory source evidence.");
+    if (previousDefinition !== undefined) continue;
+    sourceDefinitions.set(key, definition);
+    const rowNodeIds = new Set(row.wbsNodeIds);
+    if (rowNodeIds.size !== row.wbsNodeIds.length)
+      throw new WbsError(503, "WBS source evidence contains duplicate node mappings.");
     const targets = row.wbsNodeIds.map((id) => nodes.get(id));
     if (targets.some((node) => !node))
       throw new WbsError(409, "WBS candidate no longer contains an imported source node.");
@@ -84,6 +118,13 @@ export function assertContentImportCoverage(lineage: readonly WbsRevision[]): vo
       if (row.wbsNodeIds.length)
         throw new WbsError(503, "Commercial-only source evidence unexpectedly maps to WBS work.");
       continue;
+    }
+    for (const nodeId of row.wbsNodeIds) {
+      if (!mappedWbsNodeIds.has(nodeId))
+        throw new WbsError(503, "WBS source evidence points outside immutable node coverage.");
+      if (coveredNodeIds.has(nodeId))
+        throw new WbsError(503, "WBS source evidence maps one node to multiple source rows.");
+      coveredNodeIds.add(nodeId);
     }
     if (!targets.some((node) => node?.kind === "WORK_PACKAGE"))
       throw new WbsError(409, "WBS candidate no longer covers a required source work package.");
@@ -135,18 +176,34 @@ export function importContentWbs(
     };
   });
   const document = parseWbsDocument({ schemaVersion: 1, nodes });
-  const sourceKeys = new Set<string>();
-  const sourceRows = source.sourceRows.map((row) => {
+  const sourceDefinitions = new Map<string, string>();
+  const coveredNodeIds = new Set<string>();
+  const sourceRows = source.sourceRows.flatMap((row) => {
     const sourceKey = `${row.documentId}:${row.revisionId}:${row.sourceRowId}`;
-    if (sourceKeys.has(sourceKey))
-      throw new WbsError(409, "Content source coverage contains duplicate source evidence.");
-    sourceKeys.add(sourceKey);
+    const definition = JSON.stringify({
+      disposition: row.disposition,
+      nodeIds: [...row.nodeIds].sort(),
+    });
+    const previousDefinition = sourceDefinitions.get(sourceKey);
+    if (previousDefinition !== undefined && previousDefinition !== definition)
+      throw new WbsError(409, "Content source coverage contains contradictory source evidence.");
+    if (previousDefinition !== undefined) return [];
+    sourceDefinitions.set(sourceKey, definition);
     const wbsNodeIds = row.nodeIds.map((nodeId) => {
       const wbsNodeId = bySource.get(nodeId);
       if (!wbsNodeId)
         throw new WbsError(409, "Content source coverage no longer matches the imported revision.");
       return wbsNodeId;
     });
+    if (new Set(wbsNodeIds).size !== wbsNodeIds.length)
+      throw new WbsError(409, "Content source row contains duplicate WBS node mappings.");
+    if (row.disposition === "CONTENT_WORK") {
+      for (const wbsNodeId of wbsNodeIds) {
+        if (coveredNodeIds.has(wbsNodeId))
+          throw new WbsError(409, "Content source rows share a WBS node mapping.");
+        coveredNodeIds.add(wbsNodeId);
+      }
+    }
     if (
       row.disposition === "CONTENT_WORK" &&
       !row.nodeIds.some(

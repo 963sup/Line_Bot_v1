@@ -1,0 +1,20 @@
+{
+  "name": "Line Bot v1",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-24-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/pnpm:1": {
+      "version": "11.25.0"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": ["biomejs.biome"],
+      "settings": {
+        "typescript.tsdk": "node_modules/typescript/lib",
+        "typescript.enablePromptUseWorkspaceTsdk": true,
+        "search.useIgnoreFiles": true
+      }
+    }
+  },
+  "postCreateCommand": "pnpm install --frozen-lockfile --prefer-offline && pnpm tooling:doctor"
+}

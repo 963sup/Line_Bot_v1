@@ -13,4 +13,4 @@ Checks return WBS findings without granting approval or publishing a Baseline. N
 
 Delivery recovery is Notifications-owned: target/payload/retry key persist before attempting, current binding and recipient eligibility are rechecked, retries back off and stop before 23 hours. No arbitrary scripts, schedule builder, generic graph engine or automatic subscription fan-out.
 
-Validation: owner unit/persistence tests, disposable PostgreSQL concurrency, mock LINE, schema/architecture/docs checks, repository check/validate and exact-head CI. Internal entries are [documented here](../../scripts/actions/README.md). Production worker enablement and real LINE recipient/device evidence are separate.
+Validation: owner unit/persistence tests, disposable PostgreSQL concurrency, mock LINE, schema/architecture/docs checks, repository check/validate and exact-head CI. Internal entries are [documented here](../../scripts/README.md). Production worker enablement and real LINE recipient/device evidence are separate.

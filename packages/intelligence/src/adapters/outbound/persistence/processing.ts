@@ -1,8 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import type {
-  FileRevisionQualifier,
-  LegacyProcessingHistory,
-} from "@line_bot_v1/file/contracts/output/references";
+import type { FileRevisionQualifier } from "@line_bot_v1/file/contracts/output/references";
 import { businessDatabase, type Database, type SqlRow } from "@line_bot_v1/platform/postgres";
 import {
   booleanValue,
@@ -15,6 +12,7 @@ import { RepositoryError } from "@line_bot_v1/repository/contracts/errors/reposi
 import { repositoryContentScope } from "@line_bot_v1/repository/postgres/content-scope";
 import type {
   IntelligenceProcessingStore,
+  LegacyProcessingHistory,
   ProcessingCommand,
   ProcessingTransaction,
 } from "../../../contracts/output/processing.js";
