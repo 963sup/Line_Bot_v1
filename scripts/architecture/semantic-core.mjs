@@ -1,0 +1,1093 @@
+import { readFile, stat } from "node:fs/promises";
+import { posix, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { compileDataTopology, loadDataTopologySources } from "./data-topology-core.mjs";
+import {
+  loadFptDomainTruth,
+  resolveFptReference,
+  validateFptDomainTruth,
+} from "./fpt-domain-core.mjs";
+
+const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
+
+function indexById(items, label, errors) {
+  const map = new Map();
+  for (const item of items ?? []) {
+    if (!item?.id) {
+      errors.push(label + ": id is required");
+      continue;
+    }
+    if (map.has(item.id)) errors.push(label + ": duplicate id " + item.id);
+    map.set(item.id, item);
+  }
+  return map;
+}
+
+function requireCollection(model, key, errors) {
+  if (!Array.isArray(model?.[key]) || model[key].length === 0) {
+    errors.push("Semantic model: " + key + " must be a non-empty collection");
+  }
+}
+
+function commandScript(command) {
+  if (typeof command !== "string") return null;
+  return /^pnpm\s+([A-Za-z0-9:_-]+)(?:\s|$)/.exec(command.trim())?.[1] ?? null;
+}
+
+function unique(values) {
+  return new Set(values).size === values.length;
+}
+
+const DIRECT_FPT_REFERENCE_KEYS = new Set(["file", "symbol", "field"]);
+const FPT_BACKED_CONCEPT_KEYS = new Set([
+  "id",
+  "kind",
+  "owner",
+  "lifecycle",
+  "authorityMode",
+  "persistenceExpectation",
+  "fpt",
+]);
+
+function validateDirectFptReference(reference, label, errors) {
+  if (!reference || typeof reference !== "object") return;
+  const unsupported = Object.keys(reference).filter((key) => !DIRECT_FPT_REFERENCE_KEYS.has(key));
+  if (unsupported.length) {
+    errors.push(
+      label +
+        ": FPT reference must contain only file, symbol and optional field; unsupported metadata " +
+        unsupported.join(", "),
+    );
+  }
+}
+
+function implementationStatus(capability) {
+  return capability.implementation?.status ?? "missing";
+}
+
+export function validateSemanticArchitecture(model, fpt, topology, commandManifest = null) {
+  const errors = [];
+  if (model?.version !== 2 || model?.role !== "product-domain-overlay") {
+    errors.push("Semantic model: expected version 2 product-domain-overlay");
+  }
+  if (
+    model?.sources?.githubFptDomainTruth !== "architecture/domain/fpt/*.json" ||
+    model?.sources?.githubFptProvenance !== "architecture/domain/fpt-source.json"
+  ) {
+    errors.push(
+      "Semantic model: GitHub semantics must route directly to architecture/domain/fpt/*.json with fpt-source.json provenance",
+    );
+  }
+  if (
+    fpt?.manifest?.version !== 1 ||
+    fpt?.manifest?.role !== "github-fpt-domain-truth-provenance"
+  ) {
+    errors.push("Semantic model: canonical GitHub domain truth must be the vendored FPT JSON");
+  }
+  if (topology?.version !== 3 || topology?.role !== "implementation-topology") {
+    errors.push("Semantic model: manifest must be version 3 implementation-topology");
+  }
+  if (topology?.semanticModel !== "architecture/semantic-model.json") {
+    errors.push("Semantic model: manifest must point to architecture/semantic-model.json");
+  }
+
+  for (const key of [
+    "semanticOwners",
+    "subdomains",
+    "conceptTypes",
+    "boundaryTypes",
+    "integrationModes",
+    "concepts",
+    "relationships",
+    "capabilities",
+    "invariants",
+    "truthRegistry",
+    "policies",
+  ]) {
+    requireCollection(model, key, errors);
+  }
+
+  const owners = indexById(model?.semanticOwners, "Semantic owner", errors);
+  const subdomains = indexById(model?.subdomains, "Subdomain", errors);
+  const contexts = indexById(model?.boundedContexts, "Bounded context", errors);
+  const conceptTypes = indexById(model?.conceptTypes, "Concept type", errors);
+  const boundaryTypes = indexById(model?.boundaryTypes, "Boundary type", errors);
+  const integrationModes = indexById(model?.integrationModes, "Integration mode", errors);
+  const concepts = indexById(model?.concepts, "Concept", errors);
+  const relationships = indexById(model?.relationships, "Relationship", errors);
+  const capabilities = indexById(model?.capabilities, "Capability", errors);
+  const locators = indexById(model?.locators, "Locator", errors);
+  const invariants = indexById(model?.invariants, "Invariant", errors);
+  indexById(model?.truthRegistry, "Truth registry", errors);
+  indexById(model?.policies, "Policy", errors);
+
+  const requiredBoundaryTypes = [
+    "semantic",
+    "module",
+    "data",
+    "consistency",
+    "transaction",
+    "trust",
+    "runtime",
+  ];
+  for (const type of requiredBoundaryTypes) {
+    if (!boundaryTypes.has(type)) errors.push("Boundary type missing: " + type);
+  }
+
+  const lifecycles = new Set([
+    "current",
+    "current-foundation",
+    "current-data-only",
+    "selected-target",
+  ]);
+  for (const owner of owners.values()) {
+    if (!lifecycles.has(owner.lifecycle)) {
+      errors.push("Semantic owner " + owner.id + ": unsupported lifecycle " + owner.lifecycle);
+    }
+  }
+
+  const classifiedOwners = new Set();
+  for (const subdomain of subdomains.values()) {
+    const label = "Subdomain " + subdomain.id;
+    if (!["core", "supporting", "generic"].includes(subdomain.classification))
+      errors.push(label + ": classification must be core, supporting or generic");
+    if (typeof subdomain.rationale !== "string" || !subdomain.rationale.trim())
+      errors.push(label + ": classification rationale is required");
+    for (const key of ["owners", "sources"]) {
+      if (!Array.isArray(subdomain[key]) || !subdomain[key].length || !unique(subdomain[key]))
+        errors.push(label + ": " + key + " must be a non-empty unique list");
+    }
+    if (
+      Array.isArray(subdomain.sources) &&
+      subdomain.sources.some((path) => !safeRelativeFilePath(path))
+    )
+      errors.push(label + ": sources must be normalized relative files");
+    for (const ownerId of Array.isArray(subdomain.owners) ? subdomain.owners : []) {
+      const owner = owners.get(ownerId);
+      if (!owner) errors.push(label + ": unknown owner " + ownerId);
+      else if (
+        !["business-owner", "policy-owner"].includes(owner.kind) ||
+        owner.lifecycle === "selected-target" ||
+        (Object.values(topology.modules ?? {}).some(
+          (module) =>
+            module.semanticOwner === ownerId &&
+            ["support-module", "integration-adapter", "application-module"].includes(
+              module.moduleKind,
+            ),
+        ) &&
+          !Object.values(topology.modules ?? {}).some(
+            (module) => module.semanticOwner === ownerId && module.moduleKind === "domain-module",
+          ))
+      )
+        errors.push(label + ": only current business/policy owners may be classified: " + ownerId);
+      if (classifiedOwners.has(ownerId))
+        errors.push(label + ": owner already classified: " + ownerId);
+      classifiedOwners.add(ownerId);
+    }
+  }
+  for (const owner of owners.values()) {
+    if (
+      ["business-owner", "policy-owner"].includes(owner.kind) &&
+      owner.lifecycle !== "selected-target" &&
+      !classifiedOwners.has(owner.id)
+    )
+      errors.push(
+        "Semantic owner " + owner.id + ": current business/policy owner requires a subdomain",
+      );
+  }
+
+  for (const context of contexts.values()) {
+    const contextOwners = context.owners ?? (context.owner ? [context.owner] : []);
+    if (!contextOwners.length) errors.push("Bounded context " + context.id + ": owner is required");
+    if (!["selected", "strong-candidate", "candidate"].includes(context.status))
+      errors.push("Bounded context " + context.id + ": unsupported status " + context.status);
+    for (const owner of contextOwners) {
+      if (!owners.has(owner)) {
+        errors.push("Bounded context " + context.id + ": unknown owner " + owner);
+      }
+    }
+    if (["candidate", "strong-candidate"].includes(context.status) || context.evidence) {
+      const evidence = context.evidence;
+      for (const key of ["ownerContracts", "sourcePaths", "testPaths"]) {
+        if (
+          !Array.isArray(evidence?.[key]) ||
+          !evidence[key].length ||
+          evidence[key].some((path) => !safeRelativeFilePath(path)) ||
+          !unique(evidence[key])
+        )
+          errors.push(
+            "Bounded context " +
+              context.id +
+              ": evidence " +
+              key +
+              " must be a non-empty unique list of relative files",
+          );
+      }
+      if (typeof evidence?.rationale !== "string" || !evidence.rationale.trim())
+        errors.push("Bounded context " + context.id + ": evidence rationale is required");
+      for (const ownerId of contextOwners) {
+        const contract = owners.get(ownerId)?.doc;
+        if (
+          contract &&
+          (!Array.isArray(evidence?.ownerContracts) || !evidence.ownerContracts.includes(contract))
+        )
+          errors.push(
+            "Bounded context " +
+              context.id +
+              ": evidence must reference owner contract " +
+              contract,
+          );
+      }
+    }
+  }
+
+  for (const concept of concepts.values()) {
+    if (!owners.has(concept.owner)) {
+      errors.push("Concept " + concept.id + ": unknown owner " + concept.owner);
+    }
+    if (!lifecycles.has(concept.lifecycle)) {
+      errors.push("Concept " + concept.id + ": unsupported lifecycle " + concept.lifecycle);
+    }
+    const conceptType = conceptTypes.get(concept.kind);
+    if (!conceptType) {
+      errors.push("Concept " + concept.id + ": unsupported concept kind " + concept.kind);
+    } else if (concept.authorityMode !== conceptType.authorityMode) {
+      errors.push(
+        "Concept " +
+          concept.id +
+          ": authorityMode must be " +
+          conceptType.authorityMode +
+          " for " +
+          concept.kind,
+      );
+    }
+    if (concept.fpt) {
+      validateDirectFptReference(concept.fpt, "Concept " + concept.id, errors);
+      const semanticShadowKeys = Object.keys(concept).filter(
+        (key) => !FPT_BACKED_CONCEPT_KEYS.has(key),
+      );
+      if (semanticShadowKeys.length) {
+        errors.push(
+          "Concept " +
+            concept.id +
+            ": FPT-backed concept semantic shadow fields are not allowed: " +
+            semanticShadowKeys.join(", "),
+        );
+      }
+    } else {
+      if (typeof concept.canonicalName !== "string" || !concept.canonicalName.trim()) {
+        errors.push("Concept " + concept.id + ": local concept canonicalName is required");
+      }
+      if (typeof concept.definition !== "string" || !concept.definition.trim()) {
+        errors.push("Concept " + concept.id + ": local concept definition is required");
+      }
+    }
+    if (concept.fpt) {
+      const resolved = resolveFptReference(fpt, concept.fpt);
+      const reference = [concept.fpt.file, concept.fpt.symbol, concept.fpt.field]
+        .filter(Boolean)
+        .join("#");
+      if (!resolved) {
+        errors.push("Concept " + concept.id + ": unresolved FPT reference " + reference);
+      } else if (concept.lifecycle?.startsWith("current")) {
+        const field = concept.fpt.field;
+        const member = field
+          ? ["fields", "args", "inputFields", "returnFields"]
+              .flatMap((collection) => resolved.item?.[collection] ?? [])
+              .find((candidate) => candidate.name === field)
+          : null;
+        if (resolved.item?.isDeprecated === true || member?.isDeprecated === true) {
+          errors.push("Concept " + concept.id + ": deprecated FPT reference " + reference);
+        }
+      }
+    }
+    if (concept.kind === "derived-projection" && !(concept.derivedFrom ?? []).length) {
+      errors.push("Concept " + concept.id + ": derived projection requires derivedFrom");
+    }
+    for (const source of concept.derivedFrom ?? []) {
+      if (!concepts.has(source)) {
+        errors.push("Concept " + concept.id + ": missing derived source " + source);
+      }
+    }
+  }
+
+  const requiredRelationshipFields = model?.contractModel?.requiredRelationshipFields ?? [];
+  for (const relationship of relationships.values()) {
+    for (const field of requiredRelationshipFields) {
+      if (
+        relationship[field] === undefined ||
+        relationship[field] === null ||
+        relationship[field] === ""
+      ) {
+        errors.push("Relationship " + relationship.id + ": missing contract field " + field);
+      }
+    }
+    if (!owners.has(relationship.provider)) {
+      errors.push(
+        "Relationship " + relationship.id + ": unknown provider " + relationship.provider,
+      );
+    }
+    if (!owners.has(relationship.consumer)) {
+      errors.push(
+        "Relationship " + relationship.id + ": unknown consumer " + relationship.consumer,
+      );
+    }
+    if (!owners.has(relationship.authority)) {
+      errors.push(
+        "Relationship " + relationship.id + ": unknown authority " + relationship.authority,
+      );
+    }
+    if (!integrationModes.has(relationship.integrationMode)) {
+      errors.push(
+        "Relationship " +
+          relationship.id +
+          ": unsupported integration mode " +
+          relationship.integrationMode,
+      );
+    }
+    if (relationship.authority !== relationship.provider) {
+      errors.push(
+        "Relationship " +
+          relationship.id +
+          ": consumer contract must not transfer provider authority",
+      );
+    }
+  }
+
+  for (const capability of capabilities.values()) {
+    if (!owners.has(capability.owner)) {
+      errors.push("Capability " + capability.id + ": unknown owner " + capability.owner);
+    }
+    if (!["leaf", "aggregate"].includes(capability.kind)) {
+      errors.push("Capability " + capability.id + ": kind must be leaf or aggregate");
+    }
+    if (typeof capability.intent !== "string" || !capability.intent.trim()) {
+      errors.push("Capability " + capability.id + ": intent is required");
+    }
+    for (const invariantId of capability.preserves ?? []) {
+      if (!invariants.has(invariantId)) {
+        errors.push("Capability " + capability.id + ": unknown invariant " + invariantId);
+      }
+    }
+    if (capability.consumes !== undefined) {
+      if (capability.kind !== "leaf" || implementationStatus(capability) !== "implemented") {
+        errors.push(
+          "Capability " + capability.id + ": consumes requires an implemented leaf capability",
+        );
+      }
+      if (
+        !Array.isArray(capability.consumes) ||
+        capability.consumes.some((id) => typeof id !== "string" || !id.trim()) ||
+        !unique(capability.consumes)
+      ) {
+        errors.push(
+          "Capability " + capability.id + ": consumes must be a unique list of relationship IDs",
+        );
+      } else {
+        for (const id of capability.consumes) {
+          const relationship = relationships.get(id);
+          if (!relationship) {
+            errors.push("Capability " + capability.id + ": unknown consumed relationship " + id);
+          } else if (relationship.consumer !== capability.owner) {
+            errors.push(
+              "Capability " +
+                capability.id +
+                ": consumed relationship " +
+                id +
+                " consumer must match capability owner " +
+                capability.owner,
+            );
+          }
+        }
+      }
+    }
+  }
+
+  const runtimeExpectations = new Set(["required", "not-asserted"]);
+  for (const capability of capabilities.values()) {
+    if (!runtimeExpectations.has(capability.runtimeExpectation)) {
+      errors.push(
+        "Capability " + capability.id + ": runtimeExpectation must be required or not-asserted",
+      );
+    }
+  }
+
+  const evidenceClasses = indexById(model?.evidenceModel?.classes, "Evidence class", errors);
+  const validationProfiles = indexById(
+    model?.evidenceModel?.validationProfiles,
+    "Validation profile",
+    errors,
+  );
+  for (const profile of validationProfiles.values()) {
+    if (!evidenceClasses.has(profile.evidenceClass)) {
+      errors.push(
+        "Validation profile " + profile.id + ": unknown evidence class " + profile.evidenceClass,
+      );
+    }
+    const script = commandScript(profile.command);
+    if (!script) {
+      errors.push("Validation profile " + profile.id + ": command must start with pnpm <script>");
+    } else if (commandManifest && !commandManifest.scripts?.[script]) {
+      errors.push(
+        "Validation profile " + profile.id + ": unknown package.json command " + profile.command,
+      );
+    }
+    if (!(profile.proves ?? []).length) {
+      errors.push("Validation profile " + profile.id + ": proves must not be empty");
+    }
+  }
+  const feedback = model?.evidenceModel?.feedback;
+  if (feedback?.bundleVersion !== 1) {
+    errors.push("Feedback model: bundleVersion must be 1");
+  }
+  if (feedback?.claimSubject !== "capability") {
+    errors.push("Feedback model: claimSubject must be capability");
+  }
+  if (JSON.stringify(feedback?.statuses ?? []) !== JSON.stringify(["pass", "fail", "unknown"])) {
+    errors.push("Feedback model: statuses must be pass, fail, unknown");
+  }
+  if (
+    feedback?.revisionProposal?.derived !== true ||
+    feedback?.revisionProposal?.autoApply !== false
+  ) {
+    errors.push("Feedback model: revision proposals must be derived and non-automatic");
+  }
+  if (!(feedback?.channels ?? []).length) {
+    errors.push("Feedback model: at least one evidence channel is required");
+  }
+  for (const channel of model?.evidenceModel?.feedback?.channels ?? []) {
+    if (!evidenceClasses.has(channel.evidenceClass)) {
+      errors.push(
+        "Feedback channel " + channel.id + ": unknown evidence class " + channel.evidenceClass,
+      );
+    }
+  }
+  for (const capability of capabilities.values()) {
+    for (const profileId of capability.validationProfiles ?? []) {
+      if (!validationProfiles.has(profileId)) {
+        errors.push("Capability " + capability.id + ": unknown validation profile " + profileId);
+      }
+    }
+  }
+
+  const implementationStatuses = new Set([
+    "implemented",
+    "data-only",
+    "foundation",
+    "not-implemented",
+  ]);
+  for (const capability of capabilities.values()) {
+    if (capability.kind === "leaf") {
+      if (capability.members !== undefined) {
+        errors.push("Capability " + capability.id + ": leaf must not declare aggregate members");
+      }
+      const implementation = capability.implementation;
+      if (!implementation || typeof implementation !== "object") {
+        errors.push("Capability " + capability.id + ": leaf requires implementation evidence");
+        continue;
+      }
+      if (!implementationStatuses.has(implementation.status)) {
+        errors.push(
+          "Capability " +
+            capability.id +
+            ": implementation.status must be implemented, data-only, foundation, or not-implemented",
+        );
+      }
+      for (const key of ["sourcePaths", "publicExports", "entrypoints", "testPaths"]) {
+        if (!Array.isArray(implementation[key])) {
+          errors.push(
+            "Capability " + capability.id + ": implementation." + key + " must be an array",
+          );
+        }
+      }
+      if (typeof implementation.scope !== "string" || !implementation.scope.trim()) {
+        errors.push("Capability " + capability.id + ": implementation.scope is required");
+      }
+      if (typeof implementation.note !== "string" || !implementation.note.trim()) {
+        errors.push("Capability " + capability.id + ": implementation.note is required");
+      }
+      if (
+        capability.runtimeExpectation === "required" &&
+        (implementation.status !== "implemented" ||
+          !(implementation.sourcePaths ?? []).length ||
+          !(implementation.publicExports ?? []).length)
+      ) {
+        errors.push(
+          "Capability " +
+            capability.id +
+            ": required runtime expectation needs implemented sourcePaths and publicExports evidence",
+        );
+      }
+    } else if (capability.kind === "aggregate") {
+      if (capability.implementation !== undefined) {
+        errors.push(
+          "Capability " + capability.id + ": aggregate must not declare leaf implementation",
+        );
+      }
+      if (!Array.isArray(capability.members) || capability.members.length === 0) {
+        errors.push("Capability " + capability.id + ": aggregate requires members");
+        continue;
+      }
+      if (!unique(capability.members)) {
+        errors.push("Capability " + capability.id + ": aggregate members must be unique");
+      }
+      let hasNotRequiredMember = false;
+      for (const memberId of capability.members) {
+        const member = capabilities.get(memberId);
+        if (!member) {
+          errors.push("Capability " + capability.id + ": unknown member " + memberId);
+          continue;
+        }
+        if (member.kind !== "leaf") {
+          errors.push("Capability " + capability.id + ": member " + memberId + " must be leaf");
+        }
+        if (member.owner !== capability.owner) {
+          errors.push(
+            "Capability " + capability.id + ": member " + memberId + " has different owner",
+          );
+        }
+        if (member.runtimeExpectation !== "required") hasNotRequiredMember = true;
+      }
+      if (capability.runtimeExpectation === "required" && hasNotRequiredMember) {
+        errors.push("Capability " + capability.id + ": partial aggregate must not be required");
+      }
+    }
+  }
+
+  const authorityByLocatorScope = new Map();
+  for (const locator of locators.values()) {
+    const concept = concepts.get(locator.concept);
+    if (!concept) {
+      errors.push("Locator " + locator.id + ": unknown concept " + locator.concept);
+    }
+    if (!Array.isArray(locator.fields) || locator.fields.length === 0) {
+      errors.push("Locator " + locator.id + ": fields must be non-empty");
+    } else if (!unique(locator.fields)) {
+      errors.push("Locator " + locator.id + ": fields must be unique");
+    }
+    if (typeof locator.scope !== "string" || !locator.scope.trim()) {
+      errors.push("Locator " + locator.id + ": scope is required");
+    }
+    if (typeof locator.scopeAuthority !== "string" || !locator.scopeAuthority.trim()) {
+      errors.push("Locator " + locator.id + ": scopeAuthority is required");
+    } else if (!owners.has(locator.scopeAuthority)) {
+      errors.push("Locator " + locator.id + ": unknown scopeAuthority " + locator.scopeAuthority);
+    } else if (typeof locator.scope === "string" && locator.scope.trim()) {
+      const existingAuthority = authorityByLocatorScope.get(locator.scope);
+      if (existingAuthority && existingAuthority !== locator.scopeAuthority) {
+        errors.push(
+          "Locator scope " +
+            locator.scope +
+            ": conflicting authorities " +
+            existingAuthority +
+            " and " +
+            locator.scopeAuthority,
+        );
+      } else {
+        authorityByLocatorScope.set(locator.scope, locator.scopeAuthority);
+      }
+    }
+    if (!["active", "reference-only"].includes(locator.status)) {
+      errors.push("Locator " + locator.id + ": status must be active or reference-only");
+    }
+    if (locator.status === "active" && !(locator.routeFiles ?? []).length) {
+      errors.push("Locator " + locator.id + ": active locator requires routeFiles");
+    }
+    if (
+      locator.status === "active" &&
+      ["current-data-only", "selected-target"].includes(concept?.lifecycle)
+    ) {
+      errors.push(
+        "Locator " + locator.id + ": inactive concept lifecycle cannot claim active locator",
+      );
+    }
+    const source = locator.fpt;
+    if (source) {
+      validateDirectFptReference(source, "Locator " + locator.id, errors);
+    }
+    if (source && !resolveFptReference(fpt, source)) {
+      errors.push(
+        "Locator " +
+          locator.id +
+          ": unresolved FPT reference " +
+          [source.file, source.symbol, source.field].filter(Boolean).join("#"),
+      );
+    }
+  }
+
+  const modules = topology?.modules ?? {};
+  const targetModules = topology?.targetModules ?? {};
+  const applications = topology?.applications ?? {};
+  const allWorkspace = new Set([...Object.keys(modules), ...Object.keys(applications)]);
+  const targetDependencies = new Set([...Object.keys(modules), ...Object.keys(targetModules)]);
+  const fptFileNames = new Set((fpt?.manifest?.files ?? []).map((entry) => entry.name));
+  for (const [name, entry] of Object.entries(modules)) {
+    if (!entry.semanticOwner || !owners.has(entry.semanticOwner)) {
+      errors.push("Implementation topology module " + name + ": semanticOwner must resolve");
+    }
+    if (entry.moduleKind === "bounded-context") {
+      errors.push(
+        "Implementation topology module " +
+          name +
+          ": moduleKind must not masquerade as a Bounded Context",
+      );
+    }
+    for (const dependency of entry.allowedWorkspaceDependencies ?? []) {
+      if (!allWorkspace.has(dependency)) {
+        errors.push(
+          "Implementation topology module " + name + ": unknown allowed dependency " + dependency,
+        );
+      }
+    }
+  }
+  for (const [name, entry] of Object.entries(applications)) {
+    for (const dependency of entry.allowedWorkspaceDependencies ?? []) {
+      if (!allWorkspace.has(dependency)) {
+        errors.push("Manifest application " + name + ": unknown allowed dependency " + dependency);
+      }
+    }
+  }
+
+  for (const [name, entry] of Object.entries(targetModules)) {
+    const owner = owners.get(entry.semanticOwner);
+    if (!entry.semanticOwner || !owner) {
+      errors.push("Target module " + name + ": semanticOwner must resolve");
+    } else if (owner.lifecycle !== "selected-target") {
+      errors.push("Target module " + name + ": semanticOwner must be selected-target");
+    }
+    if (allWorkspace.has(name)) {
+      errors.push("Target module " + name + ": name collides with a current workspace");
+    }
+    if (entry.moduleKind === "bounded-context") {
+      errors.push(
+        "Target module " + name + ": moduleKind must not masquerade as a Bounded Context",
+      );
+    }
+    if (!Array.isArray(entry.fptFiles) || entry.fptFiles.length === 0) {
+      errors.push("Target module " + name + ": fptFiles must be non-empty");
+    } else {
+      if (!unique(entry.fptFiles))
+        errors.push("Target module " + name + ": fptFiles must be unique");
+      for (const file of entry.fptFiles) {
+        if (!fptFileNames.has(file)) {
+          errors.push("Target module " + name + ": unknown FPT file " + file);
+        }
+      }
+    }
+    const declaredFptFiles = new Set(entry.fptFiles ?? []);
+    if (!Array.isArray(entry.fptRoots) || entry.fptRoots.length === 0) {
+      errors.push("Target module " + name + ": fptRoots must be non-empty");
+    } else {
+      const rootKeys = new Set();
+      for (const root of entry.fptRoots) {
+        if (!root || typeof root !== "object") {
+          errors.push("Target module " + name + ": every fptRoot must be an object");
+          continue;
+        }
+        validateDirectFptReference(root, "Target module " + name + " FPT root", errors);
+        if (root.field !== undefined) {
+          errors.push("Target module " + name + ": fptRoot must resolve a symbol, not a field");
+        }
+        const rootKey = [root.file, root.symbol].join("#");
+        if (rootKeys.has(rootKey)) {
+          errors.push("Target module " + name + ": duplicate fptRoot " + rootKey);
+        }
+        rootKeys.add(rootKey);
+        if (!declaredFptFiles.has(root.file)) {
+          errors.push(
+            "Target module " +
+              name +
+              ": fptRoot " +
+              rootKey +
+              " must use a file declared in fptFiles",
+          );
+        }
+        if (!resolveFptReference(fpt, root)) {
+          errors.push("Target module " + name + ": unresolved FPT root " + rootKey);
+        }
+      }
+    }
+    if (!Array.isArray(entry.dependsOn)) {
+      errors.push("Target module " + name + ": dependsOn must be an array");
+    } else {
+      if (!unique(entry.dependsOn)) {
+        errors.push("Target module " + name + ": dependsOn must be unique");
+      }
+      for (const dependency of entry.dependsOn) {
+        if (dependency === name) {
+          errors.push("Target module " + name + ": must not depend on itself");
+        } else if (!targetDependencies.has(dependency)) {
+          errors.push("Target module " + name + ": unknown target dependency " + dependency);
+        }
+      }
+    }
+  }
+
+  const ownerKinds = new Map([...owners.values()].map((owner) => [owner.id, owner.kind]));
+  const ownerPair = (provider, consumer) => [provider, consumer].join("\u0000");
+  const relationshipPairs = new Set(
+    [...relationships.values()].map((relationship) =>
+      ownerPair(relationship.provider, relationship.consumer),
+    ),
+  );
+  for (const [name, entry] of Object.entries(modules)) {
+    for (const dependency of entry.allowedWorkspaceDependencies ?? []) {
+      const provider = modules[dependency];
+      if (!provider || provider.semanticOwner === entry.semanticOwner) continue;
+      if (ownerKinds.get(provider.semanticOwner) === "support-owner") continue;
+      if (!relationshipPairs.has(ownerPair(provider.semanticOwner, entry.semanticOwner))) {
+        errors.push(
+          "Implementation topology module " +
+            name +
+            ": cross-owner dependency " +
+            dependency +
+            " (" +
+            provider.semanticOwner +
+            " -> " +
+            entry.semanticOwner +
+            ") lacks explicit provider-to-consumer relationship contract",
+        );
+      }
+    }
+  }
+
+  const mappedOwners = new Set();
+  const mappingByOwner = new Map();
+  for (const mapping of model?.implementationMappings ?? []) {
+    if (!owners.has(mapping.semanticOwner)) {
+      errors.push("Implementation mapping: unknown semantic owner " + mapping.semanticOwner);
+    }
+    if (mappedOwners.has(mapping.semanticOwner)) {
+      errors.push("Implementation mapping: duplicate semantic owner " + mapping.semanticOwner);
+    }
+    mappedOwners.add(mapping.semanticOwner);
+    mappingByOwner.set(mapping.semanticOwner, mapping);
+    if (mapping.module !== null && mapping.module !== undefined) {
+      if (!modules[mapping.module]) {
+        errors.push(
+          "Implementation mapping " + mapping.semanticOwner + ": unknown module " + mapping.module,
+        );
+      } else if (modules[mapping.module].semanticOwner !== mapping.semanticOwner) {
+        errors.push(
+          "Implementation mapping " +
+            mapping.semanticOwner +
+            ": manifest module owner disagrees for " +
+            mapping.module,
+        );
+      }
+    }
+    if (mapping.targetModule !== null && mapping.targetModule !== undefined) {
+      if (mapping.module !== null && mapping.module !== undefined) {
+        errors.push(
+          "Implementation mapping " +
+            mapping.semanticOwner +
+            ": current module and targetModule are mutually exclusive",
+        );
+      }
+      if (!targetModules[mapping.targetModule]) {
+        errors.push(
+          "Implementation mapping " +
+            mapping.semanticOwner +
+            ": unknown target module " +
+            mapping.targetModule,
+        );
+      } else if (targetModules[mapping.targetModule].semanticOwner !== mapping.semanticOwner) {
+        errors.push(
+          "Implementation mapping " +
+            mapping.semanticOwner +
+            ": target module owner disagrees for " +
+            mapping.targetModule,
+        );
+      }
+    }
+  }
+  for (const [name, entry] of Object.entries(modules)) {
+    if (!mappedOwners.has(entry.semanticOwner)) {
+      errors.push(
+        "Implementation topology module " + name + ": semantic owner lacks implementation mapping",
+      );
+    }
+  }
+  for (const [name, entry] of Object.entries(targetModules)) {
+    const mapping = mappingByOwner.get(entry.semanticOwner);
+    if (!mapping || mapping.targetModule !== name) {
+      errors.push(
+        "Target module " + name + ": semantic owner lacks matching target implementation mapping",
+      );
+    }
+  }
+  for (const owner of owners.values()) {
+    const mapping = mappingByOwner.get(owner.id);
+    if (owner.lifecycle === "selected-target") {
+      if (mapping?.module != null) {
+        errors.push(
+          "Semantic owner " + owner.id + ": selected-target must not assert a runtime module",
+        );
+      }
+      if (!mapping?.targetModule) {
+        errors.push(
+          "Semantic owner " + owner.id + ": selected-target requires a target module mapping",
+        );
+      }
+    } else if (mapping?.targetModule != null) {
+      errors.push(
+        "Semantic owner " + owner.id + ": current owner must not assert a selected target module",
+      );
+    }
+  }
+
+  for (const capability of capabilities.values()) {
+    const owner = owners.get(capability.owner);
+    const mapping = mappingByOwner.get(capability.owner);
+    if (
+      capability.runtimeExpectation === "required" &&
+      (!mapping?.module ||
+        owner?.lifecycle === "selected-target" ||
+        owner?.lifecycle === "current-data-only")
+    ) {
+      errors.push(
+        "Capability " +
+          capability.id +
+          ": required runtime expectation needs a current runtime module owner",
+      );
+    }
+  }
+
+  const policyKinds = new Set([
+    "single-concept-owner",
+    "relationship-endpoints-exist",
+    "fpt-reference-must-resolve",
+    "derived-concept-cannot-be-authoritative",
+    "implementation-mapping-must-resolve",
+    "module-owner-must-resolve",
+    "selected-target-module-not-required",
+    "workspace-dependency-must-resolve",
+    "consumer-contract",
+    "evidence-scope-integrity",
+    "runtime-feedback-derived-proposal",
+    "data-topology-integrity",
+  ]);
+  for (const policy of model?.policies ?? []) {
+    if (!policyKinds.has(policy.kind)) {
+      errors.push("Policy " + policy.id + ": unsupported kind " + policy.kind);
+    }
+    if (!policy.rationale || !policy.remediation) {
+      errors.push("Policy " + policy.id + ": rationale and remediation are required");
+    }
+  }
+
+  return errors;
+}
+
+async function exists(path) {
+  try {
+    return (await stat(path)).isFile();
+  } catch {
+    return false;
+  }
+}
+
+function safeRelativeFilePath(path) {
+  if (typeof path !== "string" || !path) return false;
+  if (path.includes("\\") || path.startsWith("/") || /^[A-Za-z]:/.test(path)) return false;
+  if (path.split("/").includes("..")) return false;
+  return posix.normalize(path) === path;
+}
+
+export async function validateSemanticFilesystem(compiled, root) {
+  const errors = [];
+  const moduleByOwner = new Map();
+  const exportsByModule = new Map();
+  for (const [moduleName, entry] of Object.entries(compiled.topology.modules ?? {})) {
+    moduleByOwner.set(entry.semanticOwner, { moduleName, ...entry });
+    const packagePath = resolve(root, entry.path, "package.json");
+    if (await exists(packagePath)) {
+      const packageJson = JSON.parse(await readFile(packagePath, "utf8"));
+      exportsByModule.set(moduleName, new Set(Object.keys(packageJson.exports ?? {})));
+    } else {
+      exportsByModule.set(moduleName, new Set());
+    }
+  }
+
+  const references = [];
+  for (const subdomain of compiled.model.subdomains ?? []) {
+    for (const path of Array.isArray(subdomain.sources) ? subdomain.sources : [])
+      references.push({ label: "Subdomain " + subdomain.id, path });
+  }
+  for (const context of compiled.model.boundedContexts ?? []) {
+    const contextOwners = context.owners ?? (context.owner ? [context.owner] : []);
+    const modulePaths = Object.values(compiled.topology.modules ?? {})
+      .filter((module) => contextOwners.includes(module.semanticOwner))
+      .map((module) => module.path);
+    for (const key of ["ownerContracts", "sourcePaths", "testPaths"]) {
+      for (const path of Array.isArray(context.evidence?.[key]) ? context.evidence[key] : []) {
+        const label = "Bounded context " + context.id + " evidence " + key;
+        references.push({ label, path });
+        if (
+          key === "sourcePaths" &&
+          (typeof path !== "string" ||
+            !modulePaths.some((prefix) => path.startsWith(prefix + "/src/")))
+        )
+          errors.push(label + ": source must belong to a context owner module");
+        if (
+          key === "testPaths" &&
+          (typeof path !== "string" || !/\/(test|tests)\/.*\.test\.[cm]?[jt]sx?$/.test(path))
+        )
+          errors.push(label + ": test must be a test file");
+      }
+    }
+  }
+  for (const { label, path } of references) {
+    if (!safeRelativeFilePath(path))
+      errors.push(label + ": reference must be a normalized relative file");
+    else if (!(await exists(resolve(root, path))))
+      errors.push(label + ": missing reference " + path);
+  }
+
+  for (const capability of compiled.capabilities.values()) {
+    if (capability.kind !== "leaf") continue;
+    const implementation = capability.implementation;
+    if (!implementation) continue;
+    const module = moduleByOwner.get(capability.owner);
+    for (const path of implementation.sourcePaths ?? []) {
+      if (!safeRelativeFilePath(path)) {
+        errors.push(
+          "Capability " + capability.id + ": sourcePath must be a normalized relative path",
+        );
+        continue;
+      }
+      if (!module || !path.startsWith(module.path + "/src/")) {
+        errors.push("Capability " + capability.id + ": sourcePath must belong to owner module");
+      }
+      if (!(await exists(resolve(root, path)))) {
+        errors.push("Capability " + capability.id + ": missing sourcePath " + path);
+      }
+    }
+    for (const path of implementation.testPaths ?? []) {
+      if (!safeRelativeFilePath(path)) {
+        errors.push(
+          "Capability " + capability.id + ": testPath must be a normalized relative path",
+        );
+        continue;
+      }
+      if (!(await exists(resolve(root, path)))) {
+        errors.push("Capability " + capability.id + ": missing testPath " + path);
+      }
+    }
+    for (const path of implementation.entrypoints ?? []) {
+      if (!safeRelativeFilePath(path)) {
+        errors.push(
+          "Capability " + capability.id + ": entrypoint must be a normalized relative path",
+        );
+        continue;
+      }
+      if (!(await exists(resolve(root, path)))) {
+        errors.push("Capability " + capability.id + ": missing entrypoint " + path);
+      }
+    }
+    const publicExports = exportsByModule.get(module?.moduleName) ?? new Set();
+    for (const key of implementation.publicExports ?? []) {
+      if (!publicExports.has(key)) {
+        errors.push("Capability " + capability.id + ": unknown public export " + key);
+      }
+    }
+  }
+
+  for (const locator of compiled.locators.values()) {
+    for (const path of locator.routeFiles ?? []) {
+      if (!safeRelativeFilePath(path)) {
+        errors.push("Locator " + locator.id + ": routeFile must be a normalized relative path");
+        continue;
+      }
+      if (!path.startsWith("apps/web/src/app/") || !path.endsWith("/page.tsx")) {
+        errors.push("Locator " + locator.id + ": routeFile must be an app page.tsx");
+      }
+      if (!(await exists(resolve(root, path)))) {
+        errors.push("Locator " + locator.id + ": missing routeFile " + path);
+      }
+    }
+  }
+
+  return errors;
+}
+
+export function compileSemanticArchitecture(
+  model,
+  fpt,
+  topology,
+  commandManifest = null,
+  dataTopology = null,
+  schemaFiles = [],
+  relationsByFile = new Map(),
+) {
+  const errors = validateSemanticArchitecture(model, fpt, topology, commandManifest);
+  const data = dataTopology
+    ? compileDataTopology(model, dataTopology, schemaFiles, relationsByFile)
+    : { errors: [], dataTopology: null, surfaces: new Map(), byOwner: new Map(), schemaFiles: [] };
+  errors.push(...data.errors);
+  const owners = new Map((model.semanticOwners ?? []).map((item) => [item.id, item]));
+  const subdomains = new Map((model.subdomains ?? []).map((item) => [item.id, item]));
+  const concepts = new Map((model.concepts ?? []).map((item) => [item.id, item]));
+  const relationships = new Map((model.relationships ?? []).map((item) => [item.id, item]));
+  const capabilities = new Map((model.capabilities ?? []).map((item) => [item.id, item]));
+  const locators = new Map((model.locators ?? []).map((item) => [item.id, item]));
+  const invariants = new Map((model.invariants ?? []).map((item) => [item.id, item]));
+  const mappings = new Map(
+    (model.implementationMappings ?? []).map((item) => [item.semanticOwner, item]),
+  );
+  const validationProfiles = new Map(
+    (model.evidenceModel?.validationProfiles ?? []).map((item) => [item.id, item]),
+  );
+  const adjacency = new Map();
+  for (const owner of owners.keys()) adjacency.set(owner, new Set());
+  for (const relationship of relationships.values()) {
+    if (!adjacency.has(relationship.provider)) adjacency.set(relationship.provider, new Set());
+    if (!adjacency.has(relationship.consumer)) adjacency.set(relationship.consumer, new Set());
+    adjacency.get(relationship.provider).add(relationship.consumer);
+    adjacency.get(relationship.consumer).add(relationship.provider);
+  }
+  return {
+    errors,
+    model,
+    fpt,
+    topology,
+    commandManifest,
+    owners,
+    subdomains,
+    concepts,
+    relationships,
+    capabilities,
+    locators,
+    invariants,
+    mappings,
+    validationProfiles,
+    dataTopology: data.dataTopology,
+    dataSurfaces: data.surfaces,
+    dataByOwner: data.byOwner,
+    schemaFiles: data.schemaFiles,
+    adjacency,
+  };
+}
+
+export async function loadSemanticArchitecture(root = repositoryRoot) {
+  const readJson = async (path) => JSON.parse(await readFile(resolve(root, path), "utf8"));
+  const [model, fpt, topology, commandManifest, dataSources] = await Promise.all([
+    readJson("architecture/semantic-model.json"),
+    loadFptDomainTruth(root),
+    readJson("architecture/implementation-topology.json"),
+    readJson("package.json"),
+    loadDataTopologySources(root),
+  ]);
+  const compiled = compileSemanticArchitecture(
+    model,
+    fpt,
+    topology,
+    commandManifest,
+    dataSources.dataTopology,
+    dataSources.schemaFiles,
+    dataSources.relationsByFile,
+  );
+  compiled.errors.push(...validateFptDomainTruth(fpt));
+  compiled.errors.push(...(await validateSemanticFilesystem(compiled, root)));
+  return compiled;
+}

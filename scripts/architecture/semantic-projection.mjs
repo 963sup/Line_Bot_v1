@@ -1,0 +1,661 @@
+const fence = String.fromCharCode(96).repeat(3);
+
+function conceptName(concept) {
+  if (concept.fpt?.symbol && concept.fpt.field) {
+    return concept.fpt.symbol + "." + concept.fpt.field;
+  }
+  return concept.fpt?.symbol ?? concept.canonicalName ?? concept.id;
+}
+
+function conceptMeaning(concept) {
+  if (concept.fpt) {
+    return `GitHub FPT: ${[concept.fpt.file, concept.fpt.symbol, concept.fpt.field]
+      .filter(Boolean)
+      .join("#")}`;
+  }
+  return concept.definition ?? "";
+}
+
+function contextMap(compiled) {
+  const lines = ["flowchart LR"];
+  for (const relationship of compiled.relationships.values()) {
+    lines.push(
+      "  " +
+        relationship.provider.replaceAll("-", "_") +
+        '["' +
+        relationship.provider +
+        '"] -->|"' +
+        relationship.integrationMode +
+        '"| ' +
+        relationship.consumer.replaceAll("-", "_") +
+        '["' +
+        relationship.consumer +
+        '"]',
+    );
+  }
+  return lines.join("\n");
+}
+
+function implementationMap(compiled) {
+  const lines = ["flowchart LR"];
+  for (const mapping of compiled.model.implementationMappings ?? []) {
+    const owner = mapping.semanticOwner.replaceAll("-", "_");
+    lines.push("  " + owner + '["' + mapping.semanticOwner + '"]');
+    if (mapping.module) {
+      const moduleId = ("module_" + mapping.module).replaceAll(/[^a-zA-Z0-9_]/g, "_");
+      lines.push("  " + owner + " --> " + moduleId + '["' + mapping.module + '"]');
+    }
+    for (const data of compiled.dataByOwner.get(mapping.semanticOwner) ?? []) {
+      const dataId = ("data_" + data.path).replaceAll(/[^a-zA-Z0-9_]/g, "_");
+      lines.push("  " + owner + " -->|" + data.relation + "| " + dataId + '["' + data.path + '"]');
+    }
+  }
+  return lines.join("\n");
+}
+
+function ownership(compiled) {
+  return [...compiled.concepts.values()]
+    .map((concept) => ({
+      concept: conceptName(concept),
+      id: concept.id,
+      owner: concept.owner,
+      kind: concept.kind,
+      authorityMode: concept.authorityMode,
+      lifecycle: concept.lifecycle,
+    }))
+    .sort((a, b) => a.owner.localeCompare(b.owner) || a.id.localeCompare(b.id));
+}
+
+function markdownTable(headers, rows) {
+  const header = "| " + headers.join(" | ") + " |";
+  const separator = "| " + headers.map(() => "---").join(" | ") + " |";
+  return [header, separator, ...rows.map((row) => "| " + row.join(" | ") + " |")].join("\n");
+}
+
+export function routeFileToUrl(path) {
+  if (!path.startsWith("apps/web/src/app/") || !path.endsWith("/page.tsx")) return null;
+  const segments = path
+    .slice("apps/web/src/app/".length, -"/page.tsx".length)
+    .split("/")
+    .filter((segment) => segment && !/^\(.+\)$/.test(segment))
+    .map((segment) => segment.replace(/^\[(.+)\]$/, "{$1}"));
+  return "/" + segments.join("/");
+}
+
+function markdownCell(value) {
+  return String(value ?? "")
+    .replaceAll("|", "\\|")
+    .replaceAll("\n", " ");
+}
+
+function ownerContexts(compiled, ownerId) {
+  return (compiled.model.boundedContexts ?? []).filter((context) => {
+    const owners = context.owners ?? (context.owner ? [context.owner] : []);
+    return owners.includes(ownerId);
+  });
+}
+
+function packageReferences(paths) {
+  return paths.map((path) => "[" + path + "](../../" + path + ")").join("; ");
+}
+
+function renderPackageSemanticDoc(compiled, moduleName) {
+  const module = compiled.topology.modules?.[moduleName];
+  if (!module) throw new Error("Unknown package module: " + moduleName);
+
+  const ownerId = module.semanticOwner;
+  const owner = compiled.owners.get(ownerId);
+  if (!owner) throw new Error("Unknown semantic owner: " + ownerId);
+
+  const concepts = [...compiled.concepts.values()]
+    .filter((concept) => concept.owner === ownerId)
+    .sort((a, b) => conceptName(a).localeCompare(conceptName(b)) || a.id.localeCompare(b.id));
+  const capabilities = [...compiled.capabilities.values()]
+    .filter((capability) => capability.owner === ownerId)
+    .sort((a, b) => a.id.localeCompare(b.id));
+  const contexts = ownerContexts(compiled, ownerId).sort((a, b) => a.id.localeCompare(b.id));
+  const subdomains = [...compiled.subdomains.values()]
+    .filter((subdomain) => subdomain.owners.includes(ownerId))
+    .sort((a, b) => a.id.localeCompare(b.id));
+  const relationships = [...compiled.relationships.values()]
+    .filter(
+      (relationship) => relationship.provider === ownerId || relationship.consumer === ownerId,
+    )
+    .sort((a, b) => a.id.localeCompare(b.id));
+
+  const contextSection = contexts.length
+    ? markdownTable(
+        ["Context", "Status", "Ownership", "Note"],
+        contexts.map((context) => [
+          markdownCell(context.id),
+          markdownCell(context.status),
+          markdownCell(
+            context.owner
+              ? "owner: " + context.owner
+              : "owners: " + (context.owners ?? []).join(", "),
+          ),
+          markdownCell(context.note ?? ""),
+        ]),
+      )
+    : "No Bounded Context is selected or declared for this owner in the canonical semantic model.";
+
+  const subdomainSection = subdomains.length
+    ? markdownTable(
+        ["Subdomain", "Classification", "Rationale", "Sources"],
+        subdomains.map((subdomain) => [
+          markdownCell(subdomain.id),
+          markdownCell(subdomain.classification),
+          markdownCell(subdomain.rationale),
+          markdownCell(packageReferences(subdomain.sources)),
+        ]),
+      )
+    : "No business subdomain is assigned to this owner. Technical and application-only modules are not classified as business subdomains by package existence.";
+
+  const contextEvidence = contexts.filter((context) => context.evidence);
+  const contextEvidenceSection = contextEvidence.length
+    ? [
+        "### Boundary evidence",
+        "",
+        "References support the existing status; listed tests are evidence locations, not a claim that runtime or deployment acceptance passed.",
+        "",
+        markdownTable(
+          ["Context", "Owner contracts", "Source", "Tests", "Rationale"],
+          contextEvidence.map((context) => [
+            markdownCell(context.id),
+            markdownCell(packageReferences(context.evidence.ownerContracts)),
+            markdownCell(packageReferences(context.evidence.sourcePaths)),
+            markdownCell(packageReferences(context.evidence.testPaths)),
+            markdownCell(context.evidence.rationale),
+          ]),
+        ),
+        "",
+      ].join("\n")
+    : "";
+
+  const languageSection = concepts.length
+    ? markdownTable(
+        ["Term", "Concept ID", "Kind", "Lifecycle", "Definition"],
+        concepts.map((concept) => [
+          markdownCell(conceptName(concept)),
+          markdownCell(concept.id),
+          markdownCell(concept.kind),
+          markdownCell(concept.lifecycle),
+          markdownCell(conceptMeaning(concept)),
+        ]),
+      )
+    : "No canonical business concept is currently declared for this owner.";
+
+  const hasConsumedContracts = capabilities.some((capability) => capability.consumes?.length);
+  const capabilitySection = capabilities.length
+    ? markdownTable(
+        [
+          "Capability",
+          "Runtime",
+          "Implementation",
+          ...(hasConsumedContracts ? ["Consumes"] : []),
+          "Intent",
+        ],
+        capabilities.map((capability) => [
+          markdownCell(capability.id),
+          markdownCell(capability.runtimeExpectation),
+          markdownCell(capability.implementation?.status ?? ""),
+          ...(hasConsumedContracts ? [markdownCell((capability.consumes ?? []).join(", "))] : []),
+          markdownCell(capability.intent),
+        ]),
+      )
+    : "No owner capability is currently declared in the canonical semantic model.";
+
+  const relationshipSection = relationships.length
+    ? markdownTable(
+        ["Direction", "Counterparty", "Mode", "Authority", "Consistency", "Meaning"],
+        relationships.map((relationship) => {
+          const outbound = relationship.provider === ownerId;
+          return [
+            outbound ? "provides" : "consumes",
+            markdownCell(outbound ? relationship.consumer : relationship.provider),
+            markdownCell(relationship.integrationMode),
+            markdownCell(relationship.authority),
+            markdownCell(relationship.consistency),
+            markdownCell(relationship.meaning),
+          ];
+        }),
+      )
+    : "No cross-owner semantic relationship is currently declared for this owner.";
+
+  return [
+    "# Package Semantics: " + ownerId,
+    "",
+    "> Generated projection of `architecture/semantic-model.json` and `architecture/implementation-topology.json`. Do not edit this file as semantic authority. Regenerate with `pnpm semantic package-docs`.",
+    "",
+    "- Package: `" + module.path + "`",
+    "- Module: `" + moduleName + "`",
+    "- Module kind: `" + module.moduleKind + "`",
+    "- Semantic owner: `" + ownerId + "`",
+    "- Owner kind: `" + owner.kind + "`",
+    "- Owner lifecycle: `" + owner.lifecycle + "`",
+    "- Product domain: `" + compiled.model.system.domain + "`",
+    "",
+    "## Subdomain",
+    "",
+    subdomainSection,
+    "",
+    "## Bounded Context",
+    "",
+    contextSection,
+    "",
+    ...(contextEvidenceSection ? [contextEvidenceSection] : []),
+    "## Ubiquitous Language",
+    "",
+    languageSection,
+    "",
+    "## Capabilities",
+    "",
+    capabilitySection,
+    "",
+    "## Context Relationships",
+    "",
+    relationshipSection,
+    "",
+    "## Tactical Model Boundary",
+    "",
+    "Entity, Value Object, Aggregate, Domain Service, Domain Event, Policy, and Specification are not inferred from package names or folders. They must be derived from this owner's canonical language, invariants, consistency requirements, and source evidence before being classified.",
+    "",
+  ].join("\n");
+}
+
+function renderPackagesSemanticIndex(compiled) {
+  const modules = Object.entries(compiled.topology.modules ?? {}).sort(([, a], [, b]) =>
+    a.path.localeCompare(b.path),
+  );
+  return [
+    "# Packages Semantics",
+    "",
+    "> Generated projection of `architecture/semantic-model.json` and `architecture/implementation-topology.json`. Do not edit this file as semantic authority. Regenerate with `pnpm semantic package-docs`.",
+    "",
+    "- Product domain: " + markdownCell(compiled.model.system.domain),
+    "- Registered package modules: " + modules.length,
+    "- Selected targets: " + Object.keys(compiled.topology.targetModules ?? {}).length,
+    "",
+    "## Authority / retrieval",
+    "",
+    "[Semantic model](../architecture/semantic-model.json) owns product semantics; [implementation topology](../architecture/implementation-topology.json) owns module/dependency truth; [data topology](../architecture/data-topology.json) owns persisted relation authority. GitHub meanings resolve directly from [pinned FPT JSON](../architecture/domain/fpt/).",
+    "",
+    'Use the package links below for owner-local language, capabilities and relationships. Read [AGENTS](./AGENTS.md) for development constraints and [README](./README.md) for task routing. Full target/dependency details: `pnpm semantic view modules`; focused impact: `pnpm semantic plan "<intent>"` / `pnpm semantic context "<intent>"`.',
+    "",
+    "## Subdomains",
+    "",
+    markdownTable(
+      ["Subdomain", "Classification"],
+      [...compiled.subdomains.values()]
+        .sort((a, b) => a.id.localeCompare(b.id))
+        .map((subdomain) => [markdownCell(subdomain.id), markdownCell(subdomain.classification)]),
+    ),
+    "",
+    "## Registered package modules",
+    "",
+    "Module registration, semantic-owner lifecycle, Bounded Context status and runtime acceptance are distinct. These rows project declared facts; they do not certify package-wide DDD conformance or completed capabilities. Selected targets remain non-runtime declarations and are retrieved separately.",
+    "",
+    markdownTable(
+      ["Package", "Module kind", "Semantic owner", "Owner lifecycle", "Context / status"],
+      modules.map(([, module]) => {
+        const owner = compiled.owners.get(module.semanticOwner);
+        const contexts = ownerContexts(compiled, module.semanticOwner)
+          .sort((a, b) => a.id.localeCompare(b.id))
+          .map((context) => context.id + " / " + context.status)
+          .join("; ");
+        return [
+          "[" +
+            markdownCell(module.path) +
+            "](./" +
+            module.path.slice("packages/".length) +
+            "/SEMANTICS.md)",
+          markdownCell(module.moduleKind),
+          owner.doc
+            ? "[" + markdownCell(owner.id) + "](../" + owner.doc + ")"
+            : markdownCell(owner.id),
+          markdownCell(owner.lifecycle),
+          markdownCell(contexts || "Not declared"),
+        ];
+      }),
+    ),
+    "",
+  ].join("\n");
+}
+
+export function packageSemanticDocs(compiled) {
+  if (compiled.errors.length) {
+    throw new Error("Semantic architecture is invalid:\n" + compiled.errors.join("\n"));
+  }
+  return new Map([
+    ["packages/SEMANTICS.md", renderPackagesSemanticIndex(compiled)],
+    ...Object.entries(compiled.topology.modules ?? {})
+      .sort(([, a], [, b]) => a.path.localeCompare(b.path))
+      .map(([moduleName, module]) => [
+        module.path + "/SEMANTICS.md",
+        renderPackageSemanticDoc(compiled, moduleName),
+      ]),
+  ]);
+}
+
+function glossary(compiled) {
+  return [
+    "# Semantic Glossary",
+    "",
+    "> Generated projection of architecture/semantic-model.json; do not edit as authority.",
+    "",
+    markdownTable(
+      ["Concept", "ID", "Owner", "Kind", "Lifecycle", "Definition"],
+      [...compiled.concepts.values()]
+        .sort((a, b) => conceptName(a).localeCompare(conceptName(b)) || a.id.localeCompare(b.id))
+        .map((concept) => [
+          conceptName(concept),
+          concept.id,
+          concept.owner,
+          concept.kind,
+          concept.lifecycle,
+          conceptMeaning(concept).replaceAll("|", "\\|"),
+        ]),
+    ),
+  ].join("\n");
+}
+
+function contracts(compiled) {
+  return [
+    "# Integration Contracts",
+    "",
+    "> Generated projection of semantic relationships; provider authority is retained.",
+    "",
+    markdownTable(
+      ["Provider", "Consumer", "Mode", "Authority", "Consistency", "Meaning"],
+      [...compiled.relationships.values()].map((relationship) => [
+        relationship.provider,
+        relationship.consumer,
+        relationship.integrationMode,
+        relationship.authority,
+        relationship.consistency,
+        relationship.meaning.replaceAll("|", "\\|"),
+      ]),
+    ),
+  ].join("\n");
+}
+
+function invariants(compiled) {
+  return [
+    "# Semantic Invariants",
+    "",
+    "> Generated projection. Enforcement and evidence remain scoped to canonical owners.",
+    "",
+    markdownTable(
+      ["ID", "Scope", "Severity", "Tags", "Statement"],
+      [...compiled.invariants.values()].map((invariant) => [
+        invariant.id,
+        invariant.scope,
+        invariant.severity,
+        (invariant.tags ?? []).join(", "),
+        invariant.statement.replaceAll("|", "\\|"),
+      ]),
+    ),
+  ].join("\n");
+}
+
+function capabilities(compiled) {
+  return [
+    "# Capability Catalog",
+    "",
+    "> Generated projection of semantic capabilities.",
+    "",
+    markdownTable(
+      [
+        "Capability",
+        "Owner",
+        "Kind",
+        "Implementation",
+        "Runtime expectation",
+        "Members",
+        "Consumes",
+        "Preserves",
+        "Validation",
+        "Intent",
+      ],
+      [...compiled.capabilities.values()].map((capability) => [
+        capability.id,
+        capability.owner,
+        capability.kind,
+        capability.implementation?.status ?? "",
+        capability.runtimeExpectation,
+        (capability.members ?? []).join(", "),
+        markdownCell((capability.consumes ?? []).join(", ")),
+        (capability.preserves ?? []).join(", "),
+        (capability.validationProfiles ?? []).join(", "),
+        capability.intent.replaceAll("|", "\\|"),
+      ]),
+    ),
+  ].join("\n");
+}
+
+function modules(compiled) {
+  const entries = [
+    ...Object.entries(compiled.topology.modules ?? {}).map(([name, entry]) => ({
+      name,
+      entry,
+      status: "current",
+      dependencies: entry.allowedWorkspaceDependencies ?? [],
+    })),
+    ...Object.entries(compiled.topology.targetModules ?? {}).map(([name, entry]) => ({
+      name,
+      entry,
+      status: "selected-target",
+      dependencies: entry.dependsOn ?? [],
+    })),
+    ...Object.entries(compiled.topology.applications ?? {}).map(([name, entry]) => ({
+      name,
+      entry,
+      status: "current",
+      dependencies: entry.allowedWorkspaceDependencies ?? [],
+    })),
+  ].sort((left, right) => left.entry.path.localeCompare(right.entry.path));
+
+  return [
+    "# Module Inventory",
+    "",
+    "> Derived projection of architecture/implementation-topology.json. Current executable workspaces and selected non-runtime target modules are intentionally distinct; do not maintain a second package inventory in prose.",
+    "",
+    markdownTable(
+      [
+        "Module",
+        "Path",
+        "Status",
+        "Kind",
+        "Semantic owner",
+        "FPT files",
+        "FPT roots",
+        "Dependencies",
+      ],
+      entries.map(({ name, entry, status, dependencies }) => [
+        markdownCell(name),
+        markdownCell(entry.path),
+        markdownCell(status),
+        markdownCell(entry.moduleKind),
+        markdownCell(entry.semanticOwner ?? ""),
+        markdownCell((entry.fptFiles ?? []).join(", ")),
+        markdownCell(
+          (entry.fptRoots ?? []).map((root) => root.file + "#" + root.symbol).join(", "),
+        ),
+        markdownCell(dependencies.join(", ")),
+      ]),
+    ),
+  ].join("\n");
+}
+function locators(compiled) {
+  return [
+    "# Resource Locators",
+    "",
+    "> Generated projection of semantic locators. Route files are implementation evidence, not identity authority.",
+    "",
+    markdownTable(
+      [
+        "Locator",
+        "Concept",
+        "Status",
+        "Scope",
+        "Scope authority",
+        "Fields",
+        "Route files",
+        "Derived URL",
+        "FPT",
+      ],
+      [...compiled.locators.values()].map((locator) => [
+        locator.id,
+        locator.concept,
+        locator.status,
+        locator.scope,
+        locator.scopeAuthority,
+        locator.fields.join(", "),
+        (locator.routeFiles ?? []).join(", "),
+        (locator.routeFiles ?? []).map(routeFileToUrl).filter(Boolean).join(", "),
+        locator.fpt
+          ? [locator.fpt.file, locator.fpt.symbol, locator.fpt.field].filter(Boolean).join("#")
+          : "",
+      ]),
+    ),
+  ].join("\n");
+}
+
+function fptReferences(compiled) {
+  const rows = [
+    ...[...compiled.concepts.values()]
+      .filter((concept) => concept.fpt)
+      .map((concept) => [
+        "concept",
+        concept.id,
+        [concept.fpt.file, concept.fpt.symbol, concept.fpt.field].filter(Boolean).join("#"),
+      ]),
+    ...[...compiled.locators.values()]
+      .filter((locator) => locator.fpt)
+      .map((locator) => [
+        "locator",
+        locator.id,
+        [locator.fpt.file, locator.fpt.symbol, locator.fpt.field].filter(Boolean).join("#"),
+      ]),
+  ];
+  return [
+    "# GitHub FPT Domain Truth",
+    "",
+    "> GitHub-derived domain semantics resolve directly against the exact vendored FPT JSON. This view contains references only and does not redefine the FPT.",
+    "",
+    "- Revision: `" + compiled.fpt.manifest.upstream.revision + "`",
+    "- Local truth: `" + compiled.fpt.manifest.domainTruth + "`",
+    "",
+    markdownTable(["Local overlay", "ID", "FPT reference"], rows),
+  ].join("\n");
+}
+
+function evidence(compiled) {
+  return [
+    "# Evidence Model",
+    "",
+    "> Generated projection. Evidence never proves a stronger scope than what was executed.",
+    "",
+    "## Validation profiles",
+    "",
+    markdownTable(
+      ["Profile", "Command", "Class", "Proves", "Does not prove"],
+      [...compiled.validationProfiles.values()].map((profile) => [
+        profile.id,
+        profile.command,
+        profile.evidenceClass,
+        profile.proves.join("; ").replaceAll("|", "\\|"),
+        (profile.doesNotProve ?? []).join("; ").replaceAll("|", "\\|"),
+      ]),
+    ),
+    "",
+    "## Feedback channels",
+    "",
+    markdownTable(
+      ["Channel", "Evidence class", "May revise"],
+      (compiled.model.evidenceModel?.feedback?.channels ?? []).map((channel) => [
+        channel.id,
+        channel.evidenceClass,
+        channel.mayRevise.join("; ").replaceAll("|", "\\|"),
+      ]),
+    ),
+  ].join("\n");
+}
+
+function docs(compiled) {
+  return [
+    "# Executable Semantic Architecture",
+    "",
+    "> Generated read model. GitHub-derived domain semantics remain authoritative in the vendored FPT JSON; this projection adds only Line_Bot_v1 ownership, invariants, implementation and evidence.",
+    "",
+    "## Ownership",
+    "",
+    fence + "json",
+    JSON.stringify(ownership(compiled), null, 2),
+    fence,
+    "",
+    "## Subdomains",
+    "",
+    fence + "json",
+    JSON.stringify(compiled.model.subdomains, null, 2),
+    fence,
+    "",
+    "## Bounded contexts and evidence",
+    "",
+    fence + "json",
+    JSON.stringify(compiled.model.boundedContexts, null, 2),
+    fence,
+    "",
+    glossary(compiled),
+    "",
+    contracts(compiled),
+    "",
+    invariants(compiled),
+    "",
+    capabilities(compiled),
+    "",
+    modules(compiled),
+    "",
+    locators(compiled),
+    "",
+    fptReferences(compiled),
+    "",
+    evidence(compiled),
+    "",
+    "## Context map",
+    "",
+    fence + "mermaid",
+    contextMap(compiled),
+    fence,
+    "",
+    "## Implementation map",
+    "",
+    fence + "mermaid",
+    implementationMap(compiled),
+    fence,
+  ].join("\n");
+}
+
+export function renderSemanticView(compiled, view = "ownership") {
+  if (compiled.errors.length) {
+    throw new Error("Semantic architecture is invalid:\n" + compiled.errors.join("\n"));
+  }
+  if (view === "context-map") return contextMap(compiled);
+  if (view === "implementation-map") return implementationMap(compiled);
+  if (view === "ownership") return JSON.stringify(ownership(compiled), null, 2);
+  if (view === "subdomains") return JSON.stringify(compiled.model.subdomains, null, 2);
+  if (view === "contexts") return JSON.stringify(compiled.model.boundedContexts, null, 2);
+  if (view === "truth-registry") return JSON.stringify(compiled.model.truthRegistry, null, 2);
+  if (view === "glossary") return glossary(compiled);
+  if (view === "contracts") return contracts(compiled);
+  if (view === "invariants") return invariants(compiled);
+  if (view === "capabilities") return capabilities(compiled);
+  if (view === "modules") return modules(compiled);
+  if (view === "locators") return locators(compiled);
+  if (view === "fpt-references") return fptReferences(compiled);
+  if (view === "evidence") return evidence(compiled);
+  if (view === "docs") return docs(compiled);
+  throw new Error(
+    "Unknown semantic view. Expected ownership, subdomains, contexts, context-map, implementation-map, truth-registry, glossary, contracts, invariants, capabilities, modules, locators, fpt-references, evidence, or docs.",
+  );
+}
