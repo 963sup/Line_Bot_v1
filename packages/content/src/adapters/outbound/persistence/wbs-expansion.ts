@@ -11,7 +11,10 @@ function parsedJson(value: unknown): unknown {
   return parsed;
 }
 
-type CurrentSourceNode = Readonly<{ id: string }>;
+type CurrentSourceNode = Readonly<{
+  id: string;
+  kind?: "SUBJECT" | "OBJECT" | "SUBOBJECT" | "WORK" | "TASK";
+}>;
 type CurrentSourceRow = Readonly<{
   documentId: string;
   revisionId: string;
@@ -25,29 +28,84 @@ export function assertCurrentSourceCoverage(
   nodes: readonly CurrentSourceNode[],
   sourceRows: readonly CurrentSourceRow[],
 ): void {
-  const currentNodeIds = new Set(nodes.map((node) => node.id));
-  const sourceKeys = new Set<string>();
+  const currentNodes = new Map(nodes.map((node) => [node.id, node]));
+  const sourceDefinitions = new Map<string, string>();
+  const coveredNodeIds = new Set<string>();
   for (const row of sourceRows) {
     const sourceKey = `${row.documentId}:${row.revisionId}:${row.sourceRowId}`;
-    if (sourceKeys.has(sourceKey))
+    if (!row.documentId || !row.revisionId || !row.sourceRowId)
       throw new ContentError(
         503,
-        "Content source coverage contains duplicate source evidence.",
+        "Content source coverage contains an incomplete source key.",
         "UNAVAILABLE",
       );
-    sourceKeys.add(sourceKey);
+    const definition = JSON.stringify({
+      disposition: row.disposition,
+      nodeIds: [...row.nodeIds],
+    });
+    const previousDefinition = sourceDefinitions.get(sourceKey);
+    if (previousDefinition !== undefined && previousDefinition !== definition)
+      throw new ContentError(
+        503,
+        "Content source coverage contains contradictory source evidence.",
+        "UNAVAILABLE",
+      );
+    if (previousDefinition !== undefined) continue;
+    sourceDefinitions.set(sourceKey, definition);
     if (row.disposition === "COMMERCIAL_ONLY" && row.nodeIds.length > 0)
       throw new ContentError(
         503,
         "Commercial-only source evidence unexpectedly maps to Content nodes.",
         "UNAVAILABLE",
       );
-    if (row.nodeIds.some((nodeId) => !currentNodeIds.has(nodeId)))
+    if (new Set(row.nodeIds).size !== row.nodeIds.length)
+      throw new ContentError(
+        503,
+        "Content source evidence contains duplicate node mappings.",
+        "UNAVAILABLE",
+      );
+    if (row.disposition === "CONTENT_WORK" && row.nodeIds.length !== 2)
+      throw new ContentError(
+        503,
+        "Content work source evidence must contain one WORK and one TASK.",
+        "UNAVAILABLE",
+      );
+    const mappedNodes = row.nodeIds.map((nodeId) => currentNodes.get(nodeId));
+    if (mappedNodes.some((node) => !node))
       throw new ContentError(
         409,
         "Content source evidence no longer matches the selected revision.",
         "SOURCE_INVALID",
       );
+    if (
+      row.disposition === "CONTENT_WORK" &&
+      mappedNodes.some((node) => node?.kind !== undefined) &&
+      !mappedNodes.some((node) => node?.kind === "WORK")
+    )
+      throw new ContentError(
+        503,
+        "Content work source evidence has no WORK node.",
+        "UNAVAILABLE",
+      );
+    if (
+      row.disposition === "CONTENT_WORK" &&
+      mappedNodes.some((node) => node?.kind !== undefined) &&
+      !mappedNodes.some((node) => node?.kind === "TASK")
+    )
+      throw new ContentError(
+        503,
+        "Content work source evidence has no TASK node.",
+        "UNAVAILABLE",
+      );
+    for (const nodeId of row.nodeIds) {
+      if (coveredNodeIds.has(nodeId))
+        throw new ContentError(
+          503,
+          "Content source evidence maps one node to multiple source rows.",
+          "UNAVAILABLE",
+        );
+      coveredNodeIds.add(nodeId);
+    }
   }
 }
 
