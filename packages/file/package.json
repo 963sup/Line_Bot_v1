@@ -40,7 +40,7 @@
   "dependencies": {
     "@line_bot_v1/platform": "workspace:*",
     "@line_bot_v1/repository": "workspace:*",
-    "@supabase/supabase-js": "catalog:"
+    "@line_bot_v1/integration-supabase": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:",
