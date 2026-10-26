@@ -414,5 +414,9 @@ test("Vercel Git integration deploys unspecified branches but leaves main to the
   const config = JSON.parse(
     readFileSync(new URL("../../apps/web/vercel.json", import.meta.url), "utf8"),
   );
-  assert.deepEqual(config.git.deploymentEnabled, { main: false });
+  assert.deepEqual(config.git.deploymentEnabled, {
+    main: false,
+    preview: true,
+    "preview/**": true,
+  });
 });
