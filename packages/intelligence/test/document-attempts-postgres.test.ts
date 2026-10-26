@@ -142,12 +142,12 @@ test("Intelligence is the authorized read owner of immutable legacy processing h
   const attemptId = randomUUID();
   await db.transaction(async (sql) => {
     await sql.query(
-      `INSERT INTO file_processing_runs(id,repository_id,file_id,file_revision_id,version,head_revision_id)
+      `INSERT INTO intelligence_legacy_processing_runs(id,repository_id,file_id,file_revision_id,version,head_revision_id)
        VALUES($1,'repo',$2,$3,2,$4)`,
       [runId, pinned.fileId, pinned.fileRevisionId, revisionId],
     );
     await sql.query(
-      `INSERT INTO file_processing_revisions(id,run_id,repository_id,file_id,file_revision_id,file_sha256,version,parent_revision_id,actor_user_id,at,state,attempt_id,processor_id,processor_version,processor_kind,raw_result,saved_result,edits,failure)
+      `INSERT INTO intelligence_legacy_processing_revisions(id,run_id,repository_id,file_id,file_revision_id,file_sha256,version,parent_revision_id,actor_user_id,at,state,attempt_id,processor_id,processor_version,processor_kind,raw_result,saved_result,edits,failure)
        VALUES($1,$2,'repo',$3,$4,$5,1,NULL,'owner',1,'RUNNING',$6,'legacy-parser','v1','parser',NULL,NULL,'[]'::jsonb,NULL)`,
       [
         initialRevisionId,
@@ -159,7 +159,7 @@ test("Intelligence is the authorized read owner of immutable legacy processing h
       ],
     );
     await sql.query(
-      `INSERT INTO file_processing_revisions(id,run_id,repository_id,file_id,file_revision_id,file_sha256,version,parent_revision_id,actor_user_id,at,state,attempt_id,processor_id,processor_version,processor_kind,raw_result,saved_result,edits,failure)
+      `INSERT INTO intelligence_legacy_processing_revisions(id,run_id,repository_id,file_id,file_revision_id,file_sha256,version,parent_revision_id,actor_user_id,at,state,attempt_id,processor_id,processor_version,processor_kind,raw_result,saved_result,edits,failure)
        VALUES($1,$2,'repo',$3,$4,$5,2,$6,'owner',2,'SAVED',$7,'legacy-parser','v1','parser',$8::jsonb,$9::jsonb,'[]'::jsonb,NULL)`,
       [
         revisionId,

@@ -10,7 +10,7 @@ export class PostgresLegacyProcessingHistory implements LegacyProcessingHistory 
     return this.db.transaction(async (sql) => {
       await repositoryContentScope(sql, actor, { repositoryId });
       const result = await sql.query(
-        `SELECT revision.* FROM file_processing_runs run JOIN file_processing_revisions revision
+        `SELECT revision.* FROM intelligence_legacy_processing_runs run JOIN intelligence_legacy_processing_revisions revision
           ON revision.repository_id=run.repository_id AND revision.run_id=run.id
          WHERE run.repository_id=$1 AND run.id=$2 AND (($3::uuid IS NULL AND revision.id=run.head_revision_id) OR revision.id=$3)`,
         [repositoryId, runId, revisionId ?? null],
@@ -24,7 +24,7 @@ export class PostgresLegacyProcessingHistory implements LegacyProcessingHistory 
       await repositoryContentScope(sql, actor, { repositoryId });
       return (
         await sql.query(
-          `SELECT revision.* FROM file_processing_runs run JOIN file_processing_revisions revision
+          `SELECT revision.* FROM intelligence_legacy_processing_runs run JOIN intelligence_legacy_processing_revisions revision
             ON revision.repository_id=run.repository_id AND revision.run_id=run.id AND revision.id=run.head_revision_id
            WHERE run.repository_id=$1 AND run.file_id=$2 AND ($3::uuid IS NULL OR revision.run_id>$3)
            ORDER BY revision.run_id LIMIT 21`,

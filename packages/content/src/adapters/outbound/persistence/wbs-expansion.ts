@@ -82,21 +82,13 @@ export function assertCurrentSourceCoverage(
       mappedNodes.some((node) => node?.kind !== undefined) &&
       !mappedNodes.some((node) => node?.kind === "WORK")
     )
-      throw new ContentError(
-        503,
-        "Content work source evidence has no WORK node.",
-        "UNAVAILABLE",
-      );
+      throw new ContentError(503, "Content work source evidence has no WORK node.", "UNAVAILABLE");
     if (
       row.disposition === "CONTENT_WORK" &&
       mappedNodes.some((node) => node?.kind !== undefined) &&
       !mappedNodes.some((node) => node?.kind === "TASK")
     )
-      throw new ContentError(
-        503,
-        "Content work source evidence has no TASK node.",
-        "UNAVAILABLE",
-      );
+      throw new ContentError(503, "Content work source evidence has no TASK node.", "UNAVAILABLE");
     for (const nodeId of row.nodeIds) {
       if (coveredNodeIds.has(nodeId))
         throw new ContentError(
