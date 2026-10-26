@@ -79,7 +79,12 @@ jobs:
         env:
           VALIDATION_GROUP: ${{ matrix.group }}
           VALIDATION_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
-        run: pnpm validate --fast --group "$VALIDATION_GROUP"
+        run: |
+          if [ "$VALIDATION_GROUP" = "test-database" ]; then
+            pnpm test:database
+          else
+            pnpm validate --fast --group "$VALIDATION_GROUP"
+          fi
       - name: Upload validation logs
         if: always()
         uses: actions/upload-artifact@v4

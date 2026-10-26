@@ -974,7 +974,10 @@ export function validate(root) {
       fullValidateJob?.strategy?.matrix?.group !== "${{ fromJSON(needs.plan.outputs.groups) }}" ||
       !(fullValidateJob?.steps ?? []).some(
         (step) =>
-          step.run === 'pnpm validate --fast --group "$VALIDATION_GROUP"' &&
+          typeof step.run === "string" &&
+          step.run.includes('pnpm validate --fast --group "$VALIDATION_GROUP"') &&
+          (step.run === 'pnpm validate --fast --group "$VALIDATION_GROUP"' ||
+            step.run.includes("pnpm test:database")) &&
           step.env?.VALIDATION_GROUP === "${{ matrix.group }}" &&
           step.env?.VALIDATION_BASE_SHA ===
             "${{ github.event.pull_request.base.sha || github.event.before }}",
