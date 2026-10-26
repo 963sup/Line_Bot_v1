@@ -355,6 +355,12 @@
       "skillPath": "plugins/sharp-edges/skills/sharp-edges/SKILL.md",
       "computedHash": "4f66a4f2edbb3e196a2a1a09393320d98eddbf2e6561754d4361a31b6286319f"
     },
+    "skill-creator": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/skill-creator/SKILL.md",
+      "computedHash": "5ea13a6d9f0d4bb694405d79acd00cadec0d21bb138c4dd10fcf3c500cb835c2"
+    },
     "spec-to-code-compliance": {
       "source": "trailofbits/skills",
       "sourceType": "github",
