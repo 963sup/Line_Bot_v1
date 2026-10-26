@@ -1,5 +1,5 @@
-import { generateText } from "ai";
 import { IntelligenceError } from "@line_bot_v1/intelligence/domain/error";
+import { generateText } from "ai";
 import { fileProcessor } from "./gateway-document.js";
 
 export function createVercelAiGateway(config: { model: string }) {
