@@ -16,6 +16,8 @@
     "format": "biome check --write .",
     "deadcode": "knip",
     "schema:check": "turbo run schema:check",
+    "provider:supabase": "tsx scripts/providers/supabase.ts",
+    "provider:vercel": "tsx scripts/providers/vercel.ts",
     "supabase:stop": "pnpm exec supabase stop --no-backup",
     "start": "pnpm --filter @line_bot_v1/web start"
   },
@@ -45,9 +47,11 @@
     "smol-toml": "catalog:",
     "supabase": "catalog:",
     "ts-morph": "27.0.2",
+    "tsx": "catalog:",
     "turbo": "catalog:",
     "typescript": "catalog:",
     "typescript-language-server": "5.1.3",
+    "vercel": "65.3.1",
     "yaml": "catalog:"
   }
 }
