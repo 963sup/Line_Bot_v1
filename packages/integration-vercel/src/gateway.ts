@@ -40,7 +40,7 @@ export function createVercelAiGateway(config: { model: string }) {
         ],
         maxOutputTokens: 24_000,
         maxRetries: 0,
-        abortSignal: AbortSignal.timeout(20_000),
+        abortSignal: AbortSignal.timeout(45_000),
       });
       return parseDocumentIntakeOutput(result.output);
     },
