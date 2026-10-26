@@ -3,6 +3,7 @@ import {
   PURCHASE_ORDER_CATEGORIES,
   type PurchaseOrderCandidate,
   type PurchaseOrderFieldEvidence,
+  type SourceReviewAttestation,
 } from "./document-intake.js";
 import { ContractError } from "./error.js";
 
@@ -119,6 +120,35 @@ export function decodeDocumentSource(value: unknown): DocumentSource {
     fileId: value.fileId.toLowerCase(),
     fileRevisionId: value.fileRevisionId.toLowerCase(),
     fileSha256: value.fileSha256,
+  };
+}
+
+export function decodeSourceReviewAttestation(value: unknown): SourceReviewAttestation {
+  const keys = [
+    "verifiedLineCount",
+    "reviewedSourcePages",
+    "reviewedSourceRowIds",
+    "confirmedFromOriginal",
+  ];
+  if (
+    !record(value) ||
+    !exactKeys(value, keys) ||
+    typeof value.verifiedLineCount !== "number" ||
+    !Number.isSafeInteger(value.verifiedLineCount) ||
+    value.verifiedLineCount < 1 ||
+    !pages(value.reviewedSourcePages) ||
+    !Array.isArray(value.reviewedSourceRowIds) ||
+    value.reviewedSourceRowIds.length === 0 ||
+    !value.reviewedSourceRowIds.every((rowId) => text(rowId) && rowId.length > 0) ||
+    new Set(value.reviewedSourceRowIds).size !== value.reviewedSourceRowIds.length ||
+    value.confirmedFromOriginal !== true
+  )
+    return fail("Invalid original source review attestation.");
+  return {
+    verifiedLineCount: value.verifiedLineCount,
+    reviewedSourcePages: [...value.reviewedSourcePages],
+    reviewedSourceRowIds: [...value.reviewedSourceRowIds],
+    confirmedFromOriginal: true,
   };
 }
 

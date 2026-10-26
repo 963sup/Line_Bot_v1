@@ -24,6 +24,7 @@ create table app_private.contract_document_revisions (
  candidate jsonb not null check(jsonb_typeof(candidate)='object'),
  diagnostics jsonb not null check(jsonb_typeof(diagnostics)='array'),
  acknowledgement_reason text,
+ source_review_attestation jsonb,
  unique(repository_id,document_id,id),
  unique(repository_id,document_id,version,id),
  unique(document_id,version),
@@ -32,7 +33,9 @@ create table app_private.contract_document_revisions (
  foreign key(repository_id,file_id,file_revision_id,file_sha256)
   references app_private.file_revisions(repository_id,file_id,id,sha256),
  check((version=1 and parent_revision_id is null) or (version>1 and parent_revision_id is not null)),
- check(state='DRAFT' or jsonb_array_length(diagnostics)=0 or coalesce(length(trim(acknowledgement_reason)),0)>0)
+ check(state='DRAFT' or jsonb_array_length(diagnostics)=0 or coalesce(length(trim(acknowledgement_reason)),0)>0),
+ check((state='DRAFT' and source_review_attestation is null) or
+  (state='CONFIRMED' and jsonb_typeof(source_review_attestation)='object'))
 );
 alter table app_private.contract_documents add constraint contract_documents_head_fkey
  foreign key(repository_id,id,version,head_revision_id)

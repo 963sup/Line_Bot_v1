@@ -57,6 +57,13 @@ export type DocumentSource = Readonly<{
   fileSha256: string;
 }>;
 
+export type SourceReviewAttestation = Readonly<{
+  verifiedLineCount: number;
+  reviewedSourcePages: readonly number[];
+  reviewedSourceRowIds: readonly string[];
+  confirmedFromOriginal: true;
+}>;
+
 export type ContractDocumentRevision = Readonly<{
   schemaVersion: 1;
   id: string;
@@ -72,6 +79,7 @@ export type ContractDocumentRevision = Readonly<{
   candidate: PurchaseOrderCandidate;
   diagnostics: readonly string[];
   acknowledgementReason: string | null;
+  sourceReviewAttestation: SourceReviewAttestation | null;
 }>;
 
 function complete(value: string | null): value is string {
@@ -111,6 +119,49 @@ function equalExactDecimals(left: string, right: string): boolean {
     first.coefficient * 10n ** BigInt(scale - first.scale) ===
     second.coefficient * 10n ** BigInt(scale - second.scale)
   );
+}
+
+function multiplyExactDecimals(left: string, right: string): string {
+  const first = decimalParts(left);
+  const second = decimalParts(right);
+  const scale = first.scale + second.scale;
+  const product = first.coefficient * second.coefficient;
+  const negative = product < 0n;
+  const digits = (negative ? -product : product).toString().padStart(scale + 1, "0");
+  if (!scale) return `${negative ? "-" : ""}${digits}`;
+  const whole = digits.slice(0, -scale);
+  const fraction = digits.slice(-scale).replace(/0+$/, "");
+  return `${negative ? "-" : ""}${whole}${fraction ? `.${fraction}` : ""}`;
+}
+
+function sourcePages(candidate: PurchaseOrderCandidate): Set<number> {
+  return new Set([
+    ...candidate.lines.flatMap((line) => line.sourcePages),
+    ...candidate.terms.sourcePages,
+    ...Object.values(candidate.fieldEvidence).flatMap((entries) =>
+      entries.flatMap((entry) => entry.sourcePages),
+    ),
+  ]);
+}
+
+function validateSourceReviewAttestation(
+  candidate: PurchaseOrderCandidate,
+  attestation: SourceReviewAttestation,
+): void {
+  if (
+    attestation.verifiedLineCount !== candidate.lines.length ||
+    attestation.confirmedFromOriginal !== true ||
+    new Set(attestation.reviewedSourcePages).size !== attestation.reviewedSourcePages.length ||
+    new Set(attestation.reviewedSourceRowIds).size !== attestation.reviewedSourceRowIds.length ||
+    attestation.reviewedSourceRowIds.length !== candidate.lines.length ||
+    !candidate.lines.every((line) => attestation.reviewedSourceRowIds.includes(line.sourceRowId)) ||
+    ![...sourcePages(candidate)].every((page) => attestation.reviewedSourcePages.includes(page))
+  )
+    throw new ContractError(
+      400,
+      "Original source review must cover every candidate row and source page.",
+      "INVALID_INPUT",
+    );
 }
 
 function canonical(value: unknown): string {
@@ -179,6 +230,16 @@ function diagnosticsFor(candidate: PurchaseOrderCandidate, expectedLineCount: nu
     })
   )
     issues.push("LINE_AMOUNT_MISMATCH");
+  if (
+    candidate.lines.some(
+      (line) =>
+        complete(line.quantity) &&
+        complete(line.unitPrice) &&
+        complete(line.grossAmount) &&
+        !equalExactDecimals(multiplyExactDecimals(line.quantity, line.unitPrice), line.grossAmount),
+    )
+  )
+    issues.push("LINE_GROSS_MISMATCH");
   const grossAmounts = candidate.lines.map((line) => line.grossAmount);
   const grossTotal = candidate.totals.gross;
   if (grossAmounts.every(complete) && complete(grossTotal)) {
@@ -215,6 +276,7 @@ export function createDocumentRevision(
     candidate: PurchaseOrderCandidate;
     source: ContractDocumentRevision["source"];
     acknowledgement?: Readonly<{ reason: string }>;
+    sourceReviewAttestation?: SourceReviewAttestation;
     id: string;
     documentId: string;
     repositoryId: string;
@@ -239,6 +301,13 @@ export function createDocumentRevision(
         "Confirmation must preserve the reviewed source and draft facts.",
         "SOURCE_INVALID",
       );
+    if (!input.sourceReviewAttestation)
+      throw new ContractError(
+        400,
+        "Original source review attestation is required to confirm.",
+        "INVALID_INPUT",
+      );
+    validateSourceReviewAttestation(input.candidate, input.sourceReviewAttestation);
   }
   if (!Number.isSafeInteger(input.expectedLineCount) || input.expectedLineCount < 1)
     throw new ContractError(400, "Expected line count must be positive.", "INVALID_INPUT");
@@ -281,6 +350,10 @@ export function createDocumentRevision(
     acknowledgementReason:
       input.action === "confirm" && diagnostics.length > 0
         ? (input.acknowledgement?.reason.trim() ?? null)
+        : null,
+    sourceReviewAttestation:
+      input.action === "confirm" && input.sourceReviewAttestation
+        ? structuredClone(input.sourceReviewAttestation)
         : null,
   };
 }

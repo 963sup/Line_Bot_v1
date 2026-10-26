@@ -1,4 +1,8 @@
-import type { DocumentSource, PurchaseOrderCandidate } from "../../domain/document-intake.js";
+import type {
+  DocumentSource,
+  PurchaseOrderCandidate,
+  SourceReviewAttestation,
+} from "../../domain/document-intake.js";
 
 export type DocumentIntakeRevisionDto = Readonly<{
   schemaVersion: 1;
@@ -15,4 +19,5 @@ export type DocumentIntakeRevisionDto = Readonly<{
   candidate: PurchaseOrderCandidate;
   diagnostics: readonly string[];
   acknowledgementReason: string | null;
+  sourceReviewAttestation: SourceReviewAttestation | null;
 }>;

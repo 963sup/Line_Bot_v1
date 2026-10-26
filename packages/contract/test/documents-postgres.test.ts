@@ -47,6 +47,17 @@ function candidate(): PurchaseOrderCandidate {
   };
 }
 
+function sourceReviewAttestation(facts: PurchaseOrderCandidate) {
+  return {
+    verifiedLineCount: facts.lines.length,
+    reviewedSourcePages: [
+      ...new Set([...facts.lines.flatMap((line) => line.sourcePages), ...facts.terms.sourcePages]),
+    ],
+    reviewedSourceRowIds: facts.lines.map((line) => line.sourceRowId),
+    confirmedFromOriginal: true as const,
+  };
+}
+
 async function seed(db: Database) {
   await db.transaction(async (sql) => {
     await sql.query(
@@ -272,11 +283,12 @@ test("PostgreSQL document intake authorizes, pins source, replays exactly and ro
     acknowledgement: {
       reason: "Preserve printed source amounts; the total discrepancy was reviewed.",
     },
+    sourceReviewAttestation: sourceReviewAttestation(reportedTax),
   });
   assert.equal(confirmed.version, 3);
   const persisted = await db.transaction((sql) =>
     sql.query(
-      "SELECT acknowledgement_reason,state,schema_version FROM contract_document_revisions WHERE id=$1",
+      "SELECT acknowledgement_reason,source_review_attestation,state,schema_version FROM contract_document_revisions WHERE id=$1",
       [confirmed.revisionId],
     ),
   );
@@ -285,6 +297,10 @@ test("PostgreSQL document intake authorizes, pins source, replays exactly and ro
   assert.equal(
     persisted.rows[0]?.acknowledgement_reason,
     "Preserve printed source amounts; the total discrepancy was reviewed.",
+  );
+  assert.deepEqual(
+    persisted.rows[0]?.source_review_attestation,
+    sourceReviewAttestation(reportedTax),
   );
 
   const failedDocument = randomUUID();

@@ -1,6 +1,6 @@
 # Document owner skeleton reduction — Step 4: Contract SAVE / REVIEW / CONFIRM
 
-**狀態：目標設計，未完成實作驗證。** 上一步：[Step 3 Gateway → 候選資料](document-owner-skeleton-reduction-step-3.md)；下一步：[Step 5 Contract → Content](document-owner-skeleton-reduction-step-5.md)。
+**狀態：Contract SAVE／CONFIRM 與人工原件核對證據已實作；完整 release acceptance 仍待 CI／remote evidence。** 上一步：[Step 3 Gateway → 候選資料](document-owner-skeleton-reduction-step-3.md)；下一步：[Step 5 Contract → Content](document-owner-skeleton-reduction-step-5.md)。
 
 **唯一目的：** 把不可信 `PurchaseOrderCandidate` 經 Contract **自己的**資料規則與人工覆核，變成可追溯、不可修改的 `CONFIRMED ContractDocumentRevision`。這表示商業事實經確認，**不保證** Content 可展開或 WBS 已批准。工程承諾 `EngineeringContract` 是同 Owner 的獨立 Aggregate，不納入本 Step 的採購單閉環。
 
@@ -58,15 +58,15 @@ type ContractDocumentRevision = {
 | 單據總額 | 目前檢查 lines gross / discount / net sums、`net + tax = total` | 精確十進位、稅與折扣之合法例外須明確、可追溯；金額差異不等於缺資料 |
 | 商業確認 | DRAFT → CONFIRMED，只能確認未修改的 review facts | 真實 reviewer/actor 意圖清楚、版本固定、不能自動 Confirm |
 
-**已證實的缺口**：現行 `diagnosticsFor` 沒有明確比較 `quantity * unitPrice` 與 `grossAmount`；此外 `expectedLineCount` 是 caller 提供，驗證 54/54 只證明對上宣告，不證明原 PDF 就有 54 行。這兩項必須列入修正與反例測試。
+**已完成的修正與仍存在的邊界**：Contract domain 現在以 exact decimal 比較 `quantity * unitPrice` 與 `grossAmount`，並以 `LINE_GROSS_MISMATCH` 保留差異；`expectedLineCount` 仍是 caller 宣告，不能單獨證明原 PDF 行數。
 
 **設計決定：** 財務差異可用明確 `acknowledgementReason` 例外，但**不能用一段任意理由豁免缺少必要行、來源頁、重複 ID、未確定欄位、無效數量或未核對原件行數**。當實際商業單據存在手寫價格、折扣或特殊稅務例外時，應保留精確原始值及來源位置，而不是用公式強迫偽造一致。引入新的例外種類前先確立 domain 語意與測試；不加通用規則引擎。
 
 ## 4. 原件人工核對必須有獨立可查的確認證據
 
-**原文件無法僅以** `expectedLineCount`、`candidate.lines.length`、`sourcePages` **或** `state=CONFIRMED` **證明已逐頁核對。** 目前 `ContractDocumentRevision` 只有確認 actor/time、預期行數、候選資料及差異理由；並沒有獨立記載「原件共幾頁、人工實際核對了哪幾列」的欄位。因此 Step 4 的「人工逐頁核對」是**尚未落地的驗收缺口**，不能宣稱現有 CONFIRMED 已具有此證據。
+**原文件無法僅以** `expectedLineCount`、`candidate.lines.length`、`sourcePages` **或** `state=CONFIRMED` **證明已逐頁核對。** `ContractDocumentRevision` 現在另行保存 `sourceReviewAttestation`，記載人工確認的行數、頁碼、source row IDs 與 `confirmedFromOriginal: true`；它是「誰聲明核對過」的證據，不宣稱系統自動證明 PDF 內容必然正確。
 
-最小目標：由 **Contract Owner** 在確認命令與同一不可變確認 Revision 中持久化一份原件核對聲明（示意新增欄位，**非現有 Schema**）：
+實際契約：由 **Contract Owner** 在確認命令與同一不可變確認 Revision 中持久化一份原件核對聲明：
 
 ```ts
 type SourceReviewAttestation = {
@@ -78,7 +78,7 @@ type SourceReviewAttestation = {
 // actor/time 與 exact File revision/SHA 已在 ContractDocumentRevision，勿重複第二份真相。
 ```
 
-提交時須核對：`verifiedLineCount === candidate.lines.length`、列 ID 集合精確相同、頁碼落在經驗證的 File 原件範圍、同一 Draft/Source Version；**聲明本身是「誰聲明核對過」的證據，不是系統自動證明 PDF 內容必然正確**。若產品不批准持久化此證據的 Schema/命令/權限變更，就不能以 Step 4 的「逐頁核對已被持久化」作為 Release Gate。任何這類持久化修改需獨立走 Schema/RLS/Reader/transaction/replay/tests 設計與驗證，不新增通用審核服務。
+提交時須核對：`verifiedLineCount === candidate.lines.length`、列 ID 集合精確相同、候選所有 source pages 均被列入 reviewed pages、同一 Draft/Source Version。SQL schema、decoder、transaction persistence、replay fingerprint 與 Contract tests 已同步；仍不把 attestation 誤認成 PDF 真實內容的自動證明。
 
 ## 5. 最小狀態轉換與失敗語意
 
@@ -113,14 +113,14 @@ Contract 對 Content **只公開這個版本的已確認資料讀取能力**。�
 
 1. Gateway 產出完整但有 `uncertain=true`、缺來源頁或重複 `sourceRowId` → **SAVE Draft 可以保留調查證據**，CONFIRM 必須拒絕。
 2. 宣告 54 行但原始文件人工核對為 55 行 → 不可標記「完整確認」；記錄實際核對差異與來源證據。
-3. quantity=3、unitPrice=10、gross=20 → 不能當成無差異；新增規則需依明確折扣／計價例外處理。
+3. quantity=3、unitPrice=10、gross=20 → 產生 `LINE_GROSS_MISMATCH`，CONFIRM 必須明確以差異 acknowledgement 保留，而不能當成無差異。
 4. signed discount、稅額、逐行與表尾金額 → 使用 exact decimals 驗證；合法單據例外必須可解釋與追溯，不能只修 AI prompt。
 5. 兩個 reviewer 併發確認同 Draft → ExpectedVersion 只允許一個有效新版本；另一個明確 conflict。
 6. Gateway 或 actor 已失去 Repository 權限 → 不得跨 scope SAVE/CONFIRM/讀取；receipt replay 亦依現在的權限。
 7. CONFIRM 命令同時偷偷更改一行 → 拒絕；先 SAVE correction，後以新版本確認。
 8. Confirmed document 從未轉成 Content → 仍是有效商業事實；不得自動產生工作節點／發布 WBS。
 
-**Step 4 通過標準：** 以完整 fixture、邊界／算術反例、獨立人工文件核對、PostgreSQL 交易與 receipt readback 證明商業確認的正確性；Step 5 的工程展開狀態不影響這份證據。
+**Step 4 目前證據：** domain arithmetic／attestation tests、PostgreSQL persistence/replay/rollback test、schema checks 已具備；CI exact-head、實際人工 review 操作與 remote evidence 仍是未完成的 acceptance gate。Step 5 的工程展開狀態不影響這份證據。
 
 ## Reference
 
