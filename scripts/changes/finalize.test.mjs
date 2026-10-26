@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test } from "node:test";
 import { finalizeChange, validateCommandSurface } from "./finalize.mjs";
 
@@ -88,6 +91,51 @@ test("failed canonical validation propagates without a successful after read", (
     /fixture validation failed/,
   );
   assert.equal(reads, 1);
+});
+
+test("failed finalize validation preserves full evidence and bounds diagnostic output", (t) => {
+  const cwd = mkdtempSync(join(tmpdir(), "line-bot-finalize-evidence-"));
+  t.after(() => rmSync(cwd, { recursive: true, force: true }));
+  const outputDirectory = join(cwd, "artifacts");
+  mkdirSync(outputDirectory);
+  const npmExecPath = join(cwd, "fixture-pnpm.mjs");
+  writeFileSync(
+    npmExecPath,
+    [
+      'if (process.argv[2] !== "validate") process.exit(9);',
+      'console.error("ERROR: first actionable validation failure");',
+      'for (let i = 0; i < 200; i++) console.error("noise-" + i + ":" + "x".repeat(120));',
+      "process.exit(7);",
+    ].join("\n"),
+  );
+
+  assert.throws(
+    () => validateCommandSurface({ npmExecPath, cwd, outputDirectory }),
+    (error) => {
+      assert.match(error.message, /pnpm validate failed with status 7/);
+      assert.match(error.message, /first actionable validation failure/);
+      assert.match(error.message, /Full output: /);
+      assert.ok(Buffer.byteLength(error.message) < 9 * 1024);
+      return true;
+    },
+  );
+  const log = readFileSync(join(outputDirectory, "validate.log"), "utf8");
+  assert.match(log, /first actionable validation failure/);
+  assert.match(log, /noise-199/);
+});
+
+test("successful finalize validation writes full output without emitting it", (t) => {
+  const cwd = mkdtempSync(join(tmpdir(), "line-bot-finalize-success-"));
+  t.after(() => rmSync(cwd, { recursive: true, force: true }));
+  const outputDirectory = join(cwd, "artifacts");
+  mkdirSync(outputDirectory);
+  const npmExecPath = join(cwd, "fixture-pnpm.mjs");
+  writeFileSync(npmExecPath, 'console.log("x".repeat(16 * 1024));');
+  assert.equal(validateCommandSurface({ npmExecPath, cwd, outputDirectory }), undefined);
+  assert.equal(
+    readFileSync(join(outputDirectory, "validate.log"), "utf8").trim().length,
+    16 * 1024,
+  );
 });
 
 test("validation uses the pinned pnpm entrypoint and rejects subprocess failure", () => {
