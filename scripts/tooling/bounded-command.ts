@@ -1,7 +1,9 @@
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
+import { createWriteStream } from "node:fs";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
+import { finished } from "node:stream/promises";
 import { pathToFileURL } from "node:url";
 
 type Input = {
@@ -44,13 +46,18 @@ type Result = {
 
 type CompletedProcess = {
   exitCode: number;
-  output: string;
-  stdout: string;
+  failure: { firstActionableError?: string; tail: string[] };
+  outputHash: string;
+  outputLines: number;
+  stdoutForSummary?: string;
 };
 
 const defaultArtifactDir = resolve(process.cwd(), ".artifacts", "bounded-command");
 const defaultTailLines = 30;
 const actionableError = /\b(?:error|exception|failed|failure|assertion)\b/i;
+const maxFailureExcerptChars = 4096;
+const maxLineExcerptChars = 1024;
+const maxSummaryChars = 1024 * 1024;
 
 export function summarizeGhPrChecks(output: string): GhPrChecksSummary | undefined {
   const summary: GhPrChecksSummary = { failed: [], failing: 0, passing: 0, pending: 0, total: 0 };
@@ -141,29 +148,103 @@ function safeLabel(label: string): string {
   return normalized;
 }
 
-function nonEmptyLines(output: string): string[] {
-  return output.split(/\r?\n/).filter((line) => line.trim().length > 0);
+function clipExcerpt(line: string): string {
+  return line.length > maxLineExcerptChars
+    ? `${line.slice(0, maxLineExcerptChars)}…[truncated]`
+    : line;
 }
 
-async function execute(command: string[]): Promise<CompletedProcess> {
+class BoundedCapture {
+  #firstActionableError: string | undefined;
+  #hash = createHash("sha256");
+  #lineBuffers = new Map<string, string>();
+  #outputLines = 0;
+  #stdoutForSummary = "";
+  #summaryTooLarge = false;
+  #tail: string[] = [];
+
+  constructor(private readonly tailLines: number) {}
+
+  append(stream: "stdout" | "stderr", chunk: string): void {
+    this.#hash.update(chunk);
+    if (stream === "stdout" && !this.#summaryTooLarge) {
+      if (this.#stdoutForSummary.length + chunk.length > maxSummaryChars) {
+        this.#stdoutForSummary = "";
+        this.#summaryTooLarge = true;
+      } else {
+        this.#stdoutForSummary += chunk;
+      }
+    }
+    const buffer = `${this.#lineBuffers.get(stream) ?? ""}${chunk}`;
+    const lines = buffer.split(/\r?\n/);
+    this.#lineBuffers.set(stream, lines.pop() ?? "");
+    for (const line of lines) this.#recordLine(line);
+  }
+
+  finish(): void {
+    for (const line of this.#lineBuffers.values()) this.#recordLine(line);
+    this.#lineBuffers.clear();
+  }
+
+  result(): Omit<CompletedProcess, "exitCode"> {
+    return {
+      failure: { firstActionableError: this.#firstActionableError, tail: this.#tail },
+      outputHash: this.#hash.digest("hex"),
+      outputLines: this.#outputLines,
+      ...(this.#summaryTooLarge ? {} : { stdoutForSummary: this.#stdoutForSummary }),
+    };
+  }
+
+  #recordLine(line: string): void {
+    if (!line.trim()) return;
+    this.#outputLines += 1;
+    const excerpt = clipExcerpt(line);
+    if (!this.#firstActionableError && actionableError.test(excerpt)) {
+      this.#firstActionableError = excerpt;
+    }
+    this.#tail.push(excerpt);
+    while (
+      this.#tail.length > this.tailLines ||
+      this.#tail.join("\n").length > maxFailureExcerptChars
+    ) {
+      this.#tail.shift();
+    }
+  }
+}
+
+async function execute(
+  command: string[],
+  artifact: string,
+  tailLines: number,
+): Promise<CompletedProcess> {
   if (command.length === 0) throw new Error("command is required after --");
 
   return await new Promise((resolvePromise, reject) => {
     const child = spawn(command[0], command.slice(1), { stdio: ["ignore", "pipe", "pipe"] });
-    let stdout = "";
-    let stderr = "";
+    const artifactStream = createWriteStream(artifact, { encoding: "utf8" });
+    const capture = new BoundedCapture(tailLines);
     child.stdout.setEncoding("utf8");
     child.stderr.setEncoding("utf8");
+    child.stdout.pipe(artifactStream, { end: false });
+    child.stderr.pipe(artifactStream, { end: false });
     child.stdout.on("data", (chunk: string) => {
-      stdout += chunk;
+      capture.append("stdout", chunk);
     });
     child.stderr.on("data", (chunk: string) => {
-      stderr += chunk;
+      capture.append("stderr", chunk);
     });
     child.once("error", reject);
-    child.once("close", (code, signal) => {
-      const suffix = signal ? `\nProcess terminated by signal ${signal}\n` : "";
-      resolvePromise({ exitCode: code ?? 1, output: `${stdout}${stderr}${suffix}`, stdout });
+    artifactStream.once("error", reject);
+    child.once("close", async (code, signal) => {
+      if (signal) capture.append("stderr", `\nProcess terminated by signal ${signal}\n`);
+      capture.finish();
+      artifactStream.end();
+      try {
+        await finished(artifactStream);
+        resolvePromise({ exitCode: code ?? 1, ...capture.result() });
+      } catch (error) {
+        reject(error);
+      }
     });
   });
 }
@@ -203,16 +284,15 @@ export async function runBoundedCommand(input: Input): Promise<Result> {
 
   await mkdir(artifactDir, { recursive: true });
   const startedAt = Date.now();
-  const completed = await execute(input.command);
-  const outputLines = nonEmptyLines(completed.output);
   const artifact = join(artifactDir, `${label}-${startedAt}-${process.pid}.log`);
-  await writeFile(artifact, completed.output, "utf8");
+  const completed = await execute(input.command, artifact, tailLines);
 
   const summary =
     input.summaryMode === "gh-pr-checks"
-      ? summarizeGhPrChecks(completed.stdout)
+      ? completed.stdoutForSummary && summarizeGhPrChecks(completed.stdoutForSummary)
       : input.summaryMode === "json"
-        ? summarizeJsonResponse(completed.stdout, input.selectors)
+        ? completed.stdoutForSummary &&
+          summarizeJsonResponse(completed.stdoutForSummary, input.selectors)
         : undefined;
   const ok =
     completed.exitCode === 0 || (input.summaryMode === "gh-pr-checks" && summary !== undefined);
@@ -221,7 +301,7 @@ export async function runBoundedCommand(input: Input): Promise<Result> {
       JSON.stringify({
         command: input.command,
         exitCode: completed.exitCode,
-        output: completed.output,
+        outputHash: completed.outputHash,
       }),
     )
     .digest("hex");
@@ -239,15 +319,14 @@ export async function runBoundedCommand(input: Input): Promise<Result> {
     changed,
     durationMs: Date.now() - startedAt,
     exitCode: completed.exitCode,
-    ...(ok
+    ...(ok || !changed
       ? { tail: [] }
       : {
-          firstActionableError: outputLines.find((line) => actionableError.test(line)),
-          tail: outputLines.slice(-tailLines),
+          ...completed.failure,
         }),
     label,
     ok,
-    outputLines: outputLines.length,
+    outputLines: completed.outputLines,
     ...(summary ? { summary } : {}),
   };
 }
