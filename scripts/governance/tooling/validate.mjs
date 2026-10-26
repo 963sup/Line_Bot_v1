@@ -25,25 +25,21 @@ const fastTasks = new Set([
   "architecture:test",
   "architecture",
   "deadcode",
-  "typecheck+test",
+  "typecheck",
+  "test",
   "build",
 ]);
 
 export const validationGroups = Object.freeze({
-  tooling: [
-    "lockfile",
-    "tooling:check",
-    "tooling:test",
-    "change:test",
-    "github:test",
-    "attendance:scheduler:test",
-  ],
+  preflight: ["lockfile"],
+  tooling: ["tooling:check", "tooling:test", "github:test"],
   docs: ["docs:test", "docs:check"],
   lint: ["lint"],
   architecture: ["architecture:test", "architecture"],
   schema: ["schema:remote:test", "schema:check"],
   deadcode: ["deadcode"],
-  "typecheck-test": ["typecheck+test"],
+  typecheck: ["typecheck"],
+  test: ["test", "change:test", "attendance:scheduler:test"],
   build: ["build"],
 });
 
@@ -88,9 +84,21 @@ export function classifyChangedFiles(files) {
     file.startsWith(".agents/") ||
     file.startsWith(".vscode/") ||
     file === ".node-version";
+  const isToolingSource = (file) =>
+    isToolingMetadata(file) ||
+    file.startsWith(".github/") ||
+    file.startsWith("scripts/governance/tooling/") ||
+    file.startsWith("scripts/governance/docs/") ||
+    file.startsWith("scripts/analysis/code/") ||
+    file.startsWith("scripts/core/runtime/") ||
+    file.startsWith("scripts/operations/") ||
+    file.startsWith("scripts/providers/") ||
+    file.startsWith("scripts/architecture/") ||
+    file.startsWith("architecture/") ||
+    [".dependency-cruiser.mjs", "biome.json", "knip.jsonc", "turbo.json"].includes(file);
   const toolingAffected = changed.some(
     (file) =>
-      isToolingMetadata(file) ||
+      isToolingSource(file) ||
       file.startsWith("scripts/governance/tooling/") ||
       file.startsWith("scripts/analysis/code/") ||
       file.startsWith("scripts/core/runtime/") ||
@@ -125,7 +133,7 @@ export function classifyChangedFiles(files) {
       ["package.json", "pnpm-workspace.yaml", "pnpm-lock.yaml", "turbo.json"].includes(file),
   );
   const codeAffected = changed.some(
-    (file) => !isDoc(file) && !isSchemaSource(file) && !isToolingMetadata(file),
+    (file) => !isDoc(file) && !isSchemaSource(file) && !isToolingSource(file),
   );
   return { codeAffected, docsAffected, schemaAffected, toolingAffected };
 }
@@ -175,20 +183,21 @@ export function shouldRunFast(task, scope) {
   if (task === "tooling:check" || task === "tooling:test") return scope.toolingAffected;
   if (task === "change:test") return scope.codeAffected || scope.toolingAffected;
   if (task === "docs:test" || task === "docs:check") return scope.docsAffected;
+  if (task === "lint") return scope.codeAffected || scope.toolingAffected;
   if (task === "schema:check" || task === "schema:remote:test") return scope.schemaAffected;
   if (task === "github:test") return scope.toolingAffected;
-  if (task === "attendance:scheduler:test") return scope.codeAffected;
-  if (task === "architecture:test") return scope.toolingAffected && scope.codeAffected;
+  if (task === "attendance:scheduler:test") return scope.codeAffected || scope.toolingAffected;
+  if (task === "architecture:test") return scope.toolingAffected;
   if (task === "architecture")
     return scope.codeAffected || scope.toolingAffected || scope.schemaAffected;
   if (task === "deadcode") return scope.codeAffected || scope.toolingAffected;
-  if (task === "typecheck+test") return scope.codeAffected || scope.schemaAffected;
+  if (task === "typecheck" || task === "test") return scope.codeAffected || scope.schemaAffected;
   if (task === "build") return scope.codeAffected || scope.schemaAffected;
   return scope.codeAffected;
 }
 
 export function fastTaskArgs(task, command, scope, selection, explicitFilters = false) {
-  if (task !== "typecheck+test" && task !== "build") return command;
+  if (task !== "typecheck" && task !== "test" && task !== "build") return command;
   if ((scope?.schemaAffected || scope?.hasUntrackedFiles) && !explicitFilters) return command;
   return [...command, ...selection];
 }
@@ -217,7 +226,7 @@ export function describeFastPlan(stages, scope, selection, explicitFilters = fal
               : run
                 ? "selected by changed-file responsibility"
                 : "outside changed-file responsibility",
-        ...((task === "typecheck+test" || task === "build") && run
+        ...((task === "typecheck" || task === "test" || task === "build") && run
           ? {
               selection: args === command ? "all workspaces" : selection,
               selectionReason: explicitFilters
@@ -327,10 +336,11 @@ function main() {
     ["schema:check", [turbo, "run", "schema:check"]],
     ["architecture", ["scripts/architecture/check-all.mjs"]],
     ["deadcode", ["node_modules/knip/bin/knip.js"]],
+    ["typecheck", [turbo, "run", "typecheck", "--concurrency=2"]],
     [
-      "typecheck+test",
+      "test",
       // Each package may start two PGlite workers; bound aggregate native/WASM memory locally too.
-      [turbo, "run", "typecheck", "test", "--concurrency=2"],
+      [turbo, "run", "test", "--concurrency=2"],
     ],
     ["build", [turbo, "run", "build"]],
   ];

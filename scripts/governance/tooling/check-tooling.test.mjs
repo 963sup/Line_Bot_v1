@@ -196,8 +196,8 @@ function fixture(t) {
       "[json]": { "editor.defaultFormatter": "biomejs.biome", "editor.formatOnSave": true },
       "[jsonc]": { "editor.defaultFormatter": "biomejs.biome", "editor.formatOnSave": true },
       "editor.codeActionsOnSave": {
-        "source.fixAll.biome": "explicit",
-        "source.organizeImports.biome": "explicit",
+        "source.fixAll.biome": "always",
+        "source.organizeImports.biome": "always",
       },
     }),
   );
@@ -647,7 +647,7 @@ test("Biome mutation and editor integration stay canonical", (t) => {
   settings["[typescript]"]["editor.formatOnSave"] = true;
   settings["editor.codeActionsOnSave"]["source.organizeImports.biome"] = "never";
   write(".vscode/settings.json", JSON.stringify(settings));
-  rejects(root, "source.organizeImports.biome must run on explicit save");
+  rejects(root, "source.organizeImports.biome must run automatically on save");
 });
 
 test("Knip remains the canonical reachability gate without broad ignores", (t) => {

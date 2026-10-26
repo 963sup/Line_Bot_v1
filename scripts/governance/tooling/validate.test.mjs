@@ -132,7 +132,7 @@ test("local and CI validation bound aggregate test workers without changing scop
     import childProcess from 'node:child_process';
     import { syncBuiltinESMExports } from 'node:module';
     childProcess.spawnSync = (file, args, options) => {
-      if (file === 'git') return { status: 0, stdout: args[0] === 'ls-files' ? '' : 'scripts/governance/tooling/validate.mjs\\0' };
+      if (file === 'git') return { status: 0, stdout: args[0] === 'ls-files' ? '' : 'packages/example/source.ts\\0' };
       console.log('CAPTURE:' + JSON.stringify({ args, ci: options.env.CI ?? null }));
       return { status: 0 };
     };
@@ -141,7 +141,7 @@ test("local and CI validation bound aggregate test workers without changing scop
   );
   for (const ci of ["true", "false", undefined]) {
     for (const [mode, selection] of [
-      [["--fast", "--group", "typecheck-test"], ["--affected"]],
+      [["--fast", "--group", "test"], ["--affected"]],
       [[], []],
       [["--fast"], ["--affected"]],
       [["--fast", "--filter=@line_bot_v1/team"], ["--filter=@line_bot_v1/team"]],
@@ -166,11 +166,14 @@ test("local and CI validation bound aggregate test workers without changing scop
         .split("\n")
         .filter((line) => line.startsWith("CAPTURE:"))
         .map((line) => JSON.parse(line.slice("CAPTURE:".length)))
-        .filter((call) => call.args[1] === "run" && call.args[2] === "typecheck");
-      assert.equal(calls.length, 1);
-      assert.deepEqual(calls[0].args.slice(1, 4), ["run", "typecheck", "test"]);
-      assert.deepEqual(calls[0].args.slice(4), ["--concurrency=2", ...selection]);
-      assert.equal(calls[0].ci, ci ?? null);
+        .filter((call) => call.args[1] === "run" && ["typecheck", "test"].includes(call.args[2]));
+      const expectedCalls = mode.includes("--group") ? 1 : 2;
+      assert.equal(calls.length, expectedCalls);
+      for (const call of calls) {
+        assert.deepEqual(call.args.slice(1, 3), ["run", call.args[2]]);
+        assert.deepEqual(call.args.slice(3), ["--concurrency=2", ...selection]);
+        assert.equal(call.ci, ci ?? null);
+      }
     }
   }
 });
@@ -179,7 +182,7 @@ test("fast plan explains skips and conservative workspace selection without chan
   const stages = [
     ["lockfile", ["install"]],
     ["docs:check", ["docs"]],
-    ["typecheck+test", ["turbo", "run", "typecheck", "test"]],
+    ["typecheck", ["turbo", "run", "typecheck"]],
     ["build", ["build"]],
   ];
   for (const scope of [
@@ -193,7 +196,7 @@ test("fast plan explains skips and conservative workspace selection without chan
       assert.equal(stage.run, shouldRunFast(stage.task, scope));
       assert.ok(stage.reason);
     }
-    const product = plan.stages.find((stage) => stage.task === "typecheck+test");
+    const product = plan.stages.find((stage) => stage.task === "typecheck");
     if (scope?.schemaAffected || scope?.hasUntrackedFiles) {
       assert.equal(product.selection, "all workspaces");
     }
@@ -266,7 +269,7 @@ test("source operations trigger their tooling tests in fast validation and keep 
     assert.equal(shouldRunFast("tooling:test", scope), true, path);
     assert.equal(shouldRunFast("change:test", scope), true, path);
   }
-  assert.equal(Object.keys(validationGroups).length, 8);
+  assert.equal(Object.keys(validationGroups).length, 10);
 });
 
 test("local fast scope includes non-ignored untracked files and ignores excluded files", (t) => {
@@ -292,11 +295,11 @@ test("local fast scope includes non-ignored untracked files and ignores excluded
     toolingAffected: false,
     hasUntrackedFiles: true,
   });
-  assert.equal(shouldRunFast("typecheck+test", scope), true);
+  assert.equal(shouldRunFast("typecheck", scope), true);
   assert.equal(shouldRunFast("deadcode", scope), true);
   assert.deepEqual(
-    fastTaskArgs("typecheck+test", ["turbo", "run", "typecheck", "test"], scope, ["--affected"]),
-    ["turbo", "run", "typecheck", "test"],
+    fastTaskArgs("typecheck", ["turbo", "run", "typecheck"], scope, ["--affected"]),
+    ["turbo", "run", "typecheck"],
   );
 });
 
@@ -332,8 +335,8 @@ test("untracked declarative schemas select schema validation and the full worksp
   assert.equal(scope?.schemaAffected, true);
   assert.equal(scope?.hasUntrackedFiles, true);
   assert.deepEqual(
-    fastTaskArgs("typecheck+test", ["turbo", "run", "typecheck", "test"], scope, ["--affected"]),
-    ["turbo", "run", "typecheck", "test"],
+    fastTaskArgs("typecheck", ["turbo", "run", "typecheck"], scope, ["--affected"]),
+    ["turbo", "run", "typecheck"],
   );
 });
 
@@ -342,7 +345,7 @@ test("fast scope detection falls back to all stages when Git inventory fails", (
   t.after(() => rmSync(directory, { recursive: true, force: true }));
   const scope = detectFastScope({ directory, baseRef: null });
   assert.equal(scope, null);
-  assert.equal(shouldRunFast("typecheck+test", scope), true);
+  assert.equal(shouldRunFast("typecheck", scope), true);
 });
 
 test("CI compares an exact base SHA instead of requiring a remote branch name", (t) => {
@@ -374,7 +377,7 @@ test("schema-only changes run schema, remote-contract, architecture and product 
   assert.equal(shouldRunFast("schema:check", scope), true);
   assert.equal(shouldRunFast("schema:remote:test", scope), true);
   assert.equal(shouldRunFast("architecture", scope), true);
-  assert.equal(shouldRunFast("typecheck+test", scope), true);
+  assert.equal(shouldRunFast("typecheck", scope), true);
   assert.equal(shouldRunFast("deadcode", scope), false);
 });
 
@@ -389,10 +392,10 @@ test("schema scope expands typecheck and tests to the full workspace by default"
     "scripts/architecture/semantic-core.mjs",
   ]);
 
-  assert.deepEqual(fastTaskArgs("typecheck+test", command, schemaOnly, selection), command);
-  assert.deepEqual(fastTaskArgs("typecheck+test", command, mixed, selection), command);
+  assert.deepEqual(fastTaskArgs("typecheck", command, schemaOnly, selection), command);
+  assert.deepEqual(fastTaskArgs("typecheck", command, mixed, selection), command);
   assert.deepEqual(
-    fastTaskArgs("typecheck+test", command, mixed, ["--filter=@line_bot_v1/repository"], true),
+    fastTaskArgs("typecheck", command, mixed, ["--filter=@line_bot_v1/repository"], true),
     [...command, "--filter=@line_bot_v1/repository"],
   );
 });
@@ -413,7 +416,7 @@ test("tooling metadata stays separate while root build metadata expands conserva
       toolingAffected: true,
     });
   assert.deepEqual(classifyChangedFiles(["turbo.json"]), {
-    codeAffected: true,
+    codeAffected: false,
     docsAffected: false,
     schemaAffected: true,
     toolingAffected: true,
@@ -423,7 +426,7 @@ test("tooling metadata stays separate while root build metadata expands conserva
 test("GitHub operation changes run owner-local GitHub tests and tooling boundary checks", () => {
   const scope = classifyChangedFiles(["scripts/providers/github/release-plan.mjs"]);
   assert.deepEqual(scope, {
-    codeAffected: true,
+    codeAffected: false,
     docsAffected: false,
     schemaAffected: false,
     toolingAffected: true,
@@ -434,14 +437,14 @@ test("GitHub operation changes run owner-local GitHub tests and tooling boundary
 
 test("Attendance scheduler changes run the owner-local scheduler tests", () => {
   const scope = classifyChangedFiles(["scripts/operations/attendance/scheduler.mjs"]);
-  assert.equal(scope.codeAffected, true);
+  assert.equal(scope.codeAffected, false);
   assert.equal(shouldRunFast("attendance:scheduler:test", scope), true);
 });
 
 test("Vercel production adapter changes run the tooling-owned deployment tests", () => {
   const scope = classifyChangedFiles(["scripts/providers/vercel/deploy-production.mjs"]);
   assert.deepEqual(scope, {
-    codeAffected: true,
+    codeAffected: false,
     docsAffected: false,
     schemaAffected: false,
     toolingAffected: true,
@@ -452,7 +455,7 @@ test("Vercel production adapter changes run the tooling-owned deployment tests",
 test("WBS operator changes run its canonical tooling test stage in full and fast validation", (t) => {
   const scope = classifyChangedFiles(["scripts/operations/wbs/transfer.mjs"]);
   assert.deepEqual(scope, {
-    codeAffected: true,
+    codeAffected: false,
     docsAffected: false,
     schemaAffected: false,
     toolingAffected: true,
@@ -517,7 +520,7 @@ test("architecture tooling changes also run tooling validation", () => {
     ".dependency-cruiser.mjs",
   ])
     assert.deepEqual(classifyChangedFiles([file]), {
-      codeAffected: true,
+      codeAffected: false,
       docsAffected: false,
       schemaAffected: false,
       toolingAffected: true,
@@ -574,19 +577,19 @@ test("CI groups partition validation and reject unknown or unassigned stages", (
     ["build"],
   );
   assert.deepEqual(
-    selectValidationStages(stages, "typecheck-test").map(([task]) => task),
-    ["typecheck+test"],
+    selectValidationStages(stages, "test").map(([task]) => task),
+    ["test", "change:test", "attendance:scheduler:test"],
   );
 });
 
-test("changed-owner groups retain universal lockfile coverage and select affected gates", () => {
+test("changed-owner groups select only affected gates plus lockfile preflight", () => {
   assert.deepEqual(selectedValidationGroups(classifyChangedFiles(["docs/README.md"])), [
-    "tooling",
+    "preflight",
     "docs",
   ]);
   assert.deepEqual(
     selectedValidationGroups(classifyChangedFiles(["packages/account/src/domain.ts"])),
-    ["tooling", "lint", "architecture", "deadcode", "typecheck-test", "build"],
+    ["preflight", "lint", "architecture", "deadcode", "typecheck", "test", "build"],
   );
   assert.deepEqual(selectedValidationGroups(null), Object.keys(validationGroups));
 });

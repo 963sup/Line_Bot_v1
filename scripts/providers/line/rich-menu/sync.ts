@@ -9,7 +9,9 @@ try {
     command,
     target,
     repositoryRoot,
-    channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
+    ...(process.env.LINE_CHANNEL_ACCESS_TOKEN
+      ? { channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN }
+      : {}),
   });
   console.log(JSON.stringify(result, null, 2));
 } catch (error) {

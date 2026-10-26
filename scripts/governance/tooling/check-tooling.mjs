@@ -602,8 +602,8 @@ export function validate(root) {
     }
     const codeActions = vscodeSettings["editor.codeActionsOnSave"] ?? {};
     for (const action of ["source.fixAll.biome", "source.organizeImports.biome"]) {
-      if (codeActions[action] !== "explicit")
-        errors.push(`.vscode/settings.json: ${action} must run on explicit save`);
+      if (codeActions[action] !== "always")
+        errors.push(`.vscode/settings.json: ${action} must run automatically on save`);
     }
     const vscodeExtensions = JSON.parse(read(resolve(root, ".vscode/extensions.json")));
     if (!(vscodeExtensions.recommendations ?? []).includes("biomejs.biome"))

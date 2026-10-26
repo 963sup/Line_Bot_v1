@@ -17,6 +17,8 @@ pnpm dev
 | `pnpm validate` | merge/release full repository gate |
 | `pnpm docs:check` | Markdown + local links |
 | `pnpm test:browser` | local production Web + synthetic LINE/API |
+
+`pnpm check` 會依變更責任只選擇必要的 preflight、docs、tooling、lint、architecture、typecheck、test 與 build stages；準備合併／發布前才跑完整 `pnpm validate`。Turbo task 維持 repository 設定的最多兩個並行工作，避免 PGlite／WASM 測試互相競爭。
 ## 找資訊
 環境問題先看 [local environment](docs/reference/engineering/local-environment.md)。修改前用 `pnpm change:status` 檢查分支狀態、`pnpm semantic plan "<intent>"` 找影響範圍；提交後依 [change lifecycle](scripts/README.md) 更新 main reference，再執行 `pnpm change:finalize` 做合併前完整驗證。
 

@@ -29,6 +29,7 @@
     "schema:check": "turbo run schema:check",
     "schema:local": "node scripts/providers/supabase/schema-local.mjs",
     "tooling:check": "node scripts/governance/tooling/check-tooling.mjs",
+    "tooling:typecheck": "tsc -p tsconfig.tools.json",
     "tooling:rules": "node scripts/governance/tooling/check-rules.mjs",
     "tooling:doctor": "node scripts/governance/tooling/doctor.mjs",
     "skills:list": "node scripts/governance/tooling/list-skills.mjs",
