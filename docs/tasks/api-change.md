@@ -18,4 +18,4 @@ Route Handler / Server Action不建立第二套 business writer。Client actor/r
 
 ## Validate
 
-Owner tests + affected route/API tests + `pnpm check`。Published protocol變更另驗 backward/replay/recovery semantics。
+Owner tests + affected route/API tests + `pnpm lint`、`pnpm typecheck`、`pnpm test`。Published protocol變更另驗 backward/replay/recovery semantics。

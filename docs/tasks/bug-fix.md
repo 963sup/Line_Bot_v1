@@ -26,4 +26,4 @@ repro input
 
 ## Finish
 
-跑最小能證明根因的 test，再跑 `pnpm check`；merge前 `pnpm validate`。
+跑最小能證明根因的 test，再跑 affected lint/typecheck/test；merge前補跑 build。

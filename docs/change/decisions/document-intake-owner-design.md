@@ -182,7 +182,7 @@ whole-document mapping before changing parser/provider strategy or adding backgr
 No unmeasured claim of fastest performance is part of this decision.
 
 Each source promotion synchronizes semantic/data/module authority, manifests/exports, actual
-consumers, SQL, docs and tests. Run affected checks and `pnpm check`; architecture/public/schema
-changes add their canonical gates, and PR/merge uses exact-head `pnpm validate`. Static, native
+consumers, SQL, docs and tests. Run affected lint/typecheck/test/build; architecture/public/schema
+changes add their canonical gates. Static, native
 DB, provider, deployment and LINE-device evidence remain separate. A source PR must identify
 the exact completed slice and retained-data/release work still outstanding.

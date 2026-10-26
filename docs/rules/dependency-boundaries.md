@@ -26,4 +26,4 @@ stable ID / primitive fact
 
 Cycle出現時先找錯誤 owner/dependency，不新增 `common`/facade藏 cycle。Machine allowlist：`architecture/implementation-topology.json`。
 
-`pnpm architecture` 以 dependency graph 檢查內外層方向、Domain 的 Node／外部套件 import，並以 AST 檢查 Domain 的直接 environment 存取（含 bracket 與 destructuring）。這些靜態檢查不取代業務 invariant、授權與 runtime 測試。
+`.dependency-cruiser.mjs` 與 Biome 以 dependency graph／AST 檢查內外層方向、Domain 的 Node／外部套件 import，以及 Domain 的直接 environment 存取。這些靜態檢查不取代業務 invariant、授權與 runtime 測試。

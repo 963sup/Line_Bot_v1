@@ -46,7 +46,7 @@ or rename code merely to make a directory shape look complete.
   recovery, and privacy.
 - Update manifests, exports, schemas, architecture projections, tests, and
   documentation when the changed contract actually requires it.
-- Run the narrow owner tests and relevant `pnpm check` targets. For boundary,
+- Run the narrow owner tests and relevant lint/typecheck/test targets. For boundary,
   architecture, schema, merge, or release changes, run the corresponding
   canonical validation from the root contract.
 - Child `AGENTS.md` files add only package-specific constraints; they do not

@@ -34,12 +34,12 @@ Release／recovery operations owns this evidence contract. Provider workflows re
 
 | Recovery case | 此次判斷所需的歷史 evidence | 可重新取得的 current evidence／限制 |
 | --- | --- | --- |
-| Schema 已變更、Web 未就緒 | Schema/job 的 exact SHA、attempt、實際 plan／hash、所需 before／after 與 post-write verification；Web deployment ID、SHA、target、結果與適用 alias readback | `pnpm schema:remote plan`／`verify` 與 Vercel read-only list／inspect；目前 catalog／deployment 不能重建先前 state 或證明舊 runtime 相容。 |
-| Identifier activation fail／unknown | Exact SHA／attempt、是否執行 activation、執行的 SQL 或 verified no-op、migration history comparison、scoped-identifier readiness readback | `pnpm schema:remote verify`；目前 marker／readiness 不能回填舊 attempt 的 intermediate outcome。 |
-| Storage publication fail／unknown | Exact SHA／attempt、該 SHA 的 desired config、實際 write 或 no-op 結果、`storage-bucket-readback.json` 或同次等價 provider evidence；未保存的 preflight 明示 unknown | `pnpm storage:remote plan`／`verify`；目前一致不能證明舊 write 是否發生。 |
+| Schema 已變更、Web 未就緒 | Schema/job 的 exact SHA、attempt、實際 plan／hash、所需 before／after 與 post-write verification；Web deployment ID、SHA、target、結果與適用 alias readback | 使用 Supabase CLI、Vercel CLI 與對應 workflow readback；目前 catalog／deployment 不能重建先前 state 或證明舊 runtime 相容。 |
+| Identifier activation fail／unknown | Exact SHA／attempt、是否執行 activation、執行的 SQL 或 verified no-op、migration history comparison、scoped-identifier readiness readback | 讀取對應 workflow 與 provider state；目前 marker／readiness 不能回填舊 attempt 的 intermediate outcome。 |
+| Storage publication fail／unknown | Exact SHA／attempt、該 SHA 的 desired config、實際 write 或 no-op 結果、同次等價 provider evidence；未保存的 preflight 明示 unknown | 讀取對應 workflow 與 provider state；目前一致不能證明舊 write 是否發生。 |
 | Rerun／forward-fix | 新舊 SHA／run／attempt、各 owner 操作與上述適用 evidence；分開保留 failed／unknown 與新結果 | 讀取對應 GitHub workflow run 與受影響 provider 的唯讀查證；目前 readback 不能重建舊 attempt 的 intermediate outcome。 |
 
-Evidence 是否充分由要採取的 recovery action 決定，不能用另一種 evidence 冒充缺少的 facts。到期或缺失時先列出「已證實／未知／不適用」，保留仍可驗證的 logs／records，再取得有新查詢時間的 current readback。Current convergence 只證明目前狀態；需要歷史 before／after、plan 或 outcome 卻無法取得時，該歷史問題保持 unknown，禁止推定成功，以及禁止依賴該假設執行 rollback、重播或解凍。Forward-fix 必須依 current facts、既有授權與 validated current-main Release 契約重新證明安全性；缺少必要證據時保持停止。涉及 backup 能力時另用 `pnpm schema:remote recovery` 查證，不以 artifact 代替 backup。
+Evidence 是否充分由要採取的 recovery action 決定，不能用另一種 evidence 冒充缺少的 facts。到期或缺失時先列出「已證實／未知／不適用」，保留仍可驗證的 logs／records，再取得有新查詢時間的 current readback。Current convergence 只證明目前狀態；需要歷史 before／after、plan 或 outcome 卻無法取得時，該歷史問題保持 unknown，禁止推定成功，以及禁止依賴該假設執行 rollback、重播或解凍。Forward-fix 必須依 current facts、既有授權與 validated current-main workflow 契約重新證明安全性；缺少必要證據時保持停止。涉及 backup 能力時另用 provider 官方 CLI 與 workflow readback 查證，不以 artifact 代替 backup。
 
 取證僅保留必要 target、revision、run／attempt、deployment／artifact ID、hash、狀態、時間、counts 與 redacted error classification。不得保存 token、credential、signed URL、raw business rows、個資或不必要的 provider payload；沿既有 GitHub／provider 存取權限，不新增證據資料庫或第二份 business truth。Logs 與 provider records 的保存期限須另行查證，不假設同樣為七天或永久可取得。
 

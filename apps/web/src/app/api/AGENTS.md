@@ -49,6 +49,6 @@ result behavior where the owner supports those states. Read the route source
 and owner contract for the current endpoint map; do not maintain an inventory
 in this file.
 
-Run the narrow route/owner tests and applicable `pnpm check` targets. For
+Run the narrow route/owner tests and applicable package scripts. For
 public contract, schema, architecture, merge, or release changes, use the
 canonical root validation required by the root contract.

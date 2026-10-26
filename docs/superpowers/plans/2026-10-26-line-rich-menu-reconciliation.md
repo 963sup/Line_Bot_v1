@@ -40,7 +40,7 @@
 - Modify: `apps/web/src/app/(rich-menu)/README.md`
 - Modify: `docs/reference/line/rich-menu.md`
 - Modify: `docs/reference/operations/release.md`
-- Test: `pnpm docs:check` and targeted `rg` inventory
+- Test: targeted local-link/stale-reference checks and `rg` inventory
 
 **Interfaces:**
 - Removes references to nonexistent `scripts/providers/line/rich-menu/sync.ts`, `.github/workflows/release.yml`, and `scripts/providers/github/release-plan.mjs`.
@@ -50,7 +50,7 @@
 - [ ] Rewrite the Rich Menu reference around desired state, manifest, reconcile, preview, release, and drift recovery.
 - [ ] Update release documentation to describe path-filtered Rich Menu workflow dependencies without the deleted planner.
 - [ ] Remove the nonexistent Knip entry.
-- [ ] Run the targeted stale-reference search and `pnpm docs:check`.
+- [x] Run the targeted stale-reference search and local-link/static checks.
 
 ### Task 2: Add deterministic Rich Menu fingerprinting
 
@@ -140,7 +140,7 @@
 
 - [ ] Re-run stale-reference inventory.
 - [ ] Run affected package tests and TypeScript checks.
-- [ ] Run `pnpm lint`, `pnpm docs:check`, and `pnpm deadcode`.
+- [x] Run `pnpm lint`, affected typecheck/tests and `pnpm exec knip`.
 - [ ] Review Git diff for secrets, unsupported paths, duplicated authority, and leftover old release terminology.
 - [ ] Report exact verification status and any provider/device evidence not available locally.
 

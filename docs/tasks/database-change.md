@@ -20,4 +20,4 @@
 
 ## Validate
 
-`pnpm schema:check` → `pnpm check`。Remote convergence另用 release / authorized `schema:remote` readback，不以 local success冒充。
+`pnpm schema:check` → `pnpm lint`、`pnpm typecheck`、`pnpm test`。Remote convergence另用 release / authorized Supabase CLI readback，不以 local success冒充。

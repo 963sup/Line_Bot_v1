@@ -23,9 +23,9 @@
 
 ## 現有命令與證據
 
-- 文件：`pnpm docs:check`，驗證 Markdown 與本地連結。
+- 文件：local link check 與適用 static checks。
 - Schema：`pnpm schema:check`；執行範圍由既有 package tasks 決定，不自動發現本目錄未來檔案。
-- 一般修改：`pnpm check`；合併前：exact-head `pnpm validate`。
-- Provider readback：既有 `schema:remote verify`、`storage:remote verify` 只證明各自驗證範圍。
+- 一般修改：`pnpm lint`、`pnpm typecheck`、`pnpm test`；合併前執行完整 affected package checks。
+- Provider readback：使用官方 Supabase CLI 與對應 workflow，只證明各自驗證範圍。
 
 發布與 remote mutation 使用 [Release](../../../../docs/reference/operations/release.md)。Local tests、CI、provider smoke 與 LINE device acceptance 分別保存結果，不能因文件或 runner 存在而宣稱能力正常。

@@ -6,15 +6,11 @@ GitHub evidence is read through the shared `scripts/providers/github/api.mjs` tr
 
 ## Pending sources
 
-`pnpm github:release-plan` compares each operation with its own successful ancestor job, including completed jobs in still-running Releases. Failed/skipped operations do not advance its cursor; a successful same-SHA operation is not repeated on rerun. Missing baseline means first publication. Planning is an early snapshot: an overlapping operation that finishes later may cause redundant convergence, but resource locks and current-main checks prevent concurrent writes to the same target.
+Provider release workflows own their triggers, exact revision checks, credentials, concurrency and readback. There is no shared release planner command.
 
 | Operation | Changed inputs | Command |
 | --- | --- | --- |
-| Supabase | `packages/integration-supabase/src/schemas/*.sql` | `pnpm schema:remote sync` |
-| Supabase File Bucket | `packages/integration-supabase/src/config.toml`, `scripts/providers/supabase/storage.mjs` | `pnpm storage:remote sync` |
 | Rich Menu | images, desired-state code, publication policy, LINE adapter and executable inputs | `pnpm line:rich-menu reconcile all` |
-| Web | Turbo Web build graph, excluding publication-only sources | `pnpm vercel:deploy:production --live --sha <sha>` |
-| Attendance scheduler | scheduler code, pending schema or Web runtime since scheduler success | `pnpm attendance:scheduler reconcile --live --sha <sha>` |
 
 No relevant pending source means no remote operation. Rich Menu input classification belongs to the Rich Menu workflow path filters and manifest builder; it does not use a deleted release planner.
 

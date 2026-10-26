@@ -38,7 +38,7 @@ Vendored [GitHub FPT JSON](../architecture/domain/fpt/) 是 GitHub GraphQL seman
 2. URL / entry 變更同步 page/route、Link/back、login/LIFF continuation、Rich Menu entry、tests 與 canonical locator；已發布 URL 先查 consumer/compatibility。
 3. Owner / capability 語意改變時先修 `architecture/semantic-model.json`；module dependency/path 改變才修 `implementation-topology.json`。
 4. 未啟用能力不得用 fake data、disabled shell 或空 route 冒充完成。
-5. 文件變更跑 `pnpm docs:check`；app/tooling 變更依 root validation contract。Git push 不等於部署或 LINE/device acceptance。
+5. 文件變更檢查 local links；app/tooling 變更依 root validation contract。Git push 不等於部署或 LINE/device acceptance。
 
 ## Naming
 

@@ -78,22 +78,13 @@ Free 容量、休眠、上傳與備份限制集中查 [Platform Free plan](../..
 
 ```sh
 pnpm schema:check
-pnpm schema:local
-
-pnpm schema:remote plan
-pnpm schema:remote verify
-pnpm schema:remote verify --api
-pnpm schema:remote recovery
-
-pnpm storage:remote plan
-pnpm storage:remote verify
+pnpm --filter @line_bot_v1/platform schema:check
+pnpm exec supabase status
 ```
 
 - `schema:check`：驗 declarative schemas 與核心 database boundary。
-- `schema:local`：用 current schemas 重建 local application schema。
-- `plan / verify / recovery`：read-only remote diagnosis / recovery readback；詳細 contract 見 [Supabase platform](../../../docs/reference/platform/supabase.md)。
-- `storage:remote plan/verify`：read-only provider readback。Private Bucket desired state 只在 `config.toml`；`storage:remote sync` 僅由 validated current-`main` 的獨立 Release Job 執行。Bucket 的建立不代表 File Storage Object lifecycle 已交付。
-- `sync / activate-identifiers`：remote mutation；只允許 current `main` 的 GitHub Actions Release 呼叫，不作本機或任意 branch 操作；用途與執行條件見 [Supabase platform](../../../docs/reference/platform/supabase.md)。
+- `supabase status`：讀取目前 Docker stack 狀態。
+- Remote mutation 使用官方 Supabase CLI 與 GitHub workflow；本 package 沒有 `schema:remote` 或 `storage:remote` operator command。
 
 ## Change routing
 
@@ -102,7 +93,7 @@ pnpm storage:remote verify
 ```text
 edit packages/integration-supabase/src/schemas/*.sql
 → pnpm schema:check
-→ pnpm check
+→ pnpm lint && pnpm typecheck && pnpm test
 → validated main
 → Release / Supabase reconciliation
 ```

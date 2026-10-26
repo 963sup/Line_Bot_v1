@@ -14,7 +14,6 @@
     "test": "turbo run test",
     "lint": "biome check .",
     "format": "biome check --write .",
-    "deadcode": "knip",
     "schema:check": "turbo run schema:check",
     "provider:supabase": "tsx scripts/providers/supabase.ts",
     "provider:vercel": "tsx scripts/providers/vercel.ts",

@@ -24,16 +24,16 @@ Agent 修改前仍須按 repository source priority 檢查 code / manifest / sch
 開始時先選擇下方適用的工具；已有任務授權就直接執行。只在有助於確認 scope、未知數或責任時，以簡短進度說明選擇，不新增逐次核准或任務紀錄。
 
 1. **目標與不變條件**：確認可觀察結果、允許／排除範圍、Owner、consumer 與完成標準，保留現有 WIP。
-2. **Owner／契約**：先判定主要 Owner 與跨 Owner 影響是否已釐清。未知 Owner、語意歧義或跨 Owner 的 capability／public contract／資料／授權影響未釐清時，先用 `pnpm semantic plan "<intent>"`，需要具體 authority selectors 再用 `context`；已知且限於單一 Owner 時直接讀其契約、public exports、source/tests 與 nearest AGENTS。歧義先定位，不當成修改授權。
-3. **實作／consumers**：文字、SQL、JSON 與文件用 `rg`；有界範圍的 imports／exports／頂層宣告與靜態模組連結用 `pnpm code facts --scope <path>`；特定符號定義／引用用 `pnpm code definition` / `references`；相同語法結構用 `code search`。沿真正依賴展開，查詢的部分結果不等於沒有其他引用。
+2. **Owner／契約**：先判定主要 Owner 與跨 Owner 影響是否已釐清。未知 Owner、語意歧義或跨 Owner 的 capability／public contract／資料／授權影響未釐清時，先讀相關 authority、package exports、source/tests 與 nearest AGENTS；已知且限於單一 Owner 時直接讀其契約。歧義先定位，不當成修改授權。
+3. **實作／consumers**：文字、SQL、JSON 與文件用 bounded `rg`；imports／exports／頂層宣告與靜態模組連結用 package exports、TypeScript tooling 或 targeted reads。沿真正依賴展開，查詢的部分結果不等於沒有其他引用。
 4. **代表案例**：批次轉換先驗證會命中、應排除與關鍵邊界案例；對同一契約保持一致，不按固定檔案數切割。
-5. **完整預覽**：`code rewrite` / `rename` 產生暫存計畫，檢查全部命中、排除理由與 coverage。公開／跨 project 符號沿 public contract 另查 consumers，不能用 project-local rename 冒充全庫遷移。
-6. **修改／漏改**：`pnpm patch:apply <plan.json>` 預覽，既有授權內以 `--apply` 套用，再重跑相同搜尋、檢查剩餘命中與 Git diff。一般小修改可直接編輯；批次計畫不繞過內容／雜湊前置條件。預覽是工程步驟，不要求使用者重複確認。
-7. **相關驗證與 truth synchronization**：在任何環境皆依變更 Owner、契約與 transitive consumers 執行必要的 tests／runtime 驗收；`pnpm check` 是同一 selection contract 的本機入口，純文件用 `pnpm docs:check`。判定業務 Owner、Capability、Contract、relationship、invariant 或資料 authority 改變時，同步其 authoritative semantic overlay 與 consumer；未改變時在 PR 明確記錄「not needed」及理由，不能為了通過流程新增重複 truth。Serena／`pnpm code` 的 symbol evidence 只證明程式事實，不取代 authority。 同 checkout 的 build/type generation/installation 按順序執行。
-8. **Exact-head 驗證**：整理 logical commits、push 並建立／更新 PR，明確 fetch main、同步 base；PR 與 main 對 exact head 使用同一 changed-owner selection contract，基準遺失時保守展開全部 groups。`pnpm validate` 保留給明確要求的全庫稽核，不能把未選 Owner 的重跑當作較強的必要證據，並拒絕驗證期間 branch/HEAD/base/upstream 變動。
+5. **完整預覽**：檢查全部命中、排除理由與 coverage。公開／跨 project 符號沿 public contract 另查 consumers，不能用 project-local rename 冒充全庫遷移。
+6. **修改／漏改**：使用原生 patch，修改後重跑相同搜尋、檢查剩餘命中與 Git diff。批次計畫不繞過內容／雜湊前置條件。
+7. **相關驗證與 truth synchronization**：在任何環境皆依變更 Owner、契約與 transitive consumers 執行必要的 tests／runtime 驗收。判定業務 Owner、Capability、Contract、relationship、invariant 或資料 authority 改變時，同步其 authoritative semantic overlay 與 consumer；未改變時在 PR 明確記錄「not needed」及理由，不能為了通過流程新增重複 truth。符號 evidence 只證明程式事實，不取代 authority。同 checkout 的 build/type generation/installation 按順序執行。
+8. **Exact-head 驗證**：整理 logical commits、push 並建立／更新 PR，明確 fetch main、同步 base；PR 與 main 對 exact head 執行受影響 package scripts，並拒絕驗證期間 branch/HEAD/base/upstream 變動。
 9. **PR → main**：確認本地、remote branch、PR head 與 CI aggregate `validate` 是相同 SHA；合併前重新確認遠端 base，前進就同步並重驗。按下方 merge 契約交付，讀回 PR merged 狀態與 main commit。明示的唯讀、push-only 或其他交付限制優先。
 
-工具介面與例子見 [source operations](../../../scripts/README.md)。`pnpm code` 只查詢／產生計畫；在其批次計畫流程內，來源寫入仍由 [patch application](../../../scripts/README.md) 擁有。規則／計畫放忽略的 `.artifacts/`，不新增每次任務的永久紀錄。每個寫入面由一位負責者處理；只有獨立 scope 或唯讀分析才並行，需要隔離時使用 worktree。
+規則／暫存輸出放忽略的 `.artifacts/`，不新增每次任務的永久紀錄。每個寫入面由一位負責者處理；只有獨立 scope 或唯讀分析才並行，需要隔離時使用 worktree。
 
 AGENTS 約束代理行為，CLI 檢查輸入／前置條件，CI 驗證提交結果；三者不互相冒充證據。最終回報 changed behavior/Owner、驗證命令與 SHA、結果及未驗證範圍。開新 Codex 工作階段後，用簡短任務確認能讀到 root AGENTS、本節與工具入口；既有 session 中修改文件或靜態檢查成功不證明新 session 載入。指令探索契約見 [Codex AGENTS](https://learn.chatgpt.com/docs/agent-configuration/agents-md)。
 
@@ -49,12 +49,12 @@ AGENTS 約束代理行為，CLI 檢查輸入／前置條件，CI 驗證提交結
 
 | 要回答的問題／操作 | 主動使用 | 完成條件與限制 |
 | --- | --- | --- |
-| Owner 未知、語意歧義或跨 Owner 影響未釐清 | `pnpm semantic plan "<intent>"`；需要載入具體 authority 時用 `context` | 讀取選中的真實契約、來源與 revision；已知且限於單一 Owner 可直接讀契約，不要求先跑兩個命令。 |
+| Owner 未知、語意歧義或跨 Owner 影響未釐清 | 讀取相關 authority、package exports、source/tests 與 nearest AGENTS | 讀取真實契約、來源與 revision；已知且限於單一 Owner 可直接讀契約。 |
 | 已知路徑、精確文字、SQL／JSON／文件引用 | `rg`／`rg --files` 與 targeted reads | 確認搜尋範圍、排除與實際 consumers。文字命中不證明是同一個 TS symbol。 |
-| 有界 source 範圍的 imports／exports／頂層宣告與靜態模組連結 | `pnpm code facts --scope <path>`，可重複 scope／exclude | ts-morph 只解析當次 source snapshot，模組目標依實際 tsconfig 解析；查閱 hash、工作樹狀態、package exports 與 partial／邊界。輸出是 stdout 證據，不推導業務 Owner、runtime call graph 或跨 project 完整性。 |
-| TS／JS symbol 的定義、引用與私有改名 | `pnpm code definition`／`references`／`rename` | 使用現有 TypeScript LanguageService；先查引用再產生改名預覽。project-local、partial、unsupported、公開／跨 project 邊界如實回報，沿 public exports 補查 consumers。 |
-| 重複的 JS／TS 語法結構查改 | `pnpm code search`／`rewrite` | 使用 pinned ast-grep；先驗證代表性命中與反例，再檢查全部命中、排除與完整計畫。 |
-| 套用已檢查的批次計畫 | `pnpm patch:apply <plan.json>`，再於授權內加 `--apply` | 一個 writer；保留 hash／exact-before 檢查，修改後重查漏改並檢視 diff。一般小修改可直接編輯。 |
+| 有界 source 範圍的 imports／exports／頂層宣告與靜態模組連結 | package exports、TypeScript tooling 與 targeted reads | 輸出是程式事實 evidence，不推導業務 Owner、runtime call graph 或跨 project 完整性。 |
+| TS／JS symbol 的定義、引用與私有改名 | TypeScript tooling 與 targeted reads | 先查引用再改名。project-local、partial、公開／跨 project 邊界如實回報，沿 public exports 補查 consumers。 |
+| 重複的 JS／TS 語法結構查改 | `rg`、Biome 與原生 patch | 先驗證代表性命中與反例，再檢查全部命中與排除。 |
+| 套用已檢查的批次計畫 | 原生 patch | 一個 writer；修改後重查漏改並檢視 diff。一般小修改可直接編輯。 |
 
 工具失敗或 coverage 有缺口時，先讀錯誤與實際契約，採目前允許且能保留證據的操作；不能為完成流程擴大 permission、偽造完整覆蓋或直接繞過 plan preflight。介面細節由各工具 README 擁有。
 
@@ -62,8 +62,8 @@ AGENTS 約束代理行為，CLI 檢查輸入／前置條件，CI 驗證提交結
 
 | 項目 | 決定與原因 |
 | --- | --- |
-| `change:impact` | 移除純轉呼叫入口，統一為 `pnpm semantic plan`；不保留 compatibility alias。 |
-| `change:plan`、`semantic:*` package aliases | 維持既有退休／禁止規則。編輯器 task label 不屬 package alias。 |
+| `change:impact` | 已移除，使用 bounded source/consumer reads；不保留 compatibility alias。 |
+| `change:plan`、`semantic:*` package aliases | 不存在；不新增 compatibility alias。 |
 | `repo:context`／`scripts/context/` | 尚未實作；目前重用 semantic context、`rg` 與 code 查詢，不新增重複索引入口。 |
 | ts-morph | Root pinned direct dependency 擁有唯讀 `code facts` 的語法提取；定義／引用／改名仍使用既有 TypeScript LanguageService，shadcn 保留自己的 transitive dependency。不建立第二套語意查詢或永久索引。 |
 | `rg`、小範圍直接編輯、`change:status`／`preflight`／`finalize` | 保留各自的文字搜尋、編輯與 Git lifecycle 責任。四項查改能力不取代 validation、architecture/security guards 或 runtime 驗收。 |
@@ -100,7 +100,7 @@ MCP 接入使用官方 OpenAI/Codex 設定；可執行版本由對應 workspace 
 
 工具名稱以該版本的 `tools/list` 為準，依任務載入需要的 skills。MCP 權限依目前官方 OpenAI/Codex session 設定；免逐次確認不取代任務的寫入授權。Registry 擴展由 `components.json.registries` 擁有；只因實際 consumer 需要加入來源，registry output 仍須經 owner／dependency 檢查。
 
-MCP 設定由官方 OpenAI/Codex 設定管理。設定變更後重新載入 MCP 或開啟新 session，確認工具可呼叫；UI 變更仍需瀏覽器驗證，再執行 canonical `pnpm check`，merge 前以 exact head 執行 `pnpm validate`。
+MCP 設定由官方 OpenAI/Codex 設定管理。設定變更後重新載入 MCP 或開啟新 session，確認工具可呼叫；UI 變更仍需瀏覽器驗證，再執行受影響的 lint、typecheck、test 與 build scripts。
 
 官方契約：[Codex MCP](https://learn.chatgpt.com/docs/extend/mcp?surface=cli)、[Next.js MCP](https://nextjs.org/docs/app/guides/mcp)、[shadcn MCP](https://ui.shadcn.com/docs/mcp)。
 
@@ -199,8 +199,8 @@ GitHub ruleset 的實際 readback 才是平台 enforcement truth；目前政策�
 
 Commit 整理不能替代 repository validation，也不能藉 rebase / squash 隱藏失敗。
 
-- 文件修改：`pnpm docs:check`
-- 一般程式修改：`pnpm check`
-- 合併／發布前：`pnpm validate`
+- 文件修改：local link check 與適用 static checks
+- 一般程式修改：受影響 package 的 lint、typecheck、test
+- 合併／發布前：lint、typecheck、test、build 與 provider-specific readback
 
 實際驗證責任與證據邊界由 [Validation and tooling entry points](validation-pipeline.md) 擁有。PR 應分開說明本地 static/test/build 與 deployment、remote API、LINE 真機等外部證據。

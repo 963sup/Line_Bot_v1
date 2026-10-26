@@ -24,4 +24,4 @@ Identity、Membership、Employment、Role、Permission、Scope不可合併成一
 
 至少檢查 unauthenticated、inactive/suspended、wrong scope、revoked role、cross-tenant、stale/replay與 minimum-disclosure failure。
 
-完成後跑 affected tests + `pnpm check`；RLS/schema變更另加 `schema:check`。
+完成後跑 affected tests + `pnpm lint`、`pnpm typecheck`；RLS/schema變更另加 `schema:check`。

@@ -4,14 +4,14 @@ Choose evidence by responsibility; smaller evidence never proves a larger claim.
 
 | Evidence | Proves | Does not prove |
 | --- | --- | --- |
-| `pnpm docs:check` | Markdown structure/links + convergence manifest integrity | code/runtime/deployment |
+| local link check + applicable static checks | Markdown structure/links | code/runtime/deployment |
 | `pnpm schema:check` | local declarative schema contract | remote Supabase state |
-| `pnpm check` | repository gate for the affected change and transitive consumers | unrelated Owner verification, deployment/provider/device |
-| `pnpm validate` | explicit full static/test/build gate | deployment/provider/device |
+| affected package scripts | repository gate for the affected change and transitive consumers | unrelated Owner verification, deployment/provider/device |
+| `pnpm lint` + `pnpm typecheck` + `pnpm test` + `pnpm build` | explicit static/type/test/build gate | deployment/provider/device |
 | Provider/API readback | specific remote state | unrelated business flow |
 | Device/browser acceptance | observed user flow/environment | unrelated source/schema correctness |
 
-一般修改、PR 與 main release 都依同一 changed-owner selection contract 執行；需要稽核性全庫重跑時才明確使用 `pnpm validate`。External mutation/probe 不是一般 offline validation。
+一般修改、PR 與 main release 依實際 affected package scripts 執行。External mutation/probe 不是一般 offline validation。
 
 本機與 CI 的 typecheck/test stage 最多同時執行兩個 Turbo tasks，避免多個 Owner 的 PGlite 初始化互相爭用資源。Owner 內部測試併發、測試內容、逾時與成功條件維持原有契約。
 

@@ -51,7 +51,7 @@
 ## Effective context contract
 
 1. 一律先讀 root 與沿目標路徑適用的 `AGENTS.md`、[system invariants](docs/rules/system-invariants.md)，再由 [task router](docs/README.md) 取任務入口。子 AGENTS 只補 local constraints，引用本契約，不複製完整 authority 清單。
-2. 先定義 task、Owner、consumer 與觸及的 contract。Owner 未知、語意歧義，或跨 Owner 的 capability／public contract／資料／授權影響尚未釐清時，用 `pnpm semantic plan "<intent>"` 定位影響；需要具體 authority selectors 時用 `pnpm semantic context "<intent>"`。已知且影響限於單一 Owner 時，直接讀其 contract、相關 source/tests 及 package exports；已知主要 Owner 不代表跨 Owner 影響已釐清。候選、歧義與 no-match 不授予修改範圍。
+2. 先定義 task、Owner、consumer 與觸及的 contract。Owner 未知、語意歧義，或跨 Owner 的 capability／public contract／資料／授權影響尚未釐清時，用 `rg`、package exports、source/tests 與 architecture JSON 定位影響；不得把不確定的候選當成修改範圍。
 3. 依實際責任載入下表來源。JSON 可讀必要 entries，FPT 必須定位 exact file/symbol/field；記錄來源與 revision，working-tree 修改不能冒充 HEAD 內容。Generated projection／工具選取結果僅供定位，不取代 authority。
 
 | 觸發條件 | 必須具體讀取的來源 |
@@ -64,7 +64,7 @@
 | Governing input／guard 本身變更 | 完整讀取被修改的 authority/guard，以及實際 consumers/tests；先證明 authority/contract 需要改，保留全部 enforcement。 |
 
 4. Owner/語意不明、來源缺失、無法追溯 revision 或選取結果與 source 衝突時，明示 unresolved；先定位或保守展開完整 governing set，不能把空結果解讀為沒有約束。未解決會影響正確性的缺口前不修改該範圍。
-5. Context materialization 不改 validation scope：architecture/FPT/schema/security guards 繼續檢查完整 canonical inputs；一般 `pnpm check`、merge/release exact-head `pnpm validate` 的契約維持。
+5. Context materialization 不改 validation scope：architecture/FPT/schema/security guards 繼續檢查完整 canonical inputs；依變更執行 `pnpm lint`、`pnpm typecheck`、`pnpm test`、`pnpm build` 或適用 provider/package tests。
 
 ## Invariants
 
@@ -82,7 +82,7 @@
 
 ## Retrieval
 
-先用 [task router](docs/README.md) 取最小 context；已知且限於單一 Owner 時直接讀 owner contract + nearest `AGENTS.md`。Owner 未知、語意歧義或跨 Owner 影響未釐清時，依上方條件使用 `pnpm semantic plan "<intent>"`，需要具體閱讀來源再用 `context`。
+先用 [task router](docs/README.md) 取最小 context；已知且限於單一 Owner 時直接讀 owner contract + nearest `AGENTS.md`。需要跨檔案定位時使用 bounded `rg`、package exports、architecture JSON 與相關 tests。
 
 修改指引前先核對實際 consumer；不維護 repository 內重複的 agent prompt 或 Markdown review database。
 
@@ -102,12 +102,12 @@ Source-of-truth：[facts/sources-of-truth.md](docs/facts/sources-of-truth.md)。
 
 - 主動依 [development workflow](docs/reference/engineering/development-workflow.md) 選擇能直接回答問題的工具；簡單任務直接完成，每個寫入面與 validation 保持單一負責者。
 - Repository 修改固定依 [development change loop](docs/reference/engineering/development-workflow.md#default-repository-change-loop) 執行：先定目標與不變條件、定位 Owner/契約與 consumers，再依任務查詢、預覽、修改、檢查漏改、驗證及交付。已知 Owner 直接讀契約；純文件修正保留原本文件路徑，不強制執行無關工具。
-- 批次查改使用 `pnpm code` 產生有覆蓋邊界的預覽／計畫；來源寫入沿用 `pnpm patch:apply`。跨 project／公開契約的部分結果不能宣稱全庫完整；展開實際 consumers 後再修改。
+- 批次查改使用 bounded `rg` 與原生 patch；跨 project／公開契約的部分結果不能宣稱全庫完整；展開實際 consumers 後再修改。
 - 保留既有/他人修改；同 checkout 不並行寫同一檔案或產物。
 - 工具呼叫先設定足以回答當前問題的輸出上限；列表、diff、log、JSON/API 與 test output 先在工具端投影／計數／摘要。成功不展開原始 log；失敗先讀第一個可行動錯誤與固定 tail，只有該片段不足以改變下一步時才局部擴展。禁止把完整高量輸出直接注入 Agent context。
 - 可逆且 contract 已決定的實作直接完成；只有缺少會改變產品語意、資料處置或外部寫入授權的資訊才阻塞。
 - JS/TS/JSON 由 Biome formatting；需要時用 `pnpm format`。
-- 一般修改 `pnpm check`；文件 `pnpm docs:check`；merge/release `pnpm validate`。Evidence boundary：[validation rules](docs/rules/validation-evidence.md)。
+- 一般修改依 scope 使用 `pnpm lint`、`pnpm typecheck`、`pnpm test`、`pnpm build` 或 `pnpm exec knip`。Evidence boundary：[validation rules](docs/rules/validation-evidence.md)。
 - Merge 前依 [development workflow](docs/reference/engineering/development-workflow.md) 收斂 WIP/fixup history。
 
 Scopes：[`packages/`](packages/AGENTS.md)。GitHub platform settings remain under `.github/`.

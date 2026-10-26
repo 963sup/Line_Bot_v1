@@ -34,6 +34,6 @@ Before changing a destination, confirm its canonical URL, business/data owner,
 public contract, authorization behavior, direct-entry behavior, and existing
 consumer. Do not duplicate an existing resource route.
 
-Run the affected route and owner checks, then applicable `pnpm check`. Use
-`pnpm validate` for merge/release work and provider readback for actual Rich
+Run the affected route and owner tests, then applicable `pnpm lint`,
+`pnpm typecheck` and `pnpm test`. Use provider readback for actual Rich
 Menu publication; local route checks do not prove provider publication.

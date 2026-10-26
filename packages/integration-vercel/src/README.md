@@ -44,4 +44,4 @@ Vercel Free 對應官方 Hobby plan。此處是開發分類，不是目標帳戶
 
 Hobby 限個人、非商業用途；本結構不代表產品的商業部署已符合 Hobby 使用範圍。後續啟用前另核對方案資格、資源用量與所需權益。
 
-文件驗證使用 `pnpm docs:check`；其他 runtime、provider 與裝置證據見 [Tests](tests/README.md)。
+文件驗證使用 local link check 與適用 static checks；其他 runtime、provider 與裝置證據見 [Tests](tests/README.md)。

@@ -26,11 +26,8 @@ Member、Collaborator 是既有模型中的關係與資格，不建立同名 pac
 
 ## 查看分類、上下文與證據
 
-- `pnpm semantic view subdomains`：查 canonical 分類、所屬 owners、理由與來源。
-- `pnpm semantic view contexts`：查目前 selected／candidate status 及 boundary evidence。
-- `pnpm semantic explain repository`：查該 owner 的分類、上下文、契約與不變條件。
-- `pnpm semantic view context-map`：從 canonical relationships 產生 Owner 間的協作圖；不能據圖形把多個 Owner 自動合為一個 Bounded Context。
-- 各 package 的 `SEMANTICS.md` 是同一 model 的 generated projection，使用 `pnpm semantic package-docs` 更新。
+- 直接讀取 canonical semantic model、implementation topology 與 data topology 的必要 entries；不能據圖形把多個 Owner 自動合為一個 Bounded Context。
+- 各 package 的 `SEMANTICS.md` 是 generated projection，不能手工當作 semantic authority。
 
 Candidate 的 owner contract、模型與 test 路徑只支持目前已觀察到的責任邊界；有測試位置不代表測試已執行，靜態成功也不代表部署或實機驗收。沒有明確選定決策時保留原 status。
 

@@ -5,7 +5,7 @@
 ## Retained result
 
 - Declarative SQL 依 owner / dependency 重排；跨 owner constraint/projection 留在 cross-owner tail，不把 file 當 business owner。
-- Repository `pnpm validate` 在該 revision 通過。
+- Repository lint/typecheck/test/build 在該 revision 通過。
 - Remote readback 發現 Permission schema/literal 落後於當時 runtime contract；preflight 證明既有 rows 可無損轉換。
 - Data-preserving transaction 將 Permission columns/constraints/literals 與相關 function contract 收斂到當時 current naming。
 - Cutover 沒有建立 compatibility view、alias 或 dual-write，也沒有放寬 RLS/grants/authorization。

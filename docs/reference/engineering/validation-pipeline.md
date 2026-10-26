@@ -23,9 +23,9 @@ Biome 同時涵蓋 `knip.jsonc` 與 `architecture/**/*.json`，React Hooks 的�
 ## Fast vs full validation
 `check` 先依 Git 變更責任分流：純 Markdown 只跑 `docs:check`，純 declarative schema 只跑 `schema:check`；產品／runtime source 進 Biome lint、architecture、Knip deadcode 與 Turbo affected type/test。無法可靠判斷範圍時保守退回完整 fast gates。root config / shared dependency 改動可擴張到整個 workspace；手動 filter 必須涵蓋所有 consumer，不以縮小 filter 隱藏跨 package failure。
 
-GitHub Draft pull request 代表 active iteration，validation jobs 會 skip，避免每次 checkpoint push 都配置 hosted runner。PR 不是 Draft 時，`opened`、`synchronize`、`reopened`、`ready_for_review` 事件都會對該事件的 exact head，以 PR base SHA 做比較，選擇受影響 Owner 的 groups 與 Turbo transitive consumers；不重複跑無關 Owner。push 到 `main` 也使用前一個 main SHA 的同一選擇器，而不是切換成全量 matrix。差異基準遺失、無法讀取或不可信時，選擇器保守回退所有 groups。Merge candidate 必須以目前 head 的 aggregate `validate` 成功為證據；head 或 base 改變後，舊證據不再適用。checkout 保留完整 Git history 供 Turbo 判斷 changed packages 與 transitive consumers；不在 workflow 手工維護 package path matrix。Aggregate gate 只接受所有已選 group success，planner 或 group 失敗、取消或跳過均不得發布。同 branch 被取代的驗證可取消，外部發布不取消。需要全庫稽核時，`pnpm validate` 保留完整順序執行，避免同目錄 Next.js 產物競爭。
+GitHub Draft pull request 代表 active iteration，validation jobs 會 skip，避免每次 checkpoint push 都配置 hosted runner。PR 不是 Draft 時，`opened`、`synchronize`、`reopened`、`ready_for_review` 事件都會對該事件的 exact head，以 PR base SHA 做比較，選擇受影響 Owner 的 groups 與 Turbo transitive consumers；不重複跑無關 Owner。push 到 `main` 也使用前一個 main SHA 的同一選擇器，而不是切換成全量 matrix。差異基準遺失、無法讀取或不可信時，選擇器保守回退所有 groups。Merge candidate 必須以目前 head 的 affected package checks 成功為證據；head 或 base 改變後，舊證據不再適用。checkout 保留完整 Git history 供 Turbo 判斷 changed packages 與 transitive consumers；不在 workflow 手工維護 package path matrix。Aggregate gate 只接受所有已選 group success，planner 或 group 失敗、取消或跳過均不得發布。同 branch 被取代的驗證可取消，外部發布不取消。需要全庫稽核時，完整 lint/typecheck/test/build 依序執行，避免同目錄 Next.js 產物競爭。
 
-Changed-owner `validate` 證明 exact revision 的必要責任範圍與 consumers 通過，並不代表 deploy、migration、LINE API、Supabase remote project 或真機驗收；明確執行 `pnpm validate` 才是全庫 static/test/build evidence。兩者不得互相冒充。
+Affected package lint/typecheck/test/build 證明 exact revision 的必要責任範圍與 consumers 通過，並不代表 deploy、migration、LINE API、Supabase remote project 或真機驗收。兩者不得互相冒充。
 
 Validation subprocesses 完整執行，但預設不把高量 stdout/stderr 串流到 caller。成功只輸出 stage summary，diagnostic 必為空字串；原始輸出保存在 ignored artifact，machine-readable result 會包含 artifact path 與 byte count。失敗只回傳最多 8 KiB／80 行的 diagnostic tail 與 artifact path，caller 再針對單一 stage 局部讀取。此輸出邊界不改變 stage selection、exit status、CI aggregate 或 merge/release gate。
 
@@ -33,9 +33,8 @@ Full `validate` 可以驗 remote tooling contract tests，但不會 mutation Pro
 
 因此：
 
-- `schema:check`／`schema:remote:test` 證明 schema／reconciliation code contract，不證明 remote current state。
-- `pnpm validate` 證明 repository revision通過完整 gate，不等於 deployment。
-- Release Supabase success才證明該 validated revision的 database contract已完成對應 remote readback。
+- `schema:check` 證明 schema／reconciliation code contract，不證明 remote current state。
+- Supabase workflow success才證明該 revision的 database contract已完成對應 remote readback。
 - Vercel／LINE／provider／device evidence各自只證明自己的 external boundary。
 ## TypeScript safety
 

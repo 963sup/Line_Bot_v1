@@ -34,4 +34,4 @@ PR 只執行 `preview` 與測試。合併到 `main` 後，`rich-menu-release.yml
 - 原生切頁的 `menu=<page>` postback 不觸發出勤或授權；只有返回的 `attendance-menu` 進入既有後端返回流程。URI 與切頁都不授予 module role。
 - LINE group、chat 或 Rich Menu context 不等於 TeamMembership、Project membership 或任何管理權限。
 - 尚未有資料來源、角色或正式操作契約的項目，不以 Rich Menu 入口宣稱能力完成。
-- `publish` 是外部 mutation，不納入一般 `pnpm check`／`pnpm validate`，也不因 merge、push、build 或本地測試成功自動取得發布授權；必須由 current-`main` push 的 GitHub Release，經 successful same-SHA Validate、planner 與 exact-SHA current-main evidence 明確授權。
+- `reconcile` 是外部 mutation，不納入一般 lint/typecheck/test/build，也不因本地測試成功自動取得發布授權；必須由 current-`main` 的 Rich Menu workflow 經 exact-SHA、Environment secret、concurrency 與 provider readback 授權。
