@@ -151,7 +151,13 @@ export function parseDocumentIntakeOutput(value: unknown) {
         "uncertain",
       ]) ||
       !nullableText(line.itemNumber) ||
-      !["material", "service", "freight", "other", null].includes(line.category) ||
+      !(
+        line.category === null ||
+        line.category === "material" ||
+        line.category === "service" ||
+        line.category === "freight" ||
+        line.category === "other"
+      ) ||
       !nullableText(line.materialCode) ||
       !nullableText(line.description) ||
       !decimal(line.quantity) ||
