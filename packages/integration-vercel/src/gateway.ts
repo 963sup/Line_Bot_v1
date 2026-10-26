@@ -1,6 +1,6 @@
 import { IntelligenceError } from "@line_bot_v1/intelligence/domain/error";
 import { generateText, jsonSchema, Output } from "ai";
-import { fileProcessor } from "./document.js";
+import { fileProcessor } from "./adapters/outbound/ai-gateway/document.js";
 
 const mediaTypes = new Set(["application/pdf", "image/png", "image/jpeg", "image/webp"]);
 

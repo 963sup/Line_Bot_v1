@@ -13,7 +13,7 @@
 
 兩者可以重用同一個 Gateway SDK／Provider client，**不應先把採購單壓成最多 500 observations 再拼回完整行列**；那會增加資料失真、截斷與不可證明完整性的風險。
 
-**已核對的 #412 缺口：** `packages/integration-vercel/src/adapters/outbound/ai-gateway/document.ts` 已有結構化 `observations`；但 Contract Intake 的 `scripts/intelligence/run.mjs` 仍使用舊 `vercel/integrations/ai-gateway.mjs` 的 `file(...)`。Step 3 應將 Intake 改接新 `integration-vercel` 的**公開、Contract Schema 驅動**能力；勿假稱 #412 已完成此鏈路。一般 Web ProcessingRun 仍可使用 observations，兩種能力必須分開測試。
+**已核對的 #412 狀態：** `packages/integration-vercel/src/adapters/outbound/ai-gateway/document.ts` 提供 provider document transport，`scripts/intelligence/run.mjs` 已改接 `@line_bot_v1/integration-vercel/gateway` 的**公開、Contract Schema 驅動**能力。Contract SAVE、完整來源證據與正式入口 acceptance 仍未完成；一般 Web ProcessingRun 的 observations 與 DocumentIntake 的完整結構化輸出仍須分開測試。
 
 ## 2. 最小輸入與身份（不是全域共用 Aggregate）
 

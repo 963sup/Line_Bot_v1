@@ -49,7 +49,7 @@ export function releaseSha(displayTitle) {
 
 export function schemaChanged(files) {
   return files.some((file) =>
-    /^packages\/integration-supabase\/supabase\/schemas\/[^/]+\.sql$/.test(file),
+    /^packages\/integration-supabase\/src\/schemas\/[^/]+\.sql$/.test(file),
   );
 }
 

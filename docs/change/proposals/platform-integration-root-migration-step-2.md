@@ -11,16 +11,16 @@ packages/contract/             # owns ContractDocument SAVE/CONFIRM
 packages/file/                 # owns FileRevision, digest, readback, authorization
 packages/integration-vercel/
   package.json
-  src/gateway.ts               # shared public facade
+  src/gateway.ts               # public gateway capability
   src/gateway-config.ts         # model/auth config
-  src/gateway-document.ts       # provider document transport, private unless real consumer needs export
+  src/adapters/outbound/ai-gateway/document.ts # provider document transport
   ...                         # other **proven** provider adapter code
 packages/integration-supabase/
   package.json
-  src/storage-client.ts         # private Storage client config, existing
-  supabase/config.toml          # native CLI expects a nested supabase/ folder
-  supabase/schemas/*.sql        # declarative SQL, not package TS source
-  supabase/...                 # other qualified original CLI assets
+  src/storage-client.ts         # public server-side Storage client capability
+  src/config.toml               # native CLI source
+  src/schemas/*.sql             # declarative SQL, not package TS source
+  src/...                       # other qualified native assets
 ```
 **不**建立根部 `packages-integration-*`。仍由現有 `pnpm-workspace.yaml` 的 `packages/*` 選取兩個 package；除非真有新的 workspace 範圍，禁止改成深層 wildcard。
 

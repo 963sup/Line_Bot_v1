@@ -2,20 +2,18 @@
 
 Status: 平台移轉盤點已由 PR #412 實施；本文件保留 consumer matrix 與歷史基線，完整 release acceptance 仍由 Step 8/End 定義。上一階段：[Start](./platform-integration-root-migration-step-start.md)；下一階段：[Step 2](./platform-integration-root-migration-step-2.md)。
 
-## 可核對的基線（PR #413 的起點）
-- `vercel/` 有 README 入口與 `analytics,caching,cron,deployments,domains,environment,functions,integrations,observability,routing,security,storage,tests` 等分類。多數子目錄只有 README；**不能誤認都已啟用**。
-- `vercel/integrations/ai-gateway.mjs` **仍存在且有 runtime consumer** `scripts/intelligence/run.mjs`，不同於 #412 的 `packages/integration-vercel/src/adapters/outbound/ai-gateway/gateway.ts` / `gateway-document.ts`。它目前提供 target-schema `file(...)`，後者的 observations-only processor **不等價**。
-- `supabase/` 有 `config.toml`、`.gitignore`、`AGENTS.md`、`README.md`、`schemas/`（109 個 executable SQL schema files，目錄樹共 111 entries）與 `auth,cron,functions,queues,realtime,storage,tests,vector,webhooks` 類別 README。
-- **已確認的 SQL 清單範圍（本提案基線）**：`supabase/schemas/` 共 111 個 tracked 檔案，其中 109 個 `.sql`，另外兩個是 `AGENTS.md`、`README.md`；109 份 SQL 從 `000_foundation.sql` 到 `930_access_enforcement.sql`。需要按實際 Git tree **逐檔**產出完整清單，而不是以 109 筆摘要取代檔案列舉。此數字是當前基線，不可硬編碼為永遠固定；若 #413 或其他上游增加 SQL，必以最新 base 重新盤點。
-- `architecture/data-topology.json#schemaRoot` 指向 `supabase/schemas`；`supabase/config.toml` 的 `[db.migrations].schema_paths = ["./schemas/*.sql"]`；`scripts/supabase/storage.mjs` 以 `supabase/config.toml` 作**唯一 Bucket desired state**，並使用 `supabase/.temp/project-ref`。
-- `scripts/supabase/schema-local.mjs` 從 repo root 呼叫原生 CLI；SQL loader、Schema tests、release guard 另持有舊路徑。
+## 可核對的基線（PR #412 後）
+- 根部 `vercel/` 與 `supabase/` 已移除；Vercel native capability assets 直接位於 `packages/integration-vercel/src/`，Supabase native assets 與 executable SQL 直接位於 `packages/integration-supabase/src/`。
+- Vercel AI Gateway 的公開 runtime entries 是 `packages/integration-vercel/src/gateway.ts` 與 `src/gateway-config.ts`；provider document transport 仍是 package 內部的 `src/adapters/outbound/ai-gateway/document.ts`。
+- Supabase server client 的公開 package entry 是 `packages/integration-supabase/src/storage-client.ts`；File 的 hash、verified upload/read/remove 與 readback 仍由 `packages/file` 擁有。
+- `architecture/data-topology.json#schemaRoot`、Supabase CLI workdir、schema loader、Schema tests 與 release guard 均指向 `packages/integration-supabase/src/schemas/`；實際 SQL 數量以 current Git tree 為準，不將 109 筆摘要當成永久上限。
 以上為被觀察到的**重要起點**，不是宣稱已枚舉所有引用。
 
 ## 必交付：受追蹤且分類的 consumer matrix
 對 branch tip 掃描 tracked files（包含 dotfiles、.github、CLI、SQL、JSON、TS/JS、Markdown、tests、gitignore、workflow、workflow artifacts 設定），將每個實際使用的引用紀錄為：
 `{oldPath, consumerPath, purpose, newOwner, destination, publicExportOrNativePath, safetyGate, verification}`。
 必掃描：
-- `vercel/`、`supabase/` 的**實際 Git tree**：分清 runnable source、CLI current state、README／分類、ignore、generated `.temp`。
+- `packages/integration-vercel/src/`、`packages/integration-supabase/src/` 的**實際 Git tree**：分清 runtime source、CLI current state、README／分類、ignore、generated `.temp`。
 - `rg -n 'vercel/integrations|(?:^|["\x27 ./])vercel/|supabase/schemas|supabase/config\.toml|supabase/\.temp|supabase/' apps packages scripts architecture .github docs AGENTS.md .vercelignore package.json pnpm-workspace.yaml`（示意，依 Git tracked inventory 與實際 regex 調整）。
 - `import`、`require`、dynamic import、URL()、spawn CLI cwd、absolute/relative path、README links、release allowlist、data-topology `files[].path`、schema guard、prefix ordering 及 native config source。
 - Root `supabase/` 是否存在**非 SQL 內容**的真實 runtime/CLI consumer；README-only 不能自動轉變成新功能。

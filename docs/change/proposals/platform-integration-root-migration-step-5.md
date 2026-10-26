@@ -3,7 +3,7 @@
 Status: Supabase Storage client adapter 已由 PR #412 實施；完整 native CLI／remote read-only acceptance 仍待 Step 8。上一階段：[Step 4](./platform-integration-root-migration-step-4.md)；下一階段：[Step 6](./platform-integration-root-migration-step-6.md)。
 
 ## 當前狀態／目標
-既有 `packages/integration-supabase/src/adapters/outbound/storage/private-storage-client.ts` 只負責 `@supabase/supabase-js` 伺服器端 client 與 timeout、session 設定。現有 `packages/file/src/adapters/outbound/storage/supabase.ts` 的邏輯包含 File 的 hash key、SHA-256、verified upload/read/remove、unknown-outcome readback 和 `FileError`。**後者是 File 商業／一致性 Port 實作，不因使用 Supabase 就整包移入 integration**。
+`packages/integration-supabase/src/storage-client.ts` 只負責 `@supabase/supabase-js` 伺服器端 client 與 timeout、session 設定。現有 `packages/file/src/adapters/outbound/storage/supabase.ts` 的邏輯包含 File 的 hash key、SHA-256、verified upload/read/remove、unknown-outcome readback 和 `FileError`。**後者是 File 商業／一致性 Port 實作，不因使用 Supabase 就整包移入 integration**。
 
 ## 最小實施
 1. 盤點所有 `@supabase/supabase-js` 使用者：File Server/private Storage、Web browser/Auth/public publishable config、operator、可能的 Edge Functions。區分 public URL/publishable key 與 **server-only Service Role**；絕不為共用 client 把 service-role 傳入 browser。

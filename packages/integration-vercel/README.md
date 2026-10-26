@@ -7,13 +7,14 @@
 
 Vercel AI Gateway adapter for Assistant responses, receipt parsing, Intelligence observations, and Contract-schema-driven document candidates. No business confirmations or persistent data.
 
-Runtime adapter layout:
+Public runtime entries and private provider transport:
 
 ```text
-src/adapters/outbound/ai-gateway/
-├─ gateway.ts   # public provider capability factory
-├─ config.ts    # environment-backed provider configuration
-└─ document.ts  # structured document extraction and processing adapter
+src/
+├─ gateway.ts                         # public provider capability factory
+├─ gateway-config.ts                  # environment-backed provider configuration
+└─ adapters/outbound/ai-gateway/
+   └─ document.ts                     # structured document transport
 ```
 
-The `src/vercel/` directory contains Vercel-native platform assets and documentation; it is not a second TypeScript runtime implementation.
+Vercel-native platform assets and documentation are grouped directly under `src/` by capability; there is no `src/vercel/` wrapper.
