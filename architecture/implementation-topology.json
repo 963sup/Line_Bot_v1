@@ -367,7 +367,7 @@
     "@line_bot_v1/integration-vercel": {
       "path": "packages/integration-vercel",
       "moduleKind": "integration-adapter",
-      "semanticOwner": "intelligence",
+      "semanticOwner": "vercel-integration",
       "allowedWorkspaceDependencies": [
         "@line_bot_v1/intelligence"
       ]
@@ -375,7 +375,7 @@
     "@line_bot_v1/integration-supabase": {
       "path": "packages/integration-supabase",
       "moduleKind": "integration-adapter",
-      "semanticOwner": "platform",
+      "semanticOwner": "supabase-integration",
       "allowedWorkspaceDependencies": []
     }
   },
