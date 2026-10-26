@@ -88,7 +88,6 @@ function parseIntakeCommand(value: unknown): IntakeCommand {
     documentId: requiredString(input.documentId, "documentId"),
     requestId: requiredString(input.requestId, "requestId"),
     expectedVersion: requiredInteger(input.expectedVersion, "expectedVersion"),
-    expectedLineCount: requiredInteger(input.expectedLineCount, "expectedLineCount"),
     source: {
       fileId: requiredString(source.fileId, "source.fileId"),
       fileRevisionId: requiredString(source.fileRevisionId, "source.fileRevisionId"),

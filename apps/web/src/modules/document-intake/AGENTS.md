@@ -5,6 +5,6 @@ authorized FileRevision and submits a fixed structured extraction through the In
 intake contract; it does not own File bytes, provider configuration, Contract facts, or review
 authorization.
 
-The route preserves repository scope, request identity, exact source revision, expected line count,
+The route preserves repository scope, request identity, exact source revision,
 current owner authorization, and explicit human review before confirmation. Provider choice is
 server-side composition and is never accepted from the browser.

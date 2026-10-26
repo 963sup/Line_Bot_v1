@@ -131,7 +131,6 @@ test("PostgreSQL document intake authorizes, pins source, replays exactly and ro
     intentFingerprint,
     expectedVersion: 0,
     source,
-    expectedLineCount: 1,
     candidate: candidate(),
   };
   const saved = await intake.submit("owner", savedCommand);
@@ -222,8 +221,8 @@ test("PostgreSQL document intake authorizes, pins source, replays exactly and ro
       intentFingerprint,
       expectedVersion: 2,
       source,
-      expectedLineCount: 1,
       candidate: savedCommand.candidate,
+      sourceReviewAttestation: sourceReviewAttestation(savedCommand.candidate),
     }),
     (error) => error instanceof ContractError && error.code === "SOURCE_INVALID",
   );
@@ -236,8 +235,9 @@ test("PostgreSQL document intake authorizes, pins source, replays exactly and ro
       intentFingerprint,
       expectedVersion: 2,
       source: { ...source, fileRevisionId: randomUUID() },
-      expectedLineCount: 1,
       candidate: reportedTax,
+      sourceReviewAttestation: sourceReviewAttestation(reportedTax),
+      acknowledgement: { reason: "test" },
     }),
     sourceInvalid,
   );
@@ -250,21 +250,6 @@ test("PostgreSQL document intake authorizes, pins source, replays exactly and ro
       intentFingerprint,
       expectedVersion: 2,
       source,
-      expectedLineCount: 2,
-      candidate: reportedTax,
-    }),
-    sourceInvalid,
-  );
-  await assert.rejects(
-    intake.submit("owner", {
-      action: "confirm",
-      repositoryId: "repo",
-      documentId,
-      requestId: confirmRequestId,
-      intentFingerprint,
-      expectedVersion: 2,
-      source,
-      expectedLineCount: 1,
       candidate: reportedTax,
     }),
     (error) => error instanceof ContractError && error.code === "INVALID_INPUT",
@@ -278,7 +263,6 @@ test("PostgreSQL document intake authorizes, pins source, replays exactly and ro
     intentFingerprint,
     expectedVersion: 2,
     source,
-    expectedLineCount: 1,
     candidate: reportedTax,
     acknowledgement: {
       reason: "Preserve printed source amounts; the total discrepancy was reviewed.",
@@ -364,7 +348,6 @@ test("independent PostgreSQL sessions serialize document intake at the expected 
     intentFingerprint: createHash("sha256").update("intent").digest("hex"),
     expectedVersion: 0,
     source,
-    expectedLineCount: 1,
     candidate: candidateBase,
   };
   await documents.submit("owner", initial);

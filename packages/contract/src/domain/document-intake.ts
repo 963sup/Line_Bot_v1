@@ -75,7 +75,6 @@ export type ContractDocumentRevision = Readonly<{
   at: number;
   state: "DRAFT" | "CONFIRMED";
   source: DocumentSource;
-  expectedLineCount: number;
   candidate: PurchaseOrderCandidate;
   diagnostics: readonly string[];
   acknowledgementReason: string | null;
@@ -175,9 +174,8 @@ function canonical(value: unknown): string {
   return JSON.stringify(value) ?? "null";
 }
 
-function diagnosticsFor(candidate: PurchaseOrderCandidate, expectedLineCount: number): string[] {
+function diagnosticsFor(candidate: PurchaseOrderCandidate): string[] {
   const issues: string[] = [];
-  if (candidate.lines.length !== expectedLineCount) issues.push("LINE_COUNT_MISMATCH");
   if (new Set(candidate.lines.map((line) => line.sourceRowId)).size !== candidate.lines.length)
     issues.push("DUPLICATE_SOURCE_ROW_ID");
   if (candidate.lines.some((line) => line.uncertain)) issues.push("UNCERTAIN_LINE");
@@ -272,7 +270,6 @@ export function createDocumentRevision(
   input: Readonly<{
     action: "save" | "confirm";
     expectedVersion: number;
-    expectedLineCount: number;
     candidate: PurchaseOrderCandidate;
     source: ContractDocumentRevision["source"];
     acknowledgement?: Readonly<{ reason: string }>;
@@ -292,7 +289,6 @@ export function createDocumentRevision(
     if (!current || current.state !== "DRAFT")
       throw new ContractError(409, "Save a draft before confirming it.", "LIFECYCLE_CONFLICT");
     if (
-      input.expectedLineCount !== current.expectedLineCount ||
       canonical(input.source) !== canonical(current.source) ||
       canonical(input.candidate) !== canonical(current.candidate)
     )
@@ -309,12 +305,9 @@ export function createDocumentRevision(
       );
     validateSourceReviewAttestation(input.candidate, input.sourceReviewAttestation);
   }
-  if (!Number.isSafeInteger(input.expectedLineCount) || input.expectedLineCount < 1)
-    throw new ContractError(400, "Expected line count must be positive.", "INVALID_INPUT");
-  const diagnostics = diagnosticsFor(input.candidate, input.expectedLineCount);
+  const diagnostics = diagnosticsFor(input.candidate);
   if (input.action === "confirm") {
     if (
-      input.candidate.lines.length !== input.expectedLineCount ||
       diagnostics.includes("MISSING_REQUIRED_FACT") ||
       diagnostics.includes("MISSING_SOURCE_PAGE") ||
       diagnostics.includes("DUPLICATE_SOURCE_ROW_ID") ||
@@ -344,7 +337,6 @@ export function createDocumentRevision(
     at: input.at,
     state: input.action === "confirm" ? "CONFIRMED" : "DRAFT",
     source: { ...input.source },
-    expectedLineCount: input.expectedLineCount,
     candidate: structuredClone(input.candidate),
     diagnostics,
     acknowledgementReason:

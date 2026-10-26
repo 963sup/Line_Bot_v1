@@ -13,8 +13,8 @@ The new purchase-order aggregate does not decode or rewrite historical engineeri
 
 The published `purchase-order/v1` schema describes provider input. `intentFingerprint` is a technical
 idempotency key supplied by the calling Intelligence attempt for pre-provider receipt recovery; it
-is not authorization or user confirmation. `expectedLineCount` records the caller's declared review
-expectation and does not prove source completeness. A person must read the saved draft and
+is not authorization or user confirmation. The provider extracts every source row and Contract
+derives the displayed row count from that candidate. A person must read the saved draft and
 diagnostics before confirming; discrepancy acknowledgement reasons must come from that human
 review and must never be generated from provider output.
 

@@ -15,7 +15,6 @@ export type DocumentIntakeRevisionDto = Readonly<{
   at: number;
   state: "DRAFT" | "CONFIRMED";
   source: DocumentSource;
-  expectedLineCount: number;
   candidate: PurchaseOrderCandidate;
   diagnostics: readonly string[];
   acknowledgementReason: string | null;

@@ -50,7 +50,7 @@ does not create an agreement, Content plan, WBS baseline or Execution report.
 Each revision pins `{fileId, fileRevisionId, fileSha256}` after File requalifies that exact source
 inside Contract's transaction. Contract stores no original bytes. A candidate may be saved as DRAFT
 only through Contract's public intake command. Confirmation is an explicit Contract command; it
-requires the complete expected line count, no unresolved line uncertainty and any financial
+requires complete source-review coverage, no unresolved line uncertainty and any financial
 discrepancy acknowledgement. The source value is retained with diagnostics rather than silently
 rounded or replaced.
 

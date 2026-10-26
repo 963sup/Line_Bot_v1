@@ -25,7 +25,6 @@ const command = {
   documentId: ids.document,
   requestId: ids.request,
   expectedVersion: 0,
-  expectedLineCount: 54,
   source: { fileId: ids.file, fileRevisionId: ids.revision, fileSha256: digest },
 };
 

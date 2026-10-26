@@ -73,7 +73,6 @@ function decodeRevision(row: SqlRow): ContractDocumentRevision {
       fileRevisionId: stringValue(row.file_revision_id),
       fileSha256: stringValue(row.file_sha256),
     }),
-    expectedLineCount: numberValue(row.expected_line_count),
     candidate,
     diagnostics,
     acknowledgementReason:
@@ -233,8 +232,8 @@ export class PostgresContractDocuments implements ContractDocumentIntakeTransact
             );
           await sql.query(
             `INSERT INTO contract_document_revisions(id,document_id,repository_id,version,parent_revision_id,actor_user_id,at,state,schema_version,
-             file_id,file_revision_id,file_sha256,expected_line_count,candidate,diagnostics,acknowledgement_reason,source_review_attestation)
-             VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14::jsonb,$15::jsonb,$16,$17::jsonb)`,
+             file_id,file_revision_id,file_sha256,candidate,diagnostics,acknowledgement_reason,source_review_attestation)
+             VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,$14::jsonb,$15,$16::jsonb)`,
             [
               revision.id,
               revision.documentId,
@@ -248,7 +247,6 @@ export class PostgresContractDocuments implements ContractDocumentIntakeTransact
               revision.source.fileId,
               revision.source.fileRevisionId,
               revision.source.fileSha256,
-              revision.expectedLineCount,
               JSON.stringify(revision.candidate),
               JSON.stringify(revision.diagnostics),
               revision.acknowledgementReason,

@@ -20,7 +20,6 @@ export type IntakeCommand = Readonly<{
   documentId: string;
   requestId: string;
   expectedVersion: number;
-  expectedLineCount: number;
   source: FileSourceReference;
 }>;
 
@@ -56,7 +55,6 @@ export interface DocumentExtractor {
       bytes: Uint8Array;
       mediaType: string;
       schema: IntakeSchema;
-      expectedLineCount: number;
     }>,
   ): Promise<unknown>;
 }

@@ -58,7 +58,6 @@ function parseDocumentInput(value: unknown): DocumentIntakeInput {
     "intentFingerprint",
     "expectedVersion",
     "source",
-    "expectedLineCount",
     "candidate",
     "acknowledgement",
     "sourceReviewAttestation",
@@ -90,9 +89,6 @@ function parseDocumentInput(value: unknown): DocumentIntakeInput {
     input.expectedVersion < 0 ||
     input.expectedVersion >= 2_147_483_647 ||
     !record(source) ||
-    typeof input.expectedLineCount !== "number" ||
-    !Number.isSafeInteger(input.expectedLineCount) ||
-    input.expectedLineCount < 1 ||
     input.candidate === undefined
   )
     throw new ContractError(400, "Invalid Contract document command fields.", "INVALID_INPUT");
@@ -125,7 +121,6 @@ function parseDocumentInput(value: unknown): DocumentIntakeInput {
     requestId: input.requestId.toLowerCase(),
     intentFingerprint: input.intentFingerprint,
     expectedVersion: input.expectedVersion,
-    expectedLineCount: input.expectedLineCount,
     source: sourcePin,
     candidate,
     ...(acknowledgement === undefined ? {} : { acknowledgement }),
@@ -191,7 +186,6 @@ function documentDto(value: ContractDocumentRevision): DocumentIntakeRevisionDto
     at: value.at,
     state: value.state,
     source: { ...value.source },
-    expectedLineCount: value.expectedLineCount,
     candidate: structuredClone(value.candidate),
     diagnostics: [...value.diagnostics],
     acknowledgementReason: value.acknowledgementReason,
@@ -261,7 +255,6 @@ export function createContractDocuments(deps: {
             const revision = createDocumentRevision(current, {
               action: input.action,
               expectedVersion: input.expectedVersion,
-              expectedLineCount: input.expectedLineCount,
               candidate: input.candidate,
               source: input.source,
               ...(input.acknowledgement ? { acknowledgement: input.acknowledgement } : {}),
