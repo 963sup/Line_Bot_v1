@@ -43,6 +43,64 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
+function invalidDocumentIntake(): never {
+  throw new IntelligenceError(
+    502,
+    "Extraction returned an invalid result.",
+    "EXTRACTION_UNAVAILABLE",
+  );
+}
+
+/** Checks the provider boundary only; Contract remains the business validator. */
+export function parseDocumentIntakeOutput(value: unknown) {
+  if (!isRecord(value)) invalidDocumentIntake();
+  for (const key of [
+    "header",
+    "buyer",
+    "seller",
+    "lines",
+    "totals",
+    "terms",
+    "fieldEvidence",
+    "corrections",
+  ]) {
+    if (!(key in value)) invalidDocumentIntake();
+  }
+  if (
+    !isRecord(value.header) ||
+    !isRecord(value.buyer) ||
+    !isRecord(value.seller) ||
+    !isRecord(value.totals) ||
+    !isRecord(value.terms) ||
+    !isRecord(value.fieldEvidence) ||
+    !Array.isArray(value.lines) ||
+    !Array.isArray(value.corrections) ||
+    value.lines.length > 10_000
+  )
+    invalidDocumentIntake();
+  const rowIds = new Set<string>();
+  for (const line of value.lines) {
+    if (
+      !isRecord(line) ||
+      typeof line.sourceRowId !== "string" ||
+      line.sourceRowId.length === 0 ||
+      rowIds.has(line.sourceRowId) ||
+      !Array.isArray(line.sourcePages) ||
+      !line.sourcePages.every((page) => Number.isInteger(page) && page >= 1) ||
+      typeof line.uncertain !== "boolean"
+    )
+      invalidDocumentIntake();
+    rowIds.add(line.sourceRowId);
+  }
+  if (
+    (typeof value.terms.text !== "string" && value.terms.text !== null) ||
+    !Array.isArray(value.terms.sourcePages) ||
+    !value.terms.sourcePages.every((page) => Number.isInteger(page) && page >= 1)
+  )
+    invalidDocumentIntake();
+  return value;
+}
+
 export function parseProcessingOutput(value: unknown) {
   if (!isRecord(value))
     throw new IntelligenceError(
