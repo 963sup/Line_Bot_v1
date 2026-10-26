@@ -1,6 +1,6 @@
 # Selected data target
 
-狀態：selected future data design，不是 current database truth。Current desired PostgreSQL structure 只由 `supabase/schemas/` 擁有；current data contract 回 [Data](../../reference/data/boundaries.md)。
+狀態：selected future data design，不是 current database truth。Current desired PostgreSQL structure 只由 `packages/integration-supabase/src/schemas/` 擁有；current data contract 回 [Data](../../reference/data/boundaries.md)。
 
 ## Target scope
 
@@ -58,7 +58,7 @@ Cross-owner atomic invariant 只有真實 consistency requirement 時才使用 t
 
 ## Schema activation
 
-Target relation 只有在第一個真實 runtime consumer 具備 owner contract、authorization、transaction/recovery 與 tests 後才進 `supabase/schemas/`。Reserved target file 不代表 persistence 已啟用。
+Target relation 只有在第一個真實 runtime consumer 具備 owner contract、authorization、transaction/recovery 與 tests 後才進 `packages/integration-supabase/src/schemas/`。Reserved target file 不代表 persistence 已啟用。
 
 每個 activation slice：
 
