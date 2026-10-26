@@ -59,10 +59,19 @@ approval_mode = "approve"
 
 [mcp_servers.serena]
 # Per-worktree semantic symbol retrieval using Serena's official stdio server.
-command = "serena"
-args = ["start-mcp-server", "--project-from-cwd", "--context=codex", "--open-web-dashboard=false"]
-startup_timeout_sec = 15
+# Cloud environments do not guarantee a globally installed `serena` executable;
+# uvx resolves and caches the official PyPI launcher on first MCP startup.
+command = "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/uvx"
+args = ["--from", "serena-agent", "serena", "start-mcp-server", "--project-from-cwd", "--context=codex", "--open-web-dashboard=false"]
+startup_timeout_sec = 120
 default_tools_approval_mode = "approve"
+
+[mcp_servers.serena.env]
+# The managed image's default agent home is read-only; keep uv's package cache
+# on the writable Cloud Environment filesystem.
+UV_CACHE_DIR = "/tmp/codex-uv-cache"
+UV_TOOL_DIR = "/tmp/codex-uv-tools"
+SERENA_HOME = "/tmp/codex-serena"
 
 [mcp_servers.sentry]
 # Official hosted MCP uses OAuth; request org:read,project:read,event:read scopes.

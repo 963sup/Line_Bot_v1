@@ -4,7 +4,7 @@ Inherits [packages](../AGENTS.md). [File owner](../../docs/owners/file.md) owns 
 
 - Upload and File List never invoke processors. Processing commands belong to Intelligence and require an explicit File revision, supported processor, version and request identity.
 - File owns exact source qualification and byte reads through its public source contract. Intelligence owns Processor capability, output validation, ProcessingRun lifecycle, results and processing history.
-- Processor output is untrusted Preview. Browser Edit stays local until Intelligence Save. Save records optional bounded edits and immutable SavedResult; Discard creates no SavedResult. RawResult, source location and uncertainty cannot be rewritten.
+- Historical processor output is read-only evidence during cutover. File has no current preview, edit, save, discard, or result writer; those capabilities belong to Intelligence and Contract.
 - Current Repository permission must be rechecked on read, replay and completion. Public visibility is not File evidence authorization.
 - A retry of the same RunId must preserve exact original FileRevision and Processor id/version/kind; changing the processor is a new explicit Run. Current historical rows remain read-only until an explicit controlled retention cutover.
 - Durable Upload Intent commits before private Storage I/O. Only exact object readback allows a transactional FileRevision/head/receipt Finalize; there is no second PostgreSQL bytea store. Explicit identical-request retry recovers unknown outcomes; never overwrite objects.

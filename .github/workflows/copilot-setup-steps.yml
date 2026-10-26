@@ -5,12 +5,16 @@ on:
   push:
     paths:
       - .github/workflows/copilot-setup-steps.yml
+      - .codex/config.toml
+      - .devcontainer/devcontainer.json
       - .node-version
       - package.json
       - pnpm-lock.yaml
   pull_request:
     paths:
       - .github/workflows/copilot-setup-steps.yml
+      - .codex/config.toml
+      - .devcontainer/devcontainer.json
       - .node-version
       - package.json
       - pnpm-lock.yaml
@@ -34,6 +38,15 @@ jobs:
           run_install: false
           cache: true
           cache_dependency_path: pnpm-lock.yaml
+      - name: Install official Serena tooling
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: "**/uv.lock"
+      - name: Provision Serena MCP launcher
+        env:
+          UV_TOOL_DIR: ${{ runner.temp }}/uv-tools
+        run: uv tool install --force serena-agent==2.1.0
       - name: Restore workspace build cache
         uses: actions/cache@v6
         with:

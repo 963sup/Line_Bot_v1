@@ -419,7 +419,7 @@ test("Vercel upload retains the public integration package used by Web compositi
     readFileSync(new URL("../../../apps/web/package.json", import.meta.url), "utf8"),
   );
   assert.equal(web.dependencies["@line_bot_v1/integration-vercel"], "workspace:*");
-  for (const file of ["assistant.server.ts", "expense.server.ts", "files.server.ts"]) {
+  for (const file of ["assistant.server.ts", "expense.server.ts"]) {
     const consumer = readFileSync(
       new URL(`../../../apps/web/src/app/api/_composition/${file}`, import.meta.url),
       "utf8",

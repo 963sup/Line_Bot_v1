@@ -262,7 +262,10 @@ function parseRunPage(value: unknown): { runs: RunSummary[]; next: string | null
 }
 function parseFilePage(value: unknown): { file: FileInfo; processors: Processor[] } {
   const r = record(value);
-  return { file: parseFile(r.file), processors: listOf(r.processors, parseProcessor) };
+  return {
+    file: parseFile(r.file),
+    processors: r.processors === undefined ? [] : listOf(r.processors, parseProcessor),
+  };
 }
 function parseProcessingPage(value: unknown): { processing: Processing } {
   const r = record(value);
@@ -438,10 +441,6 @@ export default function FilesPanel({
       if (ticket !== epoch.current) throw new StaleRequest();
       if (!session) throw new Error("請完成 LINE 登入後重試。");
       const search = new URLSearchParams({ owner: ownerLogin, name: repositoryName, ...query });
-      if (mutation && (mutation.kind === "run" || mutation.kind === "result"))
-        search.set("ownerKind", "intelligence");
-      if (!mutation && ["runs", "processing"].includes(query.view ?? ""))
-        search.set("ownerKind", "intelligence");
       const headers: Record<string, string> = { "X-App-Session-Generation": session };
       let body: BodyInit | undefined;
       if (mutation?.kind === "upload") {
@@ -593,24 +592,20 @@ export default function FilesPanel({
     setBusy(true);
     setError("");
     try {
-      const [current, history] = await Promise.all([
-        request({ view: "file", fileId: file.fileId }),
-        request({ view: "runs", fileId: file.fileId }),
-      ]);
+      const current = await request({ view: "file", fileId: file.fileId });
       if (ticket !== epoch.current) return;
       const data = parseFilePage(current);
-      const previous = parseRunPage(history);
       setSelected(data.file);
-      setProcessors(data.processors);
-      setSelectedProcessor(data.processors[0]?.id ?? "");
+      setProcessors([]);
+      setSelectedProcessor("");
       setExpectedLineCount("");
       setDocumentIntakeReceipt(null);
       setDocumentIntakeRevision(null);
       setSourceReviewConfirmed(false);
       setAcknowledgementReason("");
       setPendingDocumentConfirmation(null);
-      setRuns(previous.runs);
-      setRunsNext(previous.next);
+      setRuns([]);
+      setRunsNext(null);
       setProcessing(null);
       setEdits({});
     } catch (cause) {
@@ -1141,7 +1136,9 @@ export default function FilesPanel({
       <Card>
         <CardHeader>
           <CardTitle>{selected ? selected.name : "選擇 File"}</CardTitle>
-          <CardDescription>原始檔保存、固定採購單解析，或一般檔案預覽。</CardDescription>
+          <CardDescription>
+            原始檔保存；解析由 Intelligence 負責，確認後再交給 Contract。
+          </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3">
           {busy && <p role="status">File 操作中…</p>}
@@ -1192,16 +1189,6 @@ export default function FilesPanel({
               )}
               {view?.canEdit && (
                 <>
-                  {processors.length === 0 && (
-                    <p className="text-sm text-muted-foreground">
-                      此格式目前只有原始檔保存功能，尚無可用的 Processor。
-                    </p>
-                  )}
-                  {processors.length > 0 && (
-                    <Button disabled={busy || !!pending} onClick={() => run()}>
-                      開始一般檔案預覽
-                    </Button>
-                  )}
                   <div className="grid gap-2 rounded-md border p-3">
                     <div>
                       <Label htmlFor="document-line-count">採購單來源行數</Label>

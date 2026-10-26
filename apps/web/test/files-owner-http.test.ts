@@ -7,8 +7,6 @@ import { RequestIdentityError } from "../src/shared/server/request-identity-erro
 
 const baseUrl = "https://app.example/api/repository-files?owner=acme&name=Operations";
 type Owner = ReturnType<FilesWebRuntime["owner"]>;
-type Method = ReturnType<FilesWebRuntime["processors"]>[number];
-type ProcessingOwner = ReturnType<FilesWebRuntime["processingOwner"]>;
 
 const file: Awaited<ReturnType<Owner["file"]>> = {
   repositoryId: "repository-A",
@@ -22,32 +20,6 @@ const file: Awaited<ReturnType<Owner["file"]>> = {
   mediaType: "text/plain",
   byteLength: 3,
   sha256: "0".repeat(64),
-};
-const runId = randomUUID();
-const ready: Awaited<ReturnType<ProcessingOwner["read"]>> = {
-  revisionId: randomUUID(),
-  runId,
-  fileId: file.fileId,
-  fileRevisionId: file.revisionId,
-  repositoryId: file.repositoryId,
-  state: "READY",
-  version: 2,
-  processorId: "plain-text",
-  processorVersion: "test",
-  processorKind: "parser",
-  rawResult: { documentKind: "plain-text", observations: [] },
-  savedResult: null,
-  at: 100,
-};
-const processingReady: Awaited<ReturnType<ProcessingOwner["run"]>>["processing"] = {
-  ...ready,
-  id: ready.revisionId,
-  parentRevisionId: randomUUID(),
-  actorUserId: "member",
-  attemptId: randomUUID(),
-  fileSha256: file.sha256,
-  failure: null,
-  edits: [],
 };
 const scope = {
   actorUserId: "member",
@@ -66,15 +38,6 @@ function requestIdOf(value: unknown): string {
     throw new Error("Unexpected command input.");
   return value.requestId;
 }
-const parser: Method = {
-  id: "plain-text",
-  kind: "parser",
-  version: "test",
-  supports: (mediaType) => mediaType === "text/plain",
-  async run() {
-    return { documentKind: "plain-text", observations: [] };
-  },
-};
 function fixture() {
   const calls: Array<{ operation: string; args: unknown[] }> = [];
   const called = (operation: string, args: unknown[]) => {
@@ -116,24 +79,6 @@ function fixture() {
       return { requestId: requestIdOf(input), file };
     },
   };
-  const processingOwner: ReturnType<FilesWebRuntime["processingOwner"]> = {
-    async list(actor, repositoryId, fileId, after) {
-      called("runs", [actor, repositoryId, fileId, after]);
-      return { runs: [ready], next: null };
-    },
-    async read(actor, repositoryId, id, revisionId) {
-      called("processing", [actor, repositoryId, id, revisionId]);
-      return ready;
-    },
-    async run(actor, input, processor) {
-      called("run", [actor, input, processor]);
-      return { requestId: requestIdOf(input), processing: processingReady };
-    },
-    async result(actor, input) {
-      called("result", [actor, input]);
-      return { requestId: requestIdOf(input), processing: processingReady };
-    },
-  };
   const runtime: FilesWebRuntime = {
     scope: async (subject, selector) => {
       assert.equal(subject, "line-subject");
@@ -141,8 +86,6 @@ function fixture() {
       return scope;
     },
     owner: () => owner,
-    processors: () => [parser],
-    processingOwner: () => processingOwner,
   };
   return { calls, runtime };
 }
@@ -220,7 +163,7 @@ test("Pending Uploads are explicit, actor-scoped owner reads, never exposed by F
   assert.equal(body.uploads[0].sha256, file.sha256);
 });
 
-test("File detail, Run History and Download consume only File-owned authorized reads", async () => {
+test("File detail and Download consume only File-owned authorized reads", async () => {
   const { calls, runtime } = fixture();
   const detail = await filesRequest(
     new Request(baseUrl + "&view=file&fileId=" + file.fileId),
@@ -228,21 +171,7 @@ test("File detail, Run History and Download consume only File-owned authorized r
     identity,
   );
   assert.equal(detail.status, 200);
-  assert.deepEqual((await detail.json()).processors, [
-    { id: "plain-text", kind: "parser", version: "test" },
-  ]);
-  const list = await filesRequest(
-    new Request(baseUrl + "&view=runs&fileId=" + file.fileId + "&ownerKind=intelligence"),
-    runtime,
-    identity,
-  );
-  assert.equal((await list.json()).runs[0].runId, runId);
-  const current = await filesRequest(
-    new Request(baseUrl + "&view=processing&runId=" + runId + "&ownerKind=intelligence"),
-    runtime,
-    identity,
-  );
-  assert.equal((await current.json()).processing.state, "READY");
+  assert.equal((await detail.json()).processing, null);
   const download = await filesRequest(
     new Request(
       baseUrl + "&view=download&fileId=" + file.fileId + "&revisionId=" + file.revisionId,
@@ -284,7 +213,7 @@ test("Browser download refuses large response bodies before fetching private sou
   );
 });
 
-test("File mutation refuses foreign Repository, forged Origin and unconfigured Processor", async () => {
+test("File mutation refuses foreign Repository, forged Origin and processing commands", async () => {
   await withOrigin(async () => {
     const { calls, runtime } = fixture();
     let scopes = 0;
@@ -325,53 +254,19 @@ test("File mutation refuses foreign Repository, forged Origin and unconfigured P
   });
 });
 
-test("File Run and Result are separate intentional POST commands", async () => {
+test("File rejects Intelligence processing commands at the File boundary", async () => {
   await withOrigin(async () => {
     const { calls, runtime } = fixture();
-    const runCommand = {
-      repositoryId: scope.repository.id,
-      fileId: file.fileId,
-      fileRevisionId: file.revisionId,
-      runId,
-      requestId: randomUUID(),
-      expectedVersion: 0,
-    };
-    const ran = await filesRequest(
-      new Request(baseUrl + "&ownerKind=intelligence", {
-        method: "POST",
-        headers: { origin: "https://app.example", "content-type": "application/json" },
-        body: JSON.stringify({ operation: "run", processor: "plain-text", command: runCommand }),
-      }),
-      runtime,
-      identity,
-    );
-    assert.equal(ran.status, 200);
-    assert.equal((await ran.json()).requestId, runCommand.requestId);
-    const saveCommand = {
-      repositoryId: scope.repository.id,
-      runId,
-      requestId: randomUUID(),
-      expectedVersion: 2,
-      action: "save",
-      edits: [],
-    };
-    const saved = await filesRequest(
-      new Request(baseUrl + "&ownerKind=intelligence", {
-        method: "POST",
-        headers: { origin: "https://app.example", "content-type": "application/json" },
-        body: JSON.stringify({ operation: "result", command: saveCommand }),
-      }),
-      runtime,
-      identity,
-    );
-    assert.equal(saved.status, 200);
-    assert.equal((await saved.json()).requestId, saveCommand.requestId);
-    assert.deepEqual(
-      calls.map((call) => call.operation),
-      ["run", "result"],
-    );
-    assert.strictEqual(calls[0]?.args[2], parser);
-    assert.deepEqual(calls[1]?.args[1], saveCommand);
+    for (const operation of ["run", "result"]) {
+      const response = await filesRequest(
+        post({ operation, command: { repositoryId: scope.repository.id } }),
+        runtime,
+        identity,
+      );
+      assert.equal(response.status, 400);
+      assert.match((await response.json()).error, /Intelligence/);
+    }
+    assert.deepEqual(calls, []);
   });
 });
 
