@@ -36,8 +36,6 @@ function canonicalCommand(command: IntakeCommand): IntakeCommand {
   if (command.action !== "save") throw new IntakeError("INVALID_INPUT", 422);
   if (!Number.isSafeInteger(command.expectedVersion) || command.expectedVersion < 0)
     throw new IntakeError("INVALID_INPUT", 422);
-  if (!Number.isSafeInteger(command.expectedLineCount) || command.expectedLineCount < 1)
-    throw new IntakeError("INVALID_INPUT", 422);
   if (!/^[a-f0-9]{64}$/i.test(command.source.fileSha256))
     throw new IntakeError("INVALID_INPUT", 422);
   return {
@@ -46,7 +44,6 @@ function canonicalCommand(command: IntakeCommand): IntakeCommand {
     documentId: canonicalUuid(command.documentId),
     requestId: canonicalUuid(command.requestId),
     expectedVersion: command.expectedVersion,
-    expectedLineCount: command.expectedLineCount,
     source: {
       fileId: canonicalUuid(command.source.fileId),
       fileRevisionId: canonicalUuid(command.source.fileRevisionId),
@@ -74,7 +71,6 @@ function intakeIntentFingerprint(input: {
       schemaVersion: schema.version,
       processorId: input.processorId,
       processorVersion: input.processorVersion,
-      expectedLineCount: command.expectedLineCount,
     }),
   );
 }
@@ -144,7 +140,6 @@ export function createDocumentIntake<Receipt extends IntakeReceipt>(dependencies
         bytes,
         mediaType: revision.mediaType,
         schema: dependencies.schema,
-        expectedLineCount: command.expectedLineCount,
       });
       dependencies.onTargetSubmit?.();
       const receipt = await dependencies.target.submit(actor, {

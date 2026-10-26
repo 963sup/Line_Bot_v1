@@ -53,11 +53,10 @@ function candidate(lineCount: number): PurchaseOrderCandidate {
   };
 }
 
-function draft(expectedLineCount: number, facts = candidate(54)) {
+function draft(facts = candidate(54)) {
   return createDocumentRevision(null, {
     action: "save",
     expectedVersion: 0,
-    expectedLineCount,
     candidate: facts,
     source: { fileId: randomUUID(), fileRevisionId: randomUUID(), fileSha256: "a".repeat(64) },
     id: randomUUID(),
@@ -83,12 +82,10 @@ function confirm(
   current: ReturnType<typeof draft>,
   acknowledgement?: { reason: string },
   candidateFacts = current.candidate,
-  expectedLineCount = current.expectedLineCount,
 ) {
   return createDocumentRevision(current, {
     action: "confirm",
     expectedVersion: current.version,
-    expectedLineCount,
     candidate: candidateFacts,
     source: current.source,
     sourceReviewAttestation: sourceReviewAttestation(candidateFacts),
@@ -102,20 +99,23 @@ function confirm(
 }
 
 test("accepts a complete 54-line synthetic purchase order as one confirmed revision", () => {
-  const revision = confirm(draft(54));
+  const revision = confirm(draft());
   assert.equal(revision.state, "CONFIRMED");
   assert.equal(revision.candidate.lines.length, 54);
   assert.equal(new Set(revision.candidate.lines.map((line) => line.sourceRowId)).size, 54);
   assert.deepEqual(revision.diagnostics, []);
 });
 
-test("draft saves preserve omitted-row diagnostics while confirmation rejects incomplete coverage", () => {
-  const saved = draft(54, candidate(53));
-  assert.deepEqual(saved.diagnostics, ["LINE_COUNT_MISMATCH"]);
-  assert.throws(
-    () => confirm(saved, { reason: "Reviewed source pages; line omitted." }),
-    (error: unknown) => error instanceof ContractError && error.code === "INVALID_INPUT",
-  );
+test("derives the source line count from the AI candidate instead of persisting caller input", () => {
+  const revision = draft();
+  assert.equal("expectedLineCount" in revision, false);
+  assert.equal(revision.candidate.lines.length, 54);
+});
+
+test("confirmation relies on source review coverage instead of a caller-supplied line count", () => {
+  const saved = draft(candidate(53));
+  assert.deepEqual(saved.diagnostics, []);
+  assert.equal(confirm(saved).state, "CONFIRMED");
 });
 
 test("exact decimal aggregation preserves monetary precision without floating point", () => {
@@ -130,7 +130,7 @@ test("confirmation rejects a line gross that does not equal quantity times unit 
     ...facts,
     lines: facts.lines.map((line) => ({ ...line, grossAmount: "20" })),
   };
-  const saved = draft(1, invalid);
+  const saved = draft(invalid);
   assert.throws(
     () => confirm(saved),
     (error: unknown) => error instanceof ContractError && error.code === "INVALID_INPUT",
@@ -152,10 +152,10 @@ test("confirmation preserves reported tax and requires an auditable reason for t
     totals: { ...reported.totals, tax: "1", total: "540" },
   };
   assert.throws(
-    () => confirm(draft(54, withPrintedTax)),
+    () => confirm(draft(withPrintedTax)),
     (error: unknown) => error instanceof ContractError && error.code === "INVALID_INPUT",
   );
-  const saved = draft(54, withPrintedTax);
+  const saved = draft(withPrintedTax);
   const confirmed = confirm(saved, {
     reason: "Preserve the source printed tax and total; discrepancy reviewed.",
   });
@@ -168,13 +168,12 @@ test("confirmation preserves reported tax and requires an auditable reason for t
 });
 
 test("confirmed document facts are immutable and stale versions conflict", () => {
-  const confirmed = confirm(draft(54));
+  const confirmed = confirm(draft());
   assert.throws(
     () =>
       createDocumentRevision(confirmed, {
         action: "save",
         expectedVersion: confirmed.version,
-        expectedLineCount: 54,
         candidate: candidate(54),
         source: confirmed.source,
         id: randomUUID(),
@@ -190,7 +189,6 @@ test("confirmed document facts are immutable and stale versions conflict", () =>
       createDocumentRevision(null, {
         action: "save",
         expectedVersion: 1,
-        expectedLineCount: 54,
         candidate: candidate(54),
         source: confirmed.source,
         id: randomUUID(),
@@ -210,7 +208,6 @@ test("confirmation requires a saved review draft", () => {
       createDocumentRevision(null, {
         action: "confirm",
         expectedVersion: 0,
-        expectedLineCount: 54,
         candidate: facts,
         source: {
           fileId: randomUUID(),

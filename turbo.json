@@ -39,18 +39,12 @@
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"],
       "env": ["NEXT_PUBLIC_*", "VERCEL", "VERCEL_ENV", "SENTRY_ORG", "SENTRY_PROJECT"],
       "passThroughEnv": ["SENTRY_AUTH_TOKEN"],
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        "$TURBO_ROOT$/.env.local",
-        "$TURBO_ROOT$/.vercelignore"
-      ]
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/.env.local", "$TURBO_ROOT$/.vercelignore"]
     },
     "@line_bot_v1/web#typecheck": {
       "dependsOn": ["^build"],
       "outputs": [],
-      "inputs": [
-        "$TURBO_DEFAULT$"
-      ]
+      "inputs": ["$TURBO_DEFAULT$"]
     },
     "@line_bot_v1/namespace#test": {
       "cache": false,
@@ -80,10 +74,7 @@
     "@line_bot_v1/web#test": {
       "dependsOn": ["^build"],
       "outputs": [],
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        "$TURBO_ROOT$/packages/integration-supabase/src/schemas/*.sql"
-      ]
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/packages/integration-supabase/src/schemas/*.sql"]
     },
     "@line_bot_v1/platform#schema:check": {
       "cache": false,

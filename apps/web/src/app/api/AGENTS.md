@@ -5,6 +5,8 @@ persistence, transactions, replay, and recovery remain in the owning package.
 Parent rules from [`app`](../AGENTS.md), [`apps`](../../../../AGENTS.md), and
 the repository root apply.
 
+`GET/POST /api/repository-document-intake` is the fixed ContractDocument purchase-order intake entry. It accepts only an exact FileRevision reference and stable request identity; provider/model selection is server-side composition. Contract remains the authority for candidate validation, review and confirmation; `operation=contract` forwards only the bounded review command to Contract. The route never accepts or returns private object bytes.
+
 ## Request boundary
 
 - Route handlers decode and validate transport input, establish trusted request

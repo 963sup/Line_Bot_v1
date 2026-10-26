@@ -1,11 +1,13 @@
 # Official Codex project configuration.
 # Secrets stay in the environment or Codex-managed authentication.
 
-# Serena project MCP. The devcontainer provisions `serena-agent` with uv.
+# Serena project MCP. The devcontainer provides uv; uvx resolves the official
+# server automatically for each Codex Cloud workspace.
 [mcp_servers.serena]
-command = "serena"
-args = ["start-mcp-server", "--project-from-cwd", "--context=codex"]
-startup_timeout_sec = 15
+command = "uvx"
+args = ["--from", "serena-agent", "serena", "start-mcp-server", "--project-from-cwd", "--context=codex", "--open-web-dashboard=false"]
+startup_timeout_sec = 60
+default_tools_approval_mode = "approve"
 
 # Context7 hosted MCP. Set CONTEXT7_API_KEY only when the account requires it.
 [mcp_servers.context7]
@@ -41,6 +43,17 @@ config_file = "./agents/debugger.toml"
 [agents.architect]
 description = "Review architecture, module boundaries, dependency direction, and data flow."
 config_file = "./agents/architect.toml"
+
+[mcp_servers.next-devtools.tools.nextjs_index]
+approval_mode = "approve"
+
+[mcp_servers.shadcn.tools.get_project_registries]
+approval_mode = "approve"
+
+[mcp_servers.sentry]
+# Official hosted MCP uses OAuth; request org:read,project:read,event:read scopes.
+# Project scoping supplies query defaults, not business write authorization.
+url = "https://mcp.sentry.dev/mcp/963sup/sentry"
 
 [agents.security-auditor]
 description = "Audit application security, authentication, authorization, secrets, and Supabase RLS."

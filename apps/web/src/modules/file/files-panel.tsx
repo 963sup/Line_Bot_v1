@@ -104,7 +104,6 @@ type DocumentIntakeRevision = {
   version: number;
   state: "DRAFT" | "CONFIRMED";
   source: DocumentSource;
-  expectedLineCount: number;
   candidate: Record<string, unknown>;
   diagnostics: string[];
 };
@@ -114,7 +113,6 @@ type DocumentIntakeCommand = {
   documentId: string;
   requestId: string;
   expectedVersion: number;
-  expectedLineCount: number;
   source: { fileId: string; fileRevisionId: string; fileSha256: string };
 };
 type Pending =
@@ -316,7 +314,6 @@ function parseDocumentIntakeRevision(value: unknown): DocumentIntakeRevision {
     version: intValue(r.version),
     state,
     source: parseDocumentSource(r.source),
-    expectedLineCount: intValue(r.expectedLineCount),
     candidate: record(r.candidate),
     diagnostics: listOf(r.diagnostics, stringValue),
   };
@@ -380,7 +377,6 @@ export default function FilesPanel({
   const [runs, setRuns] = useState<RunSummary[]>([]);
   const [runsNext, setRunsNext] = useState<string | null>(null);
   const [processing, setProcessing] = useState<Processing | null>(null);
-  const [expectedLineCount, setExpectedLineCount] = useState("");
   const [documentIntakeReceipt, setDocumentIntakeReceipt] = useState<DocumentIntakeReceipt | null>(
     null,
   );
@@ -416,7 +412,6 @@ export default function FilesPanel({
     setRuns([]);
     setRunsNext(null);
     setProcessing(null);
-    setExpectedLineCount("");
     setDocumentIntakeReceipt(null);
     setDocumentIntakeRevision(null);
     setSourceReviewConfirmed(false);
@@ -596,9 +591,8 @@ export default function FilesPanel({
       if (ticket !== epoch.current) return;
       const data = parseFilePage(current);
       setSelected(data.file);
-      setProcessors([]);
-      setSelectedProcessor("");
-      setExpectedLineCount("");
+      setProcessors(data.processors);
+      setSelectedProcessor(data.processors[0]?.id ?? "");
       setDocumentIntakeReceipt(null);
       setDocumentIntakeRevision(null);
       setSourceReviewConfirmed(false);
@@ -795,10 +789,7 @@ export default function FilesPanel({
     }
     const lines = candidateLines(documentIntakeRevision.candidate);
     const reviewedSourcePages = sourceReviewPages(documentIntakeRevision.candidate);
-    if (
-      lines.length !== documentIntakeRevision.expectedLineCount ||
-      reviewedSourcePages.length === 0
-    ) {
+    if (reviewedSourcePages.length === 0) {
       setError("候選資料缺少完整行數或來源頁，不能確認。");
       return;
     }
@@ -819,7 +810,6 @@ export default function FilesPanel({
           requestId: crypto.randomUUID(),
           intentFingerprint: documentIntakeReceipt.intentFingerprint,
           expectedVersion: documentIntakeRevision.version,
-          expectedLineCount: documentIntakeRevision.expectedLineCount,
           source: documentIntakeRevision.source,
           candidate: documentIntakeRevision.candidate,
           sourceReviewAttestation: {
@@ -865,24 +855,18 @@ export default function FilesPanel({
     }
   }
 
-  function startPurchaseOrderIntake() {
-    if (!view?.canEdit || !selected || pending || busy) return;
-    const lineCount = Number(expectedLineCount);
-    if (!Number.isSafeInteger(lineCount) || lineCount < 1) {
-      setError("請輸入原始採購單標示的正確行數。");
-      return;
-    }
+  function startPurchaseOrderIntake(file = selected) {
+    if (!view?.canEdit || !file || pending || busy) return;
     void intakePurchaseOrder({
       action: "save",
       repositoryId: view.repository.id,
       documentId: crypto.randomUUID(),
       requestId: crypto.randomUUID(),
       expectedVersion: 0,
-      expectedLineCount: lineCount,
       source: {
-        fileId: selected.fileId,
-        fileRevisionId: selected.revisionId,
-        fileSha256: selected.sha256,
+        fileId: file.fileId,
+        fileRevisionId: file.revisionId,
+        fileSha256: file.sha256,
       },
     });
   }
@@ -1078,15 +1062,27 @@ export default function FilesPanel({
           {view?.files.length ? (
             <div className="grid gap-2" aria-label="File List">
               {view.files.map((file) => (
-                <Button
-                  key={file.fileId}
-                  variant="outline"
-                  className="h-auto justify-start whitespace-normal text-left"
-                  disabled={busy || !!pending}
-                  onClick={() => void openFile(file)}
-                >
-                  {file.name} · v{file.version} · {Math.ceil(file.byteLength / 1024)} KB
-                </Button>
+                <div key={file.fileId} className="flex items-center gap-2 rounded-md border p-2">
+                  <Button
+                    variant="ghost"
+                    className="h-auto flex-1 justify-start whitespace-normal text-left"
+                    disabled={busy || !!pending}
+                    onClick={() => void openFile(file)}
+                  >
+                    {file.name} · v{file.version} · {Math.ceil(file.byteLength / 1024)} KB
+                  </Button>
+                  {["application/pdf", "image/png", "image/jpeg", "image/webp"].includes(
+                    file.mediaType,
+                  ) && (
+                    <Button
+                      size="sm"
+                      disabled={!view.canEdit || busy || !!pending}
+                      onClick={() => startPurchaseOrderIntake(file)}
+                    >
+                      建立採購單草稿
+                    </Button>
+                  )}
+                </div>
               ))}
             </div>
           ) : (
@@ -1189,44 +1185,30 @@ export default function FilesPanel({
               )}
               {view?.canEdit && (
                 <>
-                  <div className="grid gap-2 rounded-md border p-3">
-                    <div>
-                      <Label htmlFor="document-line-count">採購單來源行數</Label>
-                      <p className="text-xs text-muted-foreground">
-                        系統會固定使用 ContractDocument 結構化解析；行數只作為完整性核對輸入。
-                      </p>
-                    </div>
-                    <Input
-                      id="document-line-count"
-                      inputMode="numeric"
-                      min={1}
-                      placeholder="例如 54"
-                      value={expectedLineCount}
-                      disabled={busy || !!pending}
-                      onChange={(event) => setExpectedLineCount(event.target.value)}
-                    />
-                    <Button
-                      disabled={busy || !!pending || !expectedLineCount}
-                      onClick={() => startPurchaseOrderIntake()}
-                    >
-                      解析採購單並建立待審草稿
+                  {processors.length === 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      此格式目前只有原始檔保存功能，尚無可用的 Processor。
+                    </p>
+                  )}
+                  {processors.length > 0 && (
+                    <Button disabled={busy || !!pending} onClick={() => run()}>
+                      開始一般檔案預覽
                     </Button>
-                    {pendingDocumentIntake && (
-                      <Button
-                        variant="outline"
-                        disabled={busy || !!pending}
-                        onClick={() => void intakePurchaseOrder(pendingDocumentIntake)}
-                      >
-                        重試原採購單命令
-                      </Button>
-                    )}
-                    {documentIntakeReceipt && (
-                      <p className="text-xs text-muted-foreground">
-                        草稿已保存：Revision v{documentIntakeReceipt.version}
-                        ，下方可直接檢視並確認。
-                      </p>
-                    )}
-                  </div>
+                  )}
+                  {pendingDocumentIntake && (
+                    <Button
+                      variant="outline"
+                      disabled={busy || !!pending}
+                      onClick={() => void intakePurchaseOrder(pendingDocumentIntake)}
+                    >
+                      重試建立採購單草稿
+                    </Button>
+                  )}
+                  {documentIntakeReceipt && (
+                    <p className="text-xs text-muted-foreground">
+                      採購單草稿已保存：Revision v{documentIntakeReceipt.version}。
+                    </p>
+                  )}
                   {documentIntakeRevision && (
                     <div className="grid gap-3 rounded-md border p-3">
                       <div>
@@ -1234,7 +1216,7 @@ export default function FilesPanel({
                         <p className="text-xs text-muted-foreground">
                           {documentIntakeRevision.state === "CONFIRMED"
                             ? "此版本已由 Contract 明確確認。"
-                            : `候選 v${documentIntakeRevision.version} · ${candidateLines(documentIntakeRevision.candidate).length} 行 · 預期 ${documentIntakeRevision.expectedLineCount} 行`}
+                            : `候選 v${documentIntakeRevision.version} · 系統辨識 ${candidateLines(documentIntakeRevision.candidate).length} 筆明細`}
                         </p>
                       </div>
                       {documentIntakeRevision.diagnostics.length > 0 && (

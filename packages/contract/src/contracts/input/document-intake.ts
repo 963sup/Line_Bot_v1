@@ -15,7 +15,6 @@ export type DocumentIntakeInput = Readonly<{
   intentFingerprint: string;
   expectedVersion: number;
   source: DocumentSource;
-  expectedLineCount: number;
   candidate: PurchaseOrderCandidate;
   acknowledgement?: Readonly<{ reason: string }>;
   sourceReviewAttestation?: SourceReviewAttestation;

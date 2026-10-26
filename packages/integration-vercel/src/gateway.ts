@@ -18,7 +18,6 @@ export function createVercelAiGateway(config: { model: string }) {
       bytes: Uint8Array;
       mediaType: string;
       schema: { id: string; version: number; schema: Record<string, unknown> };
-      expectedLineCount: number;
     }) {
       if (!mediaTypes.has(input.mediaType))
         throw new IntelligenceError(415, "Media type is not supported.", "UNSUPPORTED_MEDIA");
@@ -33,7 +32,7 @@ export function createVercelAiGateway(config: { model: string }) {
             content: [
               {
                 type: "text",
-                text: `Schema id ${input.schema.id}, version ${input.schema.version}. Expected line count is ${input.expectedLineCount}; it is a caller assertion, not proof of source completeness.`,
+                text: `Schema id ${input.schema.id}, version ${input.schema.version}. Extract every visible source row and retain its source location.`,
               },
               { type: "file", data: input.bytes, mediaType: input.mediaType },
             ],
