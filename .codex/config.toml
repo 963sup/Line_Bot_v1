@@ -1,0 +1,25 @@
+# Official Codex project configuration.
+# Secrets stay in the environment or Codex-managed authentication.
+
+# Serena project MCP. The devcontainer provisions `serena-agent` with uv.
+[mcp_servers.serena]
+command = "serena"
+args = ["start-mcp-server", "--context", "ide-assistant", "--project", "."]
+startup_timeout_sec = 30
+
+# Context7 hosted MCP. Set CONTEXT7_API_KEY only when the account requires it.
+[mcp_servers.context7]
+url = "https://mcp.context7.com/mcp"
+startup_timeout_sec = 30
+
+# Next.js DevTools MCP uses the workspace-pinned executable.
+[mcp_servers.next-devtools]
+command = "pnpm"
+args = ["exec", "next-devtools-mcp"]
+startup_timeout_sec = 30
+
+# shadcn MCP uses the official CLI through pnpm's ephemeral command surface.
+[mcp_servers.shadcn]
+command = "pnpm"
+args = ["dlx", "shadcn@latest", "mcp"]
+startup_timeout_sec = 30
