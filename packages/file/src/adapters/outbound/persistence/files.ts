@@ -14,10 +14,7 @@ import type {
   FileTransaction,
   FileTransactions,
 } from "../../../contracts/output/files.js";
-import type {
-  FileRevisionQualifier,
-  LegacyProcessingHistory,
-} from "../../../contracts/output/references.js";
+import type { FileRevisionQualifier } from "../../../contracts/output/references.js";
 import { FileError } from "../../../domain/error.js";
 import type { FileRevision, FileUploadIntent } from "../../../domain/file.js";
 import { assertReadable, identifier, scopeId } from "../../../domain/values.js";
@@ -436,36 +433,6 @@ export class PostgresFiles implements FileReads, FileTransactions, FileReclamati
         return work(tx);
       })
       .catch(persistError);
-  }
-}
-
-export class PostgresLegacyProcessingHistory implements LegacyProcessingHistory {
-  constructor(private readonly db: Database = businessDatabase()) {}
-  read(actor: string, repositoryId: string, runId: string, revisionId?: string) {
-    return this.db.transaction(async (sql) => {
-      await repositoryContentScope(sql, actor, { repositoryId });
-      const result = await sql.query(
-        `SELECT revision.* FROM file_processing_runs run JOIN file_processing_revisions revision
-          ON revision.repository_id=run.repository_id AND revision.run_id=run.id
-         WHERE run.repository_id=$1 AND run.id=$2 AND (($3::uuid IS NULL AND revision.id=run.head_revision_id) OR revision.id=$3)`,
-        [repositoryId, runId, revisionId ?? null],
-      );
-      return result.rows[0] ?? null;
-    });
-  }
-  list(actor: string, repositoryId: string, fileId: string, after?: string) {
-    return this.db.transaction(async (sql) => {
-      await repositoryContentScope(sql, actor, { repositoryId });
-      return (
-        await sql.query(
-          `SELECT revision.* FROM file_processing_runs run JOIN file_processing_revisions revision
-            ON revision.repository_id=run.repository_id AND revision.run_id=run.id AND revision.id=run.head_revision_id
-           WHERE run.repository_id=$1 AND run.file_id=$2 AND ($3::uuid IS NULL OR revision.run_id>$3)
-           ORDER BY revision.run_id LIMIT 21`,
-          [repositoryId, fileId, after ?? null],
-        )
-      ).rows;
-    });
   }
 }
 

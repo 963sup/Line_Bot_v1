@@ -9,7 +9,7 @@ Upload → File List → select an immutable File revision → download or let I
 - **Upload** first commits an immutable Repository/actor/request/file/version/size/digest Intent, then uploads private bytes outside DB locks, verifies readback, and atomically finalizes FileRevision/head/receipt. Pending intents are never visible in File List and never start ProcessingRun.
 - **File List** is read-only; viewing a File never starts processing.
 - Processing commands, result history and recovery belong to Intelligence and are dispatched through the `ownerKind=intelligence` application route. File only supplies its authorized exact-revision reader.
-- Historical `file_processing_*` rows and mixed legacy receipts remain retained evidence. They are not writable through the File application and are not migrated or deleted by ordinary schema reconciliation.
+- Historical `file_processing_*` rows and mixed legacy receipts remain retained evidence. They are not writable through the File application; the read-only compatibility adapter is composed by Intelligence and is not part of File's current persistence surface. They are not migrated or deleted by ordinary schema reconciliation.
 
 ## Current supported capability
 
@@ -24,6 +24,12 @@ Original bytes and declared metadata are preserved. Parsing limits, candidate va
 Current active User, effective Repository permission and archive state come from Repository's public transaction-bound scope. File evidence reads require effective read/triage/triage_plus/write/maintain/admin, not visibility alone; File mutation and Intelligence processing mutation require write/maintain/admin.
 
 Original File revisions and Intelligence Processing revisions remain immutable. Durable Upload Intent precedes external Storage I/O; only exact byte/digest readback permits atomic PostgreSQL Finalize. File and Intelligence use separate request receipt namespaces. Storage service-role credential stays server-only and is never authorization. No paths, raw payloads or credentials appear in errors.
+
+The only File → `integration-supabase` production edge is the File-owned Storage adapter
+(`packages/file/src/adapters/outbound/storage/supabase.ts` → `storage-client`). Its consumer is
+File composition; the adapter retains object-key derivation, digest/readback verification and
+provider-error mapping, while `integration-supabase` only constructs the technical client. File
+application/domain code consumes `FileObjectStore` and has no Supabase SDK dependency.
 
 Historical saved-result readers are retained only for legacy records. Current Contract intake uses Intelligence's target-intake capability; Contract validates and stores its own complete candidate and confirmation. Content expansion is a separate whole-document command against an exact confirmed Contract revision.
 

@@ -2,7 +2,6 @@ import type { Database, Sql } from "@line_bot_v1/platform/postgres";
 import { filePayloadInspector } from "../../adapters/outbound/binary/payloads.js";
 import {
   PostgresFiles,
-  PostgresLegacyProcessingHistory,
   createPostgresFileRevisionQualifier as postgresRevisionQualifier,
 } from "../../adapters/outbound/persistence/files.js";
 import { supabaseFileObjects } from "../../adapters/outbound/storage/supabase.js";
@@ -14,11 +13,7 @@ import type {
   FileTransactions,
 } from "../../contracts/output/files.js";
 import type { FileObjectRemoval, FileObjectStore } from "../../contracts/output/object-store.js";
-import type {
-  FileRevisionQualifier,
-  FileSourceReader,
-  LegacyProcessingHistory,
-} from "../../contracts/output/references.js";
+import type { FileRevisionQualifier, FileSourceReader } from "../../contracts/output/references.js";
 
 /** One technical provider, initialized only when the requested operation requires bytes. */
 function lazyPrivateObjects() {
@@ -75,8 +70,4 @@ export function createPostgresFileSourceReader(
 
 export function createPostgresFileRevisionQualifier(sql: Sql): FileRevisionQualifier {
   return postgresRevisionQualifier(sql);
-}
-
-export function createPostgresLegacyProcessingHistory(db?: Database): LegacyProcessingHistory {
-  return new PostgresLegacyProcessingHistory(db);
 }

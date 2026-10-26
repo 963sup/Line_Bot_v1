@@ -5,12 +5,12 @@ import { createFiles } from "@line_bot_v1/file/application/use-cases/files";
 import {
   createPostgresFileDependencies,
   createPostgresFileRevisionQualifier,
-  createPostgresLegacyProcessingHistory,
 } from "@line_bot_v1/file/composition/bootstrap/files";
 import type { FileRevision } from "@line_bot_v1/file/domain/file";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { createPostgresDocumentAttempts } from "../src/adapters/outbound/persistence/document-attempts.js";
+import { PostgresLegacyProcessingHistory } from "../src/adapters/outbound/persistence/legacy-processing.js";
 import { PostgresIntelligenceProcessing } from "../src/adapters/outbound/persistence/processing.js";
 import { DocumentAttemptError } from "../src/contracts/output/document-attempts.js";
 
@@ -188,7 +188,7 @@ test("Intelligence is the authorized read owner of immutable legacy processing h
   const store = new PostgresIntelligenceProcessing(
     createPostgresFileRevisionQualifier,
     db,
-    createPostgresLegacyProcessingHistory(db),
+    new PostgresLegacyProcessingHistory(db),
   );
   const read = await store.read("owner", "repo", runId);
   assert.equal(read?.id, revisionId);

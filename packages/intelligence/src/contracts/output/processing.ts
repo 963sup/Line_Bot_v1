@@ -45,3 +45,19 @@ export interface IntelligenceProcessingStore {
     work: (transaction: ProcessingTransaction) => Promise<ProcessingRevision>,
   ): Promise<ProcessingRevision>;
 }
+
+/** Read-only compatibility access owned by Intelligence during legacy cutover. */
+export interface LegacyProcessingHistory {
+  read(
+    actor: string,
+    repositoryId: string,
+    runId: string,
+    revisionId?: string,
+  ): Promise<Readonly<Record<string, unknown>> | null>;
+  list(
+    actor: string,
+    repositoryId: string,
+    fileId: string,
+    after?: string,
+  ): Promise<readonly Readonly<Record<string, unknown>>[]>;
+}

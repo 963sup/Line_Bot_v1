@@ -32,7 +32,7 @@ The existing processor identity remains `observations-v1:<model>`. Contract inta
 
 ## Processing retirement
 
-New runs, result finalization, history reads and command receipts are Intelligence-owned. Each run pins one immutable File revision and SHA-256. Save/Discard append revisions; exact request replay returns its original receipt and never repeats provider I/O. Historical `file_processing_*` rows remain read-only during cutover; do not drop them or move `file_commands` wholesale because that table also records File commands. A separate retention/migration operation must verify exact counts and receipts before legacy rows can be retired.
+New runs, result finalization, history reads and command receipts are Intelligence-owned. Each run pins one immutable File revision and SHA-256. Save/Discard append revisions; exact request replay returns its original receipt and never repeats provider I/O. Historical `file_processing_*` rows remain read-only during cutover and are read through Intelligence's compatibility adapter; do not drop them or move `file_commands` wholesale because that table also records File commands. A separate retention/migration operation must verify exact counts and receipts before legacy rows can be retired.
 
 ## Deferred work
 
