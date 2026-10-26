@@ -140,15 +140,21 @@ test("Intelligence is the authorized read owner of immutable legacy processing h
   const initialRevisionId = randomUUID();
   const revisionId = randomUUID();
   const attemptId = randomUUID();
-  await db.transaction(async (sql) => {
-    await sql.query(
-      `INSERT INTO intelligence_legacy_processing_runs(id,repository_id,file_id,file_revision_id,version,head_revision_id)
-       VALUES($1,'repo',$2,$3,2,$4)`,
-      [runId, pinned.fileId, pinned.fileRevisionId, revisionId],
+  const cutoverId = randomUUID();
+  await pg.transaction(async (tx) => {
+    await tx.query(
+      `INSERT INTO intelligence_processing_history_cutovers(id,release_revision,at,runs_count,revisions_count,receipts_count,runs_sha256,revisions_sha256,receipts_sha256)
+       VALUES($1,$2,1,1,2,0,$3,$4,$5)`,
+      [cutoverId, "0".repeat(40), "1".repeat(64), "2".repeat(64), "3".repeat(64)],
     );
-    await sql.query(
-      `INSERT INTO intelligence_legacy_processing_revisions(id,run_id,repository_id,file_id,file_revision_id,file_sha256,version,parent_revision_id,actor_user_id,at,state,attempt_id,processor_id,processor_version,processor_kind,raw_result,saved_result,edits,failure)
-       VALUES($1,$2,'repo',$3,$4,$5,1,NULL,'owner',1,'RUNNING',$6,'legacy-parser','v1','parser',NULL,NULL,'[]'::jsonb,NULL)`,
+    await tx.query(
+      `INSERT INTO intelligence_legacy_processing_runs(id,repository_id,file_id,file_revision_id,version,head_revision_id,cutover_id)
+       VALUES($1,'repo',$2,$3,2,$4,$5)`,
+      [runId, pinned.fileId, pinned.fileRevisionId, revisionId, cutoverId],
+    );
+    await tx.query(
+      `INSERT INTO intelligence_legacy_processing_revisions(id,run_id,repository_id,file_id,file_revision_id,file_sha256,version,parent_revision_id,actor_user_id,at,state,attempt_id,processor_id,processor_version,processor_kind,raw_result,saved_result,edits,failure,cutover_id)
+       VALUES($1,$2,'repo',$3,$4,$5,1,NULL,'owner',1,'RUNNING',$6,'legacy-parser','v1','parser',NULL,NULL,'[]'::jsonb,NULL,$7)`,
       [
         initialRevisionId,
         runId,
@@ -156,11 +162,12 @@ test("Intelligence is the authorized read owner of immutable legacy processing h
         pinned.fileRevisionId,
         pinned.fileSha256,
         attemptId,
+        cutoverId,
       ],
     );
-    await sql.query(
-      `INSERT INTO intelligence_legacy_processing_revisions(id,run_id,repository_id,file_id,file_revision_id,file_sha256,version,parent_revision_id,actor_user_id,at,state,attempt_id,processor_id,processor_version,processor_kind,raw_result,saved_result,edits,failure)
-       VALUES($1,$2,'repo',$3,$4,$5,2,$6,'owner',2,'SAVED',$7,'legacy-parser','v1','parser',$8::jsonb,$9::jsonb,'[]'::jsonb,NULL)`,
+    await tx.query(
+      `INSERT INTO intelligence_legacy_processing_revisions(id,run_id,repository_id,file_id,file_revision_id,file_sha256,version,parent_revision_id,actor_user_id,at,state,attempt_id,processor_id,processor_version,processor_kind,raw_result,saved_result,edits,failure,cutover_id)
+       VALUES($1,$2,'repo',$3,$4,$5,2,$6,'owner',2,'SAVED',$7,'legacy-parser','v1','parser',$8::jsonb,$9::jsonb,'[]'::jsonb,NULL,$10)`,
       [
         revisionId,
         runId,
@@ -181,6 +188,7 @@ test("Intelligence is the authorized read owner of immutable legacy processing h
             { id: "line-1", label: "Source line", value: "retained", uncertain: false },
           ],
         }),
+        cutoverId,
       ],
     );
   });

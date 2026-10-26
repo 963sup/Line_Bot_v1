@@ -243,7 +243,10 @@ test("Published Content imports retain source coverage after edits", () => {
       nodes: imported.document.nodes.filter((node) => node.id !== taskId),
     },
   };
-  assert.throws(() => assertContentImportCoverage([candidate, imported]), /imported source node/i);
+  assert.throws(
+    () => assertContentImportCoverage([candidate, imported]),
+    /outside the imported revision/i,
+  );
 
   const evidence = imported.contentImport;
   assert.ok(evidence);

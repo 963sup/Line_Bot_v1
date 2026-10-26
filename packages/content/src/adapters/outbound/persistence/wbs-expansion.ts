@@ -44,13 +44,14 @@ export function assertCurrentSourceCoverage(
       nodeIds: [...row.nodeIds].sort(),
     });
     const previousDefinition = sourceDefinitions.get(sourceKey);
-    if (previousDefinition !== undefined && previousDefinition !== definition)
+    if (previousDefinition !== undefined)
       throw new ContentError(
         503,
-        "Content source coverage contains contradictory source evidence.",
+        previousDefinition === definition
+          ? "Content source coverage contains duplicate source evidence."
+          : "Content source coverage contains contradictory source evidence.",
         "UNAVAILABLE",
       );
-    if (previousDefinition !== undefined) continue;
     sourceDefinitions.set(sourceKey, definition);
     if (row.disposition === "COMMERCIAL_ONLY" && row.nodeIds.length > 0)
       throw new ContentError(
