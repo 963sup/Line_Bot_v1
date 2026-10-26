@@ -4,6 +4,7 @@ Status: PROPOSED。上一階段：[Step 7](./platform-integration-root-migration
 
 ## 先驗收再刪除
 1. **來源證據**：所有 root tracked files 在 Step 1 manifest 有 MOVE/UPDATE/DELETE 決策；SQL 有序清單與 SHA 完全吻合；原 native bucket manifest 在新路徑 **唯一**；原 AI provider runtime consumer 已遷到公開 workspace export。
+   **SQL 紅線：** 搬移前 109 份 `.sql` 的「每個檔名／原始 bytes SHA-256／載入順序」與搬移後一一對應；以原 Git tree 的完整 SQL 路徑清單與新 package 路徑清單做集合相等驗證，並檢查原/new declarative DDL/RLS/grants projections 一致。不得以「部分 SQL 可編譯」或「schema:check 綠燈」單獨取代 109/109 完整搬移驗收。
 2. **代碼驗證**：執行 `pnpm install --frozen-lockfile`、`pnpm lint`、`pnpm tooling:check`、`pnpm architecture`、`pnpm typecheck`、`pnpm test`、`pnpm build`、`pnpm schema:check`、`pnpm docs:check`、`pnpm deadcode` 或當前 CI canonical aggregate（以專案既有指令為權威）。必須保留失敗清單及修正證據，不替換為 weaker smoke。
 3. **Vercel**：同一 PR SHA Preview READY、filtered source 上傳/Next build/route resolution、Assistant/Expense/File 的 mock provider smoke；不能只接受 CI full checkout。**Production alias 不自動搬動**。
 4. **Supabase**：原生 CLI workdir 下 local schema rebuild 對應 SQL 和 RLS、Storage readback、remote `plan/verify` 只讀。危險操作僅保留 main 的現行 GitHub Release 授權，不在本 PR 執行 `sync`／remote mutation。

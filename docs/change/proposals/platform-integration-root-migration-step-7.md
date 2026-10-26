@@ -14,6 +14,7 @@ Status: PROPOSED。上一階段：[Step 6](./platform-integration-root-migration
 | Application / operators | `apps/web/src/app/api/_composition/*`、`scripts/intelligence/run.mjs`、File/Expense/Assistant/Intelligence 專用進入點 |
 | Package metadata | `package.json`、workspace manifests/lockfile、`exports`、tsconfig、Turbo graph、Node scripts build-before-run、`.vercelignore` |
 | Schema platform | `scripts/supabase/*`、`supabase` CLI workdir、schema planner/checker/SQL test fixtures、Storage Bucket exact readback |
+| **109 份根部 SQL** | **全部**將 `supabase/schemas/<name>.sql` 映射成 `packages/integration-supabase/supabase/schemas/<name>.sql`；逐檔核對 `architecture/data-topology.json#files[]`、schema loader/SQL glob、SQL ordering、DDL、functions、RLS、GRANT 與測試路徑；任何遺漏或重複皆 fail-closed |
 | Architecture | `architecture/implementation-topology.json`、`semantic-model.json`、`data-topology.json`、可能受影響的 locators / relations；執行 `pnpm semantic package-docs` 產生 canonical projections |
 | Docs / protection | `packages/*/AGENTS.md` / `SEMANTICS.md`、`docs/owners`、`docs/reference/platform/*`、Release/Recovery docs、`.github/workflows/*`、ignore 規則、deployment tests |
 | Historical evidence | 過去 commit/PR/記錄的舊路徑只可作**歷史證據**，不得被執行期查詢或舊 README 鏈結誤當 current truth |

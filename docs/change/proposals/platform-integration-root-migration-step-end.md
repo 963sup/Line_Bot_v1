@@ -8,8 +8,9 @@ Status: PROPOSED ACCEPTANCE CONTRACT；此處是**未來 cutover 的驗收條件
 | --- | --- |
 | **唯一平台模組** | `packages/integration-vercel`、`packages/integration-supabase` 各有明確 package exports、依賴圖、owner contracts、測試 |
 | **根部完全退場** | tracked root `vercel/` 和 root `supabase/` **不存在**；原每個 tracked file 已搬移或依 consumer 證據移除 |
+| **Schema 相依全部切換** | `supabase/config.toml`、109 份 `.sql`、Schema scope 文件與其他 Supabase 原生受追蹤檔已逐一處理；CLI workdir、schema loader、CI/release、`architecture/data-topology.json#schemaRoot/files[]` 均改為新的唯一檔案位置 |
 | **原生工具位置合法** | `packages/integration-supabase/supabase/config.toml` 可由 CLI `--workdir packages/integration-supabase` 探索；schemaPaths、新路徑/Storage desired state 一致 |
-| **權威 SQL 只剩一套** | 原 109 executable SQL schema 的 source identity、ordered hashes、DDL/RLS/grants 語意不變；`architecture/data-topology.json` 精確對新 canonical SQL 檔映射 |
+| **109 份根部 `.sql` 完整遷移** | 原 `supabase/schemas/` 全 109 份 executable SQL 必須逐檔（同檔名、同 bytes SHA-256、同順序）移入 `packages/integration-supabase/supabase/schemas/`；每個舊 `files[].path` 對應新唯一位置、DDL/RLS/grants 不變，零遺漏、零重複、零根部 `.sql`。若 base SQL 數量變更，按最新盤點全量驗收，不以 109 作硬上限。 |
 | **零 stale active refs** | application、scripts、CI、package metadata、architecture、current docs、test guards 無舊根部 provider 路徑 import／execute；無 symlink、shadow copy、fallback |
 | **行為等價** | Web/LINE、Assistant、Expense、File、Intelligence Intake → Contract DRAFT、Storage、SQL 語意與安全負例都通過；AI 仍是 untrusted extraction |
 | **發布安全** | `pnpm` frozen lockfile、全部 required GitHub CI、Vercel exact SHA Preview、Supabase local/read-only checks 綠燈；正式 main Release gate 不變 |
