@@ -1,6 +1,6 @@
 # Validation
 Repository validation 使用既有 scripts 作單一入口；不要把 typecheck、test、build、deployment、API probe 或手機驗收混成同一種證據。
-`tooling:check` 與 `docs:check` 只檢查專案自有內容。`.agents/skills/` 是由 `npx skills` 與 `skills-lock.json` 管理的第三方套件，其編碼、metadata、範例與內部文件連結不套用專案內容規則；`.agents/AGENTS.md` 等專案治理文件仍須通過檢查。此邊界不代表外部技能已通過安全審查或可正常執行。
+`docs:check` 只檢查專案自有內容。`.agents/skills/` 是由 `npx skills` 與 `skills-lock.json` 管理的第三方套件，其編碼、metadata、範例與內部文件連結不套用專案內容規則；`.agents/AGENTS.md` 等專案治理文件仍須通過檢查。此邊界不代表外部技能已通過安全審查或可正常執行。
 
 ## Main commands
 | Command | Responsibility |
@@ -14,8 +14,6 @@ Repository validation 使用既有 scripts 作單一入口；不要把 typecheck
 | `typecheck` | TypeScript contract |
 | `test` | 適用 unit/integration/runtime tests |
 | `build` | production build / framework compile |
-| `tooling:check` | scripts、repository-owned AGENTS hierarchy、TOML、tooling metadata 與 GitHub workflow least-privilege / publication-order guard |
-| `tooling:rules` | 需要既有 `CODEX_CLI` 的 Codex execpolicy semantic check；不納入一般 offline CI，也不執行被描述的業務操作 |
 | `check` | 日常 fast feedback，含 lint、architecture 與 affected type/test |
 | `validate` | 明確要求時的完整 tooling/docs/lint/architecture/deadcode/type/test/build |
 
@@ -23,7 +21,7 @@ Repository validation 使用既有 scripts 作單一入口；不要把 typecheck
 
 Biome 同時涵蓋 `knip.jsonc` 與 `architecture/**/*.json`，React Hooks 的呼叫位置與 effect dependencies 也納入 correctness gate。Knip 對 private workspace package 的 entry exports 檢查實際 repository consumer；未使用 export 應先區分內部宣告、必要公開契約與真正死碼，再收斂 public surface。
 ## Fast vs full validation
-`check` 先依 Git 變更責任分流：純 Markdown 只跑 `docs:check`，所有 `AGENTS.md` 視為 tooling metadata 並額外跑 `tooling:check`，純 declarative schema 只跑 `schema:check`；產品／runtime source 進 Biome lint、architecture、Knip deadcode 與 Turbo affected type/test。Knip config／editor tooling 變更也會觸發對應 tooling/deadcode gate。無法可靠判斷範圍時保守退回完整 fast gates。root config / shared dependency 改動可擴張到整個 workspace；手動 filter 必須涵蓋所有 consumer，不以縮小 filter 隱藏跨 package failure。
+`check` 先依 Git 變更責任分流：純 Markdown 只跑 `docs:check`，純 declarative schema 只跑 `schema:check`；產品／runtime source 進 Biome lint、architecture、Knip deadcode 與 Turbo affected type/test。無法可靠判斷範圍時保守退回完整 fast gates。root config / shared dependency 改動可擴張到整個 workspace；手動 filter 必須涵蓋所有 consumer，不以縮小 filter 隱藏跨 package failure。
 
 GitHub Draft pull request 代表 active iteration，validation jobs 會 skip，避免每次 checkpoint push 都配置 hosted runner。PR 不是 Draft 時，`opened`、`synchronize`、`reopened`、`ready_for_review` 事件都會對該事件的 exact head，以 PR base SHA 做比較，選擇受影響 Owner 的 groups 與 Turbo transitive consumers；不重複跑無關 Owner。push 到 `main` 也使用前一個 main SHA 的同一選擇器，而不是切換成全量 matrix。差異基準遺失、無法讀取或不可信時，選擇器保守回退所有 groups。Merge candidate 必須以目前 head 的 aggregate `validate` 成功為證據；head 或 base 改變後，舊證據不再適用。checkout 保留完整 Git history 供 Turbo 判斷 changed packages 與 transitive consumers；不在 workflow 手工維護 package path matrix。Aggregate gate 只接受所有已選 group success，planner 或 group 失敗、取消或跳過均不得發布。同 branch 被取代的驗證可取消，外部發布不取消。需要全庫稽核時，`pnpm validate` 保留完整順序執行，避免同目錄 Next.js 產物競爭。
 
@@ -41,11 +39,11 @@ Full `validate` 可以驗 remote tooling contract tests，但不會 mutation Pro
 - Vercel／LINE／provider／device evidence各自只證明自己的 external boundary。
 ## TypeScript safety
 
-TypeScript 的共用編譯契約由 `tsconfig.base.json` 擁有，workspace source 與 test config 必須繼承五項安全設定；`tooling:check` 解析實際繼承結果，拒絕子設定關閉它們。此共用檔也納入 Turbo `globalDependencies`，避免設定改變後仍重播舊的成功快取。
+TypeScript 的共用編譯契約由 `tsconfig.base.json` 擁有，workspace source 與 test config 必須繼承五項安全設定。此共用檔也納入 Turbo `globalDependencies`，避免設定改變後仍重播舊的成功快取。
 
 `biome.json` 將 explicit `any`、`@ts-ignore`、非空斷言 `!`、`enum` 與 `namespace` 設為 error，經 `lint`、`check` 與 `validate` 被動阻擋。外部輸入先用 `unknown` 再驗證，nullable / indexed value 用控制流程收窄；optional property 沒有值時省略，只有契約真的接受明確 `undefined` 才標示它。有限集合使用 literal union 或 `as const`，模組使用 ESM。一般 `as` 斷言仍可能出現在驗證過的 adapter 邊界，這些靜態規則不證明外部資料有效，也不保證完全不存在型別逃生口。
 
-防止型別漂移的目標是讓資料與契約改變時，編譯器或邊界驗證能指出失配，而不是單純減少某個關鍵字。另啟用 `noEvolvingTypes`、`noImplicitAnyLet`、`noBannedTypes`、`noUnsafeOptionalChaining`、`noUnsafeDeclarationMerging` 與 `useAsConstAssertion` 為 error；`tooling:check` 拒絕將這些規則降為 warning。
+防止型別漂移的目標是讓資料與契約改變時，編譯器或邊界驗證能指出失配，而不是單純減少某個關鍵字。另啟用 `noEvolvingTypes`、`noImplicitAnyLet`、`noBannedTypes`、`noUnsafeOptionalChaining`、`noUnsafeDeclarationMerging` 與 `useAsConstAssertion` 為 error。
 
 `noEvolvingTypes` 是明確的 repository policy 選擇：TypeScript strict 下的 evolving inference 本身可以合法且安全，但這裡對未初始化暫存變數要求明確契約，避免後續 assignment 靜默擴大型別。這不代表一般型別推導都應改成註記；`noImplicitAnyLet` 另外補上讀取未初始化變數的逃生口。
 
@@ -62,7 +60,7 @@ TypeScript 的共用編譯契約由 `tsconfig.base.json` 擁有，workspace sour
 | SQL driver 的未驗證 row 型別 | 對照 SQL projection／schema，在 owner adapter mapping | TypeScript 不會驗證 SQL；泛型 query 也不等於資料驗證 |
 | 未處理 Promise／union 新增分支 | 由 owner 確認 await、錯誤處理及 exhaustive decision | 保留 TypeScript／測試；需先驗證型別 lint 的偵測限制 |
 
-全庫啟用 nursery `noUnsafeTypeAssertion` 為 error，保留 `as const`，禁止其他型別斷言。資料庫透過 `Sql.query(text, values, decodeRow)` 在各 Owner adapter 驗證 projection；無 decoder 的查詢只回傳 unknown-valued row，不能以泛型宣稱資料已驗證。HTTP、JSONB、storage 與 SDK 邊界使用真實 narrowing 或重建已驗證資料，不得改成說謊的 type predicate。Web tests 也納入 TypeScript 檢查，測試 fake 必須符合正式契約。Biome 尚未涵蓋宣告上的 definite assignment `!`，由現有 `tooling:check` AST 檢查補足，要求明確初始化。
+全庫啟用 nursery `noUnsafeTypeAssertion` 為 error，保留 `as const`，禁止其他型別斷言。資料庫透過 `Sql.query(text, values, decodeRow)` 在各 Owner adapter 驗證 projection；無 decoder 的查詢只回傳 unknown-valued row，不能以泛型宣稱資料已驗證。HTTP、JSONB、storage 與 SDK 邊界使用真實 narrowing 或重建已驗證資料，不得改成說謊的 type predicate。Web tests 也納入 TypeScript 檢查，測試 fake 必須符合正式契約。Biome 尚未涵蓋宣告上的 definite assignment `!`，由 TypeScript 與測試契約補足，要求明確初始化。
 
 不直接啟用 `noMisusedPromises`：對 `Map.get()` 取得 `Promise | undefined` 後檢查是否已有進行中請求，必須保留存在檢查，不能自動改成 await。`noFloatingPromises`／`useExhaustiveSwitchCases` 可在獨立變更中評估；新增規則前先用固定版本實測，再補對應 regression fixture，不加 ignore 或引進第二套重複 linter。
 

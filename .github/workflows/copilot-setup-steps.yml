@@ -5,7 +5,6 @@ on:
   push:
     paths:
       - .github/workflows/copilot-setup-steps.yml
-      - .codex/config.toml
       - .devcontainer/devcontainer.json
       - .node-version
       - package.json
@@ -13,7 +12,6 @@ on:
   pull_request:
     paths:
       - .github/workflows/copilot-setup-steps.yml
-      - .codex/config.toml
       - .devcontainer/devcontainer.json
       - .node-version
       - package.json
@@ -58,5 +56,3 @@ jobs:
             copilot-${{ runner.os }}-${{ runner.arch }}-
       - name: Install workspace dependencies
         run: pnpm install --frozen-lockfile --prefer-offline
-      - name: Verify development tooling
-        run: pnpm tooling:doctor

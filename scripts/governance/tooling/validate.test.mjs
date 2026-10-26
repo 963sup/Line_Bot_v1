@@ -257,7 +257,6 @@ test("documentation-only changes run only documentation-owned fast gates", () =>
     toolingAffected: false,
   });
   for (const task of ["docs:test", "docs:check"]) assert.equal(shouldRunFast(task, scope), true);
-  assert.equal(shouldRunFast("tooling:check", scope), false);
 });
 
 test("source operations trigger their tooling tests in fast validation and keep all CI groups", () => {
@@ -271,7 +270,6 @@ test("source operations trigger their tooling tests in fast validation and keep 
   ]) {
     const scope = classifyChangedFiles([path]);
     assert.equal(scope.toolingAffected, true, path);
-    assert.equal(shouldRunFast("tooling:check", scope), true, path);
     assert.equal(shouldRunFast("tooling:test", scope), true, path);
     assert.equal(shouldRunFast("change:test", scope), true, path);
   }
@@ -451,7 +449,6 @@ test("GitHub operation changes run owner-local GitHub tests and tooling boundary
     toolingAffected: true,
   });
   assert.equal(shouldRunFast("github:test", scope), true);
-  assert.equal(shouldRunFast("tooling:check", scope), true);
 });
 
 test("Attendance scheduler changes run the owner-local scheduler tests", () => {
@@ -468,7 +465,6 @@ test("Vercel production adapter changes run the tooling-owned deployment tests",
     schemaAffected: false,
     toolingAffected: true,
   });
-  assert.equal(shouldRunFast("tooling:check", scope), true);
 });
 
 test("WBS operator changes run its canonical tooling test stage in full and fast validation", (t) => {
@@ -520,7 +516,6 @@ test("WBS operator changes run its canonical tooling test stage in full and fast
   assert.equal(toolingTests.length, 1);
   assert.deepEqual(toolingTests[0], [
     "--test",
-    "scripts/governance/tooling/doctor.test.mjs",
     "scripts/operations/wbs/transfer.test.mjs",
     "scripts/analysis/code/*.test.mjs",
     "scripts/core/runtime/validation-command.test.mjs",
@@ -575,7 +570,6 @@ test("Knip configuration changes run formatting and reachability checks", () => 
   const scope = classifyChangedFiles(["knip.jsonc"]);
   assert.equal(shouldRunFast("lint", scope), true);
   assert.equal(shouldRunFast("deadcode", scope), true);
-  assert.equal(shouldRunFast("tooling:check", scope), true);
 });
 
 test("CI groups partition validation and reject unknown or unassigned stages", () => {

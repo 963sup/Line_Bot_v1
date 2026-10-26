@@ -32,7 +32,7 @@ scripts own tested operation behaviour.
 
 - 一般 command 從 repository root 執行；完整 merge validation 使用 `pnpm validate`。
 - Read-only validation、live probe、local mutation、remote mutation 的 evidence 分開。
-- `scripts/README.md` 與 `scripts/AGENTS.md` 是 scripts 唯一的文件入口；子目錄不得放置 `README.md` 或 `AGENTS.md`。`tooling:check` 會驗證此 invariant。
+- `scripts/README.md` 與 `scripts/AGENTS.md` 是 scripts 唯一的文件入口；子目錄不得放置 `README.md` 或 `AGENTS.md`。
 - 外部 provider mutation 必須 explicit authorization + exact target + bounded failure + post-write readback。
 - 修改 script 時同步更新 command surface、測試、validation routing、workflow 與根層 scripts 文件。
 
@@ -44,13 +44,11 @@ scripts own tested operation behaviour.
 | `changes/` | Change status/preflight/finalize and deterministic patch application. |
 | `operations/` | Attendance, actions, contract, execution, file, intelligence, project, WBS and wiki entrypoints. |
 | `providers/` | Browser scenarios, GitHub routing/readback, LINE, probes, Supabase and Vercel adapters. |
-| `governance/` | Documentation validation, toolchain governance, developer doctor and validation orchestration. |
+    | `governance/` | Documentation validation, toolchain governance and validation orchestration. |
 
 ## 高頻開發入口
 
 ```text
-pnpm tooling:doctor
-pnpm skills:list
 pnpm code --help
 pnpm code facts --scope packages/repository/src
 pnpm change:status

@@ -140,9 +140,6 @@ importers:
       '@line_bot_v1/wiki':
         specifier: workspace:*
         version: link:packages/wiki
-      '@modelcontextprotocol/sdk':
-        specifier: 1.32.1
-        version: 1.32.1(supports-color@8.1.1)(zod@4.5.4)
       dependency-cruiser:
         specifier: 'catalog:'
         version: 18.2.0

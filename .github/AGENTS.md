@@ -31,4 +31,4 @@ YAML calls canonical package commands; no parsing, provider SQL, recovery algori
 
 Validation is secret-free and read-only. External credentials belong only to their consuming step; checkout does not persist credentials. Serialize writes to the same remote resource, not the entire Release workflow. Keep target, transaction, readback and failure checks; workflow success is not device acceptance.
 
-Run `tooling:check`, affected owner tests and repository checks. Tooling validates wiring and security boundaries; owner tests validate operation behavior. Contracts: [Release](../docs/reference/operations/release.md).
+Run affected owner tests and repository checks. Contracts: [Release](../docs/reference/operations/release.md).

@@ -2,17 +2,11 @@
 
 ## Codex project development
 
-共用工作契約由 repository AGENTS 維護，本文件擁有其操作程序；Codex config/rules/agents/skills 是工程工具設定，不是產品契約，也不證明目前工作階段已載入。
-
-## Project configuration
-
-- `.codex/config.toml`：專案 Codex 設定；agent concurrency 是上限，不是每次都要委派。
-- `.codex/agents/`：專案角色責任；當前工具權限與使用者指示優先。
-- `.codex/rules/default.rules`：只約束列出的 command patterns；不能取代 GitHub/Supabase/LINE 等實際平台授權。
+共用工作契約由 repository AGENTS 維護，本文件擁有其操作程序；Codex 使用官方 OpenAI 設定與目前 session 可用的工具，不把 repository 內的自製 config、rules 或 agent catalog 當成產品契約。
 
 ## Skill selection and compatibility
 
-Repository-installed third-party Skills are optional task methods, not product authority or executable permission. Discover them via `pnpm skills:list [query]` and read only the chosen `.agents/skills/<name>/SKILL.md` plus references needed for the current decision. Selection is `Task → Owner/Truth/Boundary → one applicable method → authorized tool → evidence`; do not preload all Skills, duplicate project invariants inside an external Skill, or install another Skill merely because its title resembles a project responsibility.
+Repository-installed third-party Skills are optional task methods, not product authority or executable permission. Read only the chosen `.agents/skills/<name>/SKILL.md` plus references needed for the current decision. Selection is `Task → Owner/Truth/Boundary → one applicable method → authorized tool → evidence`; do not preload all Skills, duplicate project invariants inside an external Skill, or install another Skill merely because its title resembles a project responsibility.
 
 - **Instruction priority:** root and nearest `AGENTS.md`, canonical contracts and current source take precedence over third-party Skill examples. In particular, generic `npx skills add/update` advice from `find-skills` is *not* permission to bypass [Skills management](../../../.agents/AGENTS.md). Only the project's pinned/trusted Skills CLI may install, update or remove an entry, and it must keep `skills-lock.json` synchronized; do not hand-edit `.agents/skills/` or its lockfile.
 - **Compatibility gate:** before using an external Skill, verify that its referenced local files exist, any required executables/subagents/browser or provider connection are actually available in this session, and all proposed writes fit the task/target authorization. Missing references or unsupported execution steps are an incomplete capability, not instructions to guess a replacement or claim execution; report the precise gap, and switch to an independently verified existing method when possible.
@@ -27,7 +21,7 @@ Agent 修改前仍須按 repository source priority 檢查 code / manifest / sch
 
 每個任務以一個可驗收結果為單位，從 repository root 工作；依任務使用必要工具，不為完成清單而讀全庫或執行無關程序。
 
-開始時先選擇下方適用的工具，並依 [autonomous delegation](../../../.codex/agents/AGENTS.md#autonomous-delegation) 決定 Primary 直接處理或委派；已有任務授權就直接執行。只在有助於確認 scope、未知數或責任時，以簡短進度說明選擇，不新增逐次核准或任務紀錄。
+開始時先選擇下方適用的工具；已有任務授權就直接執行。只在有助於確認 scope、未知數或責任時，以簡短進度說明選擇，不新增逐次核准或任務紀錄。
 
 1. **目標與不變條件**：確認可觀察結果、允許／排除範圍、Owner、consumer 與完成標準，保留現有 WIP。
 2. **Owner／契約**：先判定主要 Owner 與跨 Owner 影響是否已釐清。未知 Owner、語意歧義或跨 Owner 的 capability／public contract／資料／授權影響未釐清時，先用 `pnpm semantic plan "<intent>"`，需要具體 authority selectors 再用 `context`；已知且限於單一 Owner 時直接讀其契約、public exports、source/tests 與 nearest AGENTS。歧義先定位，不當成修改授權。
@@ -39,7 +33,7 @@ Agent 修改前仍須按 repository source priority 檢查 code / manifest / sch
 8. **Exact-head 驗證**：整理 logical commits、push 並建立／更新 PR，明確 fetch main、同步 base；PR 與 main 對 exact head 使用同一 changed-owner selection contract，基準遺失時保守展開全部 groups。`pnpm validate` 保留給明確要求的全庫稽核，不能把未選 Owner 的重跑當作較強的必要證據，並拒絕驗證期間 branch/HEAD/base/upstream 變動。
 9. **PR → main**：確認本地、remote branch、PR head 與 CI aggregate `validate` 是相同 SHA；合併前重新確認遠端 base，前進就同步並重驗。按下方 merge 契約交付，讀回 PR merged 狀態與 main commit。明示的唯讀、push-only 或其他交付限制優先。
 
-工具介面與例子見 [source operations](../../../scripts/README.md)。`pnpm code` 只查詢／產生計畫；在其批次計畫流程內，來源寫入仍由 [patch application](../../../scripts/README.md) 擁有。結構已知的單一 symbol 編輯可依 `.codex/SERENA.md` 使用 Serena；規則／計畫放忽略的 `.artifacts/`，不新增每次任務的永久紀錄。每個寫入面由一位負責者處理；只有獨立 scope 或唯讀分析才並行，需要隔離時使用 worktree。
+工具介面與例子見 [source operations](../../../scripts/README.md)。`pnpm code` 只查詢／產生計畫；在其批次計畫流程內，來源寫入仍由 [patch application](../../../scripts/README.md) 擁有。規則／計畫放忽略的 `.artifacts/`，不新增每次任務的永久紀錄。每個寫入面由一位負責者處理；只有獨立 scope 或唯讀分析才並行，需要隔離時使用 worktree。
 
 AGENTS 約束代理行為，CLI 檢查輸入／前置條件，CI 驗證提交結果；三者不互相冒充證據。最終回報 changed behavior/Owner、驗證命令與 SHA、結果及未驗證範圍。開新 Codex 工作階段後，用簡短任務確認能讀到 root AGENTS、本節與工具入口；既有 session 中修改文件或靜態檢查成功不證明新 session 載入。指令探索契約見 [Codex AGENTS](https://learn.chatgpt.com/docs/agent-configuration/agents-md)。
 
@@ -80,7 +74,7 @@ AGENTS 約束代理行為，CLI 檢查輸入／前置條件，CI 驗證提交結
 
 | 證據 | 可以證明 |
 | --- | --- |
-| `tooling:check`、`docs:check`、CLI regression tests、CI | canonical command／instruction wiring 與可執行前置條件、結果契約。 |
+| `docs:check`、CLI regression tests、CI | canonical command／instruction wiring 與可執行前置條件、結果契約。 |
 | 新 session 的指引讀回 | 該次 session 能讀取目前指引；不代表已主動選工具或委派。 |
 | 未提示工具／角色名稱的新 session 任務與實際工具紀錄 | 該次案例是否自行選對工具、保持單一 writer、按需要委派及如實回報 evidence。 |
 
@@ -88,7 +82,7 @@ AGENTS 約束代理行為，CLI 檢查輸入／前置條件，CI 驗證提交結
 
 ## Validation
 
-修改 Codex config、agent、rules、skill metadata 時，使用 repository 現有 tooling checks，包括 `tooling:check`、必要的 `tooling:rules` 與 `docs:check`。
+修改 repository instructions 或 MCP wiring 時，使用適用的 canonical checks 與 `docs:check`。
 
 靜態檔存在或 test case 通過不證明新的 ChatGPT/Codex session 已實際載入；需要時在新 session 讀回當前 config/agents/skills。
 
@@ -96,7 +90,7 @@ AGENTS 約束代理行為，CLI 檢查輸入／前置條件，CI 驗證提交結
 
 ## Next.js and shadcn agent workflow
 
-MCP 接入由 `.codex/config.toml` 擁有；可執行版本由對應 workspace manifest 與 lockfile 擁有。從 repository 根目錄啟動 Codex：Next DevTools 使用根 workspace 的 executable，shadcn 使用 `apps/web` 的 executable 與 `components.json`。安裝使用 `pnpm install --frozen-lockfile`；更新 MCP 時修改真正的 dependency pin 與 lockfile，再驗證，不使用 `dlx @latest` 或機器專屬路徑。
+MCP 接入使用官方 OpenAI/Codex 設定；可執行版本由對應 workspace manifest 與 lockfile 擁有。從 repository 根目錄啟動 Codex：Next DevTools 使用根 workspace 的 executable，shadcn 使用 `apps/web` 的 executable 與 `components.json`。安裝使用 `pnpm install --frozen-lockfile`；更新 MCP 時修改真正的 dependency pin 與 lockfile，再驗證，不使用 `dlx @latest` 或機器專屬路徑。
 
 | 任務 | 先讀／使用 | 接續驗證 |
 | --- | --- | --- |
@@ -104,17 +98,9 @@ MCP 接入由 `.codex/config.toml` 擁有；可執行版本由對應 workspace m
 | Next.js API、route 或 server/client boundary | `apps/web/node_modules/next/dist/docs/` 的版本對應文件；不足時使用 Context7／官方來源並確認版本 | 開發伺服器 MCP 的實際 tools 與 runtime；不以其他版本範例覆蓋本地契約 |
 | 編譯、hydration 或頁面錯誤 | 啟動 `pnpm dev`，從 banner 取得 port；透過 Next DevTools 查詢該 port 的 tools 與 project metadata | 確認 project path 是目前 checkout 的 `apps/web`，再查 errors、compilation issues 與受影響頁面 |
 
-工具名稱以該版本的 `tools/list` 為準；角色選擇與可選的專項開發角色由 [model/role routing](../../../.codex/agents/AGENTS.md) 擁有，依任務載入 skills。MCP auto-approval 集中在 parent config，子代理繼承實際權限；免逐次確認不取代任務的寫入授權。Registry 擴展由 `components.json.registries` 擁有；只因實際 consumer 需要加入來源，registry output 仍須經 owner／dependency 檢查。
+工具名稱以該版本的 `tools/list` 為準，依任務載入需要的 skills。MCP 權限依目前官方 OpenAI/Codex session 設定；免逐次確認不取代任務的寫入授權。Registry 擴展由 `components.json.registries` 擁有；只因實際 consumer 需要加入來源，registry output 仍須經 owner／dependency 檢查。
 
-```sh
-pnpm tooling:doctor
-pnpm tooling:doctor --mcp
-pnpm tooling:doctor --mcp --next-port 3000
-```
-
-第一個命令只檢查本地 toolchain、project MCP 設定與已安裝版本。`--mcp` 才啟動三個已配置的本地 MCP，使用 SDK 的安全預設環境取得 initialize／完整 tools list；Serena 另以受限的 `find_symbol` 查詢固定 source symbol，確認 worktree-local TypeScript transport。診斷不下載套件、不傳遞 provider credentials、不列印 server logs、tool descriptions 或 source body。`--next-port` 使用明確的 loopback port，經已配置的 Next DevTools 檢查 runtime tools 與 project identity；請替換成實際 banner port。診斷結束即關閉其 MCP processes，不啟停應用程式。
-
-以上分別證明 configuration、MCP transport 與 runtime project identity。一般 offline validation 不執行 live probes；診斷不證明目前 Codex session 已重新載入設定、registry 認證或瀏覽器行為。設定變更後重新載入 MCP／開新 session，確認工具可呼叫；UI 變更仍需瀏覽器驗證，再執行 canonical `pnpm check`，merge 前以 exact head 執行 `pnpm validate`。若使用 `next-dev-loop`，先滿足該 skill 的 framework／browser 版本與 preflight。
+MCP 設定由官方 OpenAI/Codex 設定管理。設定變更後重新載入 MCP 或開啟新 session，確認工具可呼叫；UI 變更仍需瀏覽器驗證，再執行 canonical `pnpm check`，merge 前以 exact head 執行 `pnpm validate`。
 
 官方契約：[Codex MCP](https://learn.chatgpt.com/docs/extend/mcp?surface=cli)、[Next.js MCP](https://nextjs.org/docs/app/guides/mcp)、[shadcn MCP](https://ui.shadcn.com/docs/mcp)。
 

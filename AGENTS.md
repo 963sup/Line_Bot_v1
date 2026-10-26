@@ -60,21 +60,15 @@
 
 先用 [task router](docs/README.md) 取最小 context；已知且限於單一 Owner 時直接讀 owner contract + nearest `AGENTS.md`。Owner 未知、語意歧義或跨 Owner 影響未釐清時，依上方條件使用 `pnpm semantic plan "<intent>"`，需要具體閱讀來源再用 `context`。
 
-修改指引前先核對實際 consumer；任務入口放 `.github/prompts/`、Codex 角色放 `.codex/agents/`，不維護重複 skill 或 Markdown review database。
+修改指引前先核對實際 consumer；任務入口放 `.github/prompts/`，不維護重複 skill 或 Markdown review database。
 
 Source-of-truth：[facts/sources-of-truth.md](docs/facts/sources-of-truth.md)。子 AGENTS 只增加 local constraints。
 
-## Serena MCP 自動使用規範
-
-本專案已配置 Serena 官方 MCP（`.codex/config.toml`）。使用規則、project lifecycle、onboarding 與 memories policy 統一見 [`.codex/SERENA.md`](.codex/SERENA.md)。
-
-使用者在訊息開頭指定 `serena` 時，視為優先使用 Serena 的提示，不是自動觸發器或額外授權。Serena 不取代 `pnpm semantic plan/context`、Owner contract、repository governing files 或正式 validation evidence。
-
 ## Change / validation
 
-- 主動依 [tool selection](docs/reference/engineering/development-workflow.md#autonomous-tool-selection) 選工具，依 [role routing](.codex/agents/AGENTS.md#autonomous-delegation) 判斷並執行有獨立價值的委派，不等待使用者逐次指定。簡單任務可由 Primary 完成；每個寫入面與 validation 必須有明確負責者，當前任務／工具限制優先。
+- 主動依 [development workflow](docs/reference/engineering/development-workflow.md) 選擇能直接回答問題的工具；簡單任務直接完成，每個寫入面與 validation 保持單一負責者。
 - Repository 修改固定依 [development change loop](docs/reference/engineering/development-workflow.md#default-repository-change-loop) 執行：先定目標與不變條件、定位 Owner/契約與 consumers，再依任務查詢、預覽、修改、檢查漏改、驗證及交付。已知 Owner 直接讀契約；純文件修正保留原本文件路徑，不強制執行無關工具。
-- 批次查改使用 `pnpm code` 產生有覆蓋邊界的預覽／計畫；在這個批次計畫流程中，來源寫入沿用 `pnpm patch:apply`。結構已知且由 language server 支援的單一 symbol 編輯，可依 `.codex/SERENA.md` 使用 Serena 的語意級工具；兩者都必須保留 diff、consumer 檢查與必要 validation。跨 project／公開契約的部分結果不能宣稱全庫完整；展開實際 consumers 後再修改。已有授權的可逆修改在預覽後直接續行，不新增逐次確認。
+- 批次查改使用 `pnpm code` 產生有覆蓋邊界的預覽／計畫；來源寫入沿用 `pnpm patch:apply`。跨 project／公開契約的部分結果不能宣稱全庫完整；展開實際 consumers 後再修改。
 - 保留既有/他人修改；同 checkout 不並行寫同一檔案或產物。
 - 工具呼叫先設定足以回答當前問題的輸出上限；列表、diff、log、JSON/API 與 test output 先在工具端投影／計數／摘要。成功不展開原始 log；失敗先讀第一個可行動錯誤與固定 tail，只有該片段不足以改變下一步時才局部擴展。禁止把完整高量輸出直接注入 Agent context。
 - 可逆且 contract 已決定的實作直接完成；只有缺少會改變產品語意、資料處置或外部寫入授權的資訊才阻塞。
@@ -82,4 +76,4 @@ Source-of-truth：[facts/sources-of-truth.md](docs/facts/sources-of-truth.md)。
 - 一般修改 `pnpm check`；文件 `pnpm docs:check`；merge/release `pnpm validate`。Evidence boundary：[validation rules](docs/rules/validation-evidence.md)。
 - Merge 前依 [development workflow](docs/reference/engineering/development-workflow.md) 收斂 WIP/fixup history。
 
-Scopes：[`packages/`](packages/AGENTS.md) · [`scripts/`](scripts/AGENTS.md) · [`.github/`](.github/AGENTS.md) · [`.codex/`](.codex/AGENTS.md)。
+Scopes：[`packages/`](packages/AGENTS.md) · [`scripts/`](scripts/AGENTS.md) · [`.github/`](.github/AGENTS.md)。

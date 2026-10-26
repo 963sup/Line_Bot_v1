@@ -50,5 +50,5 @@
     "UV_TOOL_DIR": "${containerWorkspaceFolder}/.cache/uv-tools",
     "SERENA_HOME": "${containerWorkspaceFolder}/.cache/serena"
   },
-  "postCreateCommand": "uv tool install --force serena-agent==2.1.0 && pnpm install --frozen-lockfile --prefer-offline && pnpm tooling:doctor"
+  "postCreateCommand": "uv tool install --force serena-agent==2.1.0 && pnpm install --frozen-lockfile --prefer-offline"
 }

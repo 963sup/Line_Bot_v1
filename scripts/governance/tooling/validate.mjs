@@ -12,7 +12,6 @@ const biome = fileURLToPath(
 
 const fastTasks = new Set([
   "lockfile",
-  "tooling:check",
   "tooling:test",
   "docs:test",
   "docs:check",
@@ -33,7 +32,7 @@ const fastTasks = new Set([
 
 export const validationGroups = Object.freeze({
   preflight: ["lockfile"],
-  tooling: ["tooling:check", "tooling:test", "github:test"],
+  tooling: ["tooling:test", "github:test"],
   docs: ["docs:test", "docs:check"],
   lint: ["lint"],
   architecture: ["architecture:test", "architecture"],
@@ -87,7 +86,6 @@ export function classifyChangedFiles(files) {
     file === "AGENTS.md" ||
     file.endsWith("/AGENTS.md") ||
     file.startsWith(".github/") ||
-    file.startsWith(".codex/") ||
     file.startsWith(".agents/") ||
     file.startsWith(".vscode/") ||
     file === ".node-version";
@@ -188,7 +186,7 @@ export function shouldRunFast(task, scope) {
   if (!fastTasks.has(task)) return false;
   if (task === "lockfile") return true;
   if (!scope) return true;
-  if (task === "tooling:check" || task === "tooling:test") return scope.toolingAffected;
+  if (task === "tooling:test") return scope.toolingAffected;
   if (task === "change:test") return scope.codeAffected || scope.toolingAffected;
   if (task === "docs:test" || task === "docs:check") return scope.docsAffected;
   if (task === "lint") return scope.codeAffected || scope.toolingAffected;
@@ -307,12 +305,10 @@ function main() {
       "lockfile",
       [pnpmExecPath, "install", "--lockfile-only", "--frozen-lockfile", "--ignore-scripts"],
     ],
-    ["tooling:check", ["scripts/governance/tooling/check-tooling.mjs"]],
     [
       "tooling:test",
       [
         "--test",
-        "scripts/governance/tooling/doctor.test.mjs",
         "scripts/operations/wbs/transfer.test.mjs",
         "scripts/analysis/code/*.test.mjs",
         "scripts/core/runtime/validation-command.test.mjs",

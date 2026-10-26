@@ -69,7 +69,7 @@ description: '依 repository evidence 蒸餾全域 Markdown、釐清 authority �
 
 - 歷史與未來設計不得冒充 current contract；先確認稽核、復原、決策理由或仍有效計畫的 consumer，再決定保留、移動或刪除。
 - Machine-readable source 已定義的事實，文件只寫來源、意義、修改條件與驗證方式，不複製整份設定或 schema。
-- `AGENTS.md` 服務執行，保留 critical rules 與必要局部知識；README 服務用途、快速開始、入口與主要操作；任務入口放 `.github/prompts/`，Codex 角色設定放 `.codex/agents/`。
+- `AGENTS.md` 服務執行，保留 critical rules 與必要局部知識；README 服務用途、快速開始、入口與主要操作；任務入口放 `.github/prompts/`。
 - 不建立重複 skill、Markdown review database、review manifest、byte quota 或無 consumer 的新抽象。資訊地圖與比較結果放本次回報，除非既有流程確實需要持久化產物。
 - 每段至少回答：這是什麼、誰負責、真相在哪、不可破壞什麼、影響誰、下一步去哪、如何驗證成功之一。
 - 將「適當、視情況、相關內容」改為可辨識的觸發條件。每個連結須有任務用途；減少無效跳轉，但不靠複製規則消除引用。

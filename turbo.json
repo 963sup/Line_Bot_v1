@@ -6,7 +6,6 @@
   "globalPassThroughEnv": ["npm_config_store_dir"],
   "globalDependencies": [
     "tsconfig.base.json",
-    "tsconfig.tools.json",
     "biome.json",
     "knip.jsonc",
     ".dependency-cruiser.mjs"

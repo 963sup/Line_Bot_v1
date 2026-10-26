@@ -5,7 +5,6 @@ Node / pnpm version 以 repository manifests 為準。
 
 ```sh
 pnpm install --frozen-lockfile
-pnpm tooling:doctor
 pnpm dev
 ```
 
