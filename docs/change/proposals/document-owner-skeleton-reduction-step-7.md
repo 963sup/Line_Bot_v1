@@ -8,7 +8,7 @@
 
 完整閉環必須同時滿足**三向驗證**：
 
-\`\`\`text
+```text
 正向 committed facts
   verified FileRevision
   → authorized Intelligence Attempt / Gateway candidate
@@ -28,13 +28,13 @@
   → Owner's exact authorized revision/receipt/attempt readback
   → original committed outcome, explicit conflict or UNKNOWN
   → NEVER fabricated success or duplicate business facts
-\`\`\`
+```
 
 **重要：** Intelligence Attempt 不必成為 Content/WBS 的新 business parent；其 source/intent/receipt 是獨立技術執行證據，透過精確 Contract SAVE receipt 追溯，而不是把 provider transcript 複製到每一個下游 Revision。跨 Owner trace 是受權限限制的讀取組合，**不是**新全域 Owner/Database。
 
 ## 2. 最小 Trace Contract（查詢投影，不是新持久化權威）
 
-\`\`\`ts
+```ts
 type DocumentClosureTrace = {
   scope: { repositoryId: string; projectId: string };
   file: { fileId: string; revisionId: string; sha256: string };
@@ -62,17 +62,17 @@ type DocumentClosureTrace = {
     approvalReviewIds: string[];
   };
 };
-\`\`\`
+```
 
 這是**驗收／可授權查詢時的概念形狀**，不是要求立刻新增對外 API 或全域可寫表。現有 Owner DTO 不必一次改成上述型別；實作可用各 Owner 公開 Reader 逐段產生一個短期投影。任何 Actor 未取得來源 Repository 的適當讀取／揭露權限，應回傳拒絕／有限結果，不能將 File/Contract sourceRows 泄漏給僅有 Project READ 的使用者。
 
 **不變條件：**
 
-1. \`trace.file.sha256\` 與原 FileRevision 完全一致；真正 bytes 由 File Reader 驗證，不讓 WBS 自己下載。
-2. Content 的 Contract source \`{documentId,revisionId}\` 對應的 \`CONFIRMED\` exact Revision 必須存在；它不可只靠名稱或最新 Head 猜測。
-3. \`set(content.rows.sourceRowId)\` 必須精確等於該 ContractRevision 的所有原始 \`lines.sourceRowId\`，每筆只出現一次，不因 freight/other 被刪。
-4. WBS \`sourceRows\` 必須與其所 pin 的 ContentRevision來源行一致；需施工列在要發布的**候選版本**擁有有效 WORK_PACKAGE。刪改後不可使用初始匯入覆蓋數假充現在的覆蓋。
-5. Baseline 的 \`revisionId\`、proposal/approval IDs、current policy/reviewer authority 及 outbox event 都能讀回，且指到一份真實的 immutable candidate。
+1. `trace.file.sha256` 與原 FileRevision 完全一致；真正 bytes 由 File Reader 驗證，不讓 WBS 自己下載。
+2. Content 的 Contract source `{documentId,revisionId}` 對應的 `CONFIRMED` exact Revision 必須存在；它不可只靠名稱或最新 Head 猜測。
+3. `set(content.rows.sourceRowId)` 必須精確等於該 ContractRevision 的所有原始 `lines.sourceRowId`，每筆只出現一次，不因 freight/other 被刪。
+4. WBS `sourceRows` 必須與其所 pin 的 ContentRevision來源行一致；需施工列在要發布的**候選版本**擁有有效 WORK_PACKAGE。刪改後不可使用初始匯入覆蓋數假充現在的覆蓋。
+5. Baseline 的 `revisionId`、proposal/approval IDs、current policy/reviewer authority 及 outbox event 都能讀回，且指到一份真實的 immutable candidate。
 6. 失敗與未知不是通過：每個缺失必須顯示明確 Owner/階段/錯誤語意，**不能填補不存在的欄位**讓 trace 完整。
 
 ## 3. 具體 E2E Fixture 設計（測試資料 != 實際使用者秘密）
@@ -84,7 +84,7 @@ type DocumentClosureTrace = {
 主情境：
 
 1. Actor A 在有權限 Repository 透過 File Upload；讀回 FileRevision ID／SHA，確認 Storage bytes 完整，List 沒有 pending upload。
-2. 用相同 exact FileRevision 呼叫 Intelligence Contract Intake；取得 Gateway 的完整 \`PurchaseOrderCandidate\` 並保留 Attempt，對照**獨立人工 fixture**；不得先進行泛化 observations 截斷。
+2. 用相同 exact FileRevision 呼叫 Intelligence Contract Intake；取得 Gateway 的完整 `PurchaseOrderCandidate` 並保留 Attempt，對照**獨立人工 fixture**；不得先進行泛化 observations 截斷。
 3. Contract SAVE Draft，人工核對所有行／金額／來源頁，必要時以新 Draft Revision 修正，最後由具權限 Actor 確認 exact candidate → CONFIRMED。
 4. Content 匯入 exact Confirmed ContractRevision；驗證每行 map 或 commercial-only，總節點數、measure、stable IDs 和歷史 import evidence。
 5. 有權限且有來源披露資格的 Actor 將指定 ContentRevision 匯入**空** Project WBS；完成 work package deliverable / acceptance criteria、建立 proposal／review、正式發布 Baseline。
@@ -96,7 +96,7 @@ type DocumentClosureTrace = {
 | --- | --- | --- |
 | File object write timeout | Storage upload 回應不明、readback success/fail 各一 | 只有 readback success 可以 finalize；否則 pending，List 看不到 committed 假檔案 |
 | File source tampered | bytes SHA 與 stored FileRevision 不符 | 不能處理／保存候選；明確 SOURCE_MISMATCH / unavailable |
-| Gateway malformed | 欠 \`terms\`、錯欄位型別、超過大小限制 | 沒有 Contract SAVE/CONFIRM；錯誤可分類 |
+| Gateway malformed | 欠 `terms`、錯欄位型別、超過大小限制 | 沒有 Contract SAVE/CONFIRM；錯誤可分類 |
 | Gateway timeout/unknown | Provider 呼叫已開始後斷線 | 同 requestId 不啟動第二次 provider；replay/receipt/readback 結果明確 |
 | Contract save response lost | Postgres committed but response lost | Contract receipt 查得同一 exact revision；不重寫、不再呼叫 Gateway |
 | Human review mismatch | fixture 55 行，Gateway/caller 只有 54 | 不得標記正式文件完整且確認成功 |
@@ -105,7 +105,7 @@ type DocumentClosureTrace = {
 | Content already changed | 讀取後他人更新 Content head | expectedVersion conflict；沒有丟失其他人的 plan |
 | Source removed after import | 新 ContentRevision 刪除映射 Work/Task | 歷史仍可查；WBS 用該 revision 不能假裝來源仍覆蓋 |
 | WBS deleted imported TASK | candidate 中少一個必要 WORK_PACKAGE | Baseline publish 被阻止，即使其餘工作包欄位完整 |
-| WBS proposal raced | reviewer policy/eligible role/baseBaseline changed | 過期核准不能發布；治理/Oubox rollback 原子 |
+| WBS proposal raced | reviewer policy/eligible role/baseBaseline changed | 過期核准不能發布；治理/Outbox rollback 原子 |
 | Cross-scope disclosure | Actor 可寫 Project 但無來源揭露資格 | 不展開／不洩漏 File / Contract 原始資料 |
 | Replays and concurrency | 每段重送相同/不同 fingerprint、兩 session 競爭 | immutable revision/head/receipt 一致，不產生第二個業務效果 |
 | Migration legacy records | 舊 File processing / Repository WBS provenance 缺失或格式異常 | 明確 UNKNOWN/UNAVAILABLE，不清除 evidence、不將缺失當「無來源」 |
@@ -121,11 +121,11 @@ type DocumentClosureTrace = {
 | Storage / Vercel runtime | 私有 bytes/readback、Build、ENV、部署精確 commit、API response | 運行中的技術環境 |
 | User / device | 實際需要的 LINE/LIFF 使用入口、人工 review/confirm、Project Baseline 操作 | 已驗證的使用者閉環 |
 
-**Release Gate：** #412 先完成其 Integration 依賴驗證。各 Step 的 Domain/SQL/Composition tests 在自己的變更中先通過；\`pnpm check\`、\`pnpm docs:check\`、exact-head \`pnpm validate\` 與 Vercel production revision readback 各自有真實執行證據。可合併不等於驗收通過，CI \`skipped\` 也不是綠燈。
+**Release Gate：** #412 先完成其 Integration 依賴驗證。各 Step 的 Domain/SQL/Composition tests 在自己的變更中先通過；`pnpm check`、`pnpm docs:check`、exact-head `pnpm validate` 與 Vercel production revision readback 各自有真實執行證據。可合併不等於驗收通過，CI `skipped` 也不是綠燈。
 
 ## 6. 通過／未通過明確宣告
 
-只有當下列條件**全部**有可重複的實際驗收證據時，才能宣稱 \`File → Intelligence → Contract → Content → WBS\`「完整閉環」：
+只有當下列條件**全部**有可重複的實際驗收證據時，才能宣稱 `File → Intelligence → Contract → Content → WBS`「完整閉環」：
 
 - 一份原始文件完整轉成同源 Confirmed 商業單據、工程 Content 和正式 Project WBS Baseline。
 - 所有 Contract source rows 都有可判定的 Content disposition；所有應納入的 WBS 工作包在候選版本中仍存在。
