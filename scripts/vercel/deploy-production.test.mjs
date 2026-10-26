@@ -425,6 +425,7 @@ test("Vercel upload retains the public integration package used by Web compositi
     assert.match(consumer, /@line_bot_v1\/integration-vercel\/gateway-config/);
   }
 });
+
 test("Vercel Git integration deploys unspecified branches but leaves main to the Release workflow", () => {
   const config = JSON.parse(
     readFileSync(new URL("../../apps/web/vercel.json", import.meta.url), "utf8"),
