@@ -99,6 +99,9 @@ export function createIntelligenceProcessing(
         processorId: processor.id,
         processorVersion: processor.version,
       };
+      // A committed STARTED receipt is not permission to run a processor again.
+      // The transaction callback executes only for a newly accepted command.
+      let created = false;
       const started = await deps.store.transact(actor, input, async (tx) => {
         await tx.qualifySource(input.source);
         if (
@@ -124,13 +127,14 @@ export function createIntelligenceProcessing(
         });
         await tx.save(next, command.expectedVersion);
         await tx.record(next);
+        created = true;
         return next;
       });
+      if (!created) return { requestId: command.requestId, processing: started };
       let output: ProcessingOutput | null = null;
       try {
         output = await processor.run(source);
       } catch {}
-      if (started.state !== "RUNNING") return { requestId: command.requestId, processing: started };
       const latest = await deps.store.read(actor, command.repositoryId, command.runId);
       if (!latest || latest.attemptId !== started.attemptId) throw new Error("PROCESSING_FENCED");
       const completionCommand = {
