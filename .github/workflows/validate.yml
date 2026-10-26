@@ -1,0 +1,31 @@
+name: Validate
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+      - uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+          cache: true
+          cache_dependency_path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile --prefer-offline
+      - name: Validate repository metadata
+        run: pnpm exec biome check package.json architecture/semantic-model.json knip.jsonc
+      - name: Validate patch
+        run: git diff --check
