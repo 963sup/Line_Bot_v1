@@ -24,7 +24,7 @@ Group code by independent operation responsibility; colocate tests. Share mechan
 
 GitHub workflows invoke commands and own GitHub setup/routing/secrets/artifacts. Scripts own testable source classification and complete provider operations. Source changes trigger only the corresponding operation; no unconditional remote repair or unrelated-provider dependency.
 
-Supabase schema publication consumes `supabase/schemas/*.sql`, applies the declared remote diff without migration history, and verifies the result. Rich Menu publication consumes its images/code and publishes once. Historical compatibility/data conversions are not part of either normal publication path.
+Supabase schema publication consumes `packages/integration-supabase/src/schemas/*.sql`, applies the declared remote diff without migration history, and verifies the result. Rich Menu publication consumes its images/code and publishes once. Historical compatibility/data conversions are not part of either normal publication path.
 
 ## Safety / validation
 

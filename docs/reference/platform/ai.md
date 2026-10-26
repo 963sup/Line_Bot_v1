@@ -7,8 +7,8 @@
 
 沒有全域 AI business owner；責任依實際 use case 分離：
 
-- `vercel/integrations` 擁有 Vercel AI Gateway 的 AI SDK transport、model ID validation、media mapping、timeout 與零 retry 設定；它不是 workspace package，也不擁有產品語意。
-- `@line_bot_v1/intelligence` 擁有文件理解的 processor identity、source/attempt recovery、prompt contract 與 untrusted-result boundary；host 從 `vercel/integrations` 注入 provider port，再透過接收端公開命令提交候選資料。
+- `@line_bot_v1/integration-vercel` 擁有 Vercel AI Gateway 的 AI SDK transport、model ID validation、media mapping、timeout 與零 retry 設定；它不擁有產品語意。
+- `@line_bot_v1/intelligence` 擁有文件理解的 processor identity、source/attempt recovery、prompt contract 與 untrusted-result boundary；host 從 `@line_bot_v1/integration-vercel` 注入 provider port，再透過接收端公開命令提交候選資料。
 - `@line_bot_v1/assistant` 擁有 Assistant conversation、Issue draft 的 model Port、固定 liveness probe 與 server-only/config guard；它不保管 provider client 或 credential。
 - `@line_bot_v1/contract` 擁有採購文件的結構、候選驗證與確認規則、版本及命令收據。Intelligence 不因解析成功取得正式確認權。
 - `@line_bot_v1/file` 提供 exact source authorization/readback。ProcessingRun、RawResult/SavedResult 與其 replay/recovery 屬 Intelligence；File 不保存處理結果。
@@ -17,7 +17,7 @@
 Provider adapter 不做 authorization、持久化或 business state transition，也不因共用 Provider 而取得另一個 Owner 的語意。
 ## Vercel AI Gateway
 
-Vercel provider transport 統一位於 `vercel/integrations/`。Web、CLI 與產品 owner 只接收最窄的 text/file/model Port；Assistant、Intelligence 與 Expense 不得各自建立 SDK client、讀取 provider credential，或保留 Gemini fallback。
+Vercel provider transport 統一位於 `packages/integration-vercel`。Web、CLI 與產品 owner 只接收最窄的 text/file/model Port；Assistant、Intelligence 與 Expense 不得各自建立 SDK client、讀取 provider credential，或保留 Gemini fallback。
 
 - `AI_GATEWAY_API_KEY`：可選的 Server-only Secret，適合本機或不具 Vercel OIDC 的 Runtime。由 [Vercel AI Gateway](https://vercel.com/docs/ai-gateway/authentication-and-byok/authentication) 建立 Key，再於 `mini-app-line` 專案 **Settings → Environment Variables** 設定；不得加 `NEXT_PUBLIC_`、寫入 log 或提交 Repository。
 - `AI_GATEWAY_MODEL`：Server-side Model ID，不是 Secret。從 [AI Gateway Model Catalog](https://vercel.com/ai-gateway/models) 複製實際可用的 `provider/model` ID（例如 `google/gemini-2.5-flash` 僅作格式示例，使用前需核對 Catalog 與價格）。

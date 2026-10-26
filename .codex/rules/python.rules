@@ -1,0 +1,28 @@
+python_commands = ["python", "python.exe", "python3", "python3.exe"]
+
+prefix_rule(
+    pattern = [python_commands, "--version"],
+    decision = "allow",
+    justification = "Python version is a local environment check.",
+    match = ["python --version", "python3 --version"],
+    not_match = ["python -m pip install package-name"],
+)
+
+prefix_rule(
+    pattern = [python_commands, "-m", "pytest"],
+    decision = "allow",
+    justification = "Python pytest is a bounded local test operation.",
+    match = ["python -m pytest"],
+    not_match = ["python -m pip install package-name"],
+)
+
+prefix_rule(
+    pattern = [python_commands, "-m", "pip", ["install", "uninstall"]],
+    decision = "prompt",
+    justification = "Python package installation changes the runtime environment and may access external package registries.",
+    match = [
+        "python -m pip install package-name",
+        "python -m pip uninstall package-name",
+    ],
+    not_match = ["python --version"],
+)

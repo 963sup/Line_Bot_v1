@@ -52,7 +52,7 @@ async function main() {
   );
 
   console.log(
-    "Rebuilding the LOCAL development database from supabase/schemas; local data is removed.",
+    "Rebuilding the LOCAL development database from packages/integration-supabase/src/schemas; local data is removed.",
   );
   run(localDatabaseCommands.start);
   run(localDatabaseCommands.reset);

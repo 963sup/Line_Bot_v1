@@ -18,6 +18,24 @@
 
 ## 目前提案
 
+- [Platform integrations — Step Start：目標與停止條件](platform-integration-root-migration-step-start.md)
+- [Platform integrations — Step 1：盤點](platform-integration-root-migration-step-1.md)
+- [Platform integrations — Step 2：Package/Port 契約](platform-integration-root-migration-step-2.md)
+- [Platform integrations — Step 3：Vercel Gateway runtime](platform-integration-root-migration-step-3.md)
+- [Platform integrations — Step 4：Vercel 文件/部署](platform-integration-root-migration-step-4.md)
+- [Platform integrations — Step 5：Supabase client](platform-integration-root-migration-step-5.md)
+- [Platform integrations — Step 6：Supabase native SQL/CLI](platform-integration-root-migration-step-6.md)
+- [Platform integrations — Step 7：全 repo 引用](platform-integration-root-migration-step-7.md)
+- [Platform integrations — Step 8：驗收與刪根](platform-integration-root-migration-step-8.md)
+- [Platform integrations — Step End：完成定義](platform-integration-root-migration-step-end.md)
+
+- [Document owner skeleton — Step 1（減法邊界與停止條件）](document-owner-skeleton-reduction-step-1.md)
+- [Document owner skeleton — Step 2（Integration / Port / Composition）](document-owner-skeleton-reduction-step-2.md)
+- [Document owner skeleton — Step 3（File → Intelligence → Vercel AI Gateway / 結構化候選）](document-owner-skeleton-reduction-step-3.md)
+- [Document owner skeleton — Step 4（Contract 驗證與人工確認）](document-owner-skeleton-reduction-step-4.md)
+- [Document owner skeleton — Step 5（Contract → Content 確定性全量轉換）](document-owner-skeleton-reduction-step-5.md)
+- [Document owner skeleton — Step 6（Content → WBS 與正式 Baseline）](document-owner-skeleton-reduction-step-6.md)
+- [Document owner skeleton — Step 7（E2E／反向證據／失敗恢復）](document-owner-skeleton-reduction-step-7.md)
 - [Domain target](domain-target.md)
 - [Data target](data-target.md)
 - [Security target](security-target.md)

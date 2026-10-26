@@ -1,0 +1,20 @@
+tsc_commands = ["tsc", "tsc.exe"]
+
+prefix_rule(
+    pattern = [tsc_commands, ["--version", "--noEmit"]],
+    decision = "allow",
+    justification = "TypeScript version checks and no-emit typechecking are local validation operations.",
+    match = [
+        "tsc --version",
+        "tsc --noEmit",
+    ],
+    not_match = ["tsc"],
+)
+
+prefix_rule(
+    pattern = [tsc_commands, "-p"],
+    decision = "prompt",
+    justification = "TypeScript compilation may write build artifacts and requires review of the exact project target.",
+    match = ["tsc -p tsconfig.json"],
+    not_match = ["tsc --noEmit", "tsc --version"],
+)

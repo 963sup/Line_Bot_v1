@@ -394,19 +394,38 @@ test("Vercel upload retains PostCSS configuration and its local plugin", () => {
   assert.match(config, /@tailwindcss\/postcss/);
 });
 
-test("Vercel upload retains the shared AI Gateway used by Web composition", () => {
+test("Vercel upload retains the public integration package used by Web composition", () => {
   const rules = readFileSync(new URL("../../.vercelignore", import.meta.url), "utf8").split(
     /\r?\n/,
   );
-  for (const path of ["vercel", "vercel/integrations", "vercel/integrations/gateway.ts"]) {
-    assert.ok(rules.includes(`!${path}`), `Vercel upload excludes AI Gateway input: ${path}`);
+  for (const path of [
+    "packages",
+    "packages/*",
+    "packages/*/package.json",
+    "packages/*/src",
+    "packages/*/src/**",
+  ]) {
+    assert.ok(rules.includes(`!${path}`), `Vercel upload excludes integration input: ${path}`);
   }
+  const manifest = JSON.parse(
+    readFileSync(
+      new URL("../../packages/integration-vercel/package.json", import.meta.url),
+      "utf8",
+    ),
+  );
+  assert.ok(manifest.exports["./gateway"]);
+  assert.ok(manifest.exports["./gateway-config"]);
+  const web = JSON.parse(
+    readFileSync(new URL("../../apps/web/package.json", import.meta.url), "utf8"),
+  );
+  assert.equal(web.dependencies["@line_bot_v1/integration-vercel"], "workspace:*");
   for (const file of ["assistant.server.ts", "expense.server.ts", "files.server.ts"]) {
     const consumer = readFileSync(
       new URL(`../../apps/web/src/app/api/_composition/${file}`, import.meta.url),
       "utf8",
     );
-    assert.match(consumer, /vercel\/integrations\/gateway\.ts/);
+    assert.match(consumer, /@line_bot_v1\/integration-vercel\/gateway/);
+    assert.match(consumer, /@line_bot_v1\/integration-vercel\/gateway-config/);
   }
 });
 

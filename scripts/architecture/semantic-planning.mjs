@@ -399,7 +399,7 @@ export function compileAgentContext(compiled, intent, { task = "source" } = {}) 
       { owners: plan.primaryOwners },
     );
     add("supabase/AGENTS.md", "Database scope constraints");
-    add("supabase/schemas/AGENTS.md", "Declarative schema constraints");
+    add("packages/integration-supabase/src/schemas/AGENTS.md", "Declarative schema constraints");
     add("docs/rules/database-writes.md", "Atomicity, replay and recovery");
     add("docs/rules/request-authorization.md", "Current qualification and isolation");
     for (const surface of plan.candidateChangeSurfaces.filter(

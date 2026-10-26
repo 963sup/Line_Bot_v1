@@ -15,7 +15,10 @@ function staticRootSegments(directory: URL): string[] {
 }
 
 function sqlReservedKeys(path: string, pattern: RegExp): string[] {
-  const sql = readFileSync(new URL(`../../../supabase/schemas/${path}`, import.meta.url), "utf8");
+  const sql = readFileSync(
+    new URL(`../../../packages/integration-supabase/src/schemas/${path}`, import.meta.url),
+    "utf8",
+  );
   const body = pattern.exec(sql)?.[1];
   assert.ok(body, "Namespace SQL must expose the reserved-key enforcement list");
   return [...body.matchAll(/'([^']+)'/g)].map((match) => {

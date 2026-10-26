@@ -2,15 +2,15 @@
 
 ## Canonical source
 
-`supabase/schemas/` 是 current desired PostgreSQL structure 的唯一 Source of Truth。Schema modules 以數字前綴表達 lexical dependency order；table、constraint、index、RLS、grant、function、trigger 與 role 都由負責的 declarative SQL 定義。
+`packages/integration-supabase/src/schemas/` 是 current desired PostgreSQL structure 的唯一 Source of Truth。Schema modules 以數字前綴表達 lexical dependency order；table、constraint、index、RLS、grant、function、trigger 與 role 都由負責的 declarative SQL 定義。
 
-`supabase/migrations/` 不屬於 current contract，也不是 remote deployment source。歷史 SQL 的追溯與恢復見 [History extraction](../../change/evidence/schema-history-extraction.md)；current code、fixtures、`schema:check` 與 remote reconciliation 都不 replay、repair 或新增 migration history。
+`packages/integration-supabase/src/migrations/` 不屬於 current contract，也不是 remote deployment source。歷史 SQL 的追溯與恢復見 [History extraction](../../change/evidence/schema-history-extraction.md)；current code、fixtures、`schema:check` 與 remote reconciliation 都不 replay、repair 或新增 migration history。
 
 ## Schema change
 
 Schema change 的基本流程只有一個：
 
-1. 修改負責的 `supabase/schemas/*.sql`。
+1. 修改負責的 `packages/integration-supabase/src/schemas/*.sql`。
 2. 以 `schema:check` 驗證 clean build 與核心 RLS／role boundary。
 3. 需要完整 local Supabase 時，用 `schema:local` 從 current schemas 重建 local `app_private`。
 4. Remote publication 由 repository-owned reconciliation 比較 deployed current state 與 desired schemas；validated schema source 授權 DDL convergence。
@@ -67,7 +67,7 @@ Schema與runtime需要協調切換時，由 [Release](../operations/release.md) 
 
 Current repository schema verification只證明 declarative source、clean build與安全 boundary；remote parity、deployment與business acceptance是不同 evidence。
 
-- 開發入口：[Supabase README](../../../supabase/README.md)
+- 開發入口：[Supabase README](../../../packages/integration-supabase/src/README.md)
 - Supabase platform：[Supabase](../platform/supabase.md)
 - Release：[Release](../operations/release.md)
 - Recovery：[Recovery](../operations/recovery.md)

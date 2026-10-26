@@ -20,7 +20,10 @@ function directGovernanceLockCalls(source) {
 
 test("governance lock consumers use the named SQL contract rather than repeating its key", () => {
   const root = new URL("../../", import.meta.url);
-  const sources = globSync(["packages/*/src/**/*.ts", "supabase/schemas/*.sql"], { cwd: root });
+  const sources = globSync(
+    ["packages/*/src/**/*.ts", "packages/integration-supabase/src/schemas/*.sql"],
+    { cwd: root },
+  );
   for (const source of sources)
     assert.deepEqual(
       directGovernanceLockCalls(readFileSync(new URL(source.replaceAll("\\", "/"), root), "utf8")),
@@ -56,7 +59,10 @@ function hasTopLevelMutation(sql) {
 
 test("config and schema assembly use the same complete lexical order", () => {
   const config = parse(
-    readFileSync(new URL("../../supabase/config.toml", import.meta.url), "utf8"),
+    readFileSync(
+      new URL("../../packages/integration-supabase/src/config.toml", import.meta.url),
+      "utf8",
+    ),
   );
   assert.equal(config.db.migrations.enabled, false);
   assert.deepEqual(config.db.migrations.schema_paths, ["./schemas/*.sql"]);

@@ -67,7 +67,8 @@
     "vaul": "1.1.2",
     "@line_bot_v1/content": "workspace:*",
     "@line_bot_v1/contract": "workspace:*",
-    "@line_bot_v1/execution": "workspace:*"
+    "@line_bot_v1/execution": "workspace:*",
+    "@line_bot_v1/integration-vercel": "workspace:*"
   },
   "devDependencies": {
     "@line/liff-mock": "catalog:",

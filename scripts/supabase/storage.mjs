@@ -9,8 +9,8 @@ import { assertValidatedMainMutationContext } from "./remote-authorization.mjs";
 import { assertConfirmedProject, assertRemoteTarget } from "./remote-target.mjs";
 
 const root = new URL("../../", import.meta.url);
-const bucketConfig = new URL("supabase/config.toml", root);
-const linkedProjectFile = new URL("supabase/.temp/project-ref", root);
+const bucketConfig = new URL("packages/integration-supabase/src/config.toml", root);
+const linkedProjectFile = new URL("packages/integration-supabase/src/.temp/project-ref", root);
 const cli = createRequire(import.meta.url).resolve("supabase/dist/supabase.js");
 const freeMaxObjectBytes = 50_000_000;
 

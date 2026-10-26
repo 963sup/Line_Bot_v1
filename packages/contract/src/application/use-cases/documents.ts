@@ -12,6 +12,7 @@ import {
 import {
   decodeDocumentSource,
   decodePurchaseOrderCandidate,
+  decodeSourceReviewAttestation,
 } from "../../domain/document-intake-decoder.js";
 import { ContractError, contractErrorFromUnknown } from "../../domain/error.js";
 import { canEditContract } from "../../domain/policies/access.js";
@@ -60,13 +61,15 @@ function parseDocumentInput(value: unknown): DocumentIntakeInput {
     "expectedLineCount",
     "candidate",
     "acknowledgement",
+    "sourceReviewAttestation",
   ];
   if (
     !exactKeys(
       input,
       allowedKeys
-        .filter((key) => key !== "acknowledgement")
-        .concat(input.acknowledgement === undefined ? [] : ["acknowledgement"]),
+        .filter((key) => key !== "acknowledgement" && key !== "sourceReviewAttestation")
+        .concat(input.acknowledgement === undefined ? [] : ["acknowledgement"])
+        .concat(input.sourceReviewAttestation === undefined ? [] : ["sourceReviewAttestation"]),
     )
   )
     throw new ContractError(400, "Unknown Contract document command field.", "INVALID_INPUT");
@@ -103,6 +106,16 @@ function parseDocumentInput(value: unknown): DocumentIntakeInput {
       throw new ContractError(400, "Invalid discrepancy acknowledgement.", "INVALID_INPUT");
     acknowledgement = { reason: input.acknowledgement.reason };
   }
+  let sourceReviewAttestation: DocumentIntakeInput["sourceReviewAttestation"];
+  if (input.sourceReviewAttestation !== undefined) {
+    if (input.action !== "confirm")
+      throw new ContractError(
+        400,
+        "Original source review attestation is only valid when confirming.",
+        "INVALID_INPUT",
+      );
+    sourceReviewAttestation = decodeSourceReviewAttestation(input.sourceReviewAttestation);
+  }
   const candidate = decodePurchaseOrderCandidate(input.candidate);
   const sourcePin = decodeDocumentSource(source);
   return {
@@ -116,6 +129,7 @@ function parseDocumentInput(value: unknown): DocumentIntakeInput {
     source: sourcePin,
     candidate,
     ...(acknowledgement === undefined ? {} : { acknowledgement }),
+    ...(sourceReviewAttestation === undefined ? {} : { sourceReviewAttestation }),
   };
 }
 
@@ -181,6 +195,8 @@ function documentDto(value: ContractDocumentRevision): DocumentIntakeRevisionDto
     candidate: structuredClone(value.candidate),
     diagnostics: [...value.diagnostics],
     acknowledgementReason: value.acknowledgementReason,
+    sourceReviewAttestation:
+      value.sourceReviewAttestation === null ? null : { ...value.sourceReviewAttestation },
   };
 }
 
@@ -249,6 +265,9 @@ export function createContractDocuments(deps: {
               candidate: input.candidate,
               source: input.source,
               ...(input.acknowledgement ? { acknowledgement: input.acknowledgement } : {}),
+              ...(input.sourceReviewAttestation
+                ? { sourceReviewAttestation: input.sourceReviewAttestation }
+                : {}),
               id: tx.nextId(),
               documentId: input.documentId.toLowerCase(),
               repositoryId: tx.repositoryId,

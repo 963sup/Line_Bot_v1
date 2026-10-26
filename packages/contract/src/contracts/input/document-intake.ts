@@ -1,4 +1,8 @@
-import type { DocumentSource, PurchaseOrderCandidate } from "../../domain/document-intake.js";
+import type {
+  DocumentSource,
+  PurchaseOrderCandidate,
+  SourceReviewAttestation,
+} from "../../domain/document-intake.js";
 import { PURCHASE_ORDER_CATEGORIES } from "../../domain/document-intake.js";
 
 import type { DocumentIntakeRevisionDto } from "../dto/document-intake.js";
@@ -14,6 +18,7 @@ export type DocumentIntakeInput = Readonly<{
   expectedLineCount: number;
   candidate: PurchaseOrderCandidate;
   acknowledgement?: Readonly<{ reason: string }>;
+  sourceReviewAttestation?: SourceReviewAttestation;
 }>;
 
 export type DocumentReceipt = Readonly<{

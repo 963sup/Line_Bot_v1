@@ -9,6 +9,18 @@
     "dependenciesUsePublicContracts": true
   },
   "modules": {
+    "@line_bot_v1/integration-vercel": {
+      "path": "packages/integration-vercel",
+      "moduleKind": "integration-adapter",
+      "semanticOwner": "vercel-integration",
+      "allowedWorkspaceDependencies": ["@line_bot_v1/intelligence"]
+    },
+    "@line_bot_v1/integration-supabase": {
+      "path": "packages/integration-supabase",
+      "moduleKind": "integration-adapter",
+      "semanticOwner": "supabase-integration",
+      "allowedWorkspaceDependencies": []
+    },
     "@line_bot_v1/explore": {
       "path": "packages/explore",
       "moduleKind": "application-module",
@@ -328,7 +340,11 @@
       "path": "packages/file",
       "moduleKind": "domain-module",
       "semanticOwner": "file",
-      "allowedWorkspaceDependencies": ["@line_bot_v1/platform", "@line_bot_v1/repository"]
+      "allowedWorkspaceDependencies": [
+        "@line_bot_v1/platform",
+        "@line_bot_v1/repository",
+        "@line_bot_v1/integration-supabase"
+      ]
     }
   },
   "targetModules": {
@@ -499,7 +515,8 @@
         "@line_bot_v1/content",
         "@line_bot_v1/contract",
         "@line_bot_v1/execution",
-        "@line_bot_v1/file"
+        "@line_bot_v1/file",
+        "@line_bot_v1/integration-vercel"
       ]
     }
   }

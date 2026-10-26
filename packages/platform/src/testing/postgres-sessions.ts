@@ -31,7 +31,10 @@ export async function postgresSessions(databaseUrl: string) {
       await pool.query(
         "DO $$ BEGIN IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='anon') THEN CREATE ROLE anon; END IF; IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN CREATE ROLE authenticated; END IF; END $$; CREATE SCHEMA auth; CREATE TABLE auth.users(id uuid primary key,banned_until timestamptz,deleted_at timestamptz,is_anonymous boolean); CREATE TABLE auth.identities(user_id uuid,provider text,provider_id text)",
       );
-      const directory = new URL("../../../../supabase/schemas/", import.meta.url);
+      const directory = new URL(
+        "../../../../packages/integration-supabase/src/schemas/",
+        import.meta.url,
+      );
       for (const file of readdirSync(directory)
         .filter((f) => f.endsWith(".sql"))
         .sort())

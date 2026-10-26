@@ -32,7 +32,10 @@ import { declaredSchemaSql, schemaFileNames } from "./schema-source.mjs";
 const root = new URL("../../", import.meta.url);
 const artifacts = new URL(".artifacts/supabase-remote/", root);
 const cli = createRequire(import.meta.url).resolve("supabase/dist/supabase.js");
-const foundationSql = readFileSync(new URL("supabase/schemas/000_foundation.sql", root), "utf8");
+const foundationSql = readFileSync(
+  new URL("packages/integration-supabase/src/schemas/000_foundation.sql", root),
+  "utf8",
+);
 const platformPrerequisiteSql = `
 select
   to_regclass('auth.users') is not null as auth_users_exists,
@@ -1054,7 +1057,10 @@ async function runRemoteCommand({ projectRef, command, api }) {
           "Existing-database cutover requires provider recovery readback or explicit authorization for this exact project and schema without a backup before any remote DDL.",
         );
       }
-      console.log(plan.sql || "Remote app_private schema already matches supabase/schemas.");
+      console.log(
+        plan.sql ||
+          "Remote app_private schema already matches packages/integration-supabase/src/schemas.",
+      );
       return;
     }
     if (command === "verify") {

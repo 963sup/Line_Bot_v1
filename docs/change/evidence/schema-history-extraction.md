@@ -4,19 +4,19 @@
 
 ## Retained evidence
 
-五份歷史 SQL 的有效 final DDL 已由當時的 declarative `supabase/schemas/` 完整承接；一次性 backfill、rolling bridge、transition lock 與 retired table 不再成為 current schema dependency。原始 bytes 仍可從上述 commit 的 `supabase/migrations/` 讀回。
+五份歷史 SQL 的有效 final DDL 已由當時的 declarative `packages/integration-supabase/src/schemas/` 完整承接；一次性 backfill、rolling bridge、transition lock 與 retired table 不再成為 current schema dependency。原始 bytes 仍可從上述 commit 的 `packages/integration-supabase/src/migrations/` 讀回。
 
 當時以隔離 clean rebuild 比對歷史 final DDL 與 declarative schemas，catalog semantics 一致；remote readback 也未出現需要額外套用的語意 DDL，因此沒有為了「留下 migration history」再做無用途 remote write。
 
 Recovery 時只把 Git revision 當歷史來源，不對 current database 重播舊 baseline：
 
 ```sh
-git show 30f241afaae425ecdc68f73d2296651adb557dd2:supabase/migrations/20260912023739_consolidated_baseline.sql
+git show 30f241afaae425ecdc68f73d2296651adb557dd2:packages/integration-supabase/src/migrations/20260912023739_consolidated_baseline.sql
 ```
 
 ## Boundary
 
-- Current database structure 只由 `supabase/schemas/` 擁有。
+- Current database structure 只由 `packages/integration-supabase/src/schemas/` 擁有。
 - `supabase_migrations` history 不是 current schema authority。
 - 本 evidence 不證明 current remote parity、deployment、LINE device 或 business acceptance。
 - 後續 Account expansion 見 [Account expansion evidence](account-expansion-extraction.md)。

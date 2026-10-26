@@ -51,6 +51,6 @@ Semantic impact authority 位於 architecture semantic system，統一使用 `pn
 | 輸入 | 流程 | 成功條件 |
 | --- | --- | --- |
 | `assets/line/rich-menu/*` 與 publication code | `line:rich-menu publish all` → preflight → create/upload → aliases/default → readback | LINE definitions、aliases、default 與 desired state 一致；實機另驗。 |
-| `supabase/schemas/*.sql` | `schema:remote sync` → clean local desired DB → remote diff → transaction apply → second diff/readback | schema drift = 0、ownership/security PASS、migration history 不變。 |
+| `packages/integration-supabase/src/schemas/*.sql` | `schema:remote sync` → clean local desired DB → remote diff → transaction apply → second diff/readback | schema drift = 0、ownership/security PASS、migration history 不變。 |
 
 本機可用 `pnpm line:rich-menu preview all` 檢查素材；`schema:remote plan`／`verify` 是 read-only 遠端診斷，但會重建 disposable local Supabase database，需要 Docker。Production mutation 由 [GitHub workflow](../.github/README.md) 執行。

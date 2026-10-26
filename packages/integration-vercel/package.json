@@ -1,0 +1,33 @@
+{
+  "name": "@line_bot_v1/integration-vercel",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./gateway": {
+      "types": "./dist/gateway.d.ts",
+      "default": "./dist/gateway.js"
+    },
+    "./gateway-config": {
+      "types": "./dist/gateway-config.d.ts",
+      "default": "./dist/gateway-config.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test \"test/**/*.test.ts\""
+  },
+  "dependencies": {
+    "@line_bot_v1/intelligence": "workspace:*",
+    "ai": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}

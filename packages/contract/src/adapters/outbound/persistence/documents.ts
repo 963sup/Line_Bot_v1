@@ -16,6 +16,7 @@ import type {
 import {
   decodeDocumentSource,
   decodePurchaseOrderCandidate,
+  decodeSourceReviewAttestation,
 } from "../../../domain/document-intake-decoder.js";
 import { ContractError } from "../../../domain/error.js";
 
@@ -77,6 +78,10 @@ function decodeRevision(row: SqlRow): ContractDocumentRevision {
     diagnostics,
     acknowledgementReason:
       row.acknowledgement_reason === null ? null : stringValue(row.acknowledgement_reason),
+    sourceReviewAttestation:
+      row.source_review_attestation === null
+        ? null
+        : decodeSourceReviewAttestation(json(row.source_review_attestation)),
   };
 }
 
@@ -228,8 +233,8 @@ export class PostgresContractDocuments implements ContractDocumentIntakeTransact
             );
           await sql.query(
             `INSERT INTO contract_document_revisions(id,document_id,repository_id,version,parent_revision_id,actor_user_id,at,state,schema_version,
-             file_id,file_revision_id,file_sha256,expected_line_count,candidate,diagnostics,acknowledgement_reason)
-             VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14::jsonb,$15::jsonb,$16)`,
+             file_id,file_revision_id,file_sha256,expected_line_count,candidate,diagnostics,acknowledgement_reason,source_review_attestation)
+             VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14::jsonb,$15::jsonb,$16,$17::jsonb)`,
             [
               revision.id,
               revision.documentId,
@@ -247,6 +252,9 @@ export class PostgresContractDocuments implements ContractDocumentIntakeTransact
               JSON.stringify(revision.candidate),
               JSON.stringify(revision.diagnostics),
               revision.acknowledgementReason,
+              revision.sourceReviewAttestation === null
+                ? null
+                : JSON.stringify(revision.sourceReviewAttestation),
             ],
           );
           if (

@@ -1255,9 +1255,15 @@ test("agent context derives documentation, owner and schema reading paths with e
   assert.ok(paths(owner).includes("docs/owners/attendance.md"));
   assert.equal(paths(owner).includes("architecture/domain/fpt/changelog.json"), false);
   assert.ok(paths(schema).includes("architecture/data-topology.json"));
-  assert.equal(paths(schema).includes("supabase/schemas/702_project_wbs.sql"), false);
+  assert.equal(
+    paths(schema).includes("packages/integration-supabase/src/schemas/702_project_wbs.sql"),
+    false,
+  );
   assert.ok(
-    paths(schema).some((path) => path.startsWith("supabase/schemas/") && path.endsWith(".sql")),
+    paths(schema).some(
+      (path) =>
+        path.startsWith("packages/integration-supabase/src/schemas/") && path.endsWith(".sql"),
+    ),
   );
   for (const context of [docs, owner, schema]) {
     assert.equal(context.reading.authority, "AGENTS.md#effective-context-contract");
@@ -1521,21 +1527,27 @@ test("semantic plan derives authoritative and cross-context data surfaces from d
     version: 2,
     role: "relation-data-topology",
     files: [
-      { path: "supabase/schemas/600_repositories.sql", role: "authoritative" },
-      { path: "supabase/schemas/900_cross_owner_projections.sql", role: "derived-projection" },
+      {
+        path: "packages/integration-supabase/src/schemas/600_repositories.sql",
+        role: "authoritative",
+      },
+      {
+        path: "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
+        role: "derived-projection",
+      },
     ],
     relations: [
       {
         name: "repositories",
         kind: "table",
-        path: "supabase/schemas/600_repositories.sql",
+        path: "packages/integration-supabase/src/schemas/600_repositories.sql",
         authority: true,
         semanticOwner: "repository",
       },
       {
         name: "repository_access_view",
         kind: "view",
-        path: "supabase/schemas/900_cross_owner_projections.sql",
+        path: "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
         authority: false,
         role: "derived-projection",
         participants: ["repository", "project"],
@@ -1543,13 +1555,16 @@ test("semantic plan derives authoritative and cross-context data surfaces from d
     ],
   };
   const schemaFiles = [
-    "supabase/schemas/600_repositories.sql",
-    "supabase/schemas/900_cross_owner_projections.sql",
+    "packages/integration-supabase/src/schemas/600_repositories.sql",
+    "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
   ];
   const relationsByFile = new Map([
-    ["supabase/schemas/600_repositories.sql", [{ name: "repositories", kind: "table" }]],
     [
-      "supabase/schemas/900_cross_owner_projections.sql",
+      "packages/integration-supabase/src/schemas/600_repositories.sql",
+      [{ name: "repositories", kind: "table" }],
+    ],
+    [
+      "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
       [{ name: "repository_access_view", kind: "view" }],
     ],
   ]);
@@ -1567,12 +1582,19 @@ test("semantic plan derives authoritative and cross-context data surfaces from d
   assert.deepEqual(
     repository.data.map((surface) => [surface.path, surface.relation, surface.role]),
     [
-      ["supabase/schemas/600_repositories.sql", "repositories", "owner"],
-      ["supabase/schemas/900_cross_owner_projections.sql", "repository_access_view", "participant"],
+      ["packages/integration-supabase/src/schemas/600_repositories.sql", "repositories", "owner"],
+      [
+        "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
+        "repository_access_view",
+        "participant",
+      ],
     ],
   );
   assert.deepEqual(
     plan.affectedBoundaries.data.map((surface) => surface.path),
-    ["supabase/schemas/600_repositories.sql", "supabase/schemas/900_cross_owner_projections.sql"],
+    [
+      "packages/integration-supabase/src/schemas/600_repositories.sql",
+      "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
+    ],
   );
 });

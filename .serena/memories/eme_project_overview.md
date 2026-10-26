@@ -1,7 +1,1 @@
-# EME Project Overview
-
-- ESM TypeScript pnpm monorepo: `apps/web` is the executable Next.js application; `packages/*` own bounded business capabilities.
-- Business and technical decisions are owner-first: identify Owner, capability, contract, and actual consumer before changing source.
-- Human task router: `docs/README.md`. Machine architecture truth: `architecture/`.
-- Main persistence/schema source: `supabase/schemas/`; SQL and RLS are authoritative there, not in prose.
-- Use `mem:eme_architecture_authority` for the truth hierarchy and `mem:eme_architecture_ownership` for edit boundaries.
+Current provider package source layout (verified 2026-10-26): @line_bot_v1/integration-vercel exposes its public runtime entries from src/gateway.ts and src/gateway-config.ts; provider document transport remains private at src/adapters/outbound/ai-gateway/document.ts. Provider-native Vercel capability assets are directly under src/{analytics,caching,cron,deployments,domains,environment,functions,integrations,observability,routing,security,storage,tests}, with src/README.md as the native-assets guide. @line_bot_v1/integration-supabase exposes its server SDK bootstrap from src/storage-client.ts; native Supabase assets are directly under src/{auth,cron,functions,queues,realtime,schemas,storage,tests,vector,webhooks}, with src/config.toml and src/README.md; declarative SQL is solely src/schemas. Do not reintroduce src/vercel, src/supabase, platform wrappers, or duplicate provider roots.

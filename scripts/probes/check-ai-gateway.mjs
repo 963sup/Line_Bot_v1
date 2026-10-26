@@ -8,7 +8,7 @@ if (process.argv.slice(2).join(" ") !== "--live") {
   process.exit();
 }
 
-const { createVercelAiGateway } = await import("../../vercel/integrations/ai-gateway.mjs");
+const { createVercelAiGateway } = await import("@line_bot_v1/integration-vercel/gateway");
 
 import { loadRootEnv } from "../runtime/load-env.mjs";
 
@@ -16,7 +16,7 @@ try {
   loadRootEnv();
   const { AI_GATEWAY_MODEL: model } = process.env;
   if (!model) throw new Error("Missing AI Gateway configuration");
-  const text = await createVercelAiGateway(model).text({
+  const text = await createVercelAiGateway({ model }).text({
     system: "Reply with exactly the requested text and no explanation.",
     prompt: "Reply exactly: Line_Bot_v1 AI Gateway ready",
   });

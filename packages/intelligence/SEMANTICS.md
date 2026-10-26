@@ -45,6 +45,7 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | consumes | contract | command | contract | idempotent-command | Contract supplies the versioned purchase-order target schema and public candidate command. Intelligence submits only an untrusted SAVE candidate; Contract owns validation, authorization, version/replay checks, durable revision and confirmation. |
 | consumes | file | query | file | current-source-access | Intelligence reads an exact File revision only through File's public source reader, which authorizes before and after private object I/O. Intelligence receives detached bytes and no File persistence or storage authority. |
 | consumes | platform | query | platform | transaction-bound | Intelligence consumes neutral PostgreSQL transaction and value-decoding mechanisms for its technical attempt record. It retains only attempt recovery state; Contract remains the owner of candidate and business revision truth. |
+| provides | vercel-integration | reference | intelligence | injected-at-composition | Vercel processor adapter implements the public IntelligenceProcessor contract. Intelligence owns processing lifecycle, evidence and Contract intake. |
 | consumes | repository | query | repository | transaction-recheck | Intelligence processing mutations recheck active User, current Repository write permission and archive state inside their transaction; Repository retains authorization authority. |
 
 ## Tactical Model Boundary

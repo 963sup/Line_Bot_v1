@@ -35,7 +35,7 @@ main push (exact SHA)
   ├─ scripts/tooling/validate.mjs → all groups success
   └─ scripts/github/release-plan.mjs → pending sources per operation
        ├─ Rich Menu assets/code → current-main → scripts/line/rich-menu/sync.ts
-       ├─ supabase/schemas SQL → current-main → scripts/supabase/remote.mjs
+       ├─ packages/integration-supabase/src/schemas SQL → current-main → scripts/supabase/remote.mjs
        └─ Web build inputs → required schema success → scripts/vercel/deploy-production.mjs
             └─ required schema/Web success → scripts/attendance/scheduler.mjs
 ```
@@ -44,7 +44,7 @@ main push (exact SHA)
 
 失敗不推進該 operation 的 successful baseline；後續 main push 仍會帶上尚未成功發布的內容。每次寫入前重新確認 current main，同一 provider resource 不並行寫入，也不取消已開始的 mutation。
 
-Supabase 直接比較 `supabase/schemas/` 建出的 desired database 與遠端 application schema。同步不建立、replay、repair 或清除 migration history；驗收包含 second diff = 0、權限 readback 與 history fingerprint 不變。
+Supabase 直接比較 `packages/integration-supabase/src/schemas/` 建出的 desired database 與遠端 application schema。同步不建立、replay、repair 或清除 migration history；驗收包含 second diff = 0、權限 readback 與 history fingerprint 不變。
 
 GitHub GraphQL domain truth 不由 workflow YAML 重新定義：`architecture/domain/fpt/*.json` 是 exact pinned local authority，`architecture/domain/fpt-source.json` 只保存 upstream revision/blob integrity；任何 drift 由 `pnpm architecture` 在 validation 的 architecture group 阻擋。
 

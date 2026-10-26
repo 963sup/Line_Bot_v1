@@ -1,0 +1,12 @@
+tsx_commands = ["tsx", "tsx.exe"]
+
+prefix_rule(
+    pattern = [tsx_commands, ["--version", "--test"]],
+    decision = "allow",
+    justification = "tsx version checks and local test execution are ordinary project validation operations.",
+    match = [
+        "tsx --version",
+        "tsx --test test/*.test.ts",
+    ],
+    not_match = ["tsx scripts/mutate.ts"],
+)

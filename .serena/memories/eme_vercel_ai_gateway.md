@@ -1,6 +1,1 @@
-# Vercel AI Gateway integration
-
-- Vercel AI provider runtime belongs under `vercel/integrations/`; it is not a workspace package.
-- Consumers receive provider functions through Intelligence-facing ports; Assistant, File and Expense do not own provider clients or credentials.
-- Node CLI uses `vercel/integrations/ai-gateway.mjs`; Web uses the typed integration source. Both use `AI_GATEWAY_MODEL`, AI SDK model strings, explicit timeouts and `maxRetries: 0`.
-- Do not restore `GEMINI_*` fallback wiring or provider-specific compatibility exports.
+Verified current @line_bot_v1/integration-vercel runtime placement: src/adapters/outbound/ai-gateway/{gateway.ts,config.ts,document.ts}. package exports retain ./gateway and ./gateway-config but target these nested adapter implementations directly; no root forwarding facade. Native Vercel capability assets are directly under src/{analytics,caching,cron,deployments,domains,environment,functions,integrations,observability,routing,security,storage,tests}.

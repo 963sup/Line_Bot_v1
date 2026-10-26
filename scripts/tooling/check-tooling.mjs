@@ -636,7 +636,7 @@ export function validate(root) {
           `${relative(root, file)}: remote Supabase migration-history command is forbidden; use schema reconciliation`,
         );
     }
-    for (const file of files("supabase/migrations/**/*.sql"))
+    for (const file of files("packages/integration-supabase/src/migrations/**/*.sql"))
       errors.push(
         `${relative(root, file)}: remote migration files are not a current repository contract`,
       );
@@ -685,7 +685,7 @@ export function validate(root) {
       ...files("packages/**/*.{ts,tsx,mts,cts,js,mjs,cjs,md,json,jsonc}"),
       ...files("apps/**/*.{ts,tsx,mts,cts,js,mjs,cjs,md,json,jsonc}"),
       ...files("scripts/**/*.{ts,tsx,mts,cts,js,mjs,cjs,md,sql,json,jsonc}"),
-      ...files("supabase/**/*.{sql,md,toml}"),
+      ...files("packages/integration-supabase/src/**/*.{sql,md,toml}"),
       ...currentDocumentationSources,
     ];
     const retiredDocPrefixes = [
@@ -853,7 +853,7 @@ export function validate(root) {
     if ((turbo.globalDependencies ?? []).includes(".env.local"))
       errors.push("turbo.json: .env.local must not invalidate every workspace task");
     const testInputs = turbo.tasks?.test?.inputs ?? [];
-    if (!testInputs.includes("$TURBO_ROOT$/supabase/schemas/*.sql"))
+    if (!testInputs.includes("$TURBO_ROOT$/packages/integration-supabase/src/schemas/*.sql"))
       errors.push(
         "turbo.json: product tests must hash declarative schemas so SQL changes cannot reuse stale test cache",
       );

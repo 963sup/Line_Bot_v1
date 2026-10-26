@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { createClient } from "@supabase/supabase-js";
+import { createPrivateStorageClient } from "@line_bot_v1/integration-supabase/storage-client";
 import type { FileObjectRemoval, FileObjectStore } from "../../../contracts/output/object-store.js";
 import { FileError } from "../../../domain/error.js";
 import type { FileRevision } from "../../../domain/file.js";
@@ -102,17 +102,6 @@ export function supabaseFileObjects(config: {
   const url = config.url;
   if (!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/.test(url) || !config.serviceRoleKey.trim())
     throw new FileError(503, "File Storage is not configured.", "UNAVAILABLE");
-  const client = createClient(url, config.serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-    global: {
-      fetch: (input, init) =>
-        fetch(input, {
-          ...init,
-          signal: init?.signal
-            ? AbortSignal.any([init.signal, AbortSignal.timeout(90_000)])
-            : AbortSignal.timeout(90_000),
-        }),
-    },
-  });
+  const client = createPrivateStorageClient(config);
   return fileObjects(client.storage.from("repository-files"));
 }

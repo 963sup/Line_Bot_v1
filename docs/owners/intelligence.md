@@ -40,4 +40,4 @@ The attempt is a narrow technical record, not a generic AI framework or schema r
 
 ## Evidence
 
-Source lives in `packages/intelligence` and `vercel/integrations`; canonical ownership and dependency direction live in `architecture/semantic-model.json` and `architecture/implementation-topology.json`. Simulated provider tests verify protocol mapping, bounded failures, source/intent recovery and processor identity, but do not prove live Vercel AI Gateway availability, extraction accuracy, provider acceptance, production configuration or LINE-device behavior.
+Source lives in `packages/intelligence` and `packages/integration-vercel`; canonical ownership and dependency direction live in `architecture/semantic-model.json` and `architecture/implementation-topology.json`. Simulated provider tests verify protocol mapping, bounded failures, source/intent recovery and processor identity, but do not prove live Vercel AI Gateway availability, extraction accuracy, provider acceptance, production configuration or LINE-device behavior.

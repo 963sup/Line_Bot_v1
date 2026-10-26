@@ -17,26 +17,31 @@ function fixture() {
   const dataTopology = {
     version: 2,
     role: "relation-data-topology",
-    files: [{ path: "supabase/schemas/600_repositories.sql", role: "authoritative" }],
+    files: [
+      {
+        path: "packages/integration-supabase/src/schemas/600_repositories.sql",
+        role: "authoritative",
+      },
+    ],
     relations: [
       {
         name: "repositories",
         kind: "table",
-        path: "supabase/schemas/600_repositories.sql",
+        path: "packages/integration-supabase/src/schemas/600_repositories.sql",
         authority: true,
         semanticOwner: "repository",
         concept: "repository",
       },
     ],
   };
-  const schemaFiles = ["supabase/schemas/600_repositories.sql"];
+  const schemaFiles = ["packages/integration-supabase/src/schemas/600_repositories.sql"];
   const relationsByFile = new Map([[schemaFiles[0], [{ name: "repositories", kind: "table" }]]]);
   return { model, dataTopology, schemaFiles, relationsByFile };
 }
 
 test("future schema placeholders are rejected by the current-state topology", () => {
   const f = fixture();
-  const path = "supabase/schemas/870_employments.sql";
+  const path = "packages/integration-supabase/src/schemas/870_employments.sql";
   f.dataTopology.files.push({ path, role: "reserved", targetOwner: "workforce" });
   f.schemaFiles.push(path);
   f.relationsByFile.set(path, []);

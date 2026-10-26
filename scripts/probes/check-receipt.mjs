@@ -16,14 +16,14 @@ if (process.argv.slice(2).join(" ") !== "--live") {
     const { createReceiptRecognizer } = await import(
       require.resolve("@line_bot_v1/expense/composition/bootstrap/receipt-recognizer")
     );
-    const { createVercelAiGateway } = await import("../../vercel/integrations/ai-gateway.mjs");
+    const { createVercelAiGateway } = await import("@line_bot_v1/integration-vercel/gateway");
     loadRootEnv();
     const image = await readFile(
       new URL("../../packages/expense/test/fixtures/receipt-demo.png", import.meta.url),
     );
     const model = process.env.AI_GATEWAY_MODEL;
     if (!model) throw new Error("Missing AI Gateway configuration");
-    const gateway = createVercelAiGateway(model);
+    const gateway = createVercelAiGateway({ model });
     const recognize = createReceiptRecognizer({
       downloadImage: async () => ({ image, mimeType: "image/png" }),
       generate: (input) => gateway.receipt(input),

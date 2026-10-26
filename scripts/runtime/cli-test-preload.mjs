@@ -27,6 +27,7 @@ const mocked = new Set([
   "@line_bot_v1/line/mini-app",
   "@line_bot_v1/line/provider",
   "@line_bot_v1/platform/postgres",
+  "@line_bot_v1/integration-vercel/gateway",
 ]);
 
 function operationSource(
@@ -146,6 +147,13 @@ function sourceFor(url) {
           globalThis.__cliDatabaseClosed = true;
           if (process.env.CLI_SCENARIO === "cleanup-error") throw new Error("TOP_SECRET_CLEANUP");
         }
+      }
+    `;
+  if (specifier === "@line_bot_v1/integration-vercel/gateway")
+    return `
+      export function createVercelAiGateway(config) {
+        if (!config?.model) throw new Error("AI Gateway model is not configured.");
+        return { documentExtractor: () => ({ id: "test", version: "test", extract: async () => ({}) }) };
       }
     `;
   if (specifier === "@line_bot_v1/line/identity")

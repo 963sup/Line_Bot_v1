@@ -4,17 +4,17 @@ import { createReceiptIntake } from "@line_bot_v1/expense/application/receipt-in
 import { createRecognizeReceipt } from "@line_bot_v1/expense/application/recognize-receipt";
 import { createPostgresExpenseStore } from "@line_bot_v1/expense/composition/bootstrap/postgres-expense-store";
 import { createReceiptRecognizer } from "@line_bot_v1/expense/composition/bootstrap/receipt-recognizer";
+import { createVercelAiGateway } from "@line_bot_v1/integration-vercel/gateway";
+import { gatewayConfiguration } from "@line_bot_v1/integration-vercel/gateway-config";
 import { downloadLineImage } from "@line_bot_v1/line/messaging-api";
-import { createVercelAiGateway } from "../../../../../../vercel/integrations/gateway.ts";
 import { activeLineUser } from "./account.server";
 
 const recognizeImage = async (imageId: string) => {
-  const model = process.env.AI_GATEWAY_MODEL;
-  const hasCredentials = Boolean(process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN);
-  if (!model || !hasCredentials) throw new Error("AI Gateway is not configured");
+  const gateway = gatewayConfiguration();
+  if (!gateway) throw new Error("AI Gateway is not configured");
   return createReceiptRecognizer({
     downloadImage: (id) => downloadLineImage(id, process.env.LINE_CHANNEL_ACCESS_TOKEN ?? ""),
-    generate: createVercelAiGateway({ model }).receipt,
+    generate: createVercelAiGateway(gateway).receipt,
   })(imageId);
 };
 

@@ -5,7 +5,7 @@
     ".": {
       // Analyze every repository-owned script. Exact opaque entries below are limited to
       // scripts whose external/manual execution cannot be inferred reliably by Knip.
-      "project": ["scripts/**/*.{mjs,ts}", "vercel/integrations/**/*.{mjs,ts}"],
+      "project": ["scripts/**/*.{mjs,ts}"],
       "entry": [
         "scripts/attendance/worker.mjs",
         "scripts/browser/check-auto-clock.mjs",
@@ -22,9 +22,7 @@
         "scripts/browser/check-repository-resources.mjs",
         "scripts/browser/check-repository-address.mjs",
         "scripts/browser/measure-loading.mjs",
-        "scripts/line/rich-menu/sync.ts",
-        "vercel/integrations/ai-gateway.mjs",
-        "vercel/integrations/gateway.ts"
+        "scripts/line/rich-menu/sync.ts"
       ],
       // Root operator scripts intentionally resolve these from their owning workspace:
       // Next/tsx from Web and the repository-owned Supabase CLI.

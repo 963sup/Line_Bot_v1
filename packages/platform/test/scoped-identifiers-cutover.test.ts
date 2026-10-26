@@ -4,7 +4,7 @@ import test from "node:test";
 import { PGlite } from "@electric-sql/pglite";
 
 const revision = "a".repeat(40);
-const directory = new URL("../../../supabase/schemas/", import.meta.url);
+const directory = new URL("../../../packages/integration-supabase/src/schemas/", import.meta.url);
 
 async function legacyFixture() {
   const pg = new PGlite();

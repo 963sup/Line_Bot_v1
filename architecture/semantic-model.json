@@ -11,13 +11,25 @@
     "implementationTopology": "architecture/implementation-topology.json",
     "businessOwnerDocs": "docs/owners/",
     "runtimeBehavior": "source-code-and-tests",
-    "persistenceCurrentState": "supabase/schemas/",
+    "persistenceCurrentState": "packages/integration-supabase/src/schemas/",
     "historicalChange": "docs/change/",
     "dataTopology": "architecture/data-topology.json",
     "githubFptDomainTruth": "architecture/domain/fpt/*.json",
     "githubFptProvenance": "architecture/domain/fpt-source.json"
   },
   "semanticOwners": [
+    {
+      "id": "vercel-integration",
+      "kind": "integration-owner",
+      "lifecycle": "current",
+      "doc": "docs/owners/vercel-integration.md"
+    },
+    {
+      "id": "supabase-integration",
+      "kind": "integration-owner",
+      "lifecycle": "current",
+      "doc": "docs/owners/supabase-integration.md"
+    },
     {
       "id": "account",
       "kind": "business-owner",
@@ -2186,6 +2198,24 @@
     }
   ],
   "relationships": [
+    {
+      "id": "supabase-file-storage-client",
+      "provider": "supabase-integration",
+      "consumer": "file",
+      "meaning": "File adapter uses the server-only Supabase Storage transport client; File retains object keys, SHA-256 verification, errors, writes and readback consistency.",
+      "integrationMode": "reference",
+      "authority": "supabase-integration",
+      "consistency": "per-operation-verified"
+    },
+    {
+      "id": "intelligence-vercel-processor-port",
+      "provider": "intelligence",
+      "consumer": "vercel-integration",
+      "meaning": "Vercel processor adapter implements the public IntelligenceProcessor contract. Intelligence owns processing lifecycle, evidence and Contract intake.",
+      "integrationMode": "reference",
+      "authority": "intelligence",
+      "consistency": "injected-at-composition"
+    },
     {
       "id": "namespace-account-root-reservation",
       "provider": "namespace",
@@ -6228,7 +6258,7 @@
     },
     {
       "id": "persistence-current-state",
-      "authority": "supabase/schemas/",
+      "authority": "packages/integration-supabase/src/schemas/",
       "scope": "database current structure"
     },
     {
@@ -6253,6 +6283,14 @@
     }
   ],
   "implementationMappings": [
+    {
+      "semanticOwner": "vercel-integration",
+      "module": "@line_bot_v1/integration-vercel"
+    },
+    {
+      "semanticOwner": "supabase-integration",
+      "module": "@line_bot_v1/integration-supabase"
+    },
     {
       "semanticOwner": "account",
       "module": "@line_bot_v1/account"
@@ -6565,7 +6603,7 @@
     {
       "id": "data",
       "meaning": "Persisted facts, access and isolation ownership.",
-      "source": "implementationMappings.data + supabase/schemas"
+      "source": "implementationMappings.data + packages/integration-supabase/src/schemas"
     },
     {
       "id": "consistency",

@@ -10,8 +10,8 @@ GitHub evidence is read through the shared `scripts/github/api.mjs` transport. J
 
 | Operation | Changed inputs | Command |
 | --- | --- | --- |
-| Supabase | `supabase/schemas/*.sql` | `pnpm schema:remote sync` |
-| Supabase File Bucket | `supabase/config.toml`, `scripts/supabase/storage.mjs` | `pnpm storage:remote sync` |
+| Supabase | `packages/integration-supabase/src/schemas/*.sql` | `pnpm schema:remote sync` |
+| Supabase File Bucket | `packages/integration-supabase/src/config.toml`, `scripts/supabase/storage.mjs` | `pnpm storage:remote sync` |
 | Rich Menu | images, publication code and its executable inputs | `pnpm line:rich-menu publish all` |
 | Web | Turbo Web build graph, excluding publication-only sources | `pnpm vercel:deploy:production --live --sha <sha>` |
 | Attendance scheduler | scheduler code, pending schema or Web runtime since scheduler success | `pnpm attendance:scheduler reconcile --live --sha <sha>` |

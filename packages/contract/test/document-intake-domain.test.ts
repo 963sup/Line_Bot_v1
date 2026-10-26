@@ -68,6 +68,17 @@ function draft(expectedLineCount: number, facts = candidate(54)) {
   });
 }
 
+function sourceReviewAttestation(facts: PurchaseOrderCandidate) {
+  return {
+    verifiedLineCount: facts.lines.length,
+    reviewedSourcePages: [
+      ...new Set([...facts.lines.flatMap((line) => line.sourcePages), ...facts.terms.sourcePages]),
+    ],
+    reviewedSourceRowIds: facts.lines.map((line) => line.sourceRowId),
+    confirmedFromOriginal: true as const,
+  };
+}
+
 function confirm(
   current: ReturnType<typeof draft>,
   acknowledgement?: { reason: string },
@@ -80,6 +91,7 @@ function confirm(
     expectedLineCount,
     candidate: candidateFacts,
     source: current.source,
+    sourceReviewAttestation: sourceReviewAttestation(candidateFacts),
     ...(acknowledgement ? { acknowledgement } : {}),
     id: randomUUID(),
     documentId: current.documentId,
@@ -110,6 +122,19 @@ test("exact decimal aggregation preserves monetary precision without floating po
   assert.equal(addExactDecimals(["99613576", "-18113576"]), "81500000");
   assert.equal(addExactDecimals(["0.1", "0.2", "-0.05"]), "0.25");
   assert.equal(addExactDecimals(["10.00", "-9"]), "1");
+});
+
+test("confirmation rejects a line gross that does not equal quantity times unit price", () => {
+  const facts = candidate(1);
+  const invalid: PurchaseOrderCandidate = {
+    ...facts,
+    lines: facts.lines.map((line) => ({ ...line, grossAmount: "20" })),
+  };
+  const saved = draft(1, invalid);
+  assert.throws(
+    () => confirm(saved),
+    (error: unknown) => error instanceof ContractError && error.code === "INVALID_INPUT",
+  );
 });
 
 test("purchase-order schema publishes a nullable string enum and stable version", () => {

@@ -78,7 +78,8 @@ export function classifyChangedFiles(files) {
   const isDoc = (file) =>
     file.endsWith(".md") || (file.startsWith("docs/") && file.endsWith(".txt"));
   const isSchemaSource = (file) =>
-    file.startsWith("supabase/schemas/") || file === "supabase/config.toml";
+    file.startsWith("packages/integration-supabase/src/schemas/") ||
+    file === "packages/integration-supabase/src/config.toml";
   const isToolingMetadata = (file) =>
     file === "AGENTS.md" ||
     file.endsWith("/AGENTS.md") ||
