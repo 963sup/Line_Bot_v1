@@ -3340,7 +3340,7 @@
       "consumer": "file",
       "meaning": "File adapter uses the server-only Supabase Storage transport client; File retains object keys, SHA-256 verification, errors, writes and readback consistency.",
       "integrationMode": "reference",
-      "authority": "file",
+      "authority": "supabase-integration",
       "consistency": "per-operation-verified"
     },
     {
