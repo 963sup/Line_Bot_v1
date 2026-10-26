@@ -1,8 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "regions": [
-    "hkg1"
-  ],
+  "regions": ["hkg1"],
   "buildCommand": "cd ../.. && pnpm exec turbo run build --filter=@line_bot_v1/web",
   "git": {
     "deploymentEnabled": {
