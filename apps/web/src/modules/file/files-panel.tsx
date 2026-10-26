@@ -483,15 +483,20 @@ export default function FilesPanel({
         ...(command ? { body: JSON.stringify(command) } : {}),
         cache: "no-store",
       });
-      const value: unknown = await response.json();
+      const contentType = response.headers.get("content-type") ?? "";
+      const value: unknown = contentType.includes("application/json")
+        ? await response.json()
+        : await response.text();
       if (ticket !== epoch.current) throw new StaleRequest();
       if (!response.ok) {
         const message =
           value && typeof value === "object" && "error" in value && typeof value.error === "string"
             ? value.error
-            : query.operation === "read"
-              ? "ContractDocument 讀取失敗。"
-              : "採購單操作失敗。";
+            : response.status === 504
+              ? "採購單 AI 解析逾時，請稍後重試。"
+              : query.operation === "read"
+                ? "ContractDocument 讀取失敗。"
+                : "採購單操作失敗。";
         if (response.status === 401 || response.status === 403) {
           clear();
           setError(message);

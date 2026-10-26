@@ -4,7 +4,7 @@ import { requestLineIdentity } from "../_composition/request-identity.server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 export function GET(request: Request) {
   return documentIntakeRequest(request, documentIntake(), requestLineIdentity);
