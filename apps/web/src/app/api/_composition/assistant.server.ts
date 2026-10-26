@@ -1,5 +1,6 @@
 import { runIntakeAgent } from "@line_bot_v1/assistant/agents/intake";
 import { createVercelAiGateway } from "../../../../../../vercel/integrations/gateway.ts";
+import { gatewayConfiguration } from "../../../../../../vercel/integrations/gateway-config.ts";
 import {
   type AssistantRuntimeDependencies,
   createAssistantRuntime,
@@ -7,12 +8,6 @@ import {
 import type { AssistantSurfaceMode } from "../../../modules/assistant/web-surface";
 import { runAssistantSurface } from "../../../modules/assistant/web-surface.server";
 import { activeLineUser } from "./account.server";
-
-function gatewayConfiguration() {
-  const model = process.env.AI_GATEWAY_MODEL;
-  const hasCredentials = Boolean(process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN);
-  return model && hasCredentials ? { model } : undefined;
-}
 
 const assistantRuntime = createAssistantRuntime({
   isConfigured: () => Boolean(gatewayConfiguration()),
