@@ -11,7 +11,7 @@ if (!cli || !isAbsolute(cli) || !existsSync(cli)) {
   process.exit(1);
 }
 const root = fileURLToPath(new URL("../../../", import.meta.url));
-for (const name of readdirSync(new URL("../../.codex/rules/", import.meta.url)).filter((name) =>
+for (const name of readdirSync(new URL("../../../.codex/rules/", import.meta.url)).filter((name) =>
   name.endsWith(".rules"),
 )) {
   // Loading a rule file runs its embedded match/not_match assertions. The probe is not executed.
