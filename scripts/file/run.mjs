@@ -6,24 +6,13 @@ import { fileLimits } from "@line_bot_v1/file/domain/file";
 import { createVercelAiGateway } from "@line_bot_v1/integration-vercel/gateway";
 import { createPostgresIntelligenceProcessing } from "@line_bot_v1/intelligence/composition/bootstrap/processing";
 import { plainTextProcessor } from "@line_bot_v1/intelligence/composition/bootstrap/processors";
-import { PostgresDatabase } from "@line_bot_v1/platform/postgres";
-import { classifyInternalFailure } from "../runtime/internal-failure.mjs";
-import {
-  InternalInputError,
-  internalActor,
-  readInternalInput,
-} from "../runtime/internal-input.mjs";
-import { loadRootEnv } from "../runtime/load-env.mjs";
+import { InternalInputError } from "../runtime/internal-input.mjs";
+import { runInternalOperation } from "../runtime/internal-operation.mjs";
 
-let db;
-let output;
-let failed = false;
-let mutationStarted = false;
-try {
-  loadRootEnv();
-  db = new PostgresDatabase();
-  const input = await readInternalInput();
-  const actor = await internalActor(db, input.proof);
+const output = await runInternalOperation({
+  errorMessage: "File operation failed; no credential, original file or provider payload is not logged.",
+  errorClass: FileError,
+  operation: async ({ db, input, actor, markMutation }) => {
   const files = createFiles({ ...createPostgresFileDependencies(db), now: Date.now });
   const processing = createPostgresIntelligenceProcessing(db);
   let result;
@@ -49,7 +38,7 @@ try {
     } finally {
       await handle.close();
     }
-    mutationStarted = true;
+    markMutation();
     result = await files.upload(actor, input.command, bytes);
   } else if (input.operation === "run") {
     let extractor;
@@ -62,10 +51,10 @@ try {
         throw new InternalInputError("Configure the selected extractor.");
       extractor = createVercelAiGateway({ model: process.env.AI_GATEWAY_MODEL }).fileProcessor();
     } else throw new InternalInputError("Explicit processor selection is required.");
-    mutationStarted = true;
+    markMutation();
     result = await processing.run(actor, input.command, extractor);
   } else if (input.operation === "result") {
-    mutationStarted = true;
+    markMutation();
     result = await processing.result(actor, input.command);
   } else if (input.operation === "list")
     result = await files.list(actor, input.repositoryId, input.after);
@@ -82,19 +71,8 @@ try {
     await writeFile(input.destinationPath, source.bytes, { flag: "wx", mode: 0o600 });
     result = { file: source.file, written: true };
   } else throw new InternalInputError("Unknown File operation.");
-  output = { ok: true, value: result };
-} catch (error) {
-  output = {
-    ok: false,
-    error: "File operation failed; no credential, original file or provider payload is logged.",
-    ...classifyInternalFailure(error, FileError, mutationStarted),
-  };
-  failed = true;
-} finally {
-  if (db)
-    try {
-      await db.close();
-    } catch {}
-}
-(failed ? console.error : console.log)(JSON.stringify(output));
-if (failed) process.exitCode = 1;
+  return result;
+  },
+});
+(output.ok ? console.log : console.error)(JSON.stringify(output));
+if (!output.ok) process.exitCode = 1;

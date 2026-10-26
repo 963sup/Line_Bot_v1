@@ -4,24 +4,13 @@ import { createContracts } from "@line_bot_v1/contract/application/use-cases/con
 import { createPostgresContractDependencies } from "@line_bot_v1/contract/composition/bootstrap/contracts";
 import { createPostgresContractDocuments } from "@line_bot_v1/contract/composition/bootstrap/documents";
 import { ContractError } from "@line_bot_v1/contract/domain/error";
-import { PostgresDatabase } from "@line_bot_v1/platform/postgres";
-import { classifyInternalFailure } from "../runtime/internal-failure.mjs";
-import {
-  InternalInputError,
-  internalActor,
-  readInternalInput,
-} from "../runtime/internal-input.mjs";
-import { loadRootEnv } from "../runtime/load-env.mjs";
+import { InternalInputError } from "../runtime/internal-input.mjs";
+import { runInternalOperation } from "../runtime/internal-operation.mjs";
 
-let db;
-let output;
-let failed = false;
-let mutationStarted = false;
-try {
-  loadRootEnv();
-  db = new PostgresDatabase();
-  const input = await readInternalInput();
-  const actor = await internalActor(db, input.proof);
+const output = await runInternalOperation({
+  errorMessage: "Contract operation failed; no credential or provider payload is logged.",
+  errorClass: ContractError,
+  operation: async ({ db, input, actor, markMutation }) => {
   const store = createPostgresContractDependencies(db);
   const contracts = createContracts({ ...store, now: Date.now });
   let result;
@@ -53,12 +42,12 @@ try {
       diagnosticCount: revision.diagnostics.length,
     };
   } else if (input.operation === "document-submit") {
-    mutationStarted = true;
+    markMutation();
     result = await createPostgresContractDocuments(db).submit(actor, input.command);
   } else if (input.operation === "document-receipt") {
     result = await createPostgresContractDocuments(db).receipt(actor, input.query);
   } else if (input.operation === "execute") {
-    mutationStarted = true;
+    markMutation();
     result = await contracts.execute(actor, input.command);
   } else if (input.operation === "list" && typeof input.repositoryId === "string")
     result = await contracts.list(actor, input.repositoryId, input.after);
@@ -66,20 +55,9 @@ try {
   else if (input.operation === "history")
     result = await contracts.history(actor, input.query, input.before);
   else throw new InternalInputError("Unknown Contract operation.");
-  output = { ok: true, value: result };
-} catch (error) {
-  output = {
-    ok: false,
-    error: "Contract operation failed; no credential or provider payload is logged.",
-    ...classifyInternalFailure(error, ContractError, mutationStarted),
-  };
-  failed = true;
-} finally {
-  if (db)
-    try {
-      await db.close();
-    } catch {}
-}
+  return result;
+  },
+});
 
-(failed ? console.error : console.log)(JSON.stringify(output));
-if (failed) process.exitCode = 1;
+(output.ok ? console.log : console.error)(JSON.stringify(output));
+if (!output.ok) process.exitCode = 1;
