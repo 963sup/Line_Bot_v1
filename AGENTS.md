@@ -60,7 +60,7 @@
 
 先用 [task router](docs/README.md) 取最小 context；已知且限於單一 Owner 時直接讀 owner contract + nearest `AGENTS.md`。Owner 未知、語意歧義或跨 Owner 影響未釐清時，依上方條件使用 `pnpm semantic plan "<intent>"`，需要具體閱讀來源再用 `context`。
 
-修改指引前先核對實際 consumer；任務入口放 `.github/prompts/`，不維護重複 skill 或 Markdown review database。
+修改指引前先核對實際 consumer；不維護 repository 內重複的 agent prompt 或 Markdown review database。
 
 Source-of-truth：[facts/sources-of-truth.md](docs/facts/sources-of-truth.md)。子 AGENTS 只增加 local constraints。
 
@@ -76,4 +76,4 @@ Source-of-truth：[facts/sources-of-truth.md](docs/facts/sources-of-truth.md)。
 - 一般修改 `pnpm check`；文件 `pnpm docs:check`；merge/release `pnpm validate`。Evidence boundary：[validation rules](docs/rules/validation-evidence.md)。
 - Merge 前依 [development workflow](docs/reference/engineering/development-workflow.md) 收斂 WIP/fixup history。
 
-Scopes：[`packages/`](packages/AGENTS.md) · [`scripts/`](scripts/AGENTS.md) · [`.github/`](.github/AGENTS.md)。
+Scopes：[`packages/`](packages/AGENTS.md)。GitHub platform settings remain under `.github/`.
