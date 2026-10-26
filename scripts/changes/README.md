@@ -8,7 +8,7 @@
 | `state.test.mjs` | 驗證 ahead/behind 解析與 merge blocker 判斷。 |
 | `status.mjs` | `pnpm change:status`：輸出目前 change branch 狀態，不修改 Git。 |
 | `preflight.mjs` | `pnpm change:preflight`：確認 feature branch、upstream、origin/main 對齊、clean tree 與無 conflict。 |
-| `finalize.mjs` | `pnpm change:finalize`：preflight 後執行 canonical `pnpm validate`，再確認 branch state。 |
+| `finalize.mjs` | `pnpm change:finalize`：preflight 後執行 canonical `pnpm validate`，完整輸出寫入 ignored `.artifacts/change-finalize-*`，失敗僅顯示有界診斷與 log path；再確認 branch state。 |
 | `finalize.test.mjs` | 驗證完整 validation 失敗、dirty/conflict、branch/HEAD/base/upstream 變動均不能宣稱 exact-head 成功。 |
 | `patch-apply.mjs` | `pnpm patch:apply <plan.json> [--apply]`：以 SHA-256 + exact-before preflight 執行 declarative replacement。 |
 | `patch-apply.test.mjs` | 驗證 patch path/hash/precondition/dry-run/apply/TOCTOU guards。 |
