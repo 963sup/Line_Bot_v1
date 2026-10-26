@@ -1,0 +1,18 @@
+rg_commands = ["rg", "rg.exe"]
+
+# ============================================================
+# ripgrep: bounded local search
+# ============================================================
+
+prefix_rule(
+    pattern = [rg_commands],
+    decision = "allow",
+    justification = "ripgrep performs read-only local source and configuration search.",
+    match = [
+        "rg -n \"pattern\" .",
+        "rg --files .",
+    ],
+    not_match = [
+        "Remove-Item -Recurse .",
+    ],
+)

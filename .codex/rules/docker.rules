@@ -1,0 +1,62 @@
+docker_commands = ["docker", "docker.exe"]
+
+prefix_rule(
+    pattern = [docker_commands, ["--version", "version", "ps", "inspect"]],
+    decision = "allow",
+    justification = "Docker version and local container inspection are bounded diagnostics.",
+    match = [
+        "docker --version",
+        "docker ps",
+        "docker inspect container-name",
+    ],
+    not_match = [
+        "docker rm container-name",
+        "docker system prune",
+    ],
+)
+
+prefix_rule(
+    pattern = [docker_commands, "compose", ["config", "ps"]],
+    decision = "allow",
+    justification = "Docker Compose configuration and service inspection are read-only diagnostics.",
+    match = [
+        "docker compose config",
+        "docker compose ps",
+    ],
+    not_match = [
+        "docker compose up",
+        "docker compose down",
+    ],
+)
+
+prefix_rule(
+    pattern = [docker_commands, ["run", "rm", "rmi"]],
+    decision = "prompt",
+    justification = "Docker commands may create, stop, remove, or mutate local services, images, volumes, and networks.",
+    match = [
+        "docker run image",
+    ],
+    not_match = [
+        "docker ps",
+        "docker compose config",
+    ],
+)
+
+prefix_rule(
+    pattern = [docker_commands, "compose", ["up", "down"]],
+    decision = "prompt",
+    justification = "Docker Compose up or down changes local services and may affect mounted data and networks.",
+    match = [
+        "docker compose up",
+        "docker compose down",
+    ],
+    not_match = ["docker compose config", "docker compose ps"],
+)
+
+prefix_rule(
+    pattern = [docker_commands, "system", "prune"],
+    decision = "prompt",
+    justification = "Docker system prune removes local Docker resources and requires explicit review.",
+    match = ["docker system prune"],
+    not_match = ["docker ps"],
+)

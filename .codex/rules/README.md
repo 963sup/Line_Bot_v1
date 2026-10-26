@@ -15,11 +15,26 @@ external-effect contracts.
 
 | File | Title / function | Used by | Effect boundary |
 | --- | --- | --- | --- |
+| [ast-grep.rules](ast-grep.rules) | AST code analysis | ast-grep (`sg`) commands | Allows bounded analysis; rewrites remain outside the allow boundary. |
 | [default.rules](default.rules) | GCP safety defaults | Any direct GCP CLI use | Prompts for durable infrastructure, key, secret, or deployment effects. |
+| [actionlint.rules](actionlint.rules) | GitHub Actions workflow validation | actionlint commands | Allows local workflow validation only. |
+| [biome.rules](biome.rules) | JavaScript/TypeScript formatting and linting | Biome commands | Allows read-only checks; prompts for write mode. |
+| [docker.rules](docker.rules) | Container diagnostics and lifecycle | Docker commands | Allows inspection; prompts for container, image, volume, or network mutation. |
 | [gh.rules](gh.rules) | GitHub CLI safety | GitHub CLI tasks | Separates bounded reads from issue, PR, release, and workflow mutations. |
+| [gitleaks.rules](gitleaks.rules) | Local secret scanning | gitleaks commands | Allows version and redacted scans; prompts for unredacted scans. |
 | [git.rules](git.rules) | Git history and worktree safety | Local Git lifecycle | Separates inspection/recoverable operations from remote pushes and destructive history/file actions. |
+| [knip.rules](knip.rules) | Unused code and dependency analysis | Knip commands | Allows local analysis. |
+| [node.rules](node.rules) | Node.js local execution | Node version and test commands | Allows bounded version checks and local test execution. |
+| [npm.rules](npm.rules) | npm compatibility boundary | npm commands | Allows version checks; prompts for dependency and publication operations because the repository uses pnpm. |
 | [pnpm.rules](pnpm.rules) | Local package command safety | Package manager tasks | Allows ordinary local execution/validation; prompts for publication. |
+| [playwright.rules](playwright.rules) | Browser test execution | Playwright commands | Allows repository tests; prompts for browser downloads and interactive generation. |
+| [python.rules](python.rules) | Python runtime and tests | Python commands | Allows version checks and pytest; prompts for package installation. |
+| [rg.rules](rg.rules) | Read-only source search | ripgrep commands | Allows local search without filesystem mutation. |
 | [supabase.rules](supabase.rules) | Supabase CLI safety | Schema inspection tasks | Allows inspection/diff/lint; prompts for database reset. |
+| [tsc.rules](tsc.rules) | TypeScript compilation | `tsc` commands | Allows no-emit checks; prompts for artifact-producing compilation. |
+| [tsx.rules](tsx.rules) | TypeScript runtime and tests | `tsx` commands | Allows bounded local test execution. |
+| [turbo.rules](turbo.rules) | Monorepo task orchestration | Turbo commands | Allows repository-defined `turbo run` tasks. |
+| [uv.rules](uv.rules) | Python environment and task execution | uv commands | Allows scoped `uv run`; prompts for dependency and tool installation. |
 | [vercel.rules](vercel.rules) | Vercel CLI safety | Deployment diagnosis tasks | Allows bounded inspection; prompts for deploy, production, and deletion. |
 
 ## Design and validation

@@ -14,6 +14,24 @@ contains only the runtime constraints that apply to every child.
 - Do not broaden sandbox, approval, MCP, or command prefixes merely to pass a task. Preserve least privilege and report an unavailable capability instead.
 - Validate changes under this tree with `pnpm tooling:check`; validate rule semantics with `pnpm tooling:rules`; validate Markdown links with `pnpm docs:check`. Static checks do not prove a running session reloaded configuration.
 
+## External CLI runtime
+
+- The Codex runner owns process-level configuration for authenticated external CLIs such as GitHub CLI and Vercel CLI.
+- The baseline runner capabilities are Git, GitHub CLI, Vercel CLI, Node.js, pnpm, ripgrep, actionlint, and gitleaks; availability is runtime state, not repository-owned installation metadata.
+- Repository instructions and scripts may require these capabilities, but must not hard-code runner-specific absolute paths or assign credential-related environment variables.
+- Repository tooling may read the current process environment and perform bounded, read-only availability/authentication checks without printing tokens or credential contents.
+- Credential stores, CLI paths, and authentication state remain outside repository source, commits, logs, and chat content.
+- If the runner does not inject the required capability, report it as unavailable; do not create a repository-local credential or compatibility workaround.
+
+## Codex integrations
+
+- Prefer the enabled Serena, GitHub, Vercel, Context7, and Next DevTools integrations when their scoped capability is more precise than raw CLI output.
+- Serena is the preferred route for symbol, reference, and dependency exploration; read its session instructions before coding work.
+- GitHub and Vercel integrations remain subject to the same read/write authorization boundaries as their CLIs; connector availability does not authorize remote mutation.
+- Context7 and Next DevTools are documentation/runtime evidence sources, not replacements for repository source of truth or validation.
+- Do not assume a separate Playwright MCP is available. Use the repository-pinned Playwright capability or the enabled browser/Next DevTools route when browser verification is required.
+- Integrations must return bounded, task-relevant evidence; do not preload complete PRs, deployments, logs, or documentation into context.
+
 ## Dispatch enforcement
 
 - For cross-Owner work, architecture/public-contract decisions, independent review, runtime investigation, merge-conflict resolution, or validation/acceptance claims, Primary must dispatch an enabled Atomic to its derived executor profile before integrating a conclusion.

@@ -1,0 +1,22 @@
+biome_commands = ["biome", "biome.exe"]
+
+prefix_rule(
+    pattern = [biome_commands, "--version"],
+    decision = "allow",
+    justification = "Biome version is a local tool availability check.",
+    match = ["biome --version"],
+    not_match = ["biome check --write ."],
+)
+
+prefix_rule(
+    pattern = [biome_commands, ["check", "format"]],
+    decision = "prompt",
+    justification = "Biome check or format operations may write files depending on flags and require review of the exact target.",
+    match = [
+        "biome check .",
+        "biome format .",
+        "biome check --write .",
+        "biome format --write .",
+    ],
+    not_match = ["biome --version"],
+)

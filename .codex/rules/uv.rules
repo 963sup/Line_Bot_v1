@@ -1,0 +1,30 @@
+uv_commands = ["uv", "uv.exe"]
+
+prefix_rule(
+    pattern = [uv_commands, ["--version", "version"]],
+    decision = "allow",
+    justification = "uv version checks are local environment diagnostics.",
+    match = ["uv --version", "uv version"],
+    not_match = ["uv pip install package-name", "uv tool install package-name"],
+)
+
+prefix_rule(
+    pattern = [uv_commands, "run"],
+    decision = "allow",
+    justification = "uv run executes a project-scoped Python command without directly changing repository source.",
+    match = ["uv run python --version", "uv run pytest"],
+    not_match = ["uv pip install package-name"],
+)
+
+prefix_rule(
+    pattern = [uv_commands, ["pip", "sync", "add", "remove", "tool"]],
+    decision = "prompt",
+    justification = "uv dependency and tool commands change the runtime environment or access external package registries.",
+    match = [
+        "uv pip install package-name",
+        "uv sync",
+        "uv add package-name",
+        "uv tool install package-name",
+    ],
+    not_match = ["uv run pytest", "uv --version"],
+)

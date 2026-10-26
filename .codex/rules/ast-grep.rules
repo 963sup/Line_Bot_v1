@@ -1,0 +1,25 @@
+ast_grep_commands = ["sg", "sg.exe"]
+
+prefix_rule(
+    pattern = [ast_grep_commands, "--version"],
+    decision = "allow",
+    justification = "ast-grep version is a local tool availability check.",
+    match = ["sg --version"],
+    not_match = ["sg run --pattern 'x' --rewrite 'y'"],
+)
+
+prefix_rule(
+    pattern = [ast_grep_commands, "scan"],
+    decision = "allow",
+    justification = "ast-grep scan commands are bounded local code analysis.",
+    match = ["sg scan"],
+    not_match = ["sg run --pattern 'x' --rewrite 'y'"],
+)
+
+prefix_rule(
+    pattern = [ast_grep_commands, "run"],
+    decision = "prompt",
+    justification = "ast-grep run may rewrite files and requires review of the exact operation.",
+    match = ["sg run --pattern 'x' --rewrite 'y'"],
+    not_match = ["sg scan"],
+)
