@@ -348,17 +348,6 @@ function sourceReviewPages(candidate: Record<string, unknown>): number[] {
   return [...pages].sort((left, right) => left - right);
 }
 
-/** Presentation progress only; File supplies source storage while Intelligence owns ProcessingRuns. */
-export function fileIntakeStep(
-  hasSelectedFile: boolean,
-  state: Processing["state"] | null,
-): 1 | 2 | 3 | 4 {
-  if (!hasSelectedFile) return 1;
-  if (state === "SAVED") return 4;
-  if (state === "READY") return 3;
-  return 2;
-}
-
 export default function FilesPanel({
   liffId,
   ownerLogin,
@@ -981,29 +970,9 @@ export default function FilesPanel({
   const raw = processing?.rawResult ?? null;
   const saved = processing?.savedResult ?? null;
   const editable = view?.canEdit && processing?.state === "READY" && !!raw && !pending && !busy;
-  const currentStep = fileIntakeStep(selected !== null, processing?.state ?? null);
-
   return (
     <div className="grid gap-4 p-4 md:grid-cols-[minmax(16rem,1fr)_2fr]">
       <MiniAppRuntime liffId={liffId} onReady={load} onWait={clear} />
-      <ol
-        aria-label="File 處理步驟"
-        className="col-span-full grid gap-2 rounded-lg border p-3 text-sm sm:grid-cols-4"
-      >
-        {["上傳原始檔", "固定處理", "預覽與修正", "儲存結果"].map((title, index) => (
-          <li
-            key={title}
-            aria-current={index + 1 === currentStep ? "step" : undefined}
-            className={
-              index + 1 === currentStep
-                ? "rounded-md border border-primary px-3 py-2 font-medium"
-                : "rounded-md border border-transparent px-3 py-2 text-muted-foreground"
-            }
-          >
-            {index + 1}. {title}
-          </li>
-        ))}
-      </ol>
       <Card>
         <CardHeader>
           <CardTitle>Repository Files</CardTitle>
@@ -1131,7 +1100,7 @@ export default function FilesPanel({
 
       <Card>
         <CardHeader>
-          <CardTitle>{selected ? selected.name : "選擇 File"}</CardTitle>
+          {selected && <CardTitle>{selected.name}</CardTitle>}
           <CardDescription>
             原始檔保存；解析由 Intelligence 負責，確認後再交給 Contract。
           </CardDescription>
