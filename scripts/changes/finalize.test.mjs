@@ -132,7 +132,10 @@ test("successful finalize validation writes full output without emitting it", (t
   const npmExecPath = join(cwd, "fixture-pnpm.mjs");
   writeFileSync(npmExecPath, 'console.log("x".repeat(16 * 1024));');
   assert.equal(validateCommandSurface({ npmExecPath, cwd, outputDirectory }), undefined);
-  assert.equal(readFileSync(join(outputDirectory, "validate.log"), "utf8").trim().length, 16 * 1024);
+  assert.equal(
+    readFileSync(join(outputDirectory, "validate.log"), "utf8").trim().length,
+    16 * 1024,
+  );
 });
 
 test("validation uses the pinned pnpm entrypoint and rejects subprocess failure", () => {
