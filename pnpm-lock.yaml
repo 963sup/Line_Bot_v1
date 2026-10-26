@@ -790,7 +790,7 @@ importers:
         version: link:../intelligence
       ai:
         specifier: 'catalog:'
-        version: 7.0.149(zod@4.3.6)
+        version: 7.0.149(zod@4.5.4)
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
