@@ -29,6 +29,8 @@ Domain rule 不需要獨立 horizontal package 才能測試。當新增複雜 pu
 
 `waitForBlocked` 以 `pg_stat_activity` / `pg_blocking_pids` 確認不同 backend 真正等待指定 transaction，再由測試釋放 barrier；20ms polling interval 不是排程依據。等待有期限，finally 先釋放 transaction 並等 pending operations 結束，再清理資料庫。WBS 既有測試亦以可觀測條件輪詢，不因出現 polling timer 就改寫其正確結構。這些案例不代表所有 Owner／交錯排列或 production 已驗收。
 
+Validation responsibility：`test-database` 只在 changed code 或 schema 會影響 database-backed owners 時選取，並透過 Turbo affected selection 只測受影響 workspace；乾淨文件或純 tooling 變更不會啟動該 group。其 `--concurrency=2` 是為了避免每個 package 內部的資料庫／WASM test fan-out 造成記憶體競爭，仍受 Turbo cache 與每個 Owner 的資料庫契約限制。
+
 - 優先在最靠近 invariant 的層驗證；只有跨 adapter / runtime 的 claim 才往外擴。
 - Authorization、version conflict、replay、tenant/scope isolation 與 recovery 必須有拒絕／衝突反例，不能只測 happy path。
 - 需要 transaction 保護的 invariant 必須由 concrete persistence / concurrency evidence 覆蓋；mock repository 只能證明 application orchestration。
