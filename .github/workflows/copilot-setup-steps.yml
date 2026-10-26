@@ -56,5 +56,7 @@ jobs:
             copilot-${{ runner.os }}-${{ runner.arch }}-
       - name: Install workspace dependencies
         run: pnpm install --frozen-lockfile --prefer-offline
-      - name: Validate LINE Rich Menu tooling
-        run: pnpm --filter @line_bot_v1/line build && pnpm line:rich-menu preview all
+      - name: Build LINE Rich Menu tooling
+        run: pnpm --filter @line_bot_v1/line build
+      - name: Preview LINE Rich Menu tooling
+        run: pnpm line:rich-menu preview all

@@ -37,7 +37,9 @@ jobs:
           cache: true
           cache_dependency_path: pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile --prefer-offline
-      - run: pnpm --filter @line_bot_v1/line build
-      - run: pnpm line:rich-menu preview all
+      - name: Build LINE Rich Menu tooling
+        run: pnpm --filter @line_bot_v1/line build
+      - name: Preview LINE Rich Menu tooling
+        run: pnpm line:rich-menu preview all
       - run: pnpm --filter @line_bot_v1/line exec node --import tsx --test test/rich-menu.test.ts
       - run: pnpm --filter @line_bot_v1/web exec node --import tsx --test test/rich-menu-desired-state.test.ts test/rich-menu-publication.test.ts test/rich-menu-user.test.ts
