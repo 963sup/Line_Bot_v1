@@ -1,6 +1,7 @@
 # integration-supabase
 
-- Semantic owner: platform
+- Semantic owner: supabase-integration
+- Owner contract: [supabase-integration](../../docs/owners/supabase-integration.md)
 - Module kind: integration-adapter
 - Architecture: [implementation-topology.json](../../architecture/implementation-topology.json)
 
