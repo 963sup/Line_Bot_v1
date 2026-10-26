@@ -23,3 +23,25 @@ startup_timeout_sec = 30
 command = "pnpm"
 args = ["dlx", "shadcn@latest", "mcp"]
 startup_timeout_sec = 30
+
+[agents]
+enabled = true
+max_concurrent_threads_per_session = 4
+max_depth = 2
+default_subagent_reasoning_effort = "medium"
+
+[agents.reviewer]
+description = "Review code changes for correctness, regressions, and maintainability."
+config_file = "./agents/reviewer.toml"
+
+[agents.debugger]
+description = "Diagnose and fix test, build, runtime, and integration failures."
+config_file = "./agents/debugger.toml"
+
+[agents.architect]
+description = "Review architecture, module boundaries, dependency direction, and data flow."
+config_file = "./agents/architect.toml"
+
+[agents.security-auditor]
+description = "Audit application security, authentication, authorization, secrets, and Supabase RLS."
+config_file = "./agents/security-auditor.toml"
