@@ -141,7 +141,7 @@ test("local and CI validation bound aggregate test workers without changing scop
   );
   for (const ci of ["true", "false", undefined]) {
     for (const [mode, selection] of [
-      [["--fast", "--group", "test"], ["--affected"]],
+      [["--fast", "--group", "test-database"], ["--affected"]],
       [[], []],
       [["--fast"], ["--affected"]],
       [["--fast", "--filter=@line_bot_v1/team"], ["--filter=@line_bot_v1/team"]],
@@ -167,11 +167,17 @@ test("local and CI validation bound aggregate test workers without changing scop
         .filter((line) => line.startsWith("CAPTURE:"))
         .map((line) => JSON.parse(line.slice("CAPTURE:".length)))
         .filter((call) => call.args[1] === "run" && ["typecheck", "test"].includes(call.args[2]));
-      const expectedCalls = mode.includes("--group") ? 1 : 2;
+      const expectedCalls = mode.includes("--group") ? 1 : 3;
       assert.equal(calls.length, expectedCalls);
       for (const call of calls) {
         assert.deepEqual(call.args.slice(1, 3), ["run", call.args[2]]);
-        assert.deepEqual(call.args.slice(3), ["--concurrency=2", ...selection]);
+        const concurrency = call.args[2] === "typecheck" ? "--concurrency=4" : "--concurrency=2";
+        const filters = call.args.filter((arg) => arg.startsWith("--filter="));
+        assert.deepEqual(call.args.slice(3), [
+          concurrency,
+          ...filters,
+          ...(mode.some((arg) => arg.startsWith("--filter=")) ? [] : selection),
+        ]);
         assert.equal(call.ci, ci ?? null);
       }
     }
@@ -269,7 +275,7 @@ test("source operations trigger their tooling tests in fast validation and keep 
     assert.equal(shouldRunFast("tooling:test", scope), true, path);
     assert.equal(shouldRunFast("change:test", scope), true, path);
   }
-  assert.equal(Object.keys(validationGroups).length, 10);
+  assert.equal(Object.keys(validationGroups).length, 11);
 });
 
 test("local fast scope includes non-ignored untracked files and ignores excluded files", (t) => {
@@ -577,8 +583,12 @@ test("CI groups partition validation and reject unknown or unassigned stages", (
     ["build"],
   );
   assert.deepEqual(
-    selectValidationStages(stages, "test").map(([task]) => task),
-    ["test", "change:test", "attendance:scheduler:test"],
+    selectValidationStages(stages, "test-unit").map(([task]) => task),
+    ["test:unit"],
+  );
+  assert.deepEqual(
+    selectValidationStages(stages, "test-database").map(([task]) => task),
+    ["test:database", "change:test", "attendance:scheduler:test"],
   );
 });
 
@@ -589,7 +599,16 @@ test("changed-owner groups select only affected gates plus lockfile preflight", 
   ]);
   assert.deepEqual(
     selectedValidationGroups(classifyChangedFiles(["packages/account/src/domain.ts"])),
-    ["preflight", "lint", "architecture", "deadcode", "typecheck", "test", "build"],
+    [
+      "preflight",
+      "lint",
+      "architecture",
+      "deadcode",
+      "typecheck",
+      "test-unit",
+      "test-database",
+      "build",
+    ],
   );
   assert.deepEqual(selectedValidationGroups(null), Object.keys(validationGroups));
 });

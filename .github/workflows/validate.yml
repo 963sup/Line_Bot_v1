@@ -53,7 +53,7 @@ jobs:
       TURBO_TELEMETRY_DISABLED: "1"
     services:
       postgres:
-        image: ${{ matrix.group == 'test' && 'postgres:17' || '' }}
+        image: ${{ matrix.group == 'test:database' && 'postgres:17' || '' }}
         env:
           POSTGRES_PASSWORD: wbs-test
         ports:
@@ -91,8 +91,8 @@ jobs:
         env:
           VALIDATION_GROUP: ${{ matrix.group }}
           VALIDATION_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
-          WBS_TEST_DATABASE_URL: ${{ matrix.group == 'test' && format('postgresql://postgres:wbs-test@127.0.0.1:{0}/postgres', job.services.postgres.ports[5432]) || '' }}
-          CAPABILITY_TEST_DATABASE_URL: ${{ matrix.group == 'test' && format('postgresql://postgres:wbs-test@127.0.0.1:{0}/postgres', job.services.postgres.ports[5432]) || '' }}
+          WBS_TEST_DATABASE_URL: ${{ matrix.group == 'test:database' && format('postgresql://postgres:wbs-test@127.0.0.1:{0}/postgres', job.services.postgres.ports[5432]) || '' }}
+          CAPABILITY_TEST_DATABASE_URL: ${{ matrix.group == 'test:database' && format('postgresql://postgres:wbs-test@127.0.0.1:{0}/postgres', job.services.postgres.ports[5432]) || '' }}
         run: pnpm validate --fast --group "$VALIDATION_GROUP"
       - name: Upload validation logs
         if: always()

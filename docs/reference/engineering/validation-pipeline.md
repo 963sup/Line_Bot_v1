@@ -74,7 +74,7 @@ CI 的 validation 與 Copilot setup 共用 pnpm store、Turbo cache 與 Next cac
 
 Type generation、test/build artifact 與 dependency install 在同一 checkout 可能競爭。驗證流程預設按 repository runner 順序執行；不要同時手動跑另一套會寫相同產物的 command。
 
-`check`／`validate` 的 typecheck 與 test 在 CI 分成獨立 validation groups，可平行執行並分別定位失敗；兩者各自最多兩個 Turbo tasks。單一 package 的 Node test runner 仍最多兩個 workers，避免跨套件並行相乘而同時初始化過多 PGlite／WASM instances。這是 aggregate resource budget，不縮小 package、test 或 schema coverage，也不修改 `CI`：真 PostgreSQL service 的 CI 必填檢查與本地條件維持原契約。保留 Node 24 的 `--no-wasm-code-gc` 保護；PGlite 的 native／WASM 記憶體不能靠提高 JS heap 上限當作根因修復。直接執行其他 Turbo test 命令時也須設定適當的 `--concurrency`，不要假設 package 內的 worker 上限會限制跨套件總量。
+`check`／`validate` 的 typecheck、test-unit 與 test-database 在 CI 分成獨立 validation groups，可平行執行並分別定位失敗。typecheck 使用 4 個 Turbo tasks；兩個測試 groups 各自最多 2 個 Turbo tasks。test-database 才啟動 PostgreSQL 17，test-unit 不啟動資料庫。單一 package 的 Node test runner 仍最多兩個 workers，避免跨套件並行相乘而同時初始化過多 PGlite／WASM instances。這是 aggregate resource budget，不縮小 package、test 或 schema coverage，也不修改 `CI`：真 PostgreSQL service 的 CI 必填檢查與本地條件維持原契約。保留 Node 24 的 `--no-wasm-code-gc` 保護；PGlite 的 native／WASM 記憶體不能靠提高 JS heap 上限當作根因修復。直接執行其他 Turbo test 命令時也須設定適當的 `--concurrency`，不要假設 package 內的 worker 上限會限制跨套件總量。
 ## External-effect tools
 以下可能需要明確環境／授權，不屬一般 offline validate：
 

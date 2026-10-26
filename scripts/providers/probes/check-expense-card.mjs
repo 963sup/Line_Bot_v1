@@ -17,7 +17,7 @@ const { createLineClient } = await import(
 );
 const { tsImport } = require("tsx/esm/api");
 const { renderExpenseNotice } = await tsImport(
-  "../../apps/web/src/modules/expense/notice.server.ts",
+  "../../../apps/web/src/modules/expense/notice.server.ts",
   import.meta.url,
 );
 const { lineMiniApp } = await import(

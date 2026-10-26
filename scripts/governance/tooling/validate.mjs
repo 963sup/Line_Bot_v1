@@ -26,7 +26,8 @@ const fastTasks = new Set([
   "architecture",
   "deadcode",
   "typecheck",
-  "test",
+  "test:unit",
+  "test:database",
   "build",
 ]);
 
@@ -39,7 +40,8 @@ export const validationGroups = Object.freeze({
   schema: ["schema:remote:test", "schema:check"],
   deadcode: ["deadcode"],
   typecheck: ["typecheck"],
-  test: ["test", "change:test", "attendance:scheduler:test"],
+  "test-unit": ["test:unit"],
+  "test-database": ["test:database", "change:test", "attendance:scheduler:test"],
   build: ["build"],
 });
 
@@ -191,14 +193,18 @@ export function shouldRunFast(task, scope) {
   if (task === "architecture")
     return scope.codeAffected || scope.toolingAffected || scope.schemaAffected;
   if (task === "deadcode") return scope.codeAffected || scope.toolingAffected;
-  if (task === "typecheck" || task === "test") return scope.codeAffected || scope.schemaAffected;
+  if (task === "typecheck" || task === "test:unit" || task === "test:database")
+    return scope.codeAffected || scope.schemaAffected;
   if (task === "build") return scope.codeAffected || scope.schemaAffected;
   return scope.codeAffected;
 }
 
 export function fastTaskArgs(task, command, scope, selection, explicitFilters = false) {
-  if (task !== "typecheck" && task !== "test" && task !== "build") return command;
+  if (!new Set(["typecheck", "test:unit", "test:database", "build"]).has(task)) return command;
   if ((scope?.schemaAffected || scope?.hasUntrackedFiles) && !explicitFilters) return command;
+  if ((task === "test:unit" || task === "test:database") && command.length > 4) {
+    return [...command.slice(0, 4), ...selection];
+  }
   return [...command, ...selection];
 }
 
@@ -226,7 +232,11 @@ export function describeFastPlan(stages, scope, selection, explicitFilters = fal
               : run
                 ? "selected by changed-file responsibility"
                 : "outside changed-file responsibility",
-        ...((task === "typecheck" || task === "test" || task === "build") && run
+        ...((task === "typecheck" ||
+          task === "test:unit" ||
+          task === "test:database" ||
+          task === "build") &&
+        run
           ? {
               selection: args === command ? "all workspaces" : selection,
               selectionReason: explicitFilters
@@ -336,11 +346,61 @@ function main() {
     ["schema:check", [turbo, "run", "schema:check"]],
     ["architecture", ["scripts/architecture/check-all.mjs"]],
     ["deadcode", ["node_modules/knip/bin/knip.js"]],
-    ["typecheck", [turbo, "run", "typecheck", "--concurrency=2"]],
+    ["typecheck", [turbo, "run", "typecheck", "--concurrency=4"]],
     [
-      "test",
-      // Each package may start two PGlite workers; bound aggregate native/WASM memory locally too.
-      [turbo, "run", "test", "--concurrency=2"],
+      "test:unit",
+      [
+        turbo,
+        "run",
+        "test",
+        "--concurrency=2",
+        "--filter=@line_bot_v1/assistant",
+        "--filter=@line_bot_v1/audit",
+        "--filter=@line_bot_v1/explore",
+        "--filter=@line_bot_v1/google-workspace",
+        "--filter=@line_bot_v1/insights",
+        "--filter=@line_bot_v1/integration-vercel",
+        "--filter=@line_bot_v1/line",
+        "--filter=@line_bot_v1/payroll",
+      ],
+    ],
+    [
+      "test:database",
+      [
+        turbo,
+        "run",
+        "test",
+        "--concurrency=2",
+        ...[
+          "account",
+          "actions",
+          "attendance",
+          "content",
+          "contract",
+          "daily-check-in",
+          "discussion",
+          "enterprise",
+          "execution",
+          "expense",
+          "file",
+          "identity-access",
+          "intelligence",
+          "issue",
+          "namespace",
+          "notifications",
+          "numbering",
+          "organization",
+          "partners",
+          "platform",
+          "project",
+          "repository",
+          "resources",
+          "team",
+          "wbs",
+          "wiki",
+          "web",
+        ].map((name) => `--filter=@line_bot_v1/${name}`),
+      ],
     ],
     ["build", [turbo, "run", "build"]],
   ];
