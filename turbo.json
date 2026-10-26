@@ -3,70 +3,37 @@
   "futureFlags": {
     "githubActionsRemoteBaseRefFallback": true
   },
-  "globalPassThroughEnv": [
-    "npm_config_store_dir"
-  ],
-  "globalDependencies": [
-    "tsconfig.base.json"
-  ],
+  "globalPassThroughEnv": ["npm_config_store_dir"],
+  "globalDependencies": ["tsconfig.base.json"],
   "tasks": {
     "build": {
-      "dependsOn": [
-        "^build"
-      ],
-      "outputs": [
-        "dist/**",
-        ".next/**",
-        "!.next/cache/**"
-      ]
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
     "typecheck": {
-      "dependsOn": [
-        "^build"
-      ],
+      "dependsOn": ["^build"],
       "outputs": []
     },
     "test": {
-      "dependsOn": [
-        "^build"
-      ],
+      "dependsOn": ["^build"],
       "outputs": [],
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        "$TURBO_ROOT$/supabase/schemas/*.sql"
-      ]
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/supabase/schemas/*.sql"]
     },
     "schema:check": {
       "cache": false,
       "outputs": []
     },
     "dev": {
-      "dependsOn": [
-        "^build"
-      ],
+      "dependsOn": ["^build"],
       "cache": false,
       "persistent": true
     },
     "@line_bot_v1/web#build": {
       "cache": false,
-      "dependsOn": [
-        "^build"
-      ],
-      "outputs": [
-        "dist/**",
-        ".next/**",
-        "!.next/cache/**"
-      ],
-      "env": [
-        "NEXT_PUBLIC_*",
-        "VERCEL",
-        "VERCEL_ENV",
-        "SENTRY_ORG",
-        "SENTRY_PROJECT"
-      ],
-      "passThroughEnv": [
-        "SENTRY_AUTH_TOKEN"
-      ],
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"],
+      "env": ["NEXT_PUBLIC_*", "VERCEL", "VERCEL_ENV", "SENTRY_ORG", "SENTRY_PROJECT"],
+      "passThroughEnv": ["SENTRY_AUTH_TOKEN"],
       "inputs": [
         "$TURBO_DEFAULT$",
         "$TURBO_ROOT$/.env.local",
@@ -77,9 +44,7 @@
       ]
     },
     "@line_bot_v1/web#typecheck": {
-      "dependsOn": [
-        "^build"
-      ],
+      "dependsOn": ["^build"],
       "outputs": [],
       "inputs": [
         "$TURBO_DEFAULT$",
@@ -90,14 +55,9 @@
     },
     "@line_bot_v1/namespace#test": {
       "cache": false,
-      "dependsOn": [
-        "^build"
-      ],
+      "dependsOn": ["^build"],
       "outputs": [],
-      "env": [
-        "CAPABILITY_TEST_DATABASE_URL",
-        "CI"
-      ],
+      "env": ["CAPABILITY_TEST_DATABASE_URL", "CI"],
       "inputs": [
         "$TURBO_DEFAULT$",
         "$TURBO_ROOT$/supabase/schemas/*.sql",
@@ -106,38 +66,20 @@
     },
     "@line_bot_v1/wbs#test": {
       "cache": false,
-      "dependsOn": [
-        "^build"
-      ],
+      "dependsOn": ["^build"],
       "outputs": [],
-      "env": [
-        "WBS_TEST_DATABASE_URL",
-        "CI"
-      ],
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        "$TURBO_ROOT$/supabase/schemas/*.sql"
-      ]
+      "env": ["WBS_TEST_DATABASE_URL", "CI"],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/supabase/schemas/*.sql"]
     },
     "@line_bot_v1/numbering#test": {
       "cache": false,
-      "dependsOn": [
-        "^build"
-      ],
+      "dependsOn": ["^build"],
       "outputs": [],
-      "env": [
-        "CAPABILITY_TEST_DATABASE_URL",
-        "CI"
-      ],
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        "$TURBO_ROOT$/supabase/schemas/*.sql"
-      ]
+      "env": ["CAPABILITY_TEST_DATABASE_URL", "CI"],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/supabase/schemas/*.sql"]
     },
     "@line_bot_v1/web#test": {
-      "dependsOn": [
-        "^build"
-      ],
+      "dependsOn": ["^build"],
       "outputs": [],
       "inputs": [
         "$TURBO_DEFAULT$",
@@ -159,121 +101,58 @@
     },
     "@line_bot_v1/wiki#test": {
       "cache": false,
-      "dependsOn": [
-        "^build"
-      ],
+      "dependsOn": ["^build"],
       "outputs": [],
-      "env": [
-        "CAPABILITY_TEST_DATABASE_URL",
-        "CI"
-      ],
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        "$TURBO_ROOT$/supabase/schemas/*.sql"
-      ]
+      "env": ["CAPABILITY_TEST_DATABASE_URL", "CI"],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/supabase/schemas/*.sql"]
     },
     "@line_bot_v1/repository#test": {
       "cache": false,
-      "dependsOn": [
-        "^build"
-      ],
+      "dependsOn": ["^build"],
       "outputs": [],
-      "env": [
-        "CAPABILITY_TEST_DATABASE_URL",
-        "CI"
-      ],
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        "$TURBO_ROOT$/supabase/schemas/*.sql"
-      ]
+      "env": ["CAPABILITY_TEST_DATABASE_URL", "CI"],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/supabase/schemas/*.sql"]
     },
     "@line_bot_v1/platform#test": {
       "cache": false,
-      "dependsOn": [
-        "^build"
-      ],
+      "dependsOn": ["^build"],
       "outputs": [],
-      "env": [
-        "CAPABILITY_TEST_DATABASE_URL",
-        "CI"
-      ],
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        "$TURBO_ROOT$/supabase/schemas/*.sql"
-      ]
+      "env": ["CAPABILITY_TEST_DATABASE_URL", "CI"],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/supabase/schemas/*.sql"]
     },
     "@line_bot_v1/attendance#test": {
       "cache": false,
-      "dependsOn": [
-        "^build"
-      ],
+      "dependsOn": ["^build"],
       "outputs": [],
-      "env": [
-        "CAPABILITY_TEST_DATABASE_URL",
-        "CI"
-      ],
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        "$TURBO_ROOT$/supabase/schemas/*.sql"
-      ]
+      "env": ["CAPABILITY_TEST_DATABASE_URL", "CI"],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/supabase/schemas/*.sql"]
     },
     "@line_bot_v1/identity-access#test": {
       "cache": false,
-      "dependsOn": [
-        "^build"
-      ],
+      "dependsOn": ["^build"],
       "outputs": [],
-      "env": [
-        "CAPABILITY_TEST_DATABASE_URL",
-        "CI"
-      ],
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        "$TURBO_ROOT$/supabase/schemas/*.sql"
-      ]
+      "env": ["CAPABILITY_TEST_DATABASE_URL", "CI"],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/supabase/schemas/*.sql"]
     },
     "@line_bot_v1/account#test": {
       "cache": false,
-      "dependsOn": [
-        "^build"
-      ],
+      "dependsOn": ["^build"],
       "outputs": [],
-      "env": [
-        "CAPABILITY_TEST_DATABASE_URL",
-        "CI"
-      ],
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        "$TURBO_ROOT$/supabase/schemas/*.sql"
-      ]
+      "env": ["CAPABILITY_TEST_DATABASE_URL", "CI"],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/supabase/schemas/*.sql"]
     },
     "@line_bot_v1/team#test": {
       "cache": false,
-      "dependsOn": [
-        "^build"
-      ],
+      "dependsOn": ["^build"],
       "outputs": [],
-      "env": [
-        "CAPABILITY_TEST_DATABASE_URL",
-        "CI"
-      ],
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        "$TURBO_ROOT$/supabase/schemas/*.sql"
-      ]
+      "env": ["CAPABILITY_TEST_DATABASE_URL", "CI"],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/supabase/schemas/*.sql"]
     },
     "@line_bot_v1/actions#test": {
       "cache": false,
-      "dependsOn": [
-        "^build",
-        "@line_bot_v1/actions#build",
-        "@line_bot_v1/line#build"
-      ],
+      "dependsOn": ["^build", "@line_bot_v1/actions#build", "@line_bot_v1/line#build"],
       "outputs": [],
-      "env": [
-        "CAPABILITY_TEST_DATABASE_URL",
-        "CI"
-      ],
+      "env": ["CAPABILITY_TEST_DATABASE_URL", "CI"],
       "inputs": [
         "$TURBO_DEFAULT$",
         "$TURBO_ROOT$/supabase/schemas/*.sql",
@@ -282,108 +161,52 @@
     },
     "@line_bot_v1/resources#test": {
       "cache": false,
-      "dependsOn": [
-        "^build"
-      ],
+      "dependsOn": ["^build"],
       "outputs": [],
-      "env": [
-        "CAPABILITY_TEST_DATABASE_URL",
-        "CI"
-      ],
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        "$TURBO_ROOT$/supabase/schemas/*.sql"
-      ]
+      "env": ["CAPABILITY_TEST_DATABASE_URL", "CI"],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/supabase/schemas/*.sql"]
     },
     "@line_bot_v1/contract#test": {
       "cache": false,
-      "dependsOn": [
-        "^build"
-      ],
+      "dependsOn": ["^build"],
       "outputs": [],
-      "env": [
-        "CAPABILITY_TEST_DATABASE_URL",
-        "CI"
-      ],
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        "$TURBO_ROOT$/supabase/schemas/*.sql"
-      ]
+      "env": ["CAPABILITY_TEST_DATABASE_URL", "CI"],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/supabase/schemas/*.sql"]
     },
     "@line_bot_v1/content#test": {
       "cache": false,
-      "dependsOn": [
-        "^build"
-      ],
+      "dependsOn": ["^build"],
       "outputs": [],
-      "env": [
-        "CAPABILITY_TEST_DATABASE_URL",
-        "CI"
-      ],
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        "$TURBO_ROOT$/supabase/schemas/*.sql"
-      ]
+      "env": ["CAPABILITY_TEST_DATABASE_URL", "CI"],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/supabase/schemas/*.sql"]
     },
     "@line_bot_v1/execution#test": {
       "cache": false,
-      "dependsOn": [
-        "^build"
-      ],
+      "dependsOn": ["^build"],
       "outputs": [],
-      "env": [
-        "CAPABILITY_TEST_DATABASE_URL",
-        "CI"
-      ],
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        "$TURBO_ROOT$/supabase/schemas/*.sql"
-      ]
+      "env": ["CAPABILITY_TEST_DATABASE_URL", "CI"],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/supabase/schemas/*.sql"]
     },
     "@line_bot_v1/project#test": {
       "cache": false,
-      "dependsOn": [
-        "^build"
-      ],
+      "dependsOn": ["^build"],
       "outputs": [],
-      "env": [
-        "CAPABILITY_TEST_DATABASE_URL",
-        "CI"
-      ],
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        "$TURBO_ROOT$/supabase/schemas/*.sql"
-      ]
+      "env": ["CAPABILITY_TEST_DATABASE_URL", "CI"],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/supabase/schemas/*.sql"]
     },
     "@line_bot_v1/issue#test": {
       "cache": false,
-      "dependsOn": [
-        "^build"
-      ],
+      "dependsOn": ["^build"],
       "outputs": [],
-      "env": [
-        "CAPABILITY_TEST_DATABASE_URL",
-        "CI"
-      ],
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        "$TURBO_ROOT$/supabase/schemas/*.sql"
-      ]
+      "env": ["CAPABILITY_TEST_DATABASE_URL", "CI"],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/supabase/schemas/*.sql"]
     },
     "@line_bot_v1/file#test": {
       "cache": false,
-      "dependsOn": [
-        "^build"
-      ],
+      "dependsOn": ["^build"],
       "outputs": [],
-      "env": [
-        "CAPABILITY_TEST_DATABASE_URL",
-        "CI"
-      ],
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        "$TURBO_ROOT$/supabase/schemas/*.sql"
-      ]
+      "env": ["CAPABILITY_TEST_DATABASE_URL", "CI"],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/supabase/schemas/*.sql"]
     }
   }
 }
