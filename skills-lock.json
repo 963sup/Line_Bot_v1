@@ -7,6 +7,12 @@
       "skillPath": "skills/21st-ui-review/SKILL.md",
       "computedHash": "ce7470a4777379716282b5a410a8a3211ac51a763786f6b81c3abcd282c220ab"
     },
+    "agent-browser": {
+      "source": "vercel-labs/agent-browser",
+      "sourceType": "github",
+      "skillPath": "skills/agent-browser/SKILL.md",
+      "computedHash": "dd491d53824ad9286ec950aee667098446332429a6d41fe28b4ba11f1959264c"
+    },
     "agentic-actions-auditor": {
       "source": "trailofbits/skills",
       "sourceType": "github",
