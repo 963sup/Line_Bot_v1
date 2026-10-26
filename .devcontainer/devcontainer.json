@@ -4,8 +4,12 @@
   "features": {
     "ghcr.io/devcontainers/features/pnpm:1": {
       "version": "11.25.0"
-    }
+    },
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
   },
+  "mounts": [
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+  ],
   "customizations": {
     "vscode": {
       "extensions": ["biomejs.biome"],
