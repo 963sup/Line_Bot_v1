@@ -7,11 +7,11 @@ Optimize for relevant information per loaded context.
 - `facts/`, `owners/`, `rules/`, and task routing hold current high-frequency knowledge; `reference/` holds on-demand detail.
 - `change/` holds target/proposal/migration/gap/risk/evidence and never overrides current truth.
 - Machine semantic/module/data truth lives in `architecture/*.json`; SQL truth in `packages/integration-supabase/src/schemas/`; do not recopy it into prose.
-- Git owns review/change history; use ordinary review and `pnpm docs:check`, without a review-state manifest.
+- Git owns review/change history; use ordinary review, without a review-state manifest.
 - Moves/deletes update inbound references in the same change; no redirect Markdown.
 - Documentation changes preserve authorization, transaction, replay/version, isolation, recovery, privacy, and evidence semantics.
 
-Run `pnpm docs:check` after docs changes.
+After docs changes, verify local links and run the applicable static checks; this repository has no dedicated `docs:check` script.
 
 ## Naming
 

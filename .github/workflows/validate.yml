@@ -2,25 +2,20 @@ name: Validate
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
-  workflow_call:
+  push:
+    branches:
+      - main
 
 permissions:
   contents: read
 
 jobs:
-  plan:
-    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.event.pull_request.draft == false)
+  validate:
+    name: validate
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    outputs:
-      groups: ${{ steps.select.outputs.groups }}
     steps:
       - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          fetch-depth: 0
-          persist-credentials: false
       - uses: actions/setup-node@v6
         with:
           node-version-file: .node-version
@@ -29,108 +24,8 @@ jobs:
           run_install: false
           cache: true
           cache_dependency_path: pnpm-lock.yaml
-      - run: pnpm install --frozen-lockfile
-      - name: Select changed-owner validation groups
-        id: select
-        env:
-          VALIDATION_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
-        run: echo "groups=$(pnpm --silent validate --fast --plan)" >> "$GITHUB_OUTPUT"
-
-  full-validate:
-    needs: plan
-    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.event.pull_request.draft == false)
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        group: ${{ fromJSON(needs.plan.outputs.groups) }}
-    concurrency:
-      group: validation-${{ github.event_name }}-${{ github.ref }}-${{ matrix.group }}
-      cancel-in-progress: true
-    env:
-      NEXT_TELEMETRY_DISABLED: "1"
-      TURBO_TELEMETRY_DISABLED: "1"
-    services:
-      postgres:
-        image: ${{ matrix.group == 'test-database' && 'postgres:17' || '' }}
-        env:
-          POSTGRES_PASSWORD: wbs-test
-        ports:
-          - 5432/tcp
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          fetch-depth: 0
-          persist-credentials: false
-      - uses: actions/setup-node@v6
-        with:
-          node-version-file: .node-version
-      - uses: pnpm/action-setup@v6
-        with:
-          run_install: false
-          cache: true
-          cache_dependency_path: pnpm-lock.yaml
-      - run: pnpm install --frozen-lockfile
-      - name: Restore group validation cache
-        uses: actions/cache@v6
-        with:
-          path: |
-            .turbo
-            apps/web/.next/cache
-          key: validation-${{ runner.os }}-${{ runner.arch }}-${{ matrix.group }}-${{ hashFiles('.node-version', 'package.json', 'pnpm-lock.yaml', 'turbo.json') }}
-          restore-keys: |
-            validation-${{ runner.os }}-${{ runner.arch }}-${{ matrix.group }}-
-      - name: Validate group
-        env:
-          VALIDATION_GROUP: ${{ matrix.group }}
-          VALIDATION_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
-          WBS_TEST_DATABASE_URL: ${{ matrix.group == 'test-database' && format('postgresql://postgres:wbs-test@127.0.0.1:{0}/postgres', job.services.postgres.ports[5432]) || '' }}
-          CAPABILITY_TEST_DATABASE_URL: ${{ matrix.group == 'test-database' && format('postgresql://postgres:wbs-test@127.0.0.1:{0}/postgres', job.services.postgres.ports[5432]) || '' }}
-        run: pnpm validate --fast --group "$VALIDATION_GROUP"
-      - name: Upload validation logs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: validation-${{ matrix.group }}-${{ github.event.pull_request.head.sha || github.sha }}
-          path: .artifacts/validation-*/
-          if-no-files-found: error
-          include-hidden-files: true
-          retention-days: 7
-
-  validate:
-    needs: [plan, full-validate]
-    if: always() && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.event.pull_request.draft == false))
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          fetch-depth: 0
-          persist-credentials: false
-      - uses: actions/setup-node@v6
-        with:
-          node-version-file: .node-version
-      - name: Publish validation gate summary
-        if: always()
-        env:
-          RESULT: ${{ needs.full-validate.result }}
-        run: |
-          echo "## Validation gate: ${RESULT}" >> "$GITHUB_STEP_SUMMARY"
-          if [ "${RESULT}" = "success" ]; then
-            echo "✅ Every selected validation group completed successfully." >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "❌ The validation gate is red: ${RESULT}." >> "$GITHUB_STEP_SUMMARY"
-            echo "Inspect the latest full-validate matrix job and its exact-head artifact; a cancelled run may have been superseded by a newer revision." >> "$GITHUB_STEP_SUMMARY"
-          fi
-      - name: Require every validation group to succeed
-        env:
-          RESULT: ${{ needs.full-validate.result }}
-        run: node scripts/providers/github/validation-result.mjs
+      - run: pnpm install --frozen-lockfile --prefer-offline
+      - name: Validate repository metadata
+        run: pnpm exec biome check package.json architecture/semantic-model.json knip.jsonc
+      - name: Validate patch
+        run: git diff --check

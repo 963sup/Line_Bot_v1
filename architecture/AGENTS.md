@@ -26,4 +26,4 @@
 
 ## Validation
 
-Architecture 變更至少執行 `pnpm semantic check`、`pnpm architecture`、`pnpm architecture:test`、`pnpm boundaries` 與適用 repository validation；merge / release 前 `pnpm validate`。
+Architecture 變更至少執行 `pnpm exec biome check architecture` 與適用 package typecheck/test；需要依賴方向證據時讀取 `.dependency-cruiser.mjs` 與 architecture JSON。此 repository 沒有獨立的 semantic、architecture 或 boundaries package scripts。

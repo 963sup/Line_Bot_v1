@@ -1,8 +1,0 @@
-{
-  "id": "2026-10-19-scoped-identifiers-no-backup",
-  "authority": "scoped-identifiers-v1",
-  "projectRef": "nmssogphayjymjpbnrxv",
-  "schemaSha256": "a9e66f5e124e1eb64b4ed3554d49630d80870c3ccbcaf39f99b1b2e89ba88611",
-  "decision": "proceed-without-backup",
-  "instruction": "先不備份，又能綠燈，我要在vercel驗收"
-}

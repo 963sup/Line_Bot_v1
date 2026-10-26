@@ -3,7 +3,7 @@
 ## Load
 
 1. 若功能使用 GitHub-derived semantics，先直接讀對應 `architecture/domain/fpt/*.json` symbol/field；FPT 是 domain truth。
-2. `pnpm semantic plan "<intent>"` 或 affected owner contract。
+2. 讀 affected owner contract、package exports 與 consumers。
 3. 只載入真正受影響的 rule。
 4. 若沒有 owner，再讀 [architecture change](architecture-change.md)。
 5. Next.js／UI 任務使用 [Next.js and shadcn agent workflow](../reference/engineering/development-workflow.md#nextjs-and-shadcn-agent-workflow)。

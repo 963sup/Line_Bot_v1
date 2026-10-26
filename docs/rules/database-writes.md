@@ -43,7 +43,7 @@ identify owner + invariant
 → edit declarative schema / owner adapter
 → update data-topology if ownership/mapping changes
 → pnpm schema:check
-→ pnpm check
+→ pnpm lint && pnpm typecheck && pnpm test
 → remote reconciliation only through release/authorized operation
 ```
 

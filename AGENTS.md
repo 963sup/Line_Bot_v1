@@ -2,6 +2,30 @@
 
 以 repository evidence 確認 current state；不要用 best practice、舊文件或猜測取代 code / manifest / schema / tests。
 
+## Context hygiene
+
+- 命令執行前先界定輸入範圍、目標路徑、必要檔案與預期答案；不得以整個 repository 作為預設輸入。
+- 優先指定明確檔案、package、scope、測試名稱、JSON field 或 revision；避免無範圍的 glob、遞迴掃描與全庫查詢。
+- 不得把完整檔案、完整環境、資料庫 dump 或 provider response 預設帶入上下文；敏感值不得帶入上下文。
+- 讀取大型檔案時先用 `rg`、`jq`、`sed -n` 或欄位投影定位必要片段，不要先完整載入再過濾。
+- 測試、lint、typecheck 與 build 優先使用最小 affected scope；只有錯誤原因或 release evidence 不足時才擴大輸入範圍。
+- 命令可以產生完整輸出，但不得將無關的完整輸出帶入上下文。
+- 完整 build、test、CI、provider、API 或 runtime log 可寫入 ignored artifact；上下文只讀取摘要、可行動錯誤、相關片段與必要尾端。
+- 成功結果只保留結論、exit status、結果數量、目標路徑與必要證據，不重複完整日誌。
+- 失敗時先讀第一個可行動錯誤，再讀相關 stack trace 或尾端；資訊不足時才局部擴大讀取。
+- 不為了證明命令已執行而貼出完整輸出；回報命令、結果與影響範圍即可。
+- 輸出上限是保護措施，不取代相關性判斷；相關且必要的片段優先於固定行數。
+
+## Serena MCP usage
+
+- Serena MCP 可用時，涉及 TypeScript/JavaScript 符號、跨檔案引用、宣告、實作、診斷、語義重構、safe delete、LSP 或 project memory 的任務，主動優先使用 Serena。
+- 每個新的 Serena MCP session 先呼叫一次 `initial_instructions`；不要重複把完整 Serena manual 帶入上下文。
+- 需要了解專案結構、符號關係或跨 package dependency 時，先使用 Serena 的 `serena_repl`、symbol overview、find symbol、find references、diagnostics 或 LSP 操作，再決定是否需要讀取完整檔案。
+- Serena 只負責語義定位、符號操作、診斷、重構、project activation 與 memory routing；一般檔案讀寫、patch、shell、Git、測試與驗證使用 Codex 原生工具。
+- Serena memory 只作為檢索入口；source、manifest、schema、tests、architecture authority 與 provider readback 才是完成與正確性的證據。
+- Serena session 未啟動、工具不可用或結果不足時，明示原因並使用 Codex 原生工具繼續，不得假設 Serena 結果等於完整 repository evidence。
+- 不為一次性文字查找、單檔文件修改、設定檔修改或簡單命令強制呼叫 Serena；主動使用必須能降低符號定位或跨檔案推理成本。
+
 ## Mandatory governing set
 
 以下是完整 governing authority，所有 repository 任務一律遵守。具體讀取依下方 Effective context contract 選取 target ref 的 current file／section／symbol；不要求每次將無關檔案全文預載進 context：
@@ -27,7 +51,7 @@
 ## Effective context contract
 
 1. 一律先讀 root 與沿目標路徑適用的 `AGENTS.md`、[system invariants](docs/rules/system-invariants.md)，再由 [task router](docs/README.md) 取任務入口。子 AGENTS 只補 local constraints，引用本契約，不複製完整 authority 清單。
-2. 先定義 task、Owner、consumer 與觸及的 contract。Owner 未知、語意歧義，或跨 Owner 的 capability／public contract／資料／授權影響尚未釐清時，用 `pnpm semantic plan "<intent>"` 定位影響；需要具體 authority selectors 時用 `pnpm semantic context "<intent>"`。已知且影響限於單一 Owner 時，直接讀其 contract、相關 source/tests 及 package exports；已知主要 Owner 不代表跨 Owner 影響已釐清。候選、歧義與 no-match 不授予修改範圍。
+2. 先定義 task、Owner、consumer 與觸及的 contract。Owner 未知、語意歧義，或跨 Owner 的 capability／public contract／資料／授權影響尚未釐清時，用 `rg`、package exports、source/tests 與 architecture JSON 定位影響；不得把不確定的候選當成修改範圍。
 3. 依實際責任載入下表來源。JSON 可讀必要 entries，FPT 必須定位 exact file/symbol/field；記錄來源與 revision，working-tree 修改不能冒充 HEAD 內容。Generated projection／工具選取結果僅供定位，不取代 authority。
 
 | 觸發條件 | 必須具體讀取的來源 |
@@ -40,7 +64,7 @@
 | Governing input／guard 本身變更 | 完整讀取被修改的 authority/guard，以及實際 consumers/tests；先證明 authority/contract 需要改，保留全部 enforcement。 |
 
 4. Owner/語意不明、來源缺失、無法追溯 revision 或選取結果與 source 衝突時，明示 unresolved；先定位或保守展開完整 governing set，不能把空結果解讀為沒有約束。未解決會影響正確性的缺口前不修改該範圍。
-5. Context materialization 不改 validation scope：architecture/FPT/schema/security guards 繼續檢查完整 canonical inputs；一般 `pnpm check`、merge/release exact-head `pnpm validate` 的契約維持。
+5. Context materialization 不改 validation scope：architecture/FPT/schema/security guards 繼續檢查完整 canonical inputs；依變更執行 `pnpm lint`、`pnpm typecheck`、`pnpm test`、`pnpm build` 或適用 provider/package tests。
 
 ## Invariants
 
@@ -58,28 +82,32 @@
 
 ## Retrieval
 
-先用 [task router](docs/README.md) 取最小 context；已知且限於單一 Owner 時直接讀 owner contract + nearest `AGENTS.md`。Owner 未知、語意歧義或跨 Owner 影響未釐清時，依上方條件使用 `pnpm semantic plan "<intent>"`，需要具體閱讀來源再用 `context`。
+先用 [task router](docs/README.md) 取最小 context；已知且限於單一 Owner 時直接讀 owner contract + nearest `AGENTS.md`。需要跨檔案定位時使用 bounded `rg`、package exports、architecture JSON 與相關 tests。
 
-修改指引前先核對實際 consumer；任務入口放 `.github/prompts/`、Codex 角色放 `.codex/agents/`，不維護重複 skill 或 Markdown review database。
+修改指引前先核對實際 consumer；不維護 repository 內重複的 agent prompt 或 Markdown review database。
 
 Source-of-truth：[facts/sources-of-truth.md](docs/facts/sources-of-truth.md)。子 AGENTS 只增加 local constraints。
 
-## Serena MCP 自動使用規範
+## Completeness and root-cause delivery
 
-本專案已配置 Serena 官方 MCP（`.codex/config.toml`）。使用規則、project lifecycle、onboarding 與 memories policy 統一見 [`.codex/SERENA.md`](.codex/SERENA.md)。
-
-使用者在訊息開頭指定 `serena` 時，視為優先使用 Serena 的提示，不是自動觸發器或額外授權。Serena 不取代 `pnpm semantic plan/context`、Owner contract、repository governing files 或正式 validation evidence。
+- 先把使用者要求轉成明確 scope、完成條件、不可改變條件與受影響檔案清單；「全部」、「完整」、「全面」表示必須處理該 scope 內的所有項目。
+- 先找根因，再處理所有由根因影響的 consumer、配置、文件、測試、驗證與部署入口；不得只修第一個失敗點或只完成代表性樣本。
+- 發現多個同類項目時，先建立完整 inventory，再逐項處理並重新掃描；不得以抽查、第一階段、主要檔案或高風險項目宣稱整體完成。
+- 中途發現工作量大時，不得自行把完整要求降級成分階段交付；若只能完成部分，必須明確標示未完成範圍，不能使用「已完成」或「完整」描述。
+- 完成前必須重新檢查原始 scope、搜尋漏改引用、檢查新增/刪除檔案、執行適用驗證，並回報剩餘未處理項目與理由。
+- 分層文件、配置、agent、skill 或 route 的整理，必須逐層確認父層與子層責任分配；不得只修改父文件後假設子文件已完成分配。
+- Root cause、consumer、contract、dependency、owner、source of truth 與驗證證據未串完整前，不得提交修復結論。
 
 ## Change / validation
 
-- 主動依 [tool selection](docs/reference/engineering/development-workflow.md#autonomous-tool-selection) 選工具，依 [role routing](.codex/agents/AGENTS.md#autonomous-delegation) 判斷並執行有獨立價值的委派，不等待使用者逐次指定。簡單任務可由 Primary 完成；每個寫入面與 validation 必須有明確負責者，當前任務／工具限制優先。
+- 主動依 [development workflow](docs/reference/engineering/development-workflow.md) 選擇能直接回答問題的工具；簡單任務直接完成，每個寫入面與 validation 保持單一負責者。
 - Repository 修改固定依 [development change loop](docs/reference/engineering/development-workflow.md#default-repository-change-loop) 執行：先定目標與不變條件、定位 Owner/契約與 consumers，再依任務查詢、預覽、修改、檢查漏改、驗證及交付。已知 Owner 直接讀契約；純文件修正保留原本文件路徑，不強制執行無關工具。
-- 批次查改使用 `pnpm code` 產生有覆蓋邊界的預覽／計畫；在這個批次計畫流程中，來源寫入沿用 `pnpm patch:apply`。結構已知且由 language server 支援的單一 symbol 編輯，可依 `.codex/SERENA.md` 使用 Serena 的語意級工具；兩者都必須保留 diff、consumer 檢查與必要 validation。跨 project／公開契約的部分結果不能宣稱全庫完整；展開實際 consumers 後再修改。已有授權的可逆修改在預覽後直接續行，不新增逐次確認。
+- 批次查改使用 bounded `rg` 與原生 patch；跨 project／公開契約的部分結果不能宣稱全庫完整；展開實際 consumers 後再修改。
 - 保留既有/他人修改；同 checkout 不並行寫同一檔案或產物。
 - 工具呼叫先設定足以回答當前問題的輸出上限；列表、diff、log、JSON/API 與 test output 先在工具端投影／計數／摘要。成功不展開原始 log；失敗先讀第一個可行動錯誤與固定 tail，只有該片段不足以改變下一步時才局部擴展。禁止把完整高量輸出直接注入 Agent context。
 - 可逆且 contract 已決定的實作直接完成；只有缺少會改變產品語意、資料處置或外部寫入授權的資訊才阻塞。
 - JS/TS/JSON 由 Biome formatting；需要時用 `pnpm format`。
-- 一般修改 `pnpm check`；文件 `pnpm docs:check`；merge/release `pnpm validate`。Evidence boundary：[validation rules](docs/rules/validation-evidence.md)。
+- 一般修改依 scope 使用 `pnpm lint`、`pnpm typecheck`、`pnpm test`、`pnpm build` 或 `pnpm exec knip`。Evidence boundary：[validation rules](docs/rules/validation-evidence.md)。
 - Merge 前依 [development workflow](docs/reference/engineering/development-workflow.md) 收斂 WIP/fixup history。
 
-Scopes：[`packages/`](packages/AGENTS.md) · [`scripts/`](scripts/AGENTS.md) · [`.github/`](.github/AGENTS.md) · [`.codex/`](.codex/AGENTS.md)。
+Scopes：[`packages/`](packages/AGENTS.md)。GitHub platform settings remain under `.github/`.

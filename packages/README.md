@@ -9,8 +9,8 @@
 | 理解 Owner 的語言、能力與合作關係 | `packages/<owner>/SEMANTICS.md` → 該 Owner README/AGENTS 與 [owner contracts](../docs/owners/README.md) |
 | 修改 scoped number 或 business name registry | [Numbering](../docs/owners/numbering.md) / [Namespace](../docs/owners/namespace.md)；resource lifecycle 與 authorization 仍查原 Owner |
 | 查 DDD/六邊形詞義與選用模式 | [共用詞彙表](../docs/facts/glossary.md#ddd-策略建模) |
-| 找修改影響與最小相關 context | `pnpm semantic plan "<intent>"` / `pnpm semantic context "<intent>"`；[task router](../docs/README.md) |
-| 查所有 current modules 與 selected targets | `pnpm semantic view modules` |
+| 找修改影響與最小相關 context | bounded `rg`、package exports、source/tests；[task router](../docs/README.md) |
+| 查所有 current modules 與 selected targets | 直接讀取 `architecture/implementation-topology.json` |
 | 查驗證與證據邊界 | [Validation rules](../docs/rules/validation-evidence.md) |
 
 ## Authority routing
@@ -32,8 +32,7 @@ DDD/六邊形的 responsibility、placement、consistency 與完成規則只由 
 根層 SEMANTICS 提供精簡的跨 package 索引；Owner-local SEMANTICS 提供各自語言、能力與 relationship。兩者由同一組 canonical models 產生：
 
 ```bash
-pnpm semantic package-docs
-pnpm architecture
+pnpm exec biome check architecture
 ```
 
-Generated projection 可查閱與重建，不作獨立語意 authority，也不證明 capability、DDD 分層或 runtime 已驗收。Selected targets 的完整資料經 `pnpm semantic view modules` 按需取得。
+Generated projection 可查閱，不作獨立語意 authority，也不證明 capability、DDD 分層或 runtime 已驗收。Selected targets 的完整資料直接從 topology JSON 按需取得。

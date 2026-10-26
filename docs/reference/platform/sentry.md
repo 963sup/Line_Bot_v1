@@ -31,6 +31,6 @@ Repository source 存在不代表 Vercel/Sentry 遠端 integration 已連線。�
 
 ## Developer MCP
 
-`.codex/config.toml` 接入 [官方 Sentry MCP](https://mcp.sentry.dev/)，限定 `963sup/sentry` 專案。Hosted MCP 使用 OAuth；從 repository root 執行 `codex mcp login sentry --scopes org:read,project:read,event:read`，完成登入後重新載入 MCP／開新 session，再讀取該專案的 issue/event 驗證連線。OAuth credentials 由 Codex 管理，不寫入 repository 或 `.env.local`；此連線不需要 DSN、`SENTRY_AUTH_TOKEN`、OTLP 或 log drain 環境變數。
+[官方 Sentry MCP](https://mcp.sentry.dev/) 使用 OAuth；從 repository root 執行 `codex mcp login sentry --scopes org:read,project:read,event:read`，完成登入後重新載入 MCP／開新 session，再讀取該專案的 issue/event 驗證連線。OAuth credentials 由 Codex 管理，不寫入 repository 或 `.env.local`；此連線不需要 DSN、`SENTRY_AUTH_TOKEN`、OTLP 或 log drain 環境變數。
 
-開發診斷只讀指定 environment/release 的 issue、event 與 stack，沿實際 source/consumer 確認根因；MCP project scope 不授予遠端修改權限。Config 解析或 OAuth 登入成功不代表 source map、事件收集或當前 session 工具已驗證。`tooling:doctor --mcp` 只探測 Next DevTools/shadcn 本地 servers，不驗證 Sentry。
+開發診斷只讀指定 environment/release 的 issue、event 與 stack，沿實際 source/consumer 確認根因；MCP project scope 不授予遠端修改權限。Config 解析或 OAuth 登入成功不代表 source map、事件收集或當前 session 工具已驗證。

@@ -2,7 +2,7 @@
 
 ## Load
 
-1. 找 semantic owner：`pnpm semantic explain <concept>` 或 `architecture/semantic-model.json`。
+1. 找 semantic owner：直接讀 `architecture/semantic-model.json` 與 owner docs。
 2. 讀該 owner contract。
 3. 只有 owner contract明確指向某 flow/locator/protocol reference時才下鑽。
 

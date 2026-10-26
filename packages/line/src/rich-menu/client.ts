@@ -18,6 +18,7 @@ export function createRichMenuClient(token: string, fetcher: typeof fetch = fetc
     upload: menu.upload,
     get: menu.get,
     delete: menu.delete,
+    list: menu.list,
     getAlias: alias.getAlias,
     createAlias: alias.createAlias,
     updateAlias: alias.updateAlias,

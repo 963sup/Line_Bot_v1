@@ -147,6 +147,9 @@ revoke all on app_private.repository_files,app_private.file_revisions,app_privat
  app_private.file_processing_revisions,app_private.file_upload_intents,app_private.file_commands from public,anon,authenticated,line_app;
 grant select,insert,update(version,head_revision_id) on app_private.repository_files to line_app;
 grant select on app_private.file_processing_runs,app_private.file_processing_revisions to line_app;
+-- Compatibility evidence only: File processing relations are read-only during
+-- the cutover. New processing writes must target 619_intelligence_processing.sql.
+revoke insert,update,delete on app_private.file_processing_runs,app_private.file_processing_revisions from line_app;
 grant select,insert on app_private.file_revisions,app_private.file_upload_intents,app_private.file_commands to line_app;
 grant update(last_attempt_at,abandoned_at,reclaimed_at) on app_private.file_upload_intents to line_app;
 create policy backend on app_private.repository_files for all to line_app using(true) with check(true);

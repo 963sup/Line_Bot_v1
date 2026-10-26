@@ -9,9 +9,9 @@ Node 的責任分成兩個 contract：`.node-version` 是本地與 CI 可重現�
 ```sh
 pnpm install --frozen-lockfile
 pnpm dev
-pnpm check
-pnpm validate
-pnpm docs:check
+pnpm lint
+pnpm typecheck
+pnpm test
 ```
 
 只有需要安裝依賴時才執行 install。不在同一 checkout 同時啟動多套會寫入 node_modules、Next type output 或 build artifact 的流程。

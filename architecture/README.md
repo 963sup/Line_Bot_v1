@@ -4,13 +4,13 @@
 
 | 問題 | Authority | Validation / query |
 | --- | --- | --- |
-| GitHub GraphQL domain 真正定義什麼？ | [Vendored FPT JSON](domain/fpt/)；[provenance](domain/fpt-source.json) 只記錄 pinned upstream revision/blob integrity | `pnpm architecture` |
-| Line_Bot_v1 如何擁有、約束或實作這些語意，以及有哪些本地 extension？ | [Product domain overlay](semantic-model.json) | `pnpm semantic check`、`pnpm semantic explain <concept>` |
-| 業務子域分類與 candidate context 證據在哪？ | [Product domain overlay](semantic-model.json) 的 `subdomains` / `boundedContexts` | `pnpm semantic view subdomains`、`pnpm semantic view contexts` |
-| 哪個 module 實作 owner、允許依賴誰，以及哪些 FPT package boundary 已選為非 runtime target？ | [Implementation topology](implementation-topology.json) | `pnpm boundaries`、`pnpm semantic view modules` |
-| 哪個 owner 擁有 persisted relation、誰只 projection/reference？ | [Data topology](data-topology.json) | `pnpm architecture` |
+| GitHub GraphQL domain 真正定義什麼？ | [Vendored FPT JSON](domain/fpt/)；[provenance](domain/fpt-source.json) 只記錄 pinned upstream revision/blob integrity | 直接讀取必要 JSON entries |
+| Line_Bot_v1 如何擁有、約束或實作這些語意，以及有哪些本地 extension？ | [Product domain overlay](semantic-model.json) | 直接讀取 JSON 必要 entries |
+| 業務子域分類與 candidate context 證據在哪？ | [Product domain overlay](semantic-model.json) 的 `subdomains` / `boundedContexts` | 直接讀取 JSON 必要 entries |
+| 哪個 module 實作 owner、允許依賴誰，以及哪些 FPT package boundary 已選為非 runtime target？ | [Implementation topology](implementation-topology.json) | 直接讀取 JSON 必要 entries；依賴方向另讀 `.dependency-cruiser.mjs` |
+| 哪個 owner 擁有 persisted relation、誰只 projection/reference？ | [Data topology](data-topology.json) | 直接讀取必要 JSON entries |
 | 實際 SQL / constraint / RLS 是什麼？ | [Declarative schemas](../packages/integration-supabase/src/schemas/README.md) | `pnpm schema:check` |
-| Current human meaning / routing 在哪？ | [Core docs](../docs/README.md) + [Domain owners](../docs/owners/README.md) | `pnpm docs:check` |
+| Current human meaning / routing 在哪？ | [Core docs](../docs/README.md) + [Domain owners](../docs/owners/README.md) | 直接讀取目標文件並檢查 local links |
 | Dated release / remote / device evidence 在哪？ | [Acceptance](../docs/change/evidence/README.md) | evidence 自己的日期 / revision / environment |
 
 ```text
@@ -31,7 +31,7 @@ FPT category 不等於 package 或 Bounded Context；但 FPT 中的 GitHub Graph
 
 跨 Owner 的 workspace dependency 依 `semantic-model.json#relationships` 記錄 provider → consumer 的公開 capability contract；source fact、qualification 或 decision 若反向流動，必須用另一條 relationship 保留其真正 authority。Implemented leaf capability 的 `consumes` 只引用 relationship ID，不複製 contract 定義。這些本地 metadata 只描述目前 source 已使用的協作邊界，不改寫 FPT 原始語意，也不啟用新的會員、角色或權限。
 
-可讀 projection 使用 `pnpm semantic view docs`，change impact 使用 `pnpm semantic plan "<intent>"` / `pnpm semantic context "<intent>"`。不要手工保存第二套 FPT node、edge、adoption 或 category 清單。
+可讀 projection 直接讀取 canonical JSON，change impact 使用 bounded `rg` 與實際 consumer/source/tests。不要手工保存第二套 FPT node、edge、adoption 或 category 清單。
 
 
 ## Current modules vs selected targets

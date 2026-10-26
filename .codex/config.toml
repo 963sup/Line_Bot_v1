@@ -1,70 +1,47 @@
-# Project defaults; trusted projects only. Live session overrides take precedence.
-# Preserve the user's permissions, approval policy and MCP settings.
-# Trusted project shell preapprovals load automatically from .codex/rules/*.rules.
-# Rules govern commands; MCP tool preapprovals are configured per server below.
-# Restart Codex after changes; live session and managed policies take precedence.
-# Primary-model choice is session-owned; every repository subagent profile uses GPT-5.6.
-developer_instructions = """
-Follow root AGENTS.md and the nearest local AGENTS.md for scoped repository constraints.
-At the start of repository work, follow docs/reference/engineering/development-workflow.md for the change loop and proactive tool selection.
-Read .codex/agents/AGENTS.md and apply its autonomous delegation policy when independent work or specialist evidence improves the result; current task and tool restrictions take precedence.
-For a multi-layer task, use `.codex/SYSTEM_ARCHITECTURE.md` to select the minimum layer path, then load only its matching contract: `ORCHESTRATION.md` for L2, `AGENT_ROLES.md` for L3, `CAPABILITIES.md` for L4, `WORKFLOWS.md` and `HANDOFF_PROTOCOL.md` for L5, or `VALIDATION.md` for L6. Use `.codex/schemas/` only when a packet, handoff, route, or evidence plan needs a machine-readable artifact.
-For every cross-role L5 handoff, choose one `enabled` entry from `.codex/catalog/atomic-catalog.json`, derive its sole `executorRoleId`, record its `atomicId` in the packet and result, and never dispatch a `candidate` entry. Direct single-owner work omits `atomicId`.
-Resolve Owner, contract and consumer scope through `pnpm semantic plan` and, when selectors are needed, `pnpm semantic context` before delegating a cross-owner task. Use investigator only when those results remain ambiguous, incomplete or require bounded stateful code exploration; do not make investigation a ceremonial handoff.
-When a task needs a command, MCP, or Skill beyond direct owner/source reading, read `.codex/CAPABILITIES.md` before selecting it. Select its matching route ID rather than choosing from installed-tool inventory; satisfy the route preflight before invocation; and return the route ID plus Declared/Eligible/Available/Executed/Proven state in the handoff. Do not load the capability index for a known single-owner task that needs no L4 capability.
+# Official Codex project configuration.
+# Secrets stay in the environment or Codex-managed authentication.
 
-Dispatch enforcement:
-- For any task that crosses Owners, changes architecture or public contracts, requires an independent review/decision, investigates runtime state, resolves a merge conflict, or claims validation/acceptance evidence, Primary MUST dispatch at least one enabled Atomic to its derived executor profile before integrating a conclusion.
-- The dispatch packet MUST include `atomicId`, allowed/excluded scope, inputs and revision, invariants, deliverable, stop condition, and validation owner. The executor MUST return the corresponding handoff result and evidence boundary.
-- Primary MAY work directly only for a bounded single-Owner read or reversible edit whose contract and consumer are already known and whose required evidence does not need independent execution.
-- Do not treat the presence of a TOML profile, a green static check, or a successful tool connection as proof that a role was dispatched or that the product outcome was accepted. Record the selected Atomic, executor, and result in the final integration summary.
-"""
+# Serena project MCP. The devcontainer provisions `serena-agent` with uv.
+[mcp_servers.serena]
+command = "serena"
+args = ["start-mcp-server", "--project-from-cwd", "--context=codex"]
+startup_timeout_sec = 15
+
+# Context7 hosted MCP. Set CONTEXT7_API_KEY only when the account requires it.
+[mcp_servers.context7]
+url = "https://mcp.context7.com/mcp"
+startup_timeout_sec = 30
+
+# Next.js DevTools MCP uses the workspace-pinned executable.
+[mcp_servers.next-devtools]
+command = "pnpm"
+args = ["exec", "next-devtools-mcp"]
+startup_timeout_sec = 30
+
+# shadcn MCP uses the workspace-pinned CLI from apps/web.
+[mcp_servers.shadcn]
+command = "pnpm"
+args = ["--filter", "@line_bot_v1/web", "exec", "shadcn", "mcp"]
+startup_timeout_sec = 30
 
 [agents]
 enabled = true
-# Fallback model for work without a cross-role Atomic/profile. It is not an
-# executor-role choice and must not override a profile derived from an enabled
-# Atomic; role profiles choose Luna or Terra by bounded responsibility.
-default_subagent_model = "gpt-5.6-luna"
-default_subagent_reasoning_effort = "medium"
-# Excludes the primary agent: 1 primary + up to 4 subagents.
-# Ceiling, not target team size; only parallelize independent, bounded work.
 max_concurrent_threads_per_session = 4
+max_depth = 2
+default_subagent_reasoning_effort = "medium"
 
-[mcp_servers.next-devtools]
-# Shared by the parent and its subagents; per-tool overrides take precedence.
-default_tools_approval_mode = "approve"
-command = "pnpm"
-args = ["exec", "next-devtools-mcp"]
-startup_timeout_sec = 60
+[agents.reviewer]
+description = "Review code changes for correctness, regressions, and maintainability."
+config_file = "./agents/reviewer.toml"
 
-[mcp_servers.next-devtools.env]
-NEXT_DEVTOOLS_HOST = "127.0.0.1"
+[agents.debugger]
+description = "Diagnose and fix test, build, runtime, and integration failures."
+config_file = "./agents/debugger.toml"
 
-[mcp_servers.next-devtools.tools.nextjs_docs]
-approval_mode = "approve"
+[agents.architect]
+description = "Review architecture, module boundaries, dependency direction, and data flow."
+config_file = "./agents/architect.toml"
 
-[mcp_servers.next-devtools.tools.nextjs_index]
-approval_mode = "approve"
-
-[mcp_servers.shadcn]
-# Shared by the parent and its subagents; per-tool overrides take precedence.
-default_tools_approval_mode = "approve"
-command = "pnpm"
-args = ["--dir", "apps/web", "exec", "shadcn", "mcp"]
-startup_timeout_sec = 60
-
-[mcp_servers.shadcn.tools.get_project_registries]
-approval_mode = "approve"
-
-[mcp_servers.serena]
-# Per-worktree semantic symbol retrieval using Serena's official stdio server.
-command = "serena"
-args = ["start-mcp-server", "--project-from-cwd", "--context=codex", "--open-web-dashboard=false"]
-startup_timeout_sec = 15
-default_tools_approval_mode = "approve"
-
-[mcp_servers.sentry]
-# Official hosted MCP uses OAuth; request org:read,project:read,event:read scopes.
-# Project scoping supplies query defaults, not business write authorization.
-url = "https://mcp.sentry.dev/mcp/963sup/sentry"
+[agents.security-auditor]
+description = "Audit application security, authentication, authorization, secrets, and Supabase RLS."
+config_file = "./agents/security-auditor.toml"

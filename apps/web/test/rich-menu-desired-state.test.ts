@@ -32,5 +32,9 @@ test("Rich Menu desired state is derived from canonical definitions and assets",
   for (const item of desired) {
     assert.ok(item.upload.length > 0, item.page);
     assert.deepEqual(item.menu.size, expectedSizes[item.page], item.page);
+    assert.match(item.fingerprint, /^[a-f0-9]{64}$/);
+    assert.match(item.assetSha256, /^[a-f0-9]{64}$/);
+    assert.match(item.definitionSha256, /^[a-f0-9]{64}$/);
+    assert.match(item.menu.name, /\/rm-[a-f0-9]{12}$/);
   }
 });

@@ -10,8 +10,6 @@ import {
 
 export const fileLimits = Object.freeze({
   bytes: 45 * 1024 * 1024,
-  observations: 500,
-  valueLength: 4000,
 });
 
 /** A never-committed upload must be quiet for seven days before operator reclamation. */

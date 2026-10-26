@@ -4,17 +4,55 @@
   "features": {
     "ghcr.io/devcontainers/features/pnpm:1": {
       "version": "11.25.0"
-    }
+    },
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
+    "ghcr.io/devcontainers-contrib/features/uv:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
   },
+  "mounts": [
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+  ],
   "customizations": {
     "vscode": {
-      "extensions": ["biomejs.biome"],
+      "extensions": [
+        "biomejs.biome",
+        "editorconfig.editorconfig",
+        "redhat.vscode-yaml",
+        "ms-azuretools.vscode-docker",
+        "github.vscode-pull-request-github"
+      ],
       "settings": {
         "typescript.tsdk": "node_modules/typescript/lib",
         "typescript.enablePromptUseWorkspaceTsdk": true,
-        "search.useIgnoreFiles": true
+        "search.useIgnoreFiles": true,
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "quickfix.biome": "explicit",
+          "source.organizeImports.biome": "explicit"
+        },
+        "[typescript]": {
+          "editor.defaultFormatter": "biomejs.biome"
+        },
+        "[typescriptreact]": {
+          "editor.defaultFormatter": "biomejs.biome"
+        },
+        "[javascript]": {
+          "editor.defaultFormatter": "biomejs.biome"
+        },
+        "[json]": {
+          "editor.defaultFormatter": "biomejs.biome"
+        }
       }
     }
   },
-  "postCreateCommand": "pnpm install --frozen-lockfile --prefer-offline && pnpm tooling:doctor"
+  "remoteEnv": {
+    "UV_CACHE_DIR": "${containerWorkspaceFolder}/.cache/uv",
+    "UV_TOOL_DIR": "${containerWorkspaceFolder}/.cache/uv-tools",
+    "UV_TOOL_BIN_DIR": "${containerWorkspaceFolder}/.cache/uv-tools/bin",
+    "PATH": "${containerWorkspaceFolder}/node_modules/.bin:${containerWorkspaceFolder}/.cache/uv-tools/bin:${containerEnv:PATH}",
+    "NPM_CONFIG_CACHE": "${containerWorkspaceFolder}/.cache/npm",
+    "SUPABASE_HOME": "${containerWorkspaceFolder}/.cache/supabase",
+    "SERENA_HOME": "${containerWorkspaceFolder}/.cache/serena"
+  },
+  "postCreateCommand": "export PATH=\"${containerWorkspaceFolder}/node_modules/.bin:${containerWorkspaceFolder}/.cache/uv-tools/bin:$PATH\" && export NPM_CONFIG_CACHE=\"${containerWorkspaceFolder}/.cache/npm\" && export SUPABASE_HOME=\"${containerWorkspaceFolder}/.cache/supabase\" && export SERENA_HOME=\"${containerWorkspaceFolder}/.cache/serena\" && pnpm install --frozen-lockfile --prefer-offline && pnpm --filter @line_bot_v1/line build && pnpm line:rich-menu preview all && supabase --version && vercel --version && gh --version && uv tool install --force serena-agent==2.1.0 && serena --version && serena init -b LSP && serena project index . --language typescript --log-level WARNING"
 }

@@ -81,12 +81,14 @@ export async function preflightRichMenuBatch(
   configs: RichMenuPublicationConfig[],
 ) {
   for (const config of configs) await client.validate(config.menu);
+  const remoteMenus = await client.list();
   const aliases: Record<string, string | null> = {};
   for (const config of configs)
     aliases[menuAlias(config.page)] = await client.getAlias(menuAlias(config.page));
   return {
     status: "ready",
     pages: configs.map((config) => config.page),
+    remoteMenus,
     currentDefault: await client.getDefault(),
     aliases,
   };
@@ -240,4 +242,64 @@ export async function publishRichMenuBatch(
   const created = await createRichMenuBatch(client, configs);
   const activation = await activateRichMenuBatch(client, configs, created);
   return { preflight, created, activation };
+}
+
+export async function publishRichMenuChanges(
+  client: RichMenuClient,
+  configs: RichMenuPublicationConfig[],
+) {
+  if (configs.length === 0) return { published: [], previousDefault: null };
+  const preflight = await preflightRichMenuBatch(client, configs);
+  const created = await createRichMenuBatch(client, configs);
+  const previousDefault = await client.getDefault();
+  const previousAliases = new Map(
+    await Promise.all(
+      configs.map(async (config) => {
+        const alias = menuAlias(config.page);
+        return [alias, await client.getAlias(alias)] as const;
+      }),
+    ),
+  );
+  const changedAliases: string[] = [];
+  try {
+    for (const menu of created) {
+      const alias = menuAlias(menu.page);
+      await setAlias(client, alias, menu.richMenuId);
+      changedAliases.push(alias);
+    }
+    const defaultMenu = created.find((menu) => menu.page === "attendance-in");
+    if (defaultMenu && previousDefault !== defaultMenu.richMenuId) {
+      await client.activate(defaultMenu.richMenuId);
+      if ((await client.getDefault()) !== defaultMenu.richMenuId)
+        throw new Error("Default readback mismatch");
+    }
+    return {
+      preflight,
+      created,
+      published: created.map(({ page }) => page),
+      previousDefault,
+    };
+  } catch (error) {
+    try {
+      const currentDefault = await client.getDefault();
+      if (previousDefault) {
+        if (currentDefault !== previousDefault) await client.activate(previousDefault);
+      } else if (currentDefault) {
+        await client.deleteDefault();
+      }
+      if ((await client.getDefault()) !== previousDefault)
+        throw new Error("Default rollback readback mismatch");
+    } catch {
+      // Keep the original provider failure; drift recovery will retry the desired state.
+    }
+    for (const alias of changedAliases.reverse()) {
+      const previous = previousAliases.get(alias) ?? null;
+      try {
+        await restoreAlias(client, alias, previous);
+      } catch {
+        // The original error remains the actionable failure; drift recovery handles retry.
+      }
+    }
+    throw error;
+  }
 }

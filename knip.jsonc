@@ -21,21 +21,22 @@
         "scripts/providers/browser/check-profile.mjs",
         "scripts/providers/browser/check-repository-resources.mjs",
         "scripts/providers/browser/check-repository-address.mjs",
-        "scripts/providers/browser/measure-loading.mjs",
-        "scripts/providers/line/rich-menu/sync.ts"
+        "scripts/providers/browser/measure-loading.mjs"
       ],
       // Root operator scripts intentionally resolve these from their owning workspace:
       // Next/tsx from Web and the repository-owned Supabase CLI.
       // Serena launches this executable from .serena/project.yml. Knip cannot
       // infer a dependency consumed by a YAML runtime path.
-      "ignoreDependencies": ["next", "supabase", "tsx", "typescript-language-server"]
+      "ignoreDependencies": [
+        "next",
+        "next-devtools-mcp",
+        "supabase",
+        "tsx",
+        "typescript-language-server"
+      ]
     },
     "apps/web": {
-      "entry": [
-        "test/**/*.test.ts",
-        "src/modules/assistant/rich-menu/operator.server.ts",
-        "src/app/api/_composition/attendance-worker.server.ts"
-      ],
+      "entry": ["test/**/*.test.ts", "src/app/api/_composition/attendance-worker.server.ts"],
       "project": ["src/**/*.{ts,tsx,css}", "test/**/*.ts"]
     },
     // Private workspace exports are checked against repository consumers.

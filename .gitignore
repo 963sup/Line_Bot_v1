@@ -14,6 +14,7 @@ coverage/
 .data/
 .pnpm-store/
 .tools/
+.cache/
 .codex-remote-attachments/
 .tmp_*/
 .tmp_*.zip

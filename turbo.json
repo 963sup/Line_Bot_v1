@@ -6,7 +6,6 @@
   "globalPassThroughEnv": ["npm_config_store_dir"],
   "globalDependencies": [
     "tsconfig.base.json",
-    "tsconfig.tools.json",
     "biome.json",
     "knip.jsonc",
     ".dependency-cruiser.mjs"
@@ -43,20 +42,14 @@
       "inputs": [
         "$TURBO_DEFAULT$",
         "$TURBO_ROOT$/.env.local",
-        "$TURBO_ROOT$/.vercelignore",
-        "$TURBO_ROOT$/scripts/core/runtime/load-env.mjs",
-        "$TURBO_ROOT$/scripts/core/runtime/next.mjs",
-        "$TURBO_ROOT$/scripts/core/runtime/bounded-output.mjs"
+        "$TURBO_ROOT$/.vercelignore"
       ]
     },
     "@line_bot_v1/web#typecheck": {
       "dependsOn": ["^build"],
       "outputs": [],
       "inputs": [
-        "$TURBO_DEFAULT$",
-        "$TURBO_ROOT$/scripts/core/runtime/load-env.mjs",
-        "$TURBO_ROOT$/scripts/core/runtime/next.mjs",
-        "$TURBO_ROOT$/scripts/core/runtime/bounded-output.mjs"
+        "$TURBO_DEFAULT$"
       ]
     },
     "@line_bot_v1/namespace#test": {
@@ -89,10 +82,7 @@
       "outputs": [],
       "inputs": [
         "$TURBO_DEFAULT$",
-        "$TURBO_ROOT$/packages/integration-supabase/src/schemas/*.sql",
-        "$TURBO_ROOT$/scripts/core/runtime/load-env.mjs",
-        "$TURBO_ROOT$/scripts/core/runtime/load-env.test.mjs",
-        "$TURBO_ROOT$/scripts/providers/probes/*.mjs"
+        "$TURBO_ROOT$/packages/integration-supabase/src/schemas/*.sql"
       ]
     },
     "@line_bot_v1/platform#schema:check": {

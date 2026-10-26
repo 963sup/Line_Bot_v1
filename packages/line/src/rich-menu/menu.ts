@@ -1,5 +1,5 @@
 import type { RichMenuTransport } from "./transport.js";
-import type { RichMenuDefinition } from "./types.js";
+import type { RichMenuDefinition, RichMenuSummary } from "./types.js";
 
 export function createRichMenuOperations(transport: RichMenuTransport) {
   return {
@@ -23,6 +23,24 @@ export function createRichMenuOperations(transport: RichMenuTransport) {
     },
     delete(id: string) {
       return transport.request(`richmenu/${transport.checkedId(id)}`, undefined, "DELETE");
+    },
+    async list(): Promise<RichMenuSummary[]> {
+      const response = await transport.request("richmenu/list", undefined, "GET");
+      if (!response) return [];
+      const value: unknown = await response.json();
+      if (!value || typeof value !== "object" || !("richmenus" in value))
+        throw new Error("Invalid LINE rich menu list response");
+      const menus = value.richmenus;
+      if (!Array.isArray(menus)) throw new Error("Invalid LINE rich menu list response");
+      return menus.map((menu): RichMenuSummary => {
+        if (!menu || typeof menu !== "object" || !("richMenuId" in menu))
+          throw new Error("Invalid LINE rich menu list item");
+        const id = menu.richMenuId;
+        if (typeof id !== "string") throw new Error("Invalid LINE rich menu list ID");
+        if (!("name" in menu) || typeof menu.name !== "string")
+          throw new Error("Invalid LINE rich menu list name");
+        return { richMenuId: transport.checkedId(id), name: menu.name };
+      });
     },
     getDefault: async () =>
       transport.responseId(await transport.request("user/all/richmenu", undefined, "GET")),

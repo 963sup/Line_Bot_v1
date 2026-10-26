@@ -1,8 +1,6 @@
 import { UserError } from "@line_bot_v1/account/domain/user";
 import type { createFiles } from "@line_bot_v1/file/application/use-cases/files";
 import { FileError } from "@line_bot_v1/file/domain/error";
-import type { createIntelligenceProcessing } from "@line_bot_v1/intelligence/application/use-cases/processing";
-import { IntelligenceError } from "@line_bot_v1/intelligence/domain/error";
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
 import { RepositoryError } from "@line_bot_v1/repository/contracts/errors/repository-error";
 import { normalizeRepositoryName } from "@line_bot_v1/repository/domain/repository/value-objects/repository-name";
@@ -16,10 +14,6 @@ import {
 import { RequestIdentityError } from "../../shared/server/request-identity-error";
 
 type FileOwner = ReturnType<typeof createFiles>;
-type ProcessingOwner = ReturnType<typeof createIntelligenceProcessing>;
-type FileProcessor = Parameters<ProcessingOwner["run"]>[2];
-type ProcessingRunCommand = Parameters<ProcessingOwner["run"]>[1];
-type ProcessingResultCommand = Parameters<ProcessingOwner["result"]>[1];
 type Scope = {
   actorUserId: string;
   repository: { id: string; ownerLogin: string; name: string };
@@ -30,8 +24,6 @@ type Scope = {
 export type FilesWebRuntime = {
   scope(subject: string, selector: { ownerLogin: string; repositoryName: string }): Promise<Scope>;
   owner(): FileOwner;
-  processors(): readonly FileProcessor[];
-  processingOwner(): ProcessingOwner;
 };
 
 const uploadLimit = 3_000_000;
@@ -124,40 +116,9 @@ function commandString(command: Record<string, unknown>, key: string): string {
   if (typeof value !== "string" || !value) return invalid();
   return value;
 }
-function processingRunCommand(value: unknown): ProcessingRunCommand {
-  const command = commandRecord(value);
-  const expectedVersion = command.expectedVersion;
-  if (!Number.isSafeInteger(expectedVersion) || Number(expectedVersion) < 0) return invalid();
-  return {
-    repositoryId: commandString(command, "repositoryId"),
-    requestId: commandString(command, "requestId"),
-    runId: commandString(command, "runId"),
-    fileId: commandString(command, "fileId"),
-    fileRevisionId: commandString(command, "fileRevisionId"),
-    expectedVersion: Number(expectedVersion),
-  };
-}
-function processingResultCommand(value: unknown): ProcessingResultCommand {
-  const command = commandRecord(value);
-  const expectedVersion = command.expectedVersion;
-  const action = command.action;
-  if (!Number.isSafeInteger(expectedVersion) || Number(expectedVersion) < 0) return invalid();
-  if (action !== "save" && action !== "discard") return invalid();
-  if (action === "save" && !Array.isArray(command.edits)) return invalid();
-  const edits = Array.isArray(command.edits) ? Array.from(command.edits) : [];
-  return {
-    repositoryId: commandString(command, "repositoryId"),
-    requestId: commandString(command, "requestId"),
-    runId: commandString(command, "runId"),
-    expectedVersion: Number(expectedVersion),
-    action,
-    edits,
-  };
-}
 function failure(error: unknown) {
   const known =
     error instanceof FileError ||
-    error instanceof IntelligenceError ||
     error instanceof UserError ||
     error instanceof RepositoryError ||
     error instanceof RequestIdentityError;
@@ -170,9 +131,7 @@ function failure(error: unknown) {
   return jsonResponse(
     {
       error: known ? error.message : "File service is unavailable.",
-      ...(error instanceof FileError || error instanceof IntelligenceError
-        ? { code: error.code }
-        : {}),
+      ...(error instanceof FileError ? { code: error.code } : {}),
     },
     status,
   );
@@ -190,7 +149,6 @@ export async function filesRequest(
     if (request.method === "POST") originGuard(request);
 
     const query = new URL(request.url).searchParams;
-    const intelligence = query.get("ownerKind") === "intelligence";
     const subject = await identity(request);
     const scope = await runtime.scope(subject, selector(query));
     const owner = runtime.owner();
@@ -225,35 +183,11 @@ export async function filesRequest(
         return jsonResponse({
           ...scope,
           file,
-          processors: runtime
-            .processors()
-            .filter((p) => p.supports(file.mediaType))
-            .map((p) => ({
-              id: p.id,
-              kind: p.kind,
-              version: p.version,
-            })),
+          processing: null,
         });
       }
-      if (view === "runs" && intelligence)
-        return jsonResponse({
-          ...scope,
-          ...(await runtime
-            .processingOwner()
-            .list(scope.actorUserId, scope.repository.id, fileId, query.get("after") ?? undefined)),
-        });
-      if (view === "processing" && intelligence)
-        return jsonResponse({
-          ...scope,
-          processing: await runtime
-            .processingOwner()
-            .read(
-              scope.actorUserId,
-              scope.repository.id,
-              query.get("runId") ?? "",
-              query.get("revisionId") ?? undefined,
-            ),
-        });
+      if (view === "runs" || view === "processing")
+        return invalid("File processing is owned by Intelligence.");
       if (view === "download") {
         const revisionId = query.get("revisionId") ?? "";
         const descriptor = await owner.file(
@@ -290,27 +224,11 @@ export async function filesRequest(
       return jsonResponse(await owner.upload(scope.actorUserId, upload.command, upload.bytes));
     }
     const body = await jsonBody(request);
-    if (Object.keys(body).some((key) => !["operation", "command", "processor"].includes(key)))
+    if (Object.keys(body).some((key) => !["operation", "command"].includes(key)))
       return invalid("Unknown File operation field.");
     checkScope(body.command, scope);
-    if (body.operation === "run" && query.get("ownerKind") === "intelligence") {
-      if (typeof body.processor !== "string") return invalid("Processor must be selected.");
-      const processor = runtime.processors().find((p) => p.id === body.processor);
-      if (!processor) return invalid("Selected Processor is unavailable.");
-      return jsonResponse(
-        await runtime
-          .processingOwner()
-          .run(scope.actorUserId, processingRunCommand(body.command), processor),
-      );
-    }
-    if (body.operation === "result" && query.get("ownerKind") === "intelligence") {
-      if (body.processor !== undefined) return invalid("Result cannot select a Processor.");
-      return jsonResponse(
-        await runtime
-          .processingOwner()
-          .result(scope.actorUserId, processingResultCommand(body.command)),
-      );
-    }
+    if (body.operation === "run" || body.operation === "result")
+      return invalid("File processing is owned by Intelligence.");
     return invalid("Unknown File operation.");
   } catch (error) {
     if (error instanceof BodyTooLargeError)

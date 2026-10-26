@@ -37,4 +37,4 @@ Guard 失敗時先判斷是程式違反 architecture，還是 rule 已與採用�
 
 ## Verification entry
 
-一般修改依 repository script 驗證；完整驗證由 `pnpm validate` 執行 architecture checks、反例與其他工程檢查。文件本身不宣稱某次 CI 已通過，具日期證據留 acceptance/history owner。
+一般修改依 affected package scripts 驗證；完整驗證由 lint、typecheck、test、build 與適用 dependency checks 組成。文件本身不宣稱某次 CI 已通過，具日期證據留 acceptance/history owner。

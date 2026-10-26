@@ -4,9 +4,9 @@
 
 | 驗證範圍 | 現有入口／後續場景 |
 | --- | --- |
-| README / links | `pnpm docs:check` |
-| Repository / build | exact-head `pnpm change:finalize` 執行完整 `pnpm validate` |
-| Local Web | `pnpm test:browser`；只證明其 synthetic／local 範圍 |
+| README / links | local link check |
+| Repository / build | `pnpm lint`、`pnpm typecheck`、`pnpm test`、`pnpm build` |
+| Local Web | `pnpm --filter @line_bot_v1/web test`；只證明其 synthetic／local 範圍 |
 | Deployment operator | 既有 `scripts/providers/vercel/deploy-production.test.mjs`，由 canonical validation routing 執行 |
 | Provider deployment | exact project、target、Git SHA、READY、alias readback |
 | Routing / security | callback、redirect、private request、provider protection 與真實 credential 邊界 |

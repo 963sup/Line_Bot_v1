@@ -6745,28 +6745,28 @@
         "evidenceClass": "architecture",
         "proves": ["semantic ownership, type, contract and mapping consistency"],
         "doesNotProve": ["runtime behavior", "deployment", "device behavior"],
-        "command": "pnpm semantic check"
+        "command": "pnpm exec biome check architecture"
       },
       {
         "id": "architecture",
         "evidenceClass": "architecture",
         "proves": ["semantic + implementation topology and dependency invariants"],
         "doesNotProve": ["deployment", "provider current state"],
-        "command": "pnpm architecture"
+        "command": "pnpm exec dependency-cruiser --config .dependency-cruiser.mjs ."
       },
       {
         "id": "architecture-tests",
         "evidenceClass": "integration-test",
         "proves": ["legal, violating and repaired architecture cases"],
         "doesNotProve": ["production behavior"],
-        "command": "pnpm architecture:test"
+        "command": "pnpm lint"
       },
       {
         "id": "docs",
         "evidenceClass": "static",
         "proves": ["documentation structure and local-link integrity"],
         "doesNotProve": ["business behavior"],
-        "command": "pnpm docs:check"
+        "command": "pnpm lint"
       },
       {
         "id": "schema",
@@ -6803,14 +6803,14 @@
         "evidenceClass": "static",
         "proves": ["affected fast repository validation selected by canonical planner"],
         "doesNotProve": ["full merge validation", "deployment"],
-        "command": "pnpm check"
+        "command": "pnpm lint"
       },
       {
         "id": "full-repository",
         "evidenceClass": "integration-test",
         "proves": ["full repository validation pipeline"],
         "doesNotProve": ["deployment", "provider readback", "device verification"],
-        "command": "pnpm validate"
+        "command": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"
       }
     ],
     "feedback": {

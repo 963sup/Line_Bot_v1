@@ -1,0 +1,54 @@
+name: Rich Menu Release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - assets/line/rich-menu/**
+      - apps/web/src/modules/assistant/rich-menu/**
+      - packages/line/src/rich-menu/**
+      - packages/line/src/mini-app/**
+      - packages/line/package.json
+      - packages/attendance/src/domain/value-objects/attendance-action.ts
+      - apps/web/src/shared/presentation/entry-route.ts
+      - scripts/providers/line-rich-menu.ts
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - .github/workflows/rich-menu-release.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: line-rich-menu-production
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: line-production
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Verify exact main revision
+        run: test "${GITHUB_REF}" = "refs/heads/main" && test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+      - uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+          cache: true
+          cache_dependency_path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile --prefer-offline
+      - run: pnpm --filter @line_bot_v1/line build
+      - run: pnpm line:rich-menu preview all
+      - name: Reconcile LINE Rich Menu
+        env:
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+        run: pnpm line:rich-menu reconcile all
