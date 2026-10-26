@@ -29,7 +29,7 @@ Rate limit 使用 atomic update + TTL，個別與 shared scope 可以分開。Re
 ## Verification
 測試使用 injected transport／synthetic namespace，覆蓋 REST command mapping、bounded timeout/cooldown、TTL、multi-instance single winner、completed replay、stale owner reject、expiry recovery 與 provider failure classification；production 沒有 insecure Redis toggle。
 
-Repository probe `scripts/probes/check-redis.mjs` 會建立/刪除測試 key，屬外部操作，執行前確認環境與授權。
+Repository probe `scripts/providers/probes/check-redis.mjs` 會建立/刪除測試 key，屬外部操作，執行前確認環境與授權。
 
 - Cache / TTL semantics：[Cache and projections](../data/cache.md)
 - LINE webhook usage：[Webhook](../line/webhook.md)

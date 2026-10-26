@@ -133,4 +133,4 @@ jobs:
       - name: Require every validation group to succeed
         env:
           RESULT: ${{ needs.full-validate.result }}
-        run: node scripts/github/validation-result.mjs
+        run: node scripts/providers/github/validation-result.mjs

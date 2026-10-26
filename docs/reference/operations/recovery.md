@@ -12,7 +12,7 @@ Automatic declarative schema publication不因 DDL被標記為 `sensitive` 就�
 
 Current manual data-cutover recovery gate預設使用 provider API machine-read recovery state並保存最小必要 evidence；Supabase contract接受 `PITR + WALG` 或至少一筆 `COMPLETED` managed backup。Operator attestation不能替代 provider readback。除下述使用者明確授權的特定 transition 外，若指定環境沒有可驗證 recovery capability，需先建立可驗證的 provider recovery或安全 off-site backup contract；不得以文字 reference、GitHub artifact或同一故障域的副本冒充 recovery。
 
-使用者於 2026-10-19 明確指示「先不備份，又能綠燈，我要在vercel驗收」，授權現有 scoped identifier transition 在沒有已驗證備份下執行。這是接受無完整資料還原保障的風險，並非 backup / restore evidence，也不授權清空業務資料。其 executable 授權紀錄為 `scripts/supabase/identifier-cutover-authorization.json`，僅綁定指定 project、`scoped-identifiers-v1` 與當次完整 declarative schema SHA-256（統一 LF 換行）。只有 validated current-main Release 的 `sync` 在 existing database 尚需首次 cutover 時可使用；project、authority 或 schema 不符時仍必須取得真實 provider recovery readback。不得新增通用 skip flag 或以此授權其他資料轉換。
+使用者於 2026-10-19 明確指示「先不備份，又能綠燈，我要在vercel驗收」，授權現有 scoped identifier transition 在沒有已驗證備份下執行。這是接受無完整資料還原保障的風險，並非 backup / restore evidence，也不授權清空業務資料。其 executable 授權紀錄為 `scripts/providers/supabase/identifier-cutover-authorization.json`，僅綁定指定 project、`scoped-identifiers-v1` 與當次完整 declarative schema SHA-256（統一 LF 換行）。只有 validated current-main Release 的 `sync` 在 existing database 尚需首次 cutover 時可使用；project、authority 或 schema 不符時仍必須取得真實 provider recovery readback。不得新增通用 skip flag 或以此授權其他資料轉換。
 
 此路徑保留 transaction、writer freeze、parity、current-main、migration-history 與部署後 activation 檢查；minimal evidence 明示 `backupVerified=false`、`providerRecoveryVerified=false`、授權 ID、project、schema hash 及實際 release SHA。`recovery` 診斷不接受此風險授權，仍只回報可驗證 provider recovery。切換提交後由 durable authority marker 阻止重 seed；後續問題優先保持 freeze 並 forward-fix，不宣稱可從未建立的備份 restore。
 

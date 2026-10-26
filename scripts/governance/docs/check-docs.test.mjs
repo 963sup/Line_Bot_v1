@@ -1,0 +1,94 @@
+import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import test from "node:test";
+
+test("frontmatter regex is not a link; prose links and incomplete metadata still fail", async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "docs-frontmatter-"));
+  try {
+    const source = await readFile(new URL("./check-docs.mjs", import.meta.url), "utf8");
+    const fixed = [
+      "README.md",
+      "AGENTS.md",
+      "supabase/AGENTS.md",
+      ...["app", "modules", "shared"].map((name) => `apps/web/src/${name}/AGENTS.md`),
+      ...["contracts", "domain", "infrastructure", "agents", "application"].map(
+        (name) => `packages/${name}/AGENTS.md`,
+      ),
+    ];
+    for (const file of fixed) {
+      await mkdir(path.dirname(path.join(root, file)), { recursive: true });
+      await writeFile(path.join(root, file), "# Fixture\n");
+    }
+    for (const dir of ["scripts/docs", "docs", ".agents/skills"])
+      await mkdir(path.join(root, dir), { recursive: true });
+    const script = path.join(root, "scripts/governance/docs/check-docs.mjs");
+    await writeFile(script, source);
+    const fixture = path.join(root, "docs/fixture.md");
+    for (const [body, status, message] of [
+      ["---\npattern: '[x](not-a-link)'\n---\n[real](../README.md)\n", 0, "Docs OK"],
+      [
+        "---\npattern: '[x](not-a-link)'\n---\n[broken](missing.md)\n",
+        1,
+        "missing local link missing.md",
+      ],
+      ["---\nname: incomplete\n", 1, "unclosed frontmatter"],
+      ["---\n<<<<<<< branch\n---\n", 1, "conflict marker"],
+    ]) {
+      await writeFile(fixture, body);
+      const result = spawnSync(process.execPath, [script], { encoding: "utf8" });
+      assert.equal(result.status, status, result.stderr);
+      assert.ok(`${result.stdout}${result.stderr}`.includes(message));
+    }
+    await writeFile(fixture, "# Valid\n");
+
+    const externalSkill = path.join(root, ".agents/skills/vendor/nested");
+    await mkdir(externalSkill, { recursive: true });
+    await writeFile(path.join(externalSkill, "SKILL.md"), "---\ninvalid metadata\n");
+    await writeFile(path.join(externalSkill, "AGENTS.md"), "[upstream]({baseDir}/missing.md)\n");
+    const externalResult = spawnSync(process.execPath, [script], { encoding: "utf8" });
+    assert.equal(externalResult.status, 0, externalResult.stderr);
+
+    const toolCacheNotice = path.join(root, ".tools/vendor/NOTICE.md");
+    await mkdir(path.dirname(toolCacheNotice), { recursive: true });
+    await writeFile(toolCacheNotice, "[upstream](missing-license.txt)\n");
+    const toolCacheResult = spawnSync(process.execPath, [script], { encoding: "utf8" });
+    assert.equal(toolCacheResult.status, 0, toolCacheResult.stderr);
+
+    for (const file of [".agents/AGENTS.md", ".agents/skills-local/README.md"]) {
+      const ownDocument = path.join(root, file);
+      await mkdir(path.dirname(ownDocument), { recursive: true });
+      await writeFile(ownDocument, "[broken](missing.md)\n");
+      const invalid = spawnSync(process.execPath, [script], { encoding: "utf8" });
+      assert.equal(invalid.status, 1);
+      assert.match(invalid.stderr, /missing local link missing.md/);
+      await writeFile(ownDocument, "# Repository document\n");
+      const repaired = spawnSync(process.execPath, [script], { encoding: "utf8" });
+      assert.equal(repaired.status, 0, repaired.stderr);
+    }
+
+    const semanticName = path.join(root, "docs/bug-fix.md");
+    await writeFile(semanticName, "# Bug fix\n");
+    const semanticNameResult = spawnSync(process.execPath, [script], { encoding: "utf8" });
+    assert.equal(semanticNameResult.status, 0, semanticNameResult.stderr);
+    await rm(semanticName);
+
+    const historyDir = path.join(root, "docs/change/history");
+    await mkdir(historyDir, { recursive: true });
+    await writeFile(path.join(historyDir, "010-old.txt"), "old output\n");
+    const historyResult = spawnSync(process.execPath, [script], { encoding: "utf8" });
+    assert.equal(historyResult.status, 1);
+    assert.match(historyResult.stderr, /raw governance history must live in Git history/);
+    await rm(path.join(root, "docs/change/history"), { recursive: true, force: true });
+
+    const moduleReadme = path.join(root, "packages/domain/README.md");
+    await writeFile(moduleReadme, "[broken](missing.md)\n");
+    const result = spawnSync(process.execPath, [script], { encoding: "utf8" });
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /missing local link missing.md/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});

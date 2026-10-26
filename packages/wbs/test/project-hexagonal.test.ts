@@ -92,6 +92,32 @@ test("Content whole-revision mapping preserves hierarchy and accounts for every 
     () => importContentWbs(revision, 1, source, "project-a", "actor", requestId, 2, stableId),
     WbsError,
   );
+  assert.throws(
+    () =>
+      importContentWbs(
+        null,
+        0,
+        {
+          ...source,
+          sourceRows: [
+            ...source.sourceRows,
+            {
+              documentId: "doc",
+              revisionId: "doc-rev",
+              sourceRowId: "line-3",
+              disposition: "CONTENT_WORK" as const,
+              nodeIds: ["w", "t"],
+            },
+          ],
+        },
+        "project-a",
+        "actor",
+        requestId,
+        1,
+        stableId,
+      ),
+    /share a WBS node mapping/i,
+  );
 });
 
 test("Content-to-WBS import rejects work rows without a Task work package", () => {
@@ -218,6 +244,20 @@ test("Published Content imports retain source coverage after edits", () => {
     },
   };
   assert.throws(() => assertContentImportCoverage([candidate, imported]), /imported source node/i);
+
+  const evidence = imported.contentImport;
+  assert.ok(evidence);
+  const incompleteEvidence: WbsRevision = {
+    ...imported,
+    contentImport: {
+      ...evidence,
+      nodeCoverage: evidence.nodeCoverage.slice(1),
+    },
+  };
+  assert.throws(
+    () => assertContentImportCoverage([incompleteEvidence]),
+    /node coverage is incomplete/i,
+  );
 });
 
 test("Project content uses projectId and reauthorizes the current role before exact replay", async () => {

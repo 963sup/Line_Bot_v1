@@ -7,22 +7,22 @@
       // scripts whose external/manual execution cannot be inferred reliably by Knip.
       "project": ["scripts/**/*.{mjs,ts}"],
       "entry": [
-        "scripts/attendance/worker.mjs",
-        "scripts/browser/check-auto-clock.mjs",
-        "scripts/browser/check-member-management.mjs",
-        "scripts/browser/check-membership.mjs",
-        "scripts/browser/check-navigation.mjs",
-        "scripts/browser/check-wbs.mjs",
-        "scripts/browser/check-project-wbs.mjs",
-        "scripts/browser/check-work-content.mjs",
-        "scripts/browser/check-project-imports.mjs",
-        "scripts/browser/check-partner-management.mjs",
-        "scripts/browser/check-permissions.mjs",
-        "scripts/browser/check-profile.mjs",
-        "scripts/browser/check-repository-resources.mjs",
-        "scripts/browser/check-repository-address.mjs",
-        "scripts/browser/measure-loading.mjs",
-        "scripts/line/rich-menu/sync.ts"
+        "scripts/operations/attendance/worker.mjs",
+        "scripts/providers/browser/check-auto-clock.mjs",
+        "scripts/providers/browser/check-member-management.mjs",
+        "scripts/providers/browser/check-membership.mjs",
+        "scripts/providers/browser/check-navigation.mjs",
+        "scripts/providers/browser/check-wbs.mjs",
+        "scripts/providers/browser/check-project-wbs.mjs",
+        "scripts/providers/browser/check-work-content.mjs",
+        "scripts/providers/browser/check-project-imports.mjs",
+        "scripts/providers/browser/check-partner-management.mjs",
+        "scripts/providers/browser/check-permissions.mjs",
+        "scripts/providers/browser/check-profile.mjs",
+        "scripts/providers/browser/check-repository-resources.mjs",
+        "scripts/providers/browser/check-repository-address.mjs",
+        "scripts/providers/browser/measure-loading.mjs",
+        "scripts/providers/line/rich-menu/sync.ts"
       ],
       // Root operator scripts intentionally resolve these from their owning workspace:
       // Next/tsx from Web and the repository-owned Supabase CLI.

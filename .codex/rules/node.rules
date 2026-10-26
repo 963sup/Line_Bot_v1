@@ -10,7 +10,7 @@ prefix_rule(
     justification = "Node.js version checks and local test execution are ordinary development operations.",
     match = [
         "node --version",
-        "node --test scripts/tooling/doctor.test.mjs",
+        "node --test scripts/governance/tooling/doctor.test.mjs",
     ],
     not_match = [
         "node -e \"fetch('https://example.invalid')\"",

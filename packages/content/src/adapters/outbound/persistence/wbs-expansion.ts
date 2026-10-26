@@ -11,6 +11,46 @@ function parsedJson(value: unknown): unknown {
   return parsed;
 }
 
+type CurrentSourceNode = Readonly<{ id: string }>;
+type CurrentSourceRow = Readonly<{
+  documentId: string;
+  revisionId: string;
+  sourceRowId: string;
+  disposition: "CONTENT_WORK" | "COMMERCIAL_ONLY";
+  nodeIds: readonly string[];
+}>;
+
+/** Rejects stale or contradictory immutable provenance before exposing a WBS source snapshot. */
+export function assertCurrentSourceCoverage(
+  nodes: readonly CurrentSourceNode[],
+  sourceRows: readonly CurrentSourceRow[],
+): void {
+  const currentNodeIds = new Set(nodes.map((node) => node.id));
+  const sourceKeys = new Set<string>();
+  for (const row of sourceRows) {
+    const sourceKey = `${row.documentId}:${row.revisionId}:${row.sourceRowId}`;
+    if (sourceKeys.has(sourceKey))
+      throw new ContentError(
+        503,
+        "Content source coverage contains duplicate source evidence.",
+        "UNAVAILABLE",
+      );
+    sourceKeys.add(sourceKey);
+    if (row.disposition === "COMMERCIAL_ONLY" && row.nodeIds.length > 0)
+      throw new ContentError(
+        503,
+        "Commercial-only source evidence unexpectedly maps to Content nodes.",
+        "UNAVAILABLE",
+      );
+    if (row.nodeIds.some((nodeId) => !currentNodeIds.has(nodeId)))
+      throw new ContentError(
+        409,
+        "Content source evidence no longer matches the selected revision.",
+        "SOURCE_INVALID",
+      );
+  }
+}
+
 export class PostgresContentWbsExpansionReader implements ContentWbsExpansionReader {
   constructor(private readonly sql: Sql) {}
 
@@ -54,6 +94,7 @@ export class PostgresContentWbsExpansionReader implements ContentWbsExpansionRea
           };
         });
       });
+      assertCurrentSourceCoverage(revision.document.nodes, sourceRows);
       return {
         repositoryId,
         revisionId: revision.id,

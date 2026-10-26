@@ -1,0 +1,39 @@
+// Live AI Gateway intake probe with fixed synthetic input. No task is persisted.
+
+import { createRequire } from "node:module";
+
+if (process.argv.slice(2).join(" ") !== "--live") {
+  console.error(
+    "Usage: node scripts/providers/probes/check-agent.mjs --live (one live AI Gateway intake call; no task persistence).",
+  );
+  process.exitCode = 1;
+  process.exit();
+}
+
+const require = createRequire(new URL("../../apps/web/package.json", import.meta.url));
+const { runIntakeAgent } = await import(require.resolve("@line_bot_v1/assistant/agents/intake"));
+const { createVercelAiGateway } = await import("@line_bot_v1/integration-vercel/gateway");
+
+import { loadRootEnv } from "../../core/runtime/load-env.mjs";
+
+try {
+  loadRootEnv();
+  const model = process.env.AI_GATEWAY_MODEL;
+  if (!model) throw new Error("Missing AI Gateway configuration");
+  const result = await runIntakeAgent({
+    model: createVercelAiGateway({ model }).intake("明天下午檢查消防設備，整理成任務草稿。"),
+    input: "明天下午檢查消防設備，整理成任務草稿。",
+  });
+  console.log(
+    JSON.stringify({ ok: true, toolCalls: result.toolCalls, text: result.text }, null, 2),
+  );
+} catch (error) {
+  console.error(
+    JSON.stringify({
+      ok: false,
+      status: typeof error?.status === "number" ? error.status : undefined,
+      message: "Agent acceptance failed; no task was persisted.",
+    }),
+  );
+  process.exitCode = 1;
+}

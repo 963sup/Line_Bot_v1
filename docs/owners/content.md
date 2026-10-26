@@ -17,6 +17,11 @@ do not map rows individually or select a File processing observation. Content ma
 planning facts but never rewrites Contract commercial facts. Historical `import-file` revisions
 remain readable as evidence only and cannot be newly written.
 
+When a WBS reader consumes a later Content revision, Content revalidates the immutable source-row
+evidence against that selected revision before returning the snapshot. Missing or contradictory
+source nodes are an explicit `SOURCE_INVALID` qualification failure; they are never reported as
+current coverage and no mutable coverage registry is created.
+
 One Repository plan head selects a complete immutable document revision. Replacing the document
 validates the entire hierarchy under its observed version and appends a revision. Historical plans
 remain unchanged. A plan version does not imply formal approval, completion or legal effectiveness;

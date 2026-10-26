@@ -11,7 +11,7 @@ test("expense card CLI loads the Web presenter and validates without sending mes
       "-e",
       `
     import assert from 'node:assert/strict';
-    process.argv = [process.execPath, 'scripts/probes/check-expense-card.mjs', '--live'];
+    process.argv = [process.execPath, 'scripts/providers/probes/check-expense-card.mjs', '--live'];
     let calls = 0;
     globalThis.fetch = async (input, options) => {
       calls++;
@@ -20,7 +20,7 @@ test("expense card CLI loads the Web presenter and validates without sending mes
       assert.equal(body.messages[0].altText, '🧾 新支出 #5 · 待處理');
       return Response.json({});
     };
-    await import('./scripts/probes/check-expense-card.mjs');
+    await import('./scripts/providers/probes/check-expense-card.mjs');
     assert.equal(calls, 1);
   `,
     ],

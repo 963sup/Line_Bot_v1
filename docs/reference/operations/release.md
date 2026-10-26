@@ -2,7 +2,7 @@
 
 Main push starts Release planning and reusable Validate concurrently for its exact SHA. External operations require both successful planning and full validation, then recheck current main before writing. GitHub owns trigger, permissions, job dependencies, secrets and artifacts; commands own executable operations.
 
-GitHub evidence is read through the shared `scripts/github/api.mjs` transport. Job readers paginate `filter=all` and retain the latest attempt/job ID per name: a partial rerun preserves prerequisites that were not rerun, while a newer failed or pending job supersedes every older success. Planning, production deployment and repository imports use this same interpretation. Deployment additionally binds the current run attempt and accepts only nonterminal queued/in-progress Releases with matching immutable identity; completed/cancelled runs cannot authorize a new deployment.
+GitHub evidence is read through the shared `scripts/providers/github/api.mjs` transport. Job readers paginate `filter=all` and retain the latest attempt/job ID per name: a partial rerun preserves prerequisites that were not rerun, while a newer failed or pending job supersedes every older success. Planning, production deployment and repository imports use this same interpretation. Deployment additionally binds the current run attempt and accepts only nonterminal queued/in-progress Releases with matching immutable identity; completed/cancelled runs cannot authorize a new deployment.
 
 ## Pending sources
 
@@ -11,12 +11,12 @@ GitHub evidence is read through the shared `scripts/github/api.mjs` transport. J
 | Operation | Changed inputs | Command |
 | --- | --- | --- |
 | Supabase | `packages/integration-supabase/src/schemas/*.sql` | `pnpm schema:remote sync` |
-| Supabase File Bucket | `packages/integration-supabase/src/config.toml`, `scripts/supabase/storage.mjs` | `pnpm storage:remote sync` |
+| Supabase File Bucket | `packages/integration-supabase/src/config.toml`, `scripts/providers/supabase/storage.mjs` | `pnpm storage:remote sync` |
 | Rich Menu | images, publication code and its executable inputs | `pnpm line:rich-menu publish all` |
 | Web | Turbo Web build graph, excluding publication-only sources | `pnpm vercel:deploy:production --live --sha <sha>` |
 | Attendance scheduler | scheduler code, pending schema or Web runtime since scheduler success | `pnpm attendance:scheduler reconcile --live --sha <sha>` |
 
-No relevant pending source means no remote operation. Source classifiers and tests live in `scripts/github/release-plan.mjs`; do not copy their path lists into YAML.
+No relevant pending source means no remote operation. Source classifiers and tests live in `scripts/providers/github/release-plan.mjs`; do not copy their path lists into YAML.
 
 ## File orphan recovery boundary
 

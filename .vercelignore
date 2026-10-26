@@ -6,9 +6,9 @@
 !tsconfig.base.json
 !scripts
 !scripts/runtime
-!scripts/runtime/next.mjs
-!scripts/runtime/bounded-output.mjs
-!scripts/runtime/load-env.mjs
+!scripts/core/runtime/next.mjs
+!scripts/core/runtime/bounded-output.mjs
+!scripts/core/runtime/load-env.mjs
 !apps
 !apps/web
 !apps/web/package.json
