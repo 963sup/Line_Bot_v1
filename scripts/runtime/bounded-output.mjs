@@ -4,6 +4,7 @@ import {
   mkdirSync,
   mkdtempSync,
   openSync,
+  readFileSync,
   readSync,
   statSync,
   writeFileSync,
@@ -46,6 +47,29 @@ function utf8Tail(content, maxBytes) {
   return characters.slice(start).join("");
 }
 
+function utf8Head(content, maxBytes) {
+  const characters = Array.from(content);
+  let end = 0;
+  let bytes = 0;
+  while (end < characters.length) {
+    const next = Buffer.byteLength(characters[end]);
+    if (bytes + next > maxBytes) break;
+    bytes += next;
+    end += 1;
+  }
+  return characters.slice(0, end).join("");
+}
+
+function boundFailureExcerpt(content, { maxBytes, maxLines }) {
+  const lines = content.trim().split(/\r?\n/);
+  const lineTruncated = lines.length > maxLines;
+  const lineBounded = lineTruncated ? [...lines.slice(0, maxLines - 1), truncationMarker] : lines;
+  const joined = lineBounded.join("\n");
+  if (Buffer.byteLength(joined) <= maxBytes) return joined;
+  const suffix = `\n${truncationMarker}`;
+  return `${utf8Head(joined, maxBytes - Buffer.byteLength(suffix))}${suffix}`;
+}
+
 export function readBoundedTail(
   path,
   { maxBytes = diagnosticLimits.maxBytes, maxLines = diagnosticLimits.maxLines } = {},
@@ -70,6 +94,32 @@ export function readBoundedTail(
 
   const prefix = `${truncationMarker}\n`;
   return `${prefix}${utf8Tail(tail, maxBytes - Buffer.byteLength(prefix))}`;
+}
+
+/** Preserve the first actionable compiler/provider errors before the final summary. */
+export function readBoundedFailure(path, options = {}) {
+  const { maxBytes = diagnosticLimits.maxBytes, maxLines = diagnosticLimits.maxLines } = options;
+  const lines = readFileSync(path, "utf8").split(/\r?\n/);
+  const matchIndexes = lines
+    .map((line, index) =>
+      /error|failed|module not found|cannot find|not found/i.test(line) ? index : -1,
+    )
+    .filter((index) => index >= 0)
+    .slice(0, maxLines);
+  if (!matchIndexes.length) return readBoundedTail(path, options);
+
+  const selected = new Set();
+  for (const index of matchIndexes) {
+    for (let offset = -1; offset <= 1; offset += 1) {
+      const candidate = index + offset;
+      if (candidate >= 0 && candidate < lines.length) selected.add(candidate);
+    }
+  }
+  const excerpt = [...selected]
+    .sort((left, right) => left - right)
+    .map((index) => lines[index])
+    .join("\n");
+  return boundFailureExcerpt(excerpt, { maxBytes, maxLines });
 }
 
 export function boundedSpawnOptions(outputDirectory, label) {
