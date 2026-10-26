@@ -16,4 +16,4 @@ Status: Vercel Gateway runtime 已由 PR #412 實施；完整 Preview／release 
 5. 已完成舊 provider runtime 移除；剩餘工作是以 mock provider、正式 test runners 與 Preview／release evidence 證明 Assistant/Issue/Expense/Processing/Intake 的 DTO、觀測及失敗語意相同。
 
 ## 驗收
-在**mock provider**、現有 test runners 下比較所有 consumer；`pnpm intelligence:run` 的 receipt 操作不得依賴 AI 設定；只在獲批准且有成本／資料處理授權時才測實際 AI Gateway。任何 Contract 預期行數或 decimal 字串被改寫皆失敗。無舊 import、無另加 provider key、無可見 secret。
+在**mock provider**、現有 test runners 下比較所有 consumer；`pnpm intelligence:run` 的 receipt 操作不得依賴 AI 設定；只在獲批准且有成本／資料處理授權時才測實際 AI Gateway。任何 AI candidate 行數或 decimal 字串被改寫皆失敗。無舊 import、無另加 provider key、無可見 secret。

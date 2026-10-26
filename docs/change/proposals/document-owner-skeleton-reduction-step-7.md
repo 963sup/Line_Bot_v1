@@ -49,7 +49,7 @@ type DocumentClosureTrace = { // 一次只追溯一個指定 ContractDocument；
   };
   contract: {
     documentId: string; revisionId: string; state: "CONFIRMED";
-    expectedLineCount: number; sourceRowIds: string[];
+    sourceRowIds: string[];
   };
   content: {
     repositoryId: string; revisionId: string;
