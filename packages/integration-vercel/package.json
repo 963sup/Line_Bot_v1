@@ -11,6 +11,10 @@
     "./gateway-config": {
       "types": "./dist/gateway-config.d.ts",
       "default": "./dist/gateway-config.js"
+    },
+    "./agents/purchase-order": {
+      "types": "./dist/agents/purchase-order.d.ts",
+      "default": "./dist/agents/purchase-order.js"
     }
   },
   "files": [
