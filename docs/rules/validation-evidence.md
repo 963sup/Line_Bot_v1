@@ -22,3 +22,5 @@ Failure 先讀實際 log，沿 consumer/contract/owner 找根因；不得為變�
 驗證必須完整執行，但完整 stdout/stderr 不是更強的 evidence。成功以 command、revision、exit status、stage summary 與耗時回報；原始 log 留在 ignored artifact，不載入 Agent context。失敗先回傳固定上限的 tail、第一個可行動錯誤與 artifact path；只有現有片段不足以定位下一個查詢時，才針對單一 stage／owner 局部讀取。截斷 context 不得截斷實際 command、縮小 gate 或丟失原始 evidence。
 
 使用 `pnpm tool:bounded -- --label <scope> -- <command>` 執行可能產生高量輸出的驗證。它將完整 stdout/stderr 寫入 `.artifacts/bounded-command/`，並只回傳 JSON 摘要；輪詢再加上穩定的 `--dedupe-key <key>`，相同結果會回傳 `changed: false`。
+
+對 HTTPS JSON 回應，加上 `--summary json`。預設只回傳 root type 與頂層 key；以重複的 `--select <path>` 或逗號分隔的 selector 明確投影值，例如 `--select 'items[].id,cursor'`。陣列只回傳總數與最多十個已選欄位值，物件只回傳 key，因此未選欄位及大型 response body 不會進入上下文。

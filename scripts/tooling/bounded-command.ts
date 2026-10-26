@@ -9,7 +9,8 @@ type Input = {
   command: string[];
   dedupeKey?: string;
   label: string;
-  summaryMode?: "gh-pr-checks";
+  selectors?: string[];
+  summaryMode?: "gh-pr-checks" | "json";
   tailLines?: number;
 };
 
@@ -21,6 +22,13 @@ type GhPrChecksSummary = {
   total: number;
 };
 
+type JsonSummary = {
+  kind: "json";
+  root: "array" | "object" | "primitive";
+  selected?: Record<string, unknown>;
+  topLevelKeys?: string[];
+};
+
 type Result = {
   artifact: string;
   changed: boolean;
@@ -30,13 +38,14 @@ type Result = {
   label: string;
   ok: boolean;
   outputLines: number;
-  summary?: GhPrChecksSummary;
+  summary?: GhPrChecksSummary | JsonSummary;
   tail: string[];
 };
 
 type CompletedProcess = {
   exitCode: number;
   output: string;
+  stdout: string;
 };
 
 const defaultArtifactDir = resolve(process.cwd(), ".artifacts", "bounded-command");
@@ -57,6 +66,73 @@ export function summarizeGhPrChecks(output: string): GhPrChecksSummary | undefin
     }
   }
   return summary.total > 0 ? summary : undefined;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function rootKind(value: unknown): JsonSummary["root"] {
+  if (Array.isArray(value)) return "array";
+  if (isRecord(value)) return "object";
+  return "primitive";
+}
+
+function safeJsonValue(value: unknown): unknown {
+  if (typeof value === "string") return value.slice(0, 256);
+  if (typeof value === "number" || typeof value === "boolean" || value === null) return value;
+  if (Array.isArray(value)) return { count: value.length };
+  if (isRecord(value)) return { keys: Object.keys(value).sort().slice(0, 40) };
+  return String(value).slice(0, 256);
+}
+
+function selectJson(value: unknown, path: string): unknown {
+  const segments = path.split(".");
+  let current: unknown[] = [value];
+  let traversedArray = false;
+  for (const segment of segments) {
+    const isArray = segment.endsWith("[]");
+    const key = isArray ? segment.slice(0, -2) : segment;
+    if (!key) throw new Error(`Invalid JSON selector: ${path}`);
+    const next: unknown[] = [];
+    for (const candidate of current) {
+      if (!isRecord(candidate) || !(key in candidate)) continue;
+      const child = candidate[key];
+      if (isArray) {
+        if (!Array.isArray(child)) continue;
+        traversedArray = true;
+        next.push(...child);
+      } else {
+        next.push(child);
+      }
+    }
+    current = next;
+  }
+  if (traversedArray) {
+    return { count: current.length, values: current.slice(0, 10).map(safeJsonValue) };
+  }
+  return current.length === 0 ? undefined : safeJsonValue(current[0]);
+}
+
+export function summarizeJsonResponse(
+  output: string,
+  selectors: string[] = [],
+): JsonSummary | undefined {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(output);
+  } catch {
+    return undefined;
+  }
+  const selected = Object.fromEntries(
+    selectors.map((selector) => [selector, selectJson(parsed, selector)]),
+  );
+  return {
+    kind: "json",
+    root: rootKind(parsed),
+    ...(Object.keys(selected).length > 0 ? { selected } : {}),
+    ...(isRecord(parsed) ? { topLevelKeys: Object.keys(parsed).sort().slice(0, 40) } : {}),
+  };
 }
 
 function safeLabel(label: string): string {
@@ -87,7 +163,7 @@ async function execute(command: string[]): Promise<CompletedProcess> {
     child.once("error", reject);
     child.once("close", (code, signal) => {
       const suffix = signal ? `\nProcess terminated by signal ${signal}\n` : "";
-      resolvePromise({ exitCode: code ?? 1, output: `${stdout}${stderr}${suffix}` });
+      resolvePromise({ exitCode: code ?? 1, output: `${stdout}${stderr}${suffix}`, stdout });
     });
   });
 }
@@ -133,8 +209,13 @@ export async function runBoundedCommand(input: Input): Promise<Result> {
   await writeFile(artifact, completed.output, "utf8");
 
   const summary =
-    input.summaryMode === "gh-pr-checks" ? summarizeGhPrChecks(completed.output) : undefined;
-  const ok = completed.exitCode === 0 || summary !== undefined;
+    input.summaryMode === "gh-pr-checks"
+      ? summarizeGhPrChecks(completed.stdout)
+      : input.summaryMode === "json"
+        ? summarizeJsonResponse(completed.stdout, input.selectors)
+        : undefined;
+  const ok =
+    completed.exitCode === 0 || (input.summaryMode === "gh-pr-checks" && summary !== undefined);
   const fingerprint = createHash("sha256")
     .update(
       JSON.stringify({
@@ -177,7 +258,8 @@ function printHelp(): void {
 Options:
   --artifact-dir <path>  Directory for full logs (default: .artifacts/bounded-command)
   --dedupe-key <key>     Mark unchanged identical outcomes as changed=false
-  --summary <mode>       Structured summary mode: gh-pr-checks
+  --summary <mode>       Structured summary mode: gh-pr-checks, json
+  --select <path>        JSON selector; repeat or separate paths with commas
   --tail-lines <count>   Failure tail line limit (default: 30)
 `);
 }
@@ -187,6 +269,7 @@ function parseCli(argv: string[]): Input | "help" {
   let artifactDir: string | undefined;
   let dedupeKey: string | undefined;
   let label: string | undefined;
+  const selectors: string[] = [];
   let summaryMode: Input["summaryMode"];
   let tailLines: number | undefined;
   let index = 0;
@@ -199,14 +282,26 @@ function parseCli(argv: string[]): Input | "help" {
     else if (option === "--dedupe-key") dedupeKey = value;
     else if (option === "--label") label = value;
     else if (option === "--summary") {
-      if (value !== "gh-pr-checks") throw new Error(`Unknown summary mode: ${value}`);
+      if (value !== "gh-pr-checks" && value !== "json") {
+        throw new Error(`Unknown summary mode: ${value}`);
+      }
       summaryMode = value;
+    } else if (option === "--select") {
+      selectors.push(...value.split(",").filter(Boolean));
     } else if (option === "--tail-lines") tailLines = Number(value);
     else throw new Error(`Unknown option: ${option}`);
   }
   if (argv[index] !== "--") throw new Error("Use -- before the command");
   if (!label) throw new Error("--label is required");
-  return { artifactDir, command: argv.slice(index + 1), dedupeKey, label, summaryMode, tailLines };
+  return {
+    artifactDir,
+    command: argv.slice(index + 1),
+    dedupeKey,
+    label,
+    selectors,
+    summaryMode,
+    tailLines,
+  };
 }
 
 async function main(): Promise<void> {

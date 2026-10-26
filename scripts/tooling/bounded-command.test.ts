@@ -4,7 +4,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import { runBoundedCommand, summarizeGhPrChecks } from "./bounded-command.ts";
+import {
+  runBoundedCommand,
+  summarizeGhPrChecks,
+  summarizeJsonResponse,
+} from "./bounded-command.ts";
 
 test("summarizes GitHub check rows without returning the raw table", () => {
   assert.deepEqual(
@@ -21,6 +25,32 @@ test("summarizes GitHub check rows without returning the raw table", () => {
       passing: 1,
       pending: 1,
       total: 3,
+    },
+  );
+});
+
+test("projects only selected JSON values and counts arrays", () => {
+  assert.deepEqual(
+    summarizeJsonResponse(
+      JSON.stringify({
+        id: "response-1",
+        items: [
+          { id: "a", secret: "hidden" },
+          { id: "b", secret: "hidden" },
+        ],
+        metadata: { cursor: "next", internal: "not returned" },
+      }),
+      ["id", "items[].id", "metadata"],
+    ),
+    {
+      kind: "json",
+      root: "object",
+      selected: {
+        id: "response-1",
+        "items[].id": { count: 2, values: ["a", "b"] },
+        metadata: { keys: ["cursor", "internal"] },
+      },
+      topLevelKeys: ["id", "items", "metadata"],
     },
   );
 });
