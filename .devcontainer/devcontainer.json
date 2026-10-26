@@ -50,7 +50,8 @@
     "UV_TOOL_DIR": "${containerWorkspaceFolder}/.cache/uv-tools",
     "UV_TOOL_BIN_DIR": "${containerWorkspaceFolder}/.cache/uv-tools/bin",
     "PATH": "${containerWorkspaceFolder}/.cache/uv-tools/bin:${containerEnv:PATH}",
+    "NPM_CONFIG_CACHE": "${containerWorkspaceFolder}/.cache/npm",
     "SERENA_HOME": "${containerWorkspaceFolder}/.cache/serena"
   },
-  "postCreateCommand": "uv tool install --force serena-agent==2.1.0 && pnpm install --frozen-lockfile --prefer-offline"
+  "postCreateCommand": "pnpm install --frozen-lockfile --prefer-offline && uv tool install --force serena-agent==2.1.0 && serena init -b LSP && serena project index . --language typescript --log-level WARNING"
 }

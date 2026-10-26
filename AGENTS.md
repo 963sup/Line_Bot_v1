@@ -16,6 +16,16 @@
 - 不為了證明命令已執行而貼出完整輸出；回報命令、結果與影響範圍即可。
 - 輸出上限是保護措施，不取代相關性判斷；相關且必要的片段優先於固定行數。
 
+## Serena MCP usage
+
+- Serena MCP 可用時，涉及 TypeScript/JavaScript 符號、跨檔案引用、宣告、實作、診斷、語義重構、safe delete、LSP 或 project memory 的任務，主動優先使用 Serena。
+- 每個新的 Serena MCP session 先呼叫一次 `initial_instructions`；不要重複把完整 Serena manual 帶入上下文。
+- 需要了解專案結構、符號關係或跨 package dependency 時，先使用 Serena 的 `serena_repl`、symbol overview、find symbol、find references、diagnostics 或 LSP 操作，再決定是否需要讀取完整檔案。
+- Serena 只負責語義定位、符號操作、診斷、重構、project activation 與 memory routing；一般檔案讀寫、patch、shell、Git、測試與驗證使用 Codex 原生工具。
+- Serena memory 只作為檢索入口；source、manifest、schema、tests、architecture authority 與 provider readback 才是完成與正確性的證據。
+- Serena session 未啟動、工具不可用或結果不足時，明示原因並使用 Codex 原生工具繼續，不得假設 Serena 結果等於完整 repository evidence。
+- 不為一次性文字查找、單檔文件修改、設定檔修改或簡單命令強制呼叫 Serena；主動使用必須能降低符號定位或跨檔案推理成本。
+
 ## Mandatory governing set
 
 以下是完整 governing authority，所有 repository 任務一律遵守。具體讀取依下方 Effective context contract 選取 target ref 的 current file／section／symbol；不要求每次將無關檔案全文預載進 context：
