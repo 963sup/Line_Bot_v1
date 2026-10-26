@@ -357,7 +357,9 @@ test("production deploy never retries an unknown mutation result inside one invo
 });
 
 test("Vercel upload retains the Next.js runtime script dependencies", () => {
-  const rules = readFileSync(new URL("../../.vercelignore", import.meta.url), "utf8").split(/\r?\n/);
+  const rules = readFileSync(new URL("../../.vercelignore", import.meta.url), "utf8").split(
+    /\r?\n/,
+  );
   const next = readFileSync(new URL("../runtime/next.mjs", import.meta.url), "utf8");
   for (const path of [
     "scripts/runtime/next.mjs",
