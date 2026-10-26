@@ -4,8 +4,8 @@
 # Serena project MCP. The devcontainer provisions `serena-agent` with uv.
 [mcp_servers.serena]
 command = "serena"
-args = ["start-mcp-server", "--context", "ide-assistant", "--project", "."]
-startup_timeout_sec = 30
+args = ["start-mcp-server", "--project-from-cwd", "--context=codex"]
+startup_timeout_sec = 15
 
 # Context7 hosted MCP. Set CONTEXT7_API_KEY only when the account requires it.
 [mcp_servers.context7]
@@ -18,10 +18,10 @@ command = "pnpm"
 args = ["exec", "next-devtools-mcp"]
 startup_timeout_sec = 30
 
-# shadcn MCP uses the official CLI through pnpm's ephemeral command surface.
+# shadcn MCP uses the workspace-pinned CLI from apps/web.
 [mcp_servers.shadcn]
 command = "pnpm"
-args = ["dlx", "shadcn@latest", "mcp"]
+args = ["--filter", "@line_bot_v1/web", "exec", "shadcn", "mcp"]
 startup_timeout_sec = 30
 
 [agents]

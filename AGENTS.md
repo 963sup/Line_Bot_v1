@@ -2,6 +2,20 @@
 
 以 repository evidence 確認 current state；不要用 best practice、舊文件或猜測取代 code / manifest / schema / tests。
 
+## Context hygiene
+
+- 命令執行前先界定輸入範圍、目標路徑、必要檔案與預期答案；不得以整個 repository 作為預設輸入。
+- 優先指定明確檔案、package、scope、測試名稱、JSON field 或 revision；避免無範圍的 glob、遞迴掃描與全庫查詢。
+- 不得把完整檔案、完整環境、資料庫 dump 或 provider response 預設帶入上下文；敏感值不得帶入上下文。
+- 讀取大型檔案時先用 `rg`、`jq`、`sed -n` 或欄位投影定位必要片段，不要先完整載入再過濾。
+- 測試、lint、typecheck 與 build 優先使用最小 affected scope；只有錯誤原因或 release evidence 不足時才擴大輸入範圍。
+- 命令可以產生完整輸出，但不得將無關的完整輸出帶入上下文。
+- 完整 build、test、CI、provider、API 或 runtime log 可寫入 ignored artifact；上下文只讀取摘要、可行動錯誤、相關片段與必要尾端。
+- 成功結果只保留結論、exit status、結果數量、目標路徑與必要證據，不重複完整日誌。
+- 失敗時先讀第一個可行動錯誤，再讀相關 stack trace 或尾端；資訊不足時才局部擴大讀取。
+- 不為了證明命令已執行而貼出完整輸出；回報命令、結果與影響範圍即可。
+- 輸出上限是保護措施，不取代相關性判斷；相關且必要的片段優先於固定行數。
+
 ## Mandatory governing set
 
 以下是完整 governing authority，所有 repository 任務一律遵守。具體讀取依下方 Effective context contract 選取 target ref 的 current file／section／symbol；不要求每次將無關檔案全文預載進 context：
@@ -63,6 +77,16 @@
 修改指引前先核對實際 consumer；不維護 repository 內重複的 agent prompt 或 Markdown review database。
 
 Source-of-truth：[facts/sources-of-truth.md](docs/facts/sources-of-truth.md)。子 AGENTS 只增加 local constraints。
+
+## Completeness and root-cause delivery
+
+- 先把使用者要求轉成明確 scope、完成條件、不可改變條件與受影響檔案清單；「全部」、「完整」、「全面」表示必須處理該 scope 內的所有項目。
+- 先找根因，再處理所有由根因影響的 consumer、配置、文件、測試、驗證與部署入口；不得只修第一個失敗點或只完成代表性樣本。
+- 發現多個同類項目時，先建立完整 inventory，再逐項處理並重新掃描；不得以抽查、第一階段、主要檔案或高風險項目宣稱整體完成。
+- 中途發現工作量大時，不得自行把完整要求降級成分階段交付；若只能完成部分，必須明確標示未完成範圍，不能使用「已完成」或「完整」描述。
+- 完成前必須重新檢查原始 scope、搜尋漏改引用、檢查新增/刪除檔案、執行適用驗證，並回報剩餘未處理項目與理由。
+- 分層文件、配置、agent、skill 或 route 的整理，必須逐層確認父層與子層責任分配；不得只修改父文件後假設子文件已完成分配。
+- Root cause、consumer、contract、dependency、owner、source of truth 與驗證證據未串完整前，不得提交修復結論。
 
 ## Change / validation
 

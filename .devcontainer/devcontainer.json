@@ -48,6 +48,8 @@
   "remoteEnv": {
     "UV_CACHE_DIR": "${containerWorkspaceFolder}/.cache/uv",
     "UV_TOOL_DIR": "${containerWorkspaceFolder}/.cache/uv-tools",
+    "UV_TOOL_BIN_DIR": "${containerWorkspaceFolder}/.cache/uv-tools/bin",
+    "PATH": "${containerWorkspaceFolder}/.cache/uv-tools/bin:${containerEnv:PATH}",
     "SERENA_HOME": "${containerWorkspaceFolder}/.cache/serena"
   },
   "postCreateCommand": "uv tool install --force serena-agent==2.1.0 && pnpm install --frozen-lockfile --prefer-offline"
