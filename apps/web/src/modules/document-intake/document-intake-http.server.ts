@@ -135,7 +135,12 @@ export async function documentIntakeRequest(
         throw new ContractError(405, "Document intake requires POST.", "INVALID_INPUT");
       if (!scope.canEdit || scope.archived)
         throw new ContractError(403, "目前沒有此 Repository 的文件寫入權限。", "FORBIDDEN");
-      if (!runtime.intake) throw new IntakeError("INVALID_INPUT", 503);
+      if (!runtime.intake)
+        throw new ContractError(
+          503,
+          "採購單 AI 服務尚未設定，請聯絡系統管理員。",
+          "UNAVAILABLE",
+        );
       const command = parseIntakeCommand(await jsonBody(request));
       if (command.repositoryId !== scope.repository.id)
         throw new ContractError(
@@ -145,7 +150,12 @@ export async function documentIntakeRequest(
         );
       return jsonResponse(await runtime.intake(scope.actorUserId, command));
     }
-    if (!runtime.documents) throw new IntakeError("INVALID_INPUT", 503);
+    if (!runtime.documents)
+      throw new ContractError(
+        503,
+        "採購單 AI 服務尚未設定，請聯絡系統管理員。",
+        "UNAVAILABLE",
+      );
     const documentId = query.get("documentId") ?? "";
     if (!documentId) throw new ContractError(400, "Document ID is required.", "INVALID_INPUT");
     if (operation === "receipt") {

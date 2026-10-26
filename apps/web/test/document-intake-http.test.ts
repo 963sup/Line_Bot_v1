@@ -66,3 +66,35 @@ test("ContractDocument review command is forwarded to Contract after scope check
   assert.equal(response.status, 200);
   assert.deepEqual(received, { repositoryId: repository.id, action: "confirm" });
 });
+
+test("missing intake runtime is reported as an unavailable service, not invalid input", async () => {
+  const request = new Request(
+    "https://app.example/api/repository-document-intake?owner=owner&name=repo&operation=intake",
+    {
+      method: "POST",
+      headers: { origin: "https://app.example", "content-type": "application/json" },
+      body: JSON.stringify({}),
+    },
+  );
+  const response = await documentIntakeRequest(
+    request,
+    {
+      scope: async () => ({
+        actorUserId: "user-1",
+        repository,
+        archived: false,
+        canEdit: true,
+        canManage: false,
+      }),
+      intake: null,
+      documents: null,
+    },
+    async () => "user-1",
+  );
+
+  assert.equal(response.status, 503);
+  assert.deepEqual(await response.json(), {
+    error: "採購單 AI 服務尚未設定，請聯絡系統管理員。",
+    code: "UNAVAILABLE",
+  });
+});
