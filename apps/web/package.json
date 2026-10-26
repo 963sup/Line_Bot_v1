@@ -5,11 +5,11 @@
   "type": "module",
   "scripts": {
     "ui": "shadcn",
-    "test": "node --test ../../scripts/core/runtime/load-env.test.mjs && node --no-wasm-code-gc --import tsx --test --test-concurrency=2 test/*.test.ts",
-    "dev": "node ../../scripts/core/runtime/next.mjs dev --hostname 127.0.0.1",
-    "build": "node ../../scripts/core/runtime/next.mjs build",
-    "typecheck": "node ../../scripts/core/runtime/next.mjs typegen && tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
-    "start": "node ../../scripts/core/runtime/next.mjs start --hostname 127.0.0.1"
+    "test": "node --no-wasm-code-gc --import tsx --test --test-concurrency=2 test/*.test.ts",
+    "dev": "next dev --hostname 127.0.0.1",
+    "build": "next build",
+    "typecheck": "next typegen && tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
+    "start": "next start --hostname 127.0.0.1"
   },
   "dependencies": {
     "@base-ui/react": "1.9.0",
