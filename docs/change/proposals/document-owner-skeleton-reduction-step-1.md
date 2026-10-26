@@ -4,7 +4,19 @@ Status: **proposed reduction target; not fully implemented**. Stacked PR: #413 o
 Purpose: answer **「File / Intelligence / Contract / Content / WBS 究竟砍到什麼程度，才算剩下不可刪的骨架？」**.
 Follow-on design: [Step 2 — 骨架後的最小協作設計](document-owner-skeleton-reduction-step-2.md).
 
-This RFC does not supersede `docs/owners/*`, `architecture/*.json`, SQL, package exports, source or tests. The two step numbers are **logical gates**, not a second release/history ledger; Git is the change history.
+This RFC does not supersede `docs/owners/*`, `architecture/*.json`, SQL, package exports, source or tests. The seven Step numbers are **logical gates**, not a second release/history ledger; Git is the change history. #412 (integration-vercel / integration-supabase) is **Step 0 prerequisite**, not proof that Document Intake or E2E is complete.
+
+## 七個階段的唯一任務
+
+- **Step 1（本文）**：砍到不可再刪的五個 Owner 核心、依賴與退役邊界。
+- [Step 2](document-owner-skeleton-reduction-step-2.md)：Port / Adapter / Composition，隔離 Supabase Storage 和 Vercel AI Gateway。
+- [Step 3](document-owner-skeleton-reduction-step-3.md)：Exact File bytes → Intelligence → Gateway 的 **Contract-owned structured candidate**，不同於 observations。
+- [Step 4](document-owner-skeleton-reduction-step-4.md)：`PurchaseOrderCandidate` → Contract DRAFT / explicit human CONFIRMED。
+- [Step 5](document-owner-skeleton-reduction-step-5.md)：Confirmed Contract → Content，完整 sourceRowId 映射與轉換限制。
+- [Step 6](document-owner-skeleton-reduction-step-6.md)：Content → Project WBS Draft → reviewed Baseline，出版前對帳來源。
+- [Step 7](document-owner-skeleton-reduction-step-7.md)：Gateway/Storage/DB/Runtime/使用者入口的 E2E、來源反查與失敗恢復。
+
+每一步必須先證明自己的 Invariant；Step 7 不能補救前六步違反的資料事實。下面保留原本的 KEEP/MOVE/READ-ONLY/DELETE-AFTER-PROOF/REJECT 精簡判準，後續轉換細節由各專屬文件擁有，**不在 Step 1 複製 schema**。
 
 ## 1. 第一性原理：不是砍行數，而是砍掉第二個真相
 
