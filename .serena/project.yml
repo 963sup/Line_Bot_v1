@@ -197,6 +197,9 @@ initial_prompt: >-
   file editing, shell, Git, tests, and validation for operations Serena does
   not uniquely improve. Serena output is exploration or operation evidence,
   not a replacement for repository source of truth or acceptance validation.
+  Run any potentially high-volume shell validation or polling command through
+  `pnpm tool:bounded -- --label <scope> -- <command>`; give polling a stable
+  `--dedupe-key` and consume only its JSON summary rather than raw logs.
 
 # the encoding used by text files in the project
 # For a list of possible encodings, see https://docs.python.org/3.11/library/codecs.html#standard-encodings

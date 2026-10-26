@@ -15,6 +15,8 @@
 - 失敗時先讀第一個可行動錯誤，再讀相關 stack trace 或尾端；資訊不足時才局部擴大讀取。
 - 不為了證明命令已執行而貼出完整輸出；回報命令、結果與影響範圍即可。
 - 輸出上限是保護措施，不取代相關性判斷；相關且必要的片段優先於固定行數。
+- 可能產生無界輸出的 test、build、lint、typecheck、provider、CI 或輪詢命令，必須透過 `pnpm tool:bounded -- --label <scope> -- <command>` 執行；完整 log 寫入 `.artifacts/bounded-command/`，上下文只使用其 JSON 摘要。輪詢必須指定穩定的 `--dedupe-key`，相同結果不得重複帶入上下文。
+- `rg`、`sed -n`、Git pathspec 等已明確限制輸出的定位命令可直接執行；不可為了省略篩選而將無界命令包裝成 bounded command。
 
 ## Serena MCP usage
 
