@@ -1,6 +1,6 @@
 # Vercel Free 開發入口
 
-比照 [Supabase 開發入口](../../integration-supabase/src/README.md)，本目錄先建立 Vercel 能力分類與 README，供後續開發定位。這些是 repository 文件目錄，不是 Vercel 原生部署路徑；不新增 runtime、SDK、設定或雲端資源，也不代表各能力已啟用。
+本目錄提供 Vercel 能力分類與文件導航，並與 [Supabase 開發入口](../../integration-supabase/src/README.md) 維持相同的 provider boundary。這些是 repository 文件目錄，不是 Vercel 原生部署路徑；runtime、SDK、設定或雲端資源是否啟用，仍以各 Owner、source、manifest 與 provider readback 為準。
 
 ## Source of Truth
 
@@ -16,7 +16,7 @@
 
 不在 `vercel/` 複製 `vercel.json`、`.env`、部署 script 或 `.vercel/project.json`。正式設定與程式保留在上表既有位置。
 
-## Prepared layout
+## Capability layout
 
 ```text
 vercel/
