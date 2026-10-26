@@ -1,6 +1,6 @@
 # Document owner skeleton reduction — Step 2: 骨架後的最小協作設計
 
-Status: **target design only; not yet implemented**. Depends on [Step 1 — 減法邊界與停止條件](document-owner-skeleton-reduction-step-1.md) being independently accepted and verified. Stacked PR #413 on #412 is the planning/initial regression change, not Step 2 completion.
+Status: **target design; not fully promoted to current main**. PR #413 merged the planning/initial regression work into the intermediate refactor branch, but that merge is not Step 2 completion or current-main acceptance. It still depends on [Step 1 — 減法邊界與停止條件](document-owner-skeleton-reduction-step-1.md) being independently accepted and verified.
 
 Purpose: answer **「砍到不可刪的骨架後，如何設計 File / Intelligence / Contract / Content / WBS 的正確協作，而不把依賴和狀態再加回來？」**. This RFC does not override current Owner, semantic/topology, schema or runtime contracts.
 
@@ -139,7 +139,7 @@ This design is usable only after [Step 1 exit criteria](document-owner-skeleton-
 
 - **Not a new Owner:** no shared business integration service, Source Registry or Coverage Engine.
 - **Not a new database truth:** historical source resolution remains anchored in original immutable owner revisions.
-- **Not forced into PR #413:** #413 is currently a Draft stacked branch on #412.
+- **Not forced into current main:** the intermediate PR #413 branch contains planning/initial regression work, but its merge does not by itself prove Step 2 acceptance or promote this target into current main.
 - **Not a migration approval:** historical File processing and Repository WBS transfer removal need distinct operator-controlled plans.
 - **Not production acceptance:** provider availability and deploy state remain independently verified.
 
