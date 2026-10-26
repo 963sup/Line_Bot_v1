@@ -55,6 +55,7 @@ References support the existing status; listed tests are evidence locations, not
 | consumes | platform | query | platform | transaction-bound | File consumes neutral PostgreSQL transaction and value-decoding mechanisms. File owns its persisted facts, authorization policy, transition orchestration and recovery. |
 | consumes | repository | stable-identity+query | repository | transaction-recheck | File consumes current User qualification, effective Repository permissions and archive state within each transition transaction. Visibility-only access does not disclose protected file evidence; Repository retains access authority. |
 | provides | intelligence | query | file | current-source-access | Intelligence reads an exact File revision only through File's public source reader, which authorizes before and after private object I/O. Intelligence receives detached bytes and no File persistence or storage authority. |
+| consumes | supabase-integration | reference | supabase-integration | per-operation-verified | File adapter uses the server-only Supabase Storage transport client; File retains object keys, SHA-256 verification, errors, writes and readback consistency. |
 
 ## Tactical Model Boundary
 
