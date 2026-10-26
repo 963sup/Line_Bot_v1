@@ -74,6 +74,7 @@ References support the existing status; listed tests are evidence locations, not
 | consumes | namespace | command | namespace | same-transaction | Account validates qualification and calls Namespace for global login claim/rename in the same transaction; Namespace owns normalization, collision and persistence. |
 | provides | notifications | query | account | current-state | Account supplies current active provider binding; Notifications retains the first delivery target snapshot. |
 | provides | project | stable-identity+query | account | transaction-recheck | Project owner identity is an Account constrained to User or Organization; Project also rechecks Account-owned active User qualification before accepting direct User collaborator or DraftIssue assignee references. |
+| consumes | supabase-integration | reference | supabase-integration | per-request-verified | Account identity verification uses the Supabase Auth transport through the integration boundary; Account owns Google identity qualification and domain error mapping. |
 
 ## Tactical Model Boundary
 

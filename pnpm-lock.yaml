@@ -242,6 +242,9 @@ importers:
       '@line_bot_v1/intelligence':
         specifier: workspace:*
         version: link:../../packages/intelligence
+      '@line_bot_v1/integration-supabase':
+        specifier: workspace:*
+        version: link:../../packages/integration-supabase
       '@line_bot_v1/issue':
         specifier: workspace:*
         version: link:../../packages/issue
@@ -290,9 +293,6 @@ importers:
       '@shadcn/react':
         specifier: 0.3.1
         version: 0.3.1(@types/react@19.2.18)(react@19.2.8)
-      '@supabase/supabase-js':
-        specifier: 'catalog:'
-        version: 2.115.0(@opentelemetry/api@1.9.1)
       '@vercel/analytics':
         specifier: 'catalog:'
         version: 2.0.1(next@16.3.4(@babel/core@7.29.7(supports-color@8.1.1))(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)
@@ -390,15 +390,15 @@ importers:
 
   packages/account:
     dependencies:
+      '@line_bot_v1/integration-supabase':
+        specifier: workspace:*
+        version: link:../integration-supabase
       '@line_bot_v1/namespace':
         specifier: workspace:*
         version: link:../namespace
       '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:../platform
-      '@supabase/supabase-js':
-        specifier: 'catalog:'
-        version: 2.115.0(@opentelemetry/api@1.9.1)
     devDependencies:
       '@types/node':
         specifier: 'catalog:'

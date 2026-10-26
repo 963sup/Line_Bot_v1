@@ -37,6 +37,28 @@ export default {
   forbidden: [
     ...topologyDependencyRules(),
     {
+      name: "supabase-sdk-only-through-integration",
+      severity: "error",
+      comment:
+        "Supabase SDK access is a repository-wide provider boundary; owners consume ports and adapters, never the SDK directly",
+      from: {
+        path: "^(packages|apps)/",
+        pathNot: "^packages/integration-supabase/",
+      },
+      to: { path: "(^|/)node_modules/@supabase/supabase-js/" },
+    },
+    {
+      name: "vercel-ai-sdk-only-through-integration",
+      severity: "error",
+      comment:
+        "Vercel AI SDK access stays in the provider integration; Intelligence receives a processor port",
+      from: {
+        path: "^(packages|apps)/",
+        pathNot: "^packages/integration-vercel/",
+      },
+      to: { path: "(^|/)node_modules/ai/" },
+    },
+    {
       name: "features-do-not-import-routes",
       severity: "error",
       from: { path: "^apps/[^/]+/src/(modules|features|components|shared)/" },

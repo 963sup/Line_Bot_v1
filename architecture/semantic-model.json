@@ -2208,6 +2208,15 @@
       "consistency": "per-operation-verified"
     },
     {
+      "id": "supabase-account-identity-client",
+      "provider": "supabase-integration",
+      "consumer": "account",
+      "meaning": "Account identity verification uses the Supabase Auth transport through the integration boundary; Account owns Google identity qualification and domain error mapping.",
+      "integrationMode": "reference",
+      "authority": "supabase-integration",
+      "consistency": "per-request-verified"
+    },
+    {
       "id": "intelligence-vercel-processor-port",
       "provider": "intelligence",
       "consumer": "vercel-integration",
