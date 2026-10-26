@@ -1,6 +1,7 @@
 # integration-vercel
 
-- Semantic owner: intelligence
+- Semantic owner: vercel-integration
+- Owner contract: [vercel-integration](../../docs/owners/vercel-integration.md)
 - Module kind: integration-adapter
 - Architecture: [implementation-topology.json](../../architecture/implementation-topology.json)
 
