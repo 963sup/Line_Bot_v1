@@ -1,9 +1,11 @@
 import { generateText } from "ai";
-import { modelName } from "./gateway-config.ts";
+import { IntelligenceError } from "@line_bot_v1/intelligence/domain/error";
 import { fileProcessor } from "./gateway-document.ts";
 
 export function createVercelAiGateway(config: { model: string }) {
-  const model = modelName(config.model.trim());
+  const model = config.model.trim();
+  if (!/^[a-z0-9-]+\/[a-zA-Z0-9._-]+$/.test(model))
+    throw new IntelligenceError(503, "AI Gateway model is invalid.", "EXTRACTION_UNAVAILABLE");
   return {
     text: async (input: { prompt: string; system: string }) => (await generateText({ model, prompt: input.prompt, system: input.system, maxOutputTokens: 600, maxRetries: 0, abortSignal: AbortSignal.timeout(10_000) })).text,
     intake: (input: string) => ({
