@@ -35,7 +35,12 @@
 ## 2. 最小 Trace Contract（查詢投影，不是新持久化權威）
 
 ```ts
-type DocumentClosureTrace = {
+type SourceRowKey = {
+  documentId: string;
+  revisionId: string;       // ContractDocument exact confirmed revision
+  sourceRowId: string;      // only unique inside that document revision
+};
+type DocumentClosureTrace = { // 一次只追溯一個指定 ContractDocument；Content/WBS 可有其他來源
   scope: { repositoryId: string; projectId: string };
   file: { fileId: string; revisionId: string; sha256: string };
   intelligence: {
@@ -49,8 +54,7 @@ type DocumentClosureTrace = {
   content: {
     repositoryId: string; revisionId: string;
     mappingVersion: "purchase-order-content-v1";
-    rows: Array<{
-      sourceRowId: string;
+    rows: Array<SourceRowKey & {
       disposition: "CONTENT_WORK" | "COMMERCIAL_ONLY";
       nodeIds: string[];
     }>;
@@ -58,7 +62,7 @@ type DocumentClosureTrace = {
   wbs: {
     projectId: string; candidateRevisionId: string; baselineId: string;
     mappingVersion: "content-wbs-v1";
-    sourceRowIds: string[];
+    sourceRows: Array<SourceRowKey & { wbsNodeIds: string[] }>;
     approvalReviewIds: string[];
   };
 };
@@ -71,13 +75,13 @@ type DocumentClosureTrace = {
 1. `trace.file.sha256` 與原 FileRevision 完全一致；真正 bytes 由 File Reader 驗證，不讓 WBS 自己下載。
 2. Content 的 Contract source `{documentId,revisionId}` 對應的 `CONFIRMED` exact Revision 必須存在；它不可只靠名稱或最新 Head 猜測。
 3. `set(content.rows.sourceRowId)` 必須精確等於該 ContractRevision 的所有原始 `lines.sourceRowId`，每筆只出現一次，不因 freight/other 被刪。
-4. WBS `sourceRows` 必須與其所 pin 的 ContentRevision來源行一致；需施工列在要發布的**候選版本**擁有有效 WORK_PACKAGE。刪改後不可使用初始匯入覆蓋數假充現在的覆蓋。
+4. WBS `sourceRows` 必須按上述**完整三元組鍵**與其 pinned ContentRevision 的來源行一致；需施工列在要發布的**候選版本**擁有有效 WORK_PACKAGE。刪改後不可使用初始匯入覆蓋數假充現在的覆蓋。
 5. Baseline 的 `revisionId`、proposal/approval IDs、current policy/reviewer authority 及 outbox event 都能讀回，且指到一份真實的 immutable candidate。
 6. 失敗與未知不是通過：每個缺失必須顯示明確 Owner/階段/錯誤語意，**不能填補不存在的欄位**讓 trace 完整。
 
 ## 3. 具體 E2E Fixture 設計（測試資料 != 實際使用者秘密）
 
-準備**無真實個資、經人工核對**的至少兩份文件（例如一份 54 行跨頁採購單及一份包含多幣別／折扣或複雜表格的合法反例），每份 fixture 配有獨立人工核對的 page count、line count、stable row keys、必需欄位、Decimal totals、來源欄位位置。沒有人工核對原件的 fixture 只能驗證「對照宣告」，不能叫 full-document coverage。
+準備**無真實個資、經人工核對**的至少兩份文件（例如一份 54 行跨頁採購單及一份包含折扣／複雜表格的合法單一幣別文件，另附一份多幣別的**不支援／需明確拒絕**反例），每份 fixture 配有獨立人工核對的 page count、line count、stable row keys、必需欄位、Decimal totals、來源欄位位置。沒有人工核對原件的 fixture 只能驗證「對照宣告」，不能叫 full-document coverage。
 
 驗收檔案可包含 PDF、JPG/PNG/WebP；對宣稱支援的每種 MIME/入口測試成功與不支援結果。不能把 provider output 直接當成預期答案（會循環論證）。Contract 全量保存來源原值；Content 只取得允許的工程投影；WBS 只取得其需要的工作結構。
 
@@ -85,7 +89,7 @@ type DocumentClosureTrace = {
 
 1. Actor A 在有權限 Repository 透過 File Upload；讀回 FileRevision ID／SHA，確認 Storage bytes 完整，List 沒有 pending upload。
 2. 用相同 exact FileRevision 呼叫 Intelligence Contract Intake；取得 Gateway 的完整 `PurchaseOrderCandidate` 並保留 Attempt，對照**獨立人工 fixture**；不得先進行泛化 observations 截斷。
-3. Contract SAVE Draft，人工核對所有行／金額／來源頁，必要時以新 Draft Revision 修正，最後由具權限 Actor 確認 exact candidate → CONFIRMED。
+3. Contract SAVE Draft，人工核對所有行／金額／來源頁；確認的來源核對聲明與行數必須由 Contract 持久化且經獨立驗證（詳 [Step 4](document-owner-skeleton-reduction-step-4.md)）。必要時以新 Draft Revision 修正，最後由具權限 Actor 確認 exact candidate → CONFIRMED。
 4. Content 匯入 exact Confirmed ContractRevision；驗證每行 map 或 commercial-only，總節點數、measure、stable IDs 和歷史 import evidence。
 5. 有權限且有來源披露資格的 Actor 將指定 ContentRevision 匯入**空** Project WBS；完成 work package deliverable / acceptance criteria、建立 proposal／review、正式發布 Baseline。
 6. 逆向追溯 Published Baseline 到同一 Content/Contract/File sha，驗證沒有任何來源行遺失；同時依額外權限策略檢查不得對 Project-only Actor 展露 Repository 的原始私有商業資料。
@@ -99,7 +103,7 @@ type DocumentClosureTrace = {
 | Gateway malformed | 欠 `terms`、錯欄位型別、超過大小限制 | 沒有 Contract SAVE/CONFIRM；錯誤可分類 |
 | Gateway timeout/unknown | Provider 呼叫已開始後斷線 | 同 requestId 不啟動第二次 provider；replay/receipt/readback 結果明確 |
 | Contract save response lost | Postgres committed but response lost | Contract receipt 查得同一 exact revision；不重寫、不再呼叫 Gateway |
-| Human review mismatch | fixture 55 行，Gateway/caller 只有 54 | 不得標記正式文件完整且確認成功 |
+| Human review mismatch | fixture 55 行，Gateway/caller 只有 54；無獨立人工核對持久化證據 | 不得宣稱完整人工核對或正式驗收通過 |
 | Invalid commercial math | quantity × unitPrice ≠ gross、稅／折扣歧義 | Contract 明確 diagnostics/拒絕或有受控例外，不無聲篡改原值 |
 | Confirmed-but-not-expandable | category=null、四位小數、499 工作行超過 Content 1000 nodes | Contract CONFIRMED 保持；Content 整體拒絕且無半成品 |
 | Content already changed | 讀取後他人更新 Content head | expectedVersion conflict；沒有丟失其他人的 plan |
