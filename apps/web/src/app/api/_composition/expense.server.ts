@@ -4,9 +4,9 @@ import { createReceiptIntake } from "@line_bot_v1/expense/application/receipt-in
 import { createRecognizeReceipt } from "@line_bot_v1/expense/application/recognize-receipt";
 import { createPostgresExpenseStore } from "@line_bot_v1/expense/composition/bootstrap/postgres-expense-store";
 import { createReceiptRecognizer } from "@line_bot_v1/expense/composition/bootstrap/receipt-recognizer";
-import { downloadLineImage } from "@line_bot_v1/line/messaging-api";
 import { createVercelAiGateway } from "@line_bot_v1/integration-vercel/gateway";
 import { gatewayConfiguration } from "@line_bot_v1/integration-vercel/gateway-config";
+import { downloadLineImage } from "@line_bot_v1/line/messaging-api";
 import { activeLineUser } from "./account.server";
 
 const recognizeImage = async (imageId: string) => {

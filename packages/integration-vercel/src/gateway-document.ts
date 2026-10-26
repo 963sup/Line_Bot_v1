@@ -39,35 +39,40 @@ const observationsSchema = jsonSchema<{
   },
 });
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 function processingOutput(value: unknown) {
-  if (!value || typeof value !== "object" || Array.isArray(value))
+  if (!isRecord(value))
     throw new IntelligenceError(
       502,
       "Extraction returned an invalid result.",
       "EXTRACTION_UNAVAILABLE",
     );
-  const { documentKind, observations } = value as {
-    documentKind?: unknown;
-    observations?: unknown;
-  };
+  const { documentKind, observations } = value;
   if (typeof documentKind !== "string" || !Array.isArray(observations) || observations.length > 500)
-    throw new IntelligenceError(502, "Extraction returned an invalid result.", "EXTRACTION_UNAVAILABLE");
+    throw new IntelligenceError(
+      502,
+      "Extraction returned an invalid result.",
+      "EXTRACTION_UNAVAILABLE",
+    );
   for (const observation of observations) {
     if (
-      !observation ||
-      typeof observation !== "object" ||
-      Array.isArray(observation) ||
-      typeof (observation as { id?: unknown }).id !== "string" ||
-      typeof (observation as { label?: unknown }).label !== "string" ||
-      ((observation as { value?: unknown }).value !== null &&
-        typeof (observation as { value?: unknown }).value !== "string") ||
-      typeof (observation as { uncertain?: unknown }).uncertain !== "boolean" ||
-      ((observation as { source?: unknown }).source !== undefined &&
-        (observation as { source?: unknown }).source !== null &&
-        (typeof (observation as { source?: unknown }).source !== "object" ||
-          Array.isArray((observation as { source?: unknown }).source)))
+      !isRecord(observation) ||
+      typeof observation.id !== "string" ||
+      typeof observation.label !== "string" ||
+      (observation.value !== null && typeof observation.value !== "string") ||
+      typeof observation.uncertain !== "boolean" ||
+      (observation.source !== undefined &&
+        observation.source !== null &&
+        !isRecord(observation.source))
     )
-      throw new IntelligenceError(502, "Extraction returned an invalid result.", "EXTRACTION_UNAVAILABLE");
+      throw new IntelligenceError(
+        502,
+        "Extraction returned an invalid result.",
+        "EXTRACTION_UNAVAILABLE",
+      );
   }
   return { documentKind, observations };
 }
