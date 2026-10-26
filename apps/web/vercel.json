@@ -4,7 +4,9 @@
   "buildCommand": "cd ../.. && pnpm exec turbo run build --filter=@line_bot_v1/web",
   "git": {
     "deploymentEnabled": {
-      "main": false
+      "main": false,
+      "preview": true,
+      "preview/**": true
     }
   }
 }
