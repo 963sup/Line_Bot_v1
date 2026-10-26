@@ -106,7 +106,7 @@ test("failed finalize validation preserves full evidence and bounds diagnostic o
       'console.error("ERROR: first actionable validation failure");',
       'for (let i = 0; i < 200; i++) console.error("noise-" + i + ":" + "x".repeat(120));',
       "process.exit(7);",
-    ].join("\\n"),
+    ].join("\n"),
   );
 
   assert.throws(
