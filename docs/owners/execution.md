@@ -53,7 +53,7 @@ Contract basis, are invalid and are not decoded as compatibility variants.
 ## Delivery and evidence
 
 Use authenticated bounded stdin `pnpm execution:run`; see the
-[CLI contract](../../scripts/operations/execution/README.md). The CLI exposes report execute/read/list/history
+[CLI contract](../../scripts/README.md). The CLI exposes report execute/read/list/history
 and dependency read/replace operations. Lists are Contract-scoped with
 bounded keyset pagination and report history is version-paged. Server timestamps represent commands,
 not inferred work occurrence.

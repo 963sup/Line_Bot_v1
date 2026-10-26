@@ -4,7 +4,7 @@ import { test } from "node:test";
 import { createNotifications } from "@line_bot_v1/notifications/application/use-cases/notifications";
 import { createPostgresNotificationRepository } from "@line_bot_v1/notifications/composition/bootstrap/postgres-notification-repository";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
-import { seedCapability } from "../../packages/actions/test/fixture.ts";
+import { seedCapability } from "../../../packages/actions/test/fixture.ts";
 import { actionRuntime } from "./composition.mjs";
 
 test("host runtime recovers uncertain LINE acceptance and exposes one authorized Inbox item", async (t) => {

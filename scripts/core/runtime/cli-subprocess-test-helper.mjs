@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const preload = fileURLToPath(new URL("./cli-test-preload.mjs", import.meta.url));
-const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
+const repositoryRoot = fileURLToPath(new URL("../../../", import.meta.url));
 
 export function runCli(script, input, scenario = "success", environment = {}) {
   const result = spawnSync(

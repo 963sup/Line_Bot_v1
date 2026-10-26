@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { loadEnvFile } from "node:process";
 import { fileURLToPath } from "node:url";
 
-export const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
+export const repositoryRoot = fileURLToPath(new URL("../../../", import.meta.url));
 export const localEnvFile = join(repositoryRoot, ".env.local");
 
 // Load before starting Next.js so its workers inherit the same environment.

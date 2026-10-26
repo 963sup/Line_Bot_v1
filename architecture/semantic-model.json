@@ -5447,7 +5447,10 @@
           "./contracts/output/fixed-steps",
           "./composition/bootstrap/automation"
         ],
-        "entrypoints": ["scripts/operations/actions/run.mjs", "scripts/operations/actions/worker.mjs"],
+        "entrypoints": [
+          "scripts/operations/actions/run.mjs",
+          "scripts/operations/actions/worker.mjs"
+        ],
         "testPaths": [
           "packages/actions/test/actions.test.ts",
           "packages/actions/test/actions-postgres.test.ts"
@@ -6008,7 +6011,10 @@
           "scripts/operations/file/run.mjs",
           "apps/web/src/app/api/_composition/files.server.ts"
         ],
-        "testPaths": ["packages/intelligence/test/processing.test.ts", "scripts/operations/file/run.test.mjs"],
+        "testPaths": [
+          "packages/intelligence/test/processing.test.ts",
+          "scripts/operations/file/run.test.mjs"
+        ],
         "note": "The processor preserves observations-v1:<model> identity, performs one provider attempt without fallback and supports configured PDF/JPEG/PNG/WebP inputs. Output remains candidate evidence; simulated tests do not prove live provider accuracy or acceptance."
       }
     },

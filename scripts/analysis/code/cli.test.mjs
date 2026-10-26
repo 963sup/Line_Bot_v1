@@ -12,7 +12,7 @@ import {
 import { dirname, join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
-import { runPatch } from "../changes/patch-apply.mjs";
+import { runPatch } from "../../changes/patch-apply.mjs";
 import { execute } from "./cli.mjs";
 import { applyByteReplacements, rename as renameSymbol, structuralRewrite } from "./core.mjs";
 

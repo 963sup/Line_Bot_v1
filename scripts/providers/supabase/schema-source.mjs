@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync } from "node:fs";
 
-const root = new URL("../../", import.meta.url);
+const root = new URL("../../../", import.meta.url);
 const platformSchema = String.raw`(?:"?(?:auth|storage|supabase_migrations|public)"?)`;
 
 function normalizedSql(sql) {

@@ -1,8 +1,11 @@
 import { pathToFileURL } from "node:url";
-import { withPostgres } from "../supabase/postgres.mjs";
-import { assertValidatedMainMutationContext } from "../supabase/remote-authorization.mjs";
-import { assertConfirmedProject, assertRemoteTarget } from "../supabase/remote-target.mjs";
-import { VERCEL_PRODUCTION_TARGET } from "../vercel/deploy-production.mjs";
+import { withPostgres } from "../../providers/supabase/postgres.mjs";
+import { assertValidatedMainMutationContext } from "../../providers/supabase/remote-authorization.mjs";
+import {
+  assertConfirmedProject,
+  assertRemoteTarget,
+} from "../../providers/supabase/remote-target.mjs";
+import { VERCEL_PRODUCTION_TARGET } from "../../providers/vercel/deploy-production.mjs";
 
 export const ATTENDANCE_SCHEDULER = Object.freeze({
   jobName: "attendance-maintenance",

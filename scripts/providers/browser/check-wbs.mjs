@@ -11,7 +11,7 @@ const load = process.env.PLAYWRIGHT_PACKAGE_PATH
   : require;
 const { chromium } = load("playwright");
 const { expect } = load("playwright/test");
-const webRequire = createRequire(new URL("../../apps/web/package.json", import.meta.url));
+const webRequire = createRequire(new URL("../../../apps/web/package.json", import.meta.url));
 const { postgresFixture } = await import(
   pathToFileURL(webRequire.resolve("@line_bot_v1/platform/testing/postgres")).href
 );

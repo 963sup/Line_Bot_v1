@@ -11,7 +11,7 @@ if (process.argv.slice(2).join(" ") !== "--live") {
   process.exit();
 }
 
-const require = createRequire(new URL("../../apps/web/package.json", import.meta.url));
+const require = createRequire(new URL("../../../apps/web/package.json", import.meta.url));
 const { createLineClient } = await import(
   pathToFileURL(require.resolve("@line_bot_v1/line/messaging-api")).href
 );

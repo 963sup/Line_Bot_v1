@@ -7,7 +7,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 export async function startRepositoryOverviewFixture(output) {
-  const root = fileURLToPath(new URL("../../", import.meta.url));
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
   const web = path.join(root, "apps/web");
   const require = createRequire(path.join(web, "package.json"));
   const { build } = createRequire(require.resolve("tsx"))("esbuild");

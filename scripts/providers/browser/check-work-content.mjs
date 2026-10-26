@@ -10,7 +10,7 @@ const load = process.env.PLAYWRIGHT_PACKAGE_PATH
   : require;
 const { chromium } = load("playwright");
 const { expect } = load("playwright/test");
-const webRequire = createRequire(new URL("../../apps/web/package.json", import.meta.url));
+const webRequire = createRequire(new URL("../../../apps/web/package.json", import.meta.url));
 const resolvedImport = async (specifier) =>
   import(pathToFileURL(webRequire.resolve(specifier)).href);
 

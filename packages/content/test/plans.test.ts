@@ -94,6 +94,43 @@ test("whole Contract revision gets deterministic Content identities and complete
   assert.equal(first.document.nodes.filter((node) => node.kind === "TASK").length, 48);
 });
 
+test("whole Contract expansion rejects a final Content document over the node limit atomically", () => {
+  const context = {
+    id: ids.revision,
+    repositoryId: "repo",
+    actorUserId: "owner",
+    at: 10,
+    stableId: stableUuid,
+  };
+  const current = reviseContentPlan(
+    null,
+    0,
+    "initialize",
+    { schemaVersion: 1, measures: [], nodes: [], resourcePins: [] },
+    context,
+  );
+  const expansion = {
+    documentId: "66666666-6666-4666-8666-666666666666",
+    revisionId: "77777777-7777-4777-8777-777777777777",
+    sourceFileId: "88888888-8888-4888-8888-888888888888",
+    sourceFileRevisionId: "99999999-9999-4999-8999-999999999999",
+    sourceFileSha256: "a".repeat(64),
+    title: "Large purchase order",
+    lines: Array.from({ length: 499 }, (_, index) => ({
+      sourceRowId: `row-${index + 1}`,
+      description: `Line ${index + 1}`,
+      quantity: "1",
+      unit: "PCS",
+      category: "material" as const,
+      uncertain: false,
+    })),
+  };
+  assert.throws(
+    () => expandContractDocument(current, 1, expansion, { ...context, id: ids.request }),
+    (error) => error instanceof ContentError && error.code === "INVALID_INPUT",
+  );
+});
+
 const command = {
   action: "initialize",
   repositoryId: "repo",

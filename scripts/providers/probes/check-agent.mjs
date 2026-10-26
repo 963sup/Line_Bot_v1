@@ -10,7 +10,7 @@ if (process.argv.slice(2).join(" ") !== "--live") {
   process.exit();
 }
 
-const require = createRequire(new URL("../../apps/web/package.json", import.meta.url));
+const require = createRequire(new URL("../../../apps/web/package.json", import.meta.url));
 const { runIntakeAgent } = await import(require.resolve("@line_bot_v1/assistant/agents/intake"));
 const { createVercelAiGateway } = await import("@line_bot_v1/integration-vercel/gateway");
 

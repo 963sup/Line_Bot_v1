@@ -22,7 +22,7 @@ test("frontmatter regex is not a link; prose links and incomplete metadata still
       await mkdir(path.dirname(path.join(root, file)), { recursive: true });
       await writeFile(path.join(root, file), "# Fixture\n");
     }
-    for (const dir of ["scripts/docs", "docs", ".agents/skills"])
+    for (const dir of ["scripts/governance/docs", "docs", ".agents/skills"])
       await mkdir(path.join(root, dir), { recursive: true });
     const script = path.join(root, "scripts/governance/docs/check-docs.mjs");
     await writeFile(script, source);

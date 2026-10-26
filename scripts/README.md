@@ -2,13 +2,12 @@
 
 `package.json#scripts` 是人、Agent、CI 共用的 public command surface；`scripts/` 是 private repository-operation implementation。CLI 只負責 deterministic operation orchestration，不承擔產品 domain rule 或第二份 source of truth。
 
-## Target responsibility layout
+## Responsibility layout
 
-The current directories are a migration baseline, not proof of the best final shape.
-The target structure below separates responsibility without changing a command's
-observable contract. It is implemented incrementally: a directory moves only with its
-real consumers, package command, workflow routing, tests, documentation, architecture
-projection and tooling guards.
+The first-level structure separates repository mechanisms, architecture authority,
+analysis, change lifecycle, business operations, provider adapters and governance.
+Moving an operation requires its real consumers, package command, workflow routing,
+tests, documentation, architecture projection and tooling guards to move together.
 
 ```text
 core/          repository-wide execution mechanisms and bounded output
@@ -37,15 +36,13 @@ scripts own tested operation behaviour.
 - 外部 provider mutation 必須 explicit authorization + exact target + bounded failure + post-write readback。
 - 修改 script 時同步更新 command surface、測試、validation routing、workflow 與根層 scripts 文件。
 
-| 目錄 | 責任 |
+| Group | Responsibility |
 | --- | --- |
-| Target group | Includes during migration |
-| --- | --- |
-| `core/` | Current runtime bootstrap, bounded output and validation execution mechanisms. |
+| `core/` | Runtime bootstrap, bounded output and validation execution mechanisms. |
 | `architecture/` | Machine-readable architecture compile/query/validation. |
-| `analysis/` | Current code facts, insights and read-only intelligence analysis. |
+| `analysis/` | Code facts and read-only insights analysis. |
 | `changes/` | Change status/preflight/finalize and deterministic patch application. |
-| `operations/` | Attendance, actions, contract, execution, file, project, WBS and wiki entrypoints. |
+| `operations/` | Attendance, actions, contract, execution, file, intelligence, project, WBS and wiki entrypoints. |
 | `providers/` | Browser scenarios, GitHub routing/readback, LINE, probes, Supabase and Vercel adapters. |
 | `governance/` | Documentation validation, toolchain governance, developer doctor and validation orchestration. |
 

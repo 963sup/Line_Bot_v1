@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { inspectMcpConfiguration, probeMcp } from "./mcp-doctor.mjs";
 
-export const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
+export const repositoryRoot = fileURLToPath(new URL("../../../", import.meta.url));
 
 export function parseEnvKeys(source) {
   return [

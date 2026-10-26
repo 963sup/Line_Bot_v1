@@ -10,7 +10,7 @@ if (!cli || !isAbsolute(cli) || !existsSync(cli)) {
   );
   process.exit(1);
 }
-const root = fileURLToPath(new URL("../../", import.meta.url));
+const root = fileURLToPath(new URL("../../../", import.meta.url));
 for (const name of readdirSync(new URL("../../.codex/rules/", import.meta.url)).filter((name) =>
   name.endsWith(".rules"),
 )) {

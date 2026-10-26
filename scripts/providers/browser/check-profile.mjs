@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 import { fulfillLineSessionMock } from "./line-session-mock.mjs";
 import { captureShell } from "./shell-evidence.mjs";
 
-const root = fileURLToPath(new URL("../../", import.meta.url));
+const root = fileURLToPath(new URL("../../../", import.meta.url));
 const web = path.join(root, "apps/web");
 const require = createRequire(path.join(web, "package.json"));
 const { build } = createRequire(require.resolve("tsx"))("esbuild");

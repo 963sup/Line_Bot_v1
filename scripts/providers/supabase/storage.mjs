@@ -7,7 +7,7 @@ import { withPostgres } from "./postgres.mjs";
 import { assertValidatedMainMutationContext } from "./remote-authorization.mjs";
 import { assertConfirmedProject, assertRemoteTarget } from "./remote-target.mjs";
 
-const root = new URL("../../", import.meta.url);
+const root = new URL("../../../", import.meta.url);
 const bucketConfig = new URL("packages/integration-supabase/src/config.toml", root);
 const linkedProjectFile = new URL("packages/integration-supabase/src/.temp/project-ref", root);
 const freeMaxObjectBytes = 50_000_000;

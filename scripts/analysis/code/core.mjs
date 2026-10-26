@@ -13,7 +13,7 @@ import { createRequire } from "node:module";
 import { dirname, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import ts from "typescript";
 import { isMap, parseAllDocuments } from "yaml";
-import { preparePatch } from "../changes/patch-apply.mjs";
+import { preparePatch } from "../../changes/patch-apply.mjs";
 
 const require = createRequire(import.meta.url);
 const CODE_EXTENSIONS = new Set([".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".mts", ".cts"]);

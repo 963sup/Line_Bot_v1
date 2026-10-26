@@ -492,7 +492,9 @@ test("WBS operator changes run its canonical tooling test stage in full and fast
     .split("\n")
     .filter((line) => line.startsWith("["))
     .map((line) => JSON.parse(line));
-  const toolingTests = calls.filter((call) => call.includes("scripts/operations/wbs/transfer.test.mjs"));
+  const toolingTests = calls.filter((call) =>
+    call.includes("scripts/operations/wbs/transfer.test.mjs"),
+  );
   assert.equal(toolingTests.length, 1);
   assert.deepEqual(toolingTests[0], [
     "--test",

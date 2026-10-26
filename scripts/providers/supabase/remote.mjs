@@ -28,7 +28,7 @@ import {
 import { localDatabaseCommands } from "./schema-local.mjs";
 import { declaredSchemaSql, schemaFileNames } from "./schema-source.mjs";
 
-const root = new URL("../../", import.meta.url);
+const root = new URL("../../../", import.meta.url);
 const artifacts = new URL(".artifacts/supabase-remote/", root);
 const foundationSql = readFileSync(
   new URL("packages/integration-supabase/src/schemas/000_foundation.sql", root),

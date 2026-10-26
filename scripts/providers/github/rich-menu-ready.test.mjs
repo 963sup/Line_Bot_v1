@@ -148,7 +148,7 @@ test("runtime readiness bound stays finite", async () => {
 
 test("Rich Menu job reserves execution headroom beyond bounded upstream readiness", () => {
   const workflow = readFileSync(
-    new URL("../../.github/workflows/release.yml", import.meta.url),
+    new URL("../../../.github/workflows/release.yml", import.meta.url),
     "utf8",
   );
   const menuJob = workflow.split("\n  rich_menu:\n")[1]?.split("\n  attendance_scheduler:\n")[0];

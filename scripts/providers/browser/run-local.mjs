@@ -8,7 +8,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import { boundedSpawnOptions } from "../../core/runtime/bounded-output.mjs";
 
-const root = fileURLToPath(new URL("../../", import.meta.url));
+const root = fileURLToPath(new URL("../../../", import.meta.url));
 const web = path.join(root, "apps/web");
 const require = createRequire(path.join(web, "package.json"));
 const rootRequire = createRequire(path.join(root, "package.json"));
@@ -139,14 +139,26 @@ try {
     root,
     "work-content.log",
   );
-  await command([path.join(root, "scripts/providers/browser/check-navigation.mjs")], root, "browser.log");
+  await command(
+    [path.join(root, "scripts/providers/browser/check-navigation.mjs")],
+    root,
+    "browser.log",
+  );
   await command(
     ["--no-wasm-code-gc", path.join(root, "scripts/providers/browser/check-project-imports.mjs")],
     root,
     "project-imports.log",
   );
-  await command([path.join(root, "scripts/providers/browser/measure-loading.mjs")], root, "loading.log");
-  await command([path.join(root, "scripts/providers/browser/check-profile.mjs")], root, "profile.log");
+  await command(
+    [path.join(root, "scripts/providers/browser/measure-loading.mjs")],
+    root,
+    "loading.log",
+  );
+  await command(
+    [path.join(root, "scripts/providers/browser/check-profile.mjs")],
+    root,
+    "profile.log",
+  );
   await command(
     ["--no-wasm-code-gc", path.join(root, "scripts/providers/browser/check-wbs.mjs")],
     root,
@@ -162,8 +174,16 @@ try {
     root,
     "repository-resources.log",
   );
-  await command([path.join(root, "scripts/providers/browser/check-membership.mjs")], root, "membership.log");
-  await command([path.join(root, "scripts/providers/browser/check-auto-clock.mjs")], root, "auto-clock.log");
+  await command(
+    [path.join(root, "scripts/providers/browser/check-membership.mjs")],
+    root,
+    "membership.log",
+  );
+  await command(
+    [path.join(root, "scripts/providers/browser/check-auto-clock.mjs")],
+    root,
+    "auto-clock.log",
+  );
   await command(
     [path.join(root, "scripts/providers/browser/check-repository-address.mjs")],
     root,

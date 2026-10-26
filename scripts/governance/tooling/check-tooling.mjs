@@ -11,7 +11,7 @@ import {
   writeBoundedDiagnostic,
 } from "../../core/runtime/bounded-output.mjs";
 
-const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
+const repositoryRoot = fileURLToPath(new URL("../../../", import.meta.url));
 const read = (file) => readFileSync(file, "utf8");
 
 function literalModuleSpecifiers(file) {
@@ -422,16 +422,24 @@ export function validate(root) {
     if (manifest.scripts?.["tooling:doctor"] !== "node scripts/governance/tooling/doctor.mjs")
       errors.push("package.json: tooling:doctor must own developer toolchain diagnosis");
     if (
-      manifest.scripts?.["vercel:deploy:production"] !== "node scripts/providers/vercel/deploy-production.mjs"
+      manifest.scripts?.["vercel:deploy:production"] !==
+      "node scripts/providers/vercel/deploy-production.mjs"
     )
       errors.push(
         "package.json: vercel:deploy:production must own controlled production deployment",
       );
-    if (manifest.scripts?.["github:current-main"] !== "node scripts/providers/github/current-main.mjs")
+    if (
+      manifest.scripts?.["github:current-main"] !== "node scripts/providers/github/current-main.mjs"
+    )
       errors.push("package.json: github:current-main must own exact-main GitHub readback");
-    if (manifest.scripts?.["github:release-plan"] !== "node scripts/providers/github/release-plan.mjs")
+    if (
+      manifest.scripts?.["github:release-plan"] !== "node scripts/providers/github/release-plan.mjs"
+    )
       errors.push("package.json: github:release-plan must own Release affected-source routing");
-    if (manifest.scripts?.["github:rich-menu-ready"] !== "node scripts/providers/github/rich-menu-ready.mjs")
+    if (
+      manifest.scripts?.["github:rich-menu-ready"] !==
+      "node scripts/providers/github/rich-menu-ready.mjs"
+    )
       errors.push("package.json: github:rich-menu-ready must own read-only Menu runtime evidence");
     if (Object.hasOwn(manifest.scripts ?? {}, "change:plan"))
       errors.push(

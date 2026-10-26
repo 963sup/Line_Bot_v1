@@ -15,7 +15,7 @@ import { fileURLToPath } from "node:url";
 import YAML from "yaml";
 import { validate } from "./check-tooling.mjs";
 
-const repo = fileURLToPath(new URL("../../", import.meta.url));
+const repo = fileURLToPath(new URL("../../../", import.meta.url));
 const manifest = JSON.parse(readFileSync(resolve(repo, "package.json"), "utf8"));
 const exactNodeVersion = readFileSync(resolve(repo, ".node-version"), "utf8").trim();
 // Generated fixture imports must not be mistaken for this test's actual imports.
@@ -557,7 +557,10 @@ test("validation entrypoints stay canonical and read-only", (t) => {
 test("validation keeps subprocess output bounded and artifact-backed", (t) => {
   const { root, write } = fixture(t);
   const source = readFileSync(resolve(repo, "scripts/governance/tooling/validate.mjs"), "utf8");
-  write("scripts/governance/tooling/validate.mjs", source.replaceAll("runBoundedCommand(", "spawnSync("));
+  write(
+    "scripts/governance/tooling/validate.mjs",
+    source.replaceAll("runBoundedCommand(", "spawnSync("),
+  );
   rejects(root, "validation subprocess output must remain bounded and artifact-backed");
   write(
     "scripts/governance/tooling/validate.mjs",
@@ -834,7 +837,10 @@ test("current repository surfaces reject retired User vocabulary", (t) => {
     "packages/integration-supabase/src/schemas/10_users.sql",
     "create table app_private.users(id text);\n",
   );
-  write("scripts/providers/probes/check-user.mjs", `export const payload = { ${retiredField}: "a" };\n`);
+  write(
+    "scripts/providers/probes/check-user.mjs",
+    `export const payload = { ${retiredField}: "a" };\n`,
+  );
   rejects(root, "retired User vocabulary");
 
   write("scripts/providers/probes/check-user.mjs", 'export const payload = { userId: "a" };\n');
@@ -1692,11 +1698,15 @@ for (const [script, args, message] of [
   });
 }
 test("wrong package manager stops before metadata checks", () => {
-  const result = spawnSync(process.execPath, [resolve(repo, "scripts/governance/tooling/check-tooling.mjs")], {
-    cwd: repo,
-    encoding: "utf8",
-    env: { ...process.env, npm_config_user_agent: "pnpm/0.0.0" },
-  });
+  const result = spawnSync(
+    process.execPath,
+    [resolve(repo, "scripts/governance/tooling/check-tooling.mjs")],
+    {
+      cwd: repo,
+      encoding: "utf8",
+      env: { ...process.env, npm_config_user_agent: "pnpm/0.0.0" },
+    },
+  );
   assert.equal(result.status, 1);
   assert.match(result.stderr, /Expected Node/);
   assert.equal(result.stdout, "");
@@ -1709,11 +1719,15 @@ test("wrong Node stops before metadata checks", (t) => {
   );
   write(".node-version", "0.0.0\n");
   write(".codex/config.toml", "[invalid");
-  const result = spawnSync(process.execPath, [resolve(root, "scripts/governance/tooling/check-tooling.mjs")], {
-    cwd: root,
-    encoding: "utf8",
-    env: { ...process.env, npm_config_user_agent: manifest.packageManager.replace("@", "/") },
-  });
+  const result = spawnSync(
+    process.execPath,
+    [resolve(root, "scripts/governance/tooling/check-tooling.mjs")],
+    {
+      cwd: root,
+      encoding: "utf8",
+      env: { ...process.env, npm_config_user_agent: manifest.packageManager.replace("@", "/") },
+    },
+  );
   assert.equal(result.status, 1);
   assert.match(result.stderr, /Expected Node 0\.0\.0/);
   assert.equal(result.stdout, "");

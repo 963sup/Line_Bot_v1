@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 
-const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
+const repositoryRoot = fileURLToPath(new URL("../../../", import.meta.url));
 const cli = createRequire(import.meta.url).resolve("supabase/dist/supabase.js");
 
 function redact(value, secrets) {

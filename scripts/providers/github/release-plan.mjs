@@ -14,7 +14,7 @@ const IDENTIFIER_RUNTIME_ACTIVATION_JOB = "identifier_runtime_activation";
 
 const PUBLICATION_ONLY_SOURCES = [
   /^assets\/line\/rich-menu\//,
-  /^scripts\/line\/rich-menu\/.*\.(?:ts|mjs)$/,
+  /^scripts\/providers\/line\/rich-menu\/.*\.(?:ts|mjs)$/,
   /^apps\/web\/src\/modules\/assistant\/rich-menu\/(definition|desired-state\.server)\.ts$/,
 ];
 const RICH_MENU_SOURCES = [
@@ -23,7 +23,7 @@ const RICH_MENU_SOURCES = [
   /^packages\/line\/src\/mini-app\/(?:index|registration)\.ts$/,
   /^apps\/web\/src\/shared\/presentation\/entry-route\.ts$/,
   /^packages\/line\/src\/rich-menu\/(?:alias|client|image|index|menu|transport|user-link)\.ts$/,
-  /^scripts\/runtime\/load-env\.mjs$/,
+  /^scripts\/core\/runtime\/load-env\.mjs$/,
   /^(?:pnpm-lock\.yaml|package\.json|apps\/web\/package\.json|packages\/line\/package\.json)$/,
 ];
 
@@ -33,7 +33,7 @@ function executableSource(file) {
 
 export function schedulerChanged(files) {
   return files.some(
-    (file) => executableSource(file) && /^scripts\/attendance\/.*\.mjs$/.test(file),
+    (file) => executableSource(file) && /^scripts\/operations\/attendance\/.*\.mjs$/.test(file),
   );
 }
 

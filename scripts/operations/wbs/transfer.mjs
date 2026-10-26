@@ -1,21 +1,21 @@
 import { createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
-import { withPostgres } from "../supabase/postgres.mjs";
+import { withPostgres } from "../../providers/supabase/postgres.mjs";
 import {
   runWithRemoteReconciliationLock,
   supabaseManagementRecoveryConfig,
   verifySupabaseRecoveryReadback,
-} from "../supabase/remote.mjs";
+} from "../../providers/supabase/remote.mjs";
 import {
   assertValidatedMainMutationContext,
   remoteMutationRevision,
   requireMutationAdjacentCurrentMain,
-} from "../supabase/remote-authorization.mjs";
+} from "../../providers/supabase/remote-authorization.mjs";
 import {
   assertConfirmedProject,
   assertRemoteTarget,
   projectRefFromSupabaseUrl,
-} from "../supabase/remote-target.mjs";
+} from "../../providers/supabase/remote-target.mjs";
 
 const githubApiOrigin = "https://api.github.com";
 const releaseWorkflowPath = ".github/workflows/release.yml";

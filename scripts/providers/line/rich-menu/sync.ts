@@ -1,5 +1,5 @@
-import { runRichMenuOperation } from "../../../apps/web/src/modules/assistant/rich-menu/operator.server.ts";
-import { loadRootEnv, repositoryRoot } from "../../../core/runtime/load-env.mjs";
+import { runRichMenuOperation } from "../../../../apps/web/src/modules/assistant/rich-menu/operator.server.ts";
+import { loadRootEnv, repositoryRoot } from "../../../../scripts/core/runtime/load-env.mjs";
 
 loadRootEnv();
 

@@ -19,7 +19,7 @@ function directGovernanceLockCalls(source) {
 }
 
 test("governance lock consumers use the named SQL contract rather than repeating its key", () => {
-  const root = new URL("../../", import.meta.url);
+  const root = new URL("../../../", import.meta.url);
   const sources = globSync(
     ["packages/*/src/**/*.ts", "packages/integration-supabase/src/schemas/*.sql"],
     { cwd: root },
@@ -60,7 +60,7 @@ function hasTopLevelMutation(sql) {
 test("config and schema assembly use the same complete lexical order", () => {
   const config = parse(
     readFileSync(
-      new URL("../../packages/integration-supabase/src/config.toml", import.meta.url),
+      new URL("../../../packages/integration-supabase/src/config.toml", import.meta.url),
       "utf8",
     ),
   );

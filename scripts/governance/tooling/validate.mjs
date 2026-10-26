@@ -4,10 +4,10 @@ import { fileURLToPath } from "node:url";
 import { createOutputDirectory, runBoundedCommand } from "../../core/runtime/bounded-output.mjs";
 
 const require = createRequire(import.meta.url);
-const root = fileURLToPath(new URL("../../", import.meta.url));
+const root = fileURLToPath(new URL("../../../", import.meta.url));
 const turbo = require.resolve("turbo/bin/turbo");
 const biome = fileURLToPath(
-  new URL("../../node_modules/@biomejs/biome/bin/biome", import.meta.url),
+  new URL("../../../node_modules/@biomejs/biome/bin/biome", import.meta.url),
 );
 
 const fastTasks = new Set([
@@ -113,7 +113,9 @@ export function classifyChangedFiles(files) {
         "knip.jsonc",
       ].includes(file),
   );
-  const docsAffected = changed.some((file) => isDoc(file) || file.startsWith("scripts/governance/docs/"));
+  const docsAffected = changed.some(
+    (file) => isDoc(file) || file.startsWith("scripts/governance/docs/"),
+  );
   const schemaAffected = changed.some(
     (file) =>
       isSchemaSource(file) ||

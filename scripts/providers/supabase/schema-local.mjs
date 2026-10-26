@@ -4,7 +4,7 @@ import { runSupabaseCli } from "./cli-adapter.mjs";
 import { executeSql } from "./postgres.mjs";
 import { declaredSchemaSql } from "./schema-source.mjs";
 
-const root = new URL("../../", import.meta.url);
+const root = new URL("../../../", import.meta.url);
 
 export const localDatabaseCommands = {
   start: ["db", "start"],

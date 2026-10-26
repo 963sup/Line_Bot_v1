@@ -3,7 +3,7 @@ import { basename, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import YAML from "yaml";
 
-const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
+const repositoryRoot = fileURLToPath(new URL("../../../", import.meta.url));
 const skillsRoot = resolve(repositoryRoot, ".agents/skills");
 const lockPath = resolve(repositoryRoot, "skills-lock.json");
 

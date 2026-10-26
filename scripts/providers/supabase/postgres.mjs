@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { Client } from "pg";
 
-const root = new URL("../../", import.meta.url);
+const root = new URL("../../../", import.meta.url);
 const caSource = new URL("packages/platform/src/database/postgres/ca.ts", root);
 
 export function supabaseCaFromSource(source) {

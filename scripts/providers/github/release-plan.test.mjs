@@ -577,7 +577,7 @@ test("failed scheduler still retries after Web deployment has already succeeded"
 });
 
 test("upload-only changes schedule Web without schema or Rich Menu publication", async () => {
-  const turbo = JSON.parse(readFileSync(new URL("../../turbo.json", import.meta.url), "utf8"));
+  const turbo = JSON.parse(readFileSync(new URL("../../../turbo.json", import.meta.url), "utf8"));
   assert.ok(
     turbo.tasks["@line_bot_v1/web#build"].inputs.includes("$TURBO_ROOT$/.vercelignore"),
     "Web build must track its deployment upload policy",

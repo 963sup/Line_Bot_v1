@@ -357,7 +357,7 @@ test("production deploy never retries an unknown mutation result inside one invo
 });
 
 test("Vercel upload retains the Next.js runtime script dependencies", () => {
-  const rules = readFileSync(new URL("../../.vercelignore", import.meta.url), "utf8").split(
+  const rules = readFileSync(new URL("../../../.vercelignore", import.meta.url), "utf8").split(
     /\r?\n/,
   );
   const next = readFileSync(new URL("../../core/runtime/next.mjs", import.meta.url), "utf8");
@@ -373,7 +373,7 @@ test("Vercel upload retains the Next.js runtime script dependencies", () => {
 });
 
 test("Vercel upload retains PostCSS configuration and its local plugin", () => {
-  const rules = readFileSync(new URL("../../.vercelignore", import.meta.url), "utf8").split(
+  const rules = readFileSync(new URL("../../../.vercelignore", import.meta.url), "utf8").split(
     /\r?\n/,
   );
   for (const path of [
@@ -387,7 +387,7 @@ test("Vercel upload retains PostCSS configuration and its local plugin", () => {
     );
   }
   const config = readFileSync(
-    new URL("../../apps/web/postcss.config.mjs", import.meta.url),
+    new URL("../../../apps/web/postcss.config.mjs", import.meta.url),
     "utf8",
   );
   assert.match(config, /legacy-modules\.cjs/);
@@ -395,7 +395,7 @@ test("Vercel upload retains PostCSS configuration and its local plugin", () => {
 });
 
 test("Vercel upload retains the public integration package used by Web composition", () => {
-  const rules = readFileSync(new URL("../../.vercelignore", import.meta.url), "utf8").split(
+  const rules = readFileSync(new URL("../../../.vercelignore", import.meta.url), "utf8").split(
     /\r?\n/,
   );
   for (const path of [
@@ -409,19 +409,19 @@ test("Vercel upload retains the public integration package used by Web compositi
   }
   const manifest = JSON.parse(
     readFileSync(
-      new URL("../../packages/integration-vercel/package.json", import.meta.url),
+      new URL("../../../packages/integration-vercel/package.json", import.meta.url),
       "utf8",
     ),
   );
   assert.ok(manifest.exports["./gateway"]);
   assert.ok(manifest.exports["./gateway-config"]);
   const web = JSON.parse(
-    readFileSync(new URL("../../apps/web/package.json", import.meta.url), "utf8"),
+    readFileSync(new URL("../../../apps/web/package.json", import.meta.url), "utf8"),
   );
   assert.equal(web.dependencies["@line_bot_v1/integration-vercel"], "workspace:*");
   for (const file of ["assistant.server.ts", "expense.server.ts", "files.server.ts"]) {
     const consumer = readFileSync(
-      new URL(`../../apps/web/src/app/api/_composition/${file}`, import.meta.url),
+      new URL(`../../../apps/web/src/app/api/_composition/${file}`, import.meta.url),
       "utf8",
     );
     assert.match(consumer, /@line_bot_v1\/integration-vercel\/gateway/);
@@ -431,7 +431,7 @@ test("Vercel upload retains the public integration package used by Web compositi
 
 test("Vercel Git integration deploys unspecified branches but leaves main to the Release workflow", () => {
   const config = JSON.parse(
-    readFileSync(new URL("../../apps/web/vercel.json", import.meta.url), "utf8"),
+    readFileSync(new URL("../../../apps/web/vercel.json", import.meta.url), "utf8"),
   );
   assert.deepEqual(config.git.deploymentEnabled, {
     main: false,

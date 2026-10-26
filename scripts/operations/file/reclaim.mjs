@@ -1,10 +1,13 @@
 import { createFileReclaimer } from "@line_bot_v1/file/application/use-cases/reclaim";
 import { createPostgresFileReclamationDependencies } from "@line_bot_v1/file/composition/bootstrap/files";
 import { PostgresDatabase } from "@line_bot_v1/platform/postgres";
-import { requireCurrentMain } from "../github/current-main.mjs";
 import { loadRootEnv } from "../../core/runtime/load-env.mjs";
-import { assertValidatedMainMutationContext } from "../supabase/remote-authorization.mjs";
-import { assertConfirmedProject, assertRemoteTarget } from "../supabase/remote-target.mjs";
+import { requireCurrentMain } from "../../providers/github/current-main.mjs";
+import { assertValidatedMainMutationContext } from "../../providers/supabase/remote-authorization.mjs";
+import {
+  assertConfirmedProject,
+  assertRemoteTarget,
+} from "../../providers/supabase/remote-target.mjs";
 
 function beforeUtc(value) {
   if (
