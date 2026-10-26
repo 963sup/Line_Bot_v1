@@ -509,11 +509,16 @@ export default function FilesPanel({
             : query.operation === "read"
               ? "ContractDocument 讀取失敗。"
               : "採購單操作失敗。";
+        if (response.status === 401 || response.status === 403) {
+          clear();
+          setError(message);
+          throw new StaleRequest();
+        }
         throw Object.assign(new Error(message), { status: response.status });
       }
       return value;
     },
-    [liffId, ownerLogin, repositoryName],
+    [clear, liffId, ownerLogin, repositoryName],
   );
 
   const load = useCallback(async () => {
@@ -763,11 +768,13 @@ export default function FilesPanel({
         await requestDocumentIntake({ operation: "intake" }, command),
       );
       const revision = parseDocumentIntakeRevision(
-        await requestDocumentIntake({
-          operation: "read",
-          documentId: receipt.documentId,
-          revisionId: receipt.revisionId,
-        }),
+        record(
+          await requestDocumentIntake({
+            operation: "read",
+            documentId: receipt.documentId,
+            revisionId: receipt.revisionId,
+          }),
+        ).revision,
       );
       setDocumentIntakeReceipt(receipt);
       setDocumentIntakeRevision(revision);
@@ -843,11 +850,13 @@ export default function FilesPanel({
         ),
       );
       const revision = parseDocumentIntakeRevision(
-        await requestDocumentIntake({
-          operation: "read",
-          documentId: receipt.documentId,
-          revisionId: receipt.revisionId,
-        }),
+        record(
+          await requestDocumentIntake({
+            operation: "read",
+            documentId: receipt.documentId,
+            revisionId: receipt.revisionId,
+          }),
+        ).revision,
       );
       setDocumentIntakeReceipt(receipt);
       setDocumentIntakeRevision(revision);
