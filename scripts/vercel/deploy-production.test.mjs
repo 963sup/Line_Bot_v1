@@ -396,7 +396,7 @@ test("Vercel upload retains PostCSS configuration and its local plugin", () => {
 
 test("Vercel upload retains the shared AI Gateway used by Web composition", () => {
   const rules = readFileSync(new URL("../../.vercelignore", import.meta.url), "utf8").split(
-    /\\r?\\n/,
+    /\r?\n/,
   );
   for (const path of [
     "vercel",
@@ -410,6 +410,6 @@ test("Vercel upload retains the shared AI Gateway used by Web composition", () =
       new URL(`../../apps/web/src/app/api/_composition/${file}`, import.meta.url),
       "utf8",
     );
-    assert.match(consumer, /vercel\\/integrations\\/gateway\\.ts/);
+    assert.match(consumer, /vercel\/integrations\/gateway\.ts/);
   }
 });
