@@ -4,7 +4,26 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import { runBoundedCommand } from "./bounded-command.ts";
+import { runBoundedCommand, summarizeGhPrChecks } from "./bounded-command.ts";
+
+test("summarizes GitHub check rows without returning the raw table", () => {
+  assert.deepEqual(
+    summarizeGhPrChecks(
+      [
+        "validate\tpass\t27s\thttps://example.test/validate",
+        "Vercel\tpending\t0\thttps://example.test/vercel\tDeploying",
+        "lint\tfail\t12s\thttps://example.test/lint\tBiome failed",
+      ].join("\n"),
+    ),
+    {
+      failed: ["lint"],
+      failing: 1,
+      passing: 1,
+      pending: 1,
+      total: 3,
+    },
+  );
+});
 
 test("writes complete output to an artifact and returns a bounded success summary", async () => {
   const artifactDir = await mkdtemp(join(tmpdir(), "bounded-command-"));
@@ -55,4 +74,28 @@ test("deduplicates identical completed poll results without suppressing the arti
   assert.equal(first.changed, true);
   assert.equal(second.changed, false);
   assert.notEqual(first.artifact, second.artifact);
+});
+
+test("treats GitHub pending checks as a structured probe instead of a command failure", async () => {
+  const artifactDir = await mkdtemp(join(tmpdir(), "bounded-command-"));
+  const result = await runBoundedCommand({
+    artifactDir,
+    command: [
+      process.execPath,
+      "-e",
+      "console.log('validate\\tpending\\t0\\thttps://example.test'); process.exit(1)",
+    ],
+    label: "pending-checks",
+    summaryMode: "gh-pr-checks",
+  });
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.summary, {
+    failed: [],
+    failing: 0,
+    passing: 0,
+    pending: 1,
+    total: 1,
+  });
+  assert.deepEqual(result.tail, []);
 });

@@ -9,7 +9,16 @@ type Input = {
   command: string[];
   dedupeKey?: string;
   label: string;
+  summaryMode?: "gh-pr-checks";
   tailLines?: number;
+};
+
+type GhPrChecksSummary = {
+  failed: string[];
+  failing: number;
+  passing: number;
+  pending: number;
+  total: number;
 };
 
 type Result = {
@@ -21,6 +30,7 @@ type Result = {
   label: string;
   ok: boolean;
   outputLines: number;
+  summary?: GhPrChecksSummary;
   tail: string[];
 };
 
@@ -32,6 +42,22 @@ type CompletedProcess = {
 const defaultArtifactDir = resolve(process.cwd(), ".artifacts", "bounded-command");
 const defaultTailLines = 30;
 const actionableError = /\b(?:error|exception|failed|failure|assertion)\b/i;
+
+export function summarizeGhPrChecks(output: string): GhPrChecksSummary | undefined {
+  const summary: GhPrChecksSummary = { failed: [], failing: 0, passing: 0, pending: 0, total: 0 };
+  for (const line of output.split(/\r?\n/)) {
+    const [name, status] = line.split("\t", 3);
+    if (!name || !status) continue;
+    summary.total += 1;
+    if (status === "pass") summary.passing += 1;
+    else if (status === "pending") summary.pending += 1;
+    else if (status === "fail") {
+      summary.failing += 1;
+      summary.failed.push(name);
+    }
+  }
+  return summary.total > 0 ? summary : undefined;
+}
 
 function safeLabel(label: string): string {
   const normalized = label.replaceAll(/[^a-zA-Z0-9._-]+/g, "-").replaceAll(/^-+|-+$/g, "");
@@ -106,7 +132,9 @@ export async function runBoundedCommand(input: Input): Promise<Result> {
   const artifact = join(artifactDir, `${label}-${startedAt}-${process.pid}.log`);
   await writeFile(artifact, completed.output, "utf8");
 
-  const ok = completed.exitCode === 0;
+  const summary =
+    input.summaryMode === "gh-pr-checks" ? summarizeGhPrChecks(completed.output) : undefined;
+  const ok = completed.exitCode === 0 || summary !== undefined;
   const fingerprint = createHash("sha256")
     .update(
       JSON.stringify({
@@ -139,6 +167,7 @@ export async function runBoundedCommand(input: Input): Promise<Result> {
     label,
     ok,
     outputLines: outputLines.length,
+    ...(summary ? { summary } : {}),
   };
 }
 
@@ -148,6 +177,7 @@ function printHelp(): void {
 Options:
   --artifact-dir <path>  Directory for full logs (default: .artifacts/bounded-command)
   --dedupe-key <key>     Mark unchanged identical outcomes as changed=false
+  --summary <mode>       Structured summary mode: gh-pr-checks
   --tail-lines <count>   Failure tail line limit (default: 30)
 `);
 }
@@ -157,6 +187,7 @@ function parseCli(argv: string[]): Input | "help" {
   let artifactDir: string | undefined;
   let dedupeKey: string | undefined;
   let label: string | undefined;
+  let summaryMode: Input["summaryMode"];
   let tailLines: number | undefined;
   let index = 0;
   while (index < argv.length && argv[index] !== "--") {
@@ -167,12 +198,15 @@ function parseCli(argv: string[]): Input | "help" {
     if (option === "--artifact-dir") artifactDir = value;
     else if (option === "--dedupe-key") dedupeKey = value;
     else if (option === "--label") label = value;
-    else if (option === "--tail-lines") tailLines = Number(value);
+    else if (option === "--summary") {
+      if (value !== "gh-pr-checks") throw new Error(`Unknown summary mode: ${value}`);
+      summaryMode = value;
+    } else if (option === "--tail-lines") tailLines = Number(value);
     else throw new Error(`Unknown option: ${option}`);
   }
   if (argv[index] !== "--") throw new Error("Use -- before the command");
   if (!label) throw new Error("--label is required");
-  return { artifactDir, command: argv.slice(index + 1), dedupeKey, label, tailLines };
+  return { artifactDir, command: argv.slice(index + 1), dedupeKey, label, summaryMode, tailLines };
 }
 
 async function main(): Promise<void> {
@@ -182,7 +216,18 @@ async function main(): Promise<void> {
     return;
   }
   const result = await runBoundedCommand(input);
-  console.log(JSON.stringify({ ...result, artifact: relative(process.cwd(), result.artifact) }));
+  const response = result.changed
+    ? result
+    : {
+        artifact: result.artifact,
+        changed: false,
+        exitCode: result.exitCode,
+        label: result.label,
+        ok: result.ok,
+      };
+  console.log(
+    JSON.stringify({ ...response, artifact: relative(process.cwd(), response.artifact) }),
+  );
   process.exitCode = result.exitCode;
 }
 
