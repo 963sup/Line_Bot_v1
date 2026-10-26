@@ -1,6 +1,6 @@
 # Platform integration root migration — Step 2：Package、Port 與權威契約
 
-Status: PROPOSED。上一階段：[Step 1](./platform-integration-root-migration-step-1.md)；下一階段：[Step 3](./platform-integration-root-migration-step-3.md)。
+Status: 平台 package boundary 已由 PR #412 實施；業務 Owner 深化與後續 Document Owner gates 不由本 PR 宣稱完成。上一階段：[Step 1](./platform-integration-root-migration-step-1.md)；下一階段：[Step 3](./platform-integration-root-migration-step-3.md)。
 
 ## 必要最小結構
 ```text

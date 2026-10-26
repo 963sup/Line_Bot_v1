@@ -1,6 +1,6 @@
 # Platform integration root migration — Step 4：Vercel 根部殘餘／部署交界
 
-Status: PROPOSED。上一階段：[Step 3](./platform-integration-root-migration-step-3.md)；下一階段：[Step 5](./platform-integration-root-migration-step-5.md)。
+Status: Vercel native capability source 已由 PR #412 整理至 integration package 的 `src/`；完整 deployment acceptance 仍待 Step 8。上一階段：[Step 3](./platform-integration-root-migration-step-3.md)；下一階段：[Step 5](./platform-integration-root-migration-step-5.md)。
 
 ## 目前 root inventory 的處置
 `vercel/` 的 `README.md` 與 `analytics,caching,cron,deployments,domains,environment,functions,observability,routing,security,storage,tests` 多數為 **README-only navigation**，`integrations` 有舊 AI runtime。不能把分類 README 全改成空的 TypeScript workspace 子模組。

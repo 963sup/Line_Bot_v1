@@ -1,6 +1,6 @@
 # Document owner skeleton reduction — Step 3: File → Intelligence → Vercel AI Gateway
 
-**狀態：目標設計，尚未視為已實施。** 前提：[Step 1 減法](document-owner-skeleton-reduction-step-1.md) 與 [Step 2 Port / Composition](document-owner-skeleton-reduction-step-2.md)。下一步：[Step 4 Contract 確認](document-owner-skeleton-reduction-step-4.md)。
+**狀態：PR #412 已實施 provider adapter、structured gateway wiring 與 source layout；本文件的 Contract SAVE、完整來源證據與正式入口 acceptance 仍未完成。** 前提：[Step 1 減法](document-owner-skeleton-reduction-step-1.md) 與 [Step 2 Port / Composition](document-owner-skeleton-reduction-step-2.md)。下一步：[Step 4 Contract 確認](document-owner-skeleton-reduction-step-4.md)。
 
 **唯一目的：** 從一個經 File 授權且 SHA-256 已驗證的不可變檔案版本，取得**符合 Contract 自身 Schema 的完整採購單候選資料**，以 Intelligence 的 Attempt 證據保護不確定的 Gateway 執行。輸出是 *untrusted candidate*，**絕不直接 CONFIRM**。
 
@@ -13,7 +13,7 @@
 
 兩者可以重用同一個 Gateway SDK／Provider client，**不應先把採購單壓成最多 500 observations 再拼回完整行列**；那會增加資料失真、截斷與不可證明完整性的風險。
 
-**已核對的 #412 缺口：** `packages/integration-vercel/src/gateway-document.ts` 已有結構化 `observations`；但 Contract Intake 的 `scripts/intelligence/run.mjs` 仍使用舊 `vercel/integrations/ai-gateway.mjs` 的 `file(...)`。Step 3 應將 Intake 改接新 `integration-vercel` 的**公開、Contract Schema 驅動**能力；勿假稱 #412 已完成此鏈路。一般 Web ProcessingRun 仍可使用 observations，兩種能力必須分開測試。
+**已核對的 #412 缺口：** `packages/integration-vercel/src/adapters/outbound/ai-gateway/document.ts` 已有結構化 `observations`；但 Contract Intake 的 `scripts/intelligence/run.mjs` 仍使用舊 `vercel/integrations/ai-gateway.mjs` 的 `file(...)`。Step 3 應將 Intake 改接新 `integration-vercel` 的**公開、Contract Schema 驅動**能力；勿假稱 #412 已完成此鏈路。一般 Web ProcessingRun 仍可使用 observations，兩種能力必須分開測試。
 
 ## 2. 最小輸入與身份（不是全域共用 Aggregate）
 
@@ -135,5 +135,5 @@ verify actor / command / exact source
 - `packages/intelligence/src/application/use-cases/intake-document.ts`
 - `packages/intelligence/src/contracts/output/document-intake.ts`
 - `packages/contract/src/contracts/input/document-intake.ts`
-- `packages/integration-vercel/src/gateway-document.ts` (PR #412)
+- `packages/integration-vercel/src/adapters/outbound/ai-gateway/document.ts` (PR #412)
 - `scripts/intelligence/run.mjs` (PR #412)

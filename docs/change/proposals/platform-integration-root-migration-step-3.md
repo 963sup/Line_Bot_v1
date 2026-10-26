@@ -1,11 +1,11 @@
 # Platform integration root migration — Step 3：Vercel Gateway runtime 單一實作
 
-Status: PROPOSED。上一階段：[Step 2](./platform-integration-root-migration-step-2.md)；下一階段：[Step 4](./platform-integration-root-migration-step-4.md)。
+Status: Vercel Gateway runtime 已由 PR #412 實施；完整 Preview／release acceptance 仍由 Step 8/End 驗收。上一階段：[Step 2](./platform-integration-root-migration-step-2.md)；下一階段：[Step 4](./platform-integration-root-migration-step-4.md)。
 關聯（不取代）#413 的 [文件解析 Step 3](./document-owner-skeleton-reduction-step-3.md)。
 
 ## 待移動／淘汰的確切來源
 - 活躍舊入口：`vercel/integrations/ai-gateway.mjs`，測試 `vercel/integrations/ai-gateway.test.mjs`；現行 consumer `scripts/intelligence/run.mjs`。
-- 新入口：`packages/integration-vercel/src/gateway.ts`、`gateway-config.ts`、`gateway-document.ts`，以及 Web `assistant.server.ts`、`expense.server.ts`、`files.server.ts`。
+- 新入口：`packages/integration-vercel/src/adapters/outbound/ai-gateway/gateway.ts`、`gateway-config.ts`、`gateway-document.ts`，以及 Web `assistant.server.ts`、`expense.server.ts`、`files.server.ts`。
 - 目標是**一個 SDK/provider transport 實作**、數個依真實 Port 分開的能力；不要保留新的/舊的平行 `createVercelAiGateway`。
 
 ## 最小遷移

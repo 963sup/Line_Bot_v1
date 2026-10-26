@@ -1,6 +1,6 @@
 # Platform integration root migration — Step 8：行為等價、Release 保護與最後刪除
 
-Status: PROPOSED。上一階段：[Step 7](./platform-integration-root-migration-step-7.md)；下一階段：[End](./platform-integration-root-migration-step-end.md)。
+Status: ACCEPTANCE PENDING。PR #412 已完成 source/path migration，但本文件列出的 Preview、native CLI、remote read-only 與行為等價證據尚未全部具備。上一階段：[Step 7](./platform-integration-root-migration-step-7.md)；下一階段：[End](./platform-integration-root-migration-step-end.md)。
 
 ## 先驗收再刪除
 1. **來源證據**：所有 root tracked files 在 Step 1 manifest 有 MOVE/UPDATE/DELETE 決策；SQL 有序清單與 SHA 完全吻合；原 native bucket manifest 在新路徑 **唯一**；原 AI provider runtime consumer 已遷到公開 workspace export。

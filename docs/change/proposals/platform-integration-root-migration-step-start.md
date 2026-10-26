@@ -14,7 +14,7 @@ Status: **PROPOSED / documentation-only**；stacked plan on **PR #413**, which i
 1. **Business facts**：Contract/Content/WBS/Repository/Assistant/Intelligence/File/Expense 的業務授權、版本、replay、交易與 owner Port 不轉移給 integration。
 2. **Platform facts**：Vercel AI SDK/Gateway 與 Supabase SDK/Storage transport、Supabase CLI 原生專案資產歸各自 integration；不要新增 `platform-provider-router` 或通用 repository/service。
 3. **Schema truth**：原 `supabase/schemas` 是**唯一** PostgreSQL declarative current truth；新位置須更新 data topology 指向單一 schema root，SQL 內容及順序語意不變。不得複製兩套 schema、bucket desired-state 或 migration history。
-   **完整遷移的必要部分：根部 `supabase/schemas/` 已存在的全部 109 份 `.sql` 必須逐檔原樣移至 `packages/integration-supabase/supabase/schemas/`（同時處理其中的 AGENTS/README），不能只遷移 Supabase SDK 或 `config.toml`。** 包含 `000_foundation.sql`、所有 `100–899` owner-authoritative SQL 及 `900–930` 跨 Owner 約束／交易／存取 SQL；不得漏一份、留第二份或因更名改變 schema 語意。
+   **完整遷移的必要部分：根部 `supabase/schemas/` 已存在的全部 109 份 `.sql` 必須逐檔原樣移至 `packages/integration-supabase/src/schemas/`（同時處理其中的 AGENTS/README），不能只遷移 Supabase SDK 或 `config.toml`。** 包含 `000_foundation.sql`、所有 `100–899` owner-authoritative SQL 及 `900–930` 跨 Owner 約束／交易／存取 SQL；不得漏一份、留第二份或因更名改變 schema 語意。
 4. **Execution**：現有 LINE Webhook、Assistant 回覆／Issue 草稿、Expense receipt、File Processing、Intelligence→ContractDocument SAVE、Storage digest/readback、Release 的對外契約不變。未授權的遠端 mutation／AI 費用不得因文件方案而發生。
 5. **Observability**：每一步提供可逆 git 變更與具體測試；`UNKNOWN`／request receipt 不能被重跑外部呼叫掩蓋。
 
