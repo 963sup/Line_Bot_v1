@@ -393,3 +393,30 @@ test("Vercel upload retains PostCSS configuration and its local plugin", () => {
   assert.match(config, /legacy-modules\.cjs/);
   assert.match(config, /@tailwindcss\/postcss/);
 });
+
+test("Vercel upload retains the shared AI Gateway used by Web composition", () => {
+  const rules = readFileSync(new URL("../../.vercelignore", import.meta.url), "utf8").split(
+    /\r?\n/,
+  );
+  for (const path of ["vercel", "vercel/integrations", "vercel/integrations/gateway.ts"]) {
+    assert.ok(rules.includes(`!${path}`), `Vercel upload excludes AI Gateway input: ${path}`);
+  }
+  for (const file of ["assistant.server.ts", "expense.server.ts", "files.server.ts"]) {
+    const consumer = readFileSync(
+      new URL(`../../apps/web/src/app/api/_composition/${file}`, import.meta.url),
+      "utf8",
+    );
+    assert.match(consumer, /vercel\/integrations\/gateway\.ts/);
+  }
+});
+
+test("Vercel Git integration deploys unspecified branches but leaves main to the Release workflow", () => {
+  const config = JSON.parse(
+    readFileSync(new URL("../../apps/web/vercel.json", import.meta.url), "utf8"),
+  );
+  assert.deepEqual(config.git.deploymentEnabled, {
+    main: false,
+    preview: true,
+    "preview/**": true,
+  });
+});
