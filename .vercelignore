@@ -7,6 +7,7 @@
 !scripts
 !scripts/runtime
 !scripts/runtime/next.mjs
+!scripts/runtime/bounded-output.mjs
 !scripts/runtime/load-env.mjs
 !apps
 !apps/web

@@ -356,6 +356,22 @@ test("production deploy never retries an unknown mutation result inside one invo
   assert.equal(calls, 3);
 });
 
+test("Vercel upload retains the Next.js runtime script dependencies", () => {
+  const rules = readFileSync(new URL("../../.vercelignore", import.meta.url), "utf8").split(
+    /\r?\n/,
+  );
+  const next = readFileSync(new URL("../runtime/next.mjs", import.meta.url), "utf8");
+  for (const path of [
+    "scripts/runtime/next.mjs",
+    "scripts/runtime/load-env.mjs",
+    "scripts/runtime/bounded-output.mjs",
+  ]) {
+    assert.ok(rules.includes(`!${path}`), `Vercel upload excludes required runtime input: ${path}`);
+  }
+  assert.match(next, /from "\.\/bounded-output\.mjs"/);
+  assert.match(next, /from "\.\/load-env\.mjs"/);
+});
+
 test("Vercel upload retains PostCSS configuration and its local plugin", () => {
   const rules = readFileSync(new URL("../../.vercelignore", import.meta.url), "utf8").split(
     /\r?\n/,
