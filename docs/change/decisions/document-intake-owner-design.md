@@ -1,6 +1,6 @@
 # Document intake owner decision
 
-Status: selected end-to-end target direction. Original source baseline:
+Status: selected end-to-end direction; the main implementation boundary is now present in current source, while live provider and formal acceptance evidence remain separate. Original source baseline:
 `7539638b0b10a5917a115a6ac699207d816a7f4b` (2026-10-25).
 Implementation and evidence are tracked by
 [#375](https://github.com/963sup/Line_Bot_v1/issues/375),
