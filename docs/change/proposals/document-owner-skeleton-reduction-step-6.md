@@ -68,6 +68,8 @@ type WbsContentImportEvidence = {
 };
 ```
 
+**來源行的唯一鍵是三元組，不是 `sourceRowId`。** `ContentWbsSource.sourceRows` 可以包含同一 Content plan 多次歷史 Contract 匯入的 rows；`doc-A/rev-1/row-1` 與 `doc-B/rev-1/row-1` 是兩筆不同來源，不能以 ID 相同互相抵銷。建立 `WbsContentImportEvidence` 與發布時的有效工作覆蓋時，先依 `(documentId, revisionId, sourceRowId)` 去重／檢查衝突，再分別檢查每份來源完整度。相同三元組重複且定義不一致應拒絕，不得靜默取第一筆或以 `Set<sourceRowId>` 丟資料。此處是需補測的目標不變條件，不能誤認現有 `importContentWbs` 已全部驗證。
+
 **不能宣稱 WBS 保留全部 Content business fields。** 現有 WBS 公開 Reader 投影只取 `title/body/kind/position` 等結構，不包含 `plannedQuantity/resourcePins`；這些仍由 Content 的 exact Revision 持有。確實需要時，另經 Content public query 依授權讀取，不在 WBS 創造第二份量價所有權。
 
 ## 3. 匯入原子性與 source row 驗證

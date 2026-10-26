@@ -83,6 +83,8 @@ type ContentContractImportEvidence = {
 };
 ```
 
+**跨文件身份不能只用 `sourceRowId`。** 一次 `import-contract-document` 的 rows 是同一份 Contract Revision 內的局部 ID；同一 Content plan 可在不同版本匯入多份 Contract，且兩份文件可以各自有 `row-1`。歷史／WBS Reader 對帳時必須使用 `(documentId, revisionId, sourceRowId)`，而不是把所有來源列展平後只比較字串 ID。當 Content Revision 同時承接多份來源時，每份 ContractRevision 各自必須滿足完整 row disposition；不能用另一份文件的同名 row 抵數。**這是依現有 ancestry reader 必須補上的驗收條件，非建議新增 Source Registry。**
+
 `ContentPlanRevision` 仍包含自身 `id/version/parentRevisionId` 與完整計畫 `{schemaVersion,measures,nodes,resourcePins}`。來源映射是 **Content 轉換的 immutable evidence**，不是另一份 Contract 商業事實。
 
 ## 4. 原子性與必要驗證：不能只檢查行數
