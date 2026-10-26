@@ -408,7 +408,10 @@ test("Vercel upload retains the public integration package used by Web compositi
     assert.ok(rules.includes(`!${path}`), `Vercel upload excludes integration input: ${path}`);
   }
   const manifest = JSON.parse(
-    readFileSync(new URL("../../packages/integration-vercel/package.json", import.meta.url), "utf8"),
+    readFileSync(
+      new URL("../../packages/integration-vercel/package.json", import.meta.url),
+      "utf8",
+    ),
   );
   assert.ok(manifest.exports["./gateway"]);
   assert.ok(manifest.exports["./gateway-config"]);
