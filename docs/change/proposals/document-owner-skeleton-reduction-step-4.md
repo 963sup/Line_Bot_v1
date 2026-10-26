@@ -62,7 +62,25 @@ type ContractDocumentRevision = {
 
 **設計決定：** 財務差異可用明確 `acknowledgementReason` 例外，但**不能用一段任意理由豁免缺少必要行、來源頁、重複 ID、未確定欄位、無效數量或未核對原件行數**。當實際商業單據存在手寫價格、折扣或特殊稅務例外時，應保留精確原始值及來源位置，而不是用公式強迫偽造一致。引入新的例外種類前先確立 domain 語意與測試；不加通用規則引擎。
 
-## 4. 最小狀態轉換與失敗語意
+## 4. 原件人工核對必須有獨立可查的確認證據
+
+**原文件無法僅以** `expectedLineCount`、`candidate.lines.length`、`sourcePages` **或** `state=CONFIRMED` **證明已逐頁核對。** 目前 `ContractDocumentRevision` 只有確認 actor/time、預期行數、候選資料及差異理由；並沒有獨立記載「原件共幾頁、人工實際核對了哪幾列」的欄位。因此 Step 4 的「人工逐頁核對」是**尚未落地的驗收缺口**，不能宣稱現有 CONFIRMED 已具有此證據。
+
+最小目標：由 **Contract Owner** 在確認命令與同一不可變確認 Revision 中持久化一份原件核對聲明（示意新增欄位，**非現有 Schema**）：
+
+```ts
+type SourceReviewAttestation = {
+  verifiedLineCount: number;      // reviewer 看原件所確認的行數，不抄用 expectedLineCount
+  reviewedSourcePages: number[];  // reviewer 確認的頁碼範圍
+  reviewedSourceRowIds: string[]; // 人工檢視過的 candidate row ID 清單
+  confirmedFromOriginal: true;   // 明確的人類確認動作
+};
+// actor/time 與 exact File revision/SHA 已在 ContractDocumentRevision，勿重複第二份真相。
+```
+
+提交時須核對：`verifiedLineCount === candidate.lines.length`、列 ID 集合精確相同、頁碼落在經驗證的 File 原件範圍、同一 Draft/Source Version；**聲明本身是「誰聲明核對過」的證據，不是系統自動證明 PDF 內容必然正確**。若產品不批准持久化此證據的 Schema/命令/權限變更，就不能以 Step 4 的「逐頁核對已被持久化」作為 Release Gate。任何這類持久化修改需獨立走 Schema/RLS/Reader/transaction/replay/tests 設計與驗證，不新增通用審核服務。
+
+## 5. 最小狀態轉換與失敗語意
 
 ```text
 non-existent document
@@ -79,7 +97,7 @@ Contract SAVE／CONFIRM 需在同一 PostgreSQL 交易內保存 aggregate head�
 
 若提交回應逾時，首先向 Contract 的 public `receipt(actor, {repositoryId, documentId, requestId})` 讀回；無回執不表示可以重跑 Gateway，也不能返回 `CONFIRMED`。已 CONFIRMED 需要商業更正時，採**新的明確修訂／取代文件**提案，保留舊確認事實，不能原地覆寫。
 
-## 5. Structured Contract → Content 邊界（此 Step 只輸出，不映射）
+## 6. Structured Contract → Content 邊界（此 Step 只輸出，不映射）
 
 ```ts
 type ConfirmedDocumentPin = {
@@ -91,7 +109,7 @@ type ConfirmedDocumentPin = {
 
 Contract 對 Content **只公開這個版本的已確認資料讀取能力**。不在 Contract 建 Content workId／taskId／plannedQuantity 的新權威，不先選擇 WBS。更不能在 Contract 中將 `material`、`service`、`freight`、`other` 解讀成必定可以展開；不相容性由 Step 5 的 Content 在自己的交易中拒絕且保留 Contract 真相。
 
-## 6. 最小驗收案例與不可省的觀測證據
+## 7. 最小驗收案例與不可省的觀測證據
 
 1. Gateway 產出完整但有 `uncertain=true`、缺來源頁或重複 `sourceRowId` → **SAVE Draft 可以保留調查證據**，CONFIRM 必須拒絕。
 2. 宣告 54 行但原始文件人工核對為 55 行 → 不可標記「完整確認」；記錄實際核對差異與來源證據。
