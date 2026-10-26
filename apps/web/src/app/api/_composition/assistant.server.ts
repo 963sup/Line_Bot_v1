@@ -1,6 +1,6 @@
 import { runIntakeAgent } from "@line_bot_v1/assistant/agents/intake";
-import { createVercelAiGateway } from "../../../../../../vercel/integrations/gateway.ts";
-import { gatewayConfiguration } from "../../../../../../vercel/integrations/gateway-config.ts";
+import { createVercelAiGateway } from "@line_bot_v1/integration-vercel/gateway";
+import { gatewayConfiguration } from "@line_bot_v1/integration-vercel/gateway-config";
 import {
   type AssistantRuntimeDependencies,
   createAssistantRuntime,
