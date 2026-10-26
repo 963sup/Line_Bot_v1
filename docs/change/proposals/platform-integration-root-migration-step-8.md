@@ -15,4 +15,4 @@ Status: ACCEPTANCE PENDING。PR #412 已完成 source/path migration，但本文
 以上 1–6 全通過後，從 Git **移除根部 `vercel/` 與 `supabase/`**；在同一次提交更新全部可執行引用、native paths、schema topology、metadata、測試和正式 current docs。刪除後再跑**相同完整驗證**，避免「搬過來能跑、移除舊路徑就壞」。無根部 symlink、沒有第二套 native config、沒有 deprecated alias。
 
 ## Red gate
-任何 required CI 紅燈或 pending、`Merging is blocked`、Preview ERROR、資料／AI 結果不等價、RLS/owner change 或 SQL drift 都是**不合併、不發布**；不能用 skip/test deletion/關 branch protection 達成綠燈。PR #414 是這組 proposal 的規劃提交，不是聲稱已執行上述實作步驟。
+任何 required CI 紅燈或 pending、`Merging is blocked`、Preview ERROR、資料／AI 結果不等價、RLS/owner change 或 SQL drift 都是**不合併、不發布**；不能用 skip/test deletion/關 branch protection 達成綠燈。PR #414 已合併到中間 refactor branch，但只代表該 branch 的 source/path 變更，不代表本文件列出的完整 acceptance 已完成。

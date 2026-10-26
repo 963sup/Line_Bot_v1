@@ -26,12 +26,15 @@ const servers = [
       "--context=codex",
       "--open-web-dashboard=false",
     ],
-    requiredTools: [
-      "find_declaration",
-      "find_implementations",
-      "find_referencing_symbols",
-      "find_symbol",
-      "get_symbols_overview",
+    requiredToolSets: [
+      [
+        "find_declaration",
+        "find_implementations",
+        "find_referencing_symbols",
+        "find_symbol",
+        "get_symbols_overview",
+      ],
+      ["serena_repl", "initial_instructions"],
     ],
   },
 ];
@@ -195,7 +198,7 @@ export async function probeMcp(root, { port } = {}) {
   const { Client } = await import("@modelcontextprotocol/sdk/client/index.js");
   const { StdioClientTransport } = await import("@modelcontextprotocol/sdk/client/stdio.js");
   const results = [];
-  for (const { name, requiredTools } of servers) {
+  for (const { name, requiredTools, requiredToolSets } of servers) {
     const server = config.mcp_servers[name];
     const serverTimeout = name === "serena" ? 30_000 : timeout;
     const client = new Client({ name: "repository-mcp-doctor", version: "1.0.0" });
@@ -215,9 +218,12 @@ export async function probeMcp(root, { port } = {}) {
       const listed = await client.listTools({}, { timeout: serverTimeout });
       if (!listed.tools.length || listed.nextCursor) throw new Error("Incomplete tool discovery.");
       result.tools = listed.tools.map((tool) => tool.name);
+      const requiredToolSetSatisfied = requiredToolSets?.some((toolSet) =>
+        toolSet.every((tool) => result.tools.includes(tool)),
+      );
       if (
-        requiredTools?.some((tool) => !result.tools.includes(tool)) ||
-        (requiredTools && !requiredTools.every((tool) => result.tools.includes(tool)))
+        (requiredTools && !requiredTools.every((tool) => result.tools.includes(tool))) ||
+        (requiredToolSets && !requiredToolSetSatisfied)
       )
         throw new Error("Unexpected Serena tool set.");
       result.status = "connected";

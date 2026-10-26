@@ -391,7 +391,10 @@ export default function ProjectWbsPanel({
       {view && !view.revision && (
         <div className={styles.panel}>
           <h2>尚未建立 WBS</h2>
-          <p>WBS 可由完整 Content 版本一次展開，或從空白結構開始建立。</p>
+          <p>
+            WBS 可由指定 Content 版本一次展開成草稿，或從空白結構開始建立；正式 Baseline
+            需另行治理發布。
+          </p>
           {editable && (
             <>
               <form
@@ -431,9 +434,9 @@ export default function ProjectWbsPanel({
                     checked={contentDisclosureConfirmed}
                     onChange={(event) => setContentDisclosureConfirmed(event.target.checked)}
                   />
-                  我確認此 Content 的完整結構可作為此 Project 的 WBS 基線。
+                  我確認此 Content 已授權披露給此 Project，並建立 WBS 草稿。
                 </label>
-                <button type="submit">從 Content 建立完整 WBS</button>
+                <button type="submit">從 Content 建立 WBS 草稿</button>
               </form>
               <button onClick={() => void execute({ action: "initialize" })}>建立空白 WBS</button>
             </>

@@ -6,6 +6,7 @@ import type {
   ProjectWbsGovernanceChange,
   ProjectWbsGovernanceStore,
 } from "../../contracts/repositories/project-governance.js";
+import { assertContentImportCoverage, type WbsRevision } from "../../domain/content.js";
 import { WbsError } from "../../domain/document.js";
 import { canGovernProjectWbs } from "../../domain/policies/project-access.js";
 import {
@@ -98,6 +99,14 @@ export function executeProjectWbsGovernanceCommand(
           };
         else {
           const candidate = await transaction.loadRevision(item.candidateRevisionId);
+          const lineage: WbsRevision[] = [candidate];
+          let parentRevisionId = candidate.parentRevisionId;
+          while (parentRevisionId) {
+            const parent = await transaction.loadRevision(parentRevisionId);
+            lineage.push(parent);
+            parentRevisionId = parent.parentRevisionId;
+          }
+          assertContentImportCoverage(lineage);
           const reviews = await transaction.loadReviews(item, state.policy);
           const baseline = publishWbsScope(
             item,

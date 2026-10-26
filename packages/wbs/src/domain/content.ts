@@ -58,6 +58,38 @@ export type WbsRevision = Readonly<{
   contentImport?: WbsContentImportEvidence;
 }>;
 
+/** Validate source coverage against the exact candidate selected for publication. */
+export function assertContentImportCoverage(lineage: readonly WbsRevision[]): void {
+  const imported = lineage.find((revision) => revision.contentImport);
+  const importedAction = lineage.some((revision) => revision.action === "import-content-document");
+  if (!imported) {
+    if (importedAction) throw new WbsError(503, "WBS content import evidence is unavailable.");
+    return;
+  }
+  const evidence = imported.contentImport;
+  const candidate = lineage[0];
+  if (!evidence || !candidate)
+    throw new WbsError(503, "WBS content import evidence is unavailable.");
+  const nodes = new Map(candidate.document.nodes.map((node) => [node.id, node]));
+  const sourceKeys = new Set<string>();
+  for (const row of evidence.sourceRows) {
+    const key = `${row.documentId}:${row.revisionId}:${row.sourceRowId}`;
+    if (sourceKeys.has(key))
+      throw new WbsError(503, "WBS source coverage contains duplicate source evidence.");
+    sourceKeys.add(key);
+    const targets = row.wbsNodeIds.map((id) => nodes.get(id));
+    if (targets.some((node) => !node))
+      throw new WbsError(409, "WBS candidate no longer contains an imported source node.");
+    if (row.disposition === "COMMERCIAL_ONLY") {
+      if (row.wbsNodeIds.length)
+        throw new WbsError(503, "Commercial-only source evidence unexpectedly maps to WBS work.");
+      continue;
+    }
+    if (!targets.some((node) => node?.kind === "WORK_PACKAGE"))
+      throw new WbsError(409, "WBS candidate no longer covers a required source work package.");
+  }
+}
+
 /** Fixed one-shot Content hierarchy projection. It initializes an empty WBS draft and never publishes a Baseline. */
 export function importContentWbs(
   current: WbsRevision | null,
@@ -103,15 +135,25 @@ export function importContentWbs(
     };
   });
   const document = parseWbsDocument({ schemaVersion: 1, nodes });
+  const sourceKeys = new Set<string>();
   const sourceRows = source.sourceRows.map((row) => {
+    const sourceKey = `${row.documentId}:${row.revisionId}:${row.sourceRowId}`;
+    if (sourceKeys.has(sourceKey))
+      throw new WbsError(409, "Content source coverage contains duplicate source evidence.");
+    sourceKeys.add(sourceKey);
     const wbsNodeIds = row.nodeIds.map((nodeId) => {
       const wbsNodeId = bySource.get(nodeId);
       if (!wbsNodeId)
         throw new WbsError(409, "Content source coverage no longer matches the imported revision.");
       return wbsNodeId;
     });
-    if (row.disposition === "CONTENT_WORK" && wbsNodeIds.length === 0)
-      throw new WbsError(409, "Content work source row has no WBS target.");
+    if (
+      row.disposition === "CONTENT_WORK" &&
+      !row.nodeIds.some(
+        (nodeId) => source.nodes.find((node) => node.id === nodeId)?.kind === "TASK",
+      )
+    )
+      throw new WbsError(409, "Content work source row has no WBS work package.");
     if (row.disposition === "COMMERCIAL_ONLY" && wbsNodeIds.length !== 0)
       throw new WbsError(409, "Commercial-only source row unexpectedly maps to WBS work.");
     return { ...row, wbsNodeIds };

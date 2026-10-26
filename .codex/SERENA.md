@@ -6,7 +6,7 @@
 
 ## 觸發與使用原則
 
-當任務涉及程式碼結構理解、symbol 導航、references、diagnostics、受控編輯、專案記憶或受控 shell 時，優先使用已配置的 Serena MCP。
+當任務涉及程式碼結構理解、symbol 導航、references、diagnostics、結構化 symbol 編輯、專案記憶或受控 shell 時，優先使用已配置的 Serena MCP。
 
 使用者在訊息開頭指定 `serena`，表示優先使用 Serena 的提示；它不是自動觸發器，也不授予額外權限。先確認 MCP 與目前 worktree 可用，再依任務需要選擇工具。
 
@@ -95,8 +95,9 @@ Symbol tools 操作的是目前程式碼與 language-server index，不是另一
 
 | 分類 | 代表工具 | 使用規則 |
 | --- | --- | --- |
-| `symbol_tools` / `lsp` | declaration、implementations、references、overview、diagnostics、rename、replace、safe delete | 先 bounded navigation，再做最小修改；重構後檢查 public consumers |
-| `file_tools` / `fs` | find/list/read/search、create、replace、insert、delete | 只處理明確 scope；大量搜尋優先在 Serena/REPL 內聚合摘要 |
+| `symbol_tools` / `lsp` | declaration、implementations、references、overview、diagnostics、rename、replace、safe delete | 先 bounded navigation，再用 symbol-aware edit 或 safe delete 做最小修改；重構後檢查 public consumers |
+| `file_tools` / `fs` | find/list/read/search、create、replace、insert、delete | 讀取與搜尋可用 Serena/REPL 聚合摘要；一般檔案修改仍優先 Codex `apply_patch` |
+| `edit` | replace symbol body、insert before/after symbol、replace content/in files | 結構已知且 symbol 邊界清楚時優先使用；一般行級或多檔案非語意修改使用 Codex 原生編輯 |
 | `memory_tools` / `mem` | list/read/write/edit/rename/delete | `delete_memory` 只有明確指示或授權才能使用；更新前先讀 `memory_maintenance` |
 | `config_tools` / `cfg` | activate project、current config、dashboard | 用於確認 session/project state；dashboard 不等於授權 |
 | `workflow_tools` / `mem.onboarding` | `initial_instructions`、`onboarding`、`serena_info` | onboarding 僅首次；`serena_info` 按需讀取，避免預載大量說明 |

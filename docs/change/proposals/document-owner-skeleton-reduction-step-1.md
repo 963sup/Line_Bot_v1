@@ -1,6 +1,6 @@
 # Document owner skeleton reduction — Step 1: 減法邊界與停止條件
 
-Status: **proposed reduction target; not fully implemented**. Stacked PR: #413 on #412.
+Status: **proposed reduction target; not fully promoted to current main**. PR #413 merged the owner-skeleton work into the intermediate refactor branch; this proposal remains a target/acceptance reference until that revision is part of the current main baseline.
 Purpose: answer **「File / Intelligence / Contract / Content / WBS 究竟砍到什麼程度，才算剩下不可刪的骨架？」**.
 Follow-on design: [Step 2 — 骨架後的最小協作設計](document-owner-skeleton-reduction-step-2.md).
 

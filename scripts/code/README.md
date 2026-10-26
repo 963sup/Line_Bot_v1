@@ -1,6 +1,6 @@
 # Source operation tool
 
-`pnpm code` provides repository-scoped structural search and TypeScript navigation. Reads never modify source files. Rewrite and rename can only write a version 1 declarative plan below `.artifacts/`; `pnpm patch:apply <plan.json> [--apply]` remains the sole source mutation boundary.
+`pnpm code` provides repository-scoped structural search and TypeScript navigation. Reads never modify source files. Rewrite and rename can only write a version 1 declarative plan below `.artifacts/`; within the `pnpm code` batch-plan workflow, `pnpm patch:apply <plan.json> [--apply]` is the sole source mutation boundary. This does not prohibit separately governed symbol-level edits through Serena; those edits still require the repository diff, consumer checks and applicable validation.
 
 | File | Responsibility |
 | --- | --- |

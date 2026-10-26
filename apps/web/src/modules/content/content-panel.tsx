@@ -88,13 +88,11 @@ export default function ContentPanel({
   liffId,
   ownerLogin,
   repositoryName,
-  contractsPath,
   onCanManageChange,
 }: {
   liffId: string;
   ownerLogin: string;
   repositoryName: string;
-  contractsPath: string;
   onCanManageChange(value: boolean): void;
 }) {
   const [view, setView] = useState<View | null>(null);
@@ -621,32 +619,6 @@ export default function ContentPanel({
           ))}
         </CardContent>
       </Card>
-      {view?.canEdit &&
-        view.revision &&
-        view.revision.document.nodes.some(
-          (node) => (node.kind === "WORK" || node.kind === "TASK") && node.plannedQuantity !== null,
-        ) && (
-          <div className="grid gap-2 rounded-lg border p-3 text-sm">
-            <p className="font-medium">下一步：由正式 Content Revision 建立 Contract</p>
-            <p className="text-muted-foreground">
-              只引用已提交的 Content v{view.revision.version}，不採用尚未儲存的草稿，
-              也不會自動建立合約。
-            </p>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={busy || pending !== null}
-              onClick={() => {
-                const query = new URLSearchParams({
-                  planRevisionId: view.revision?.revisionId ?? "",
-                });
-                globalThis.window.location.assign(`${contractsPath}?${query.toString()}`);
-              }}
-            >
-              前往 Contracts 選擇正式 Work／Task 與約定數量
-            </Button>
-          </div>
-        )}
       <Card>
         <CardHeader>
           <CardTitle>新增節點</CardTitle>

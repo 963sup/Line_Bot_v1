@@ -1,6 +1,6 @@
 # Platform integration root migration — Step Start：目標、權威與停止條件
 
-Status: **PROPOSED / documentation-only**；stacked plan on **PR #413**, which itself depends on #412。**此文件不表示遷移已發生或已驗證**。
+Status: **PROPOSED / documentation-only**；the plan was carried through the intermediate #413/#414 branch stack, but this file does not represent current-main promotion or acceptance. **此文件不表示遷移已發生或已驗證**。
 後續：[Step 1 — 全量盤點](./platform-integration-root-migration-step-1.md)。最後驗收：[Step End](./platform-integration-root-migration-step-end.md)。
 
 ## 唯一目標與命名

@@ -14,7 +14,7 @@ import type {
   ProjectWbsGovernanceTransaction,
 } from "../src/contracts/repositories/project-governance.js";
 import type { WbsRevision } from "../src/domain/content.js";
-import { importContentWbs } from "../src/domain/content.js";
+import { assertContentImportCoverage, importContentWbs } from "../src/domain/content.js";
 import { parseWbsDocument, WbsError } from "../src/domain/document.js";
 import { defaultWbsPolicy } from "../src/domain/governance.js";
 import type { ProjectWbsRole } from "../src/domain/policies/project-access.js";
@@ -92,6 +92,132 @@ test("Content whole-revision mapping preserves hierarchy and accounts for every 
     () => importContentWbs(revision, 1, source, "project-a", "actor", requestId, 2, stableId),
     WbsError,
   );
+});
+
+test("Content-to-WBS import rejects work rows without a Task work package", () => {
+  const source = {
+    repositoryId: "repo-a",
+    revisionId: "content-rev",
+    version: 1,
+    nodes: [
+      {
+        id: "subject",
+        parentId: null,
+        position: 0,
+        kind: "SUBJECT" as const,
+        title: "S",
+        body: "",
+      },
+      {
+        id: "object",
+        parentId: "subject",
+        position: 0,
+        kind: "OBJECT" as const,
+        title: "O",
+        body: "",
+      },
+      {
+        id: "subobject",
+        parentId: "object",
+        position: 0,
+        kind: "SUBOBJECT" as const,
+        title: "SO",
+        body: "",
+      },
+      {
+        id: "work",
+        parentId: "subobject",
+        position: 0,
+        kind: "WORK" as const,
+        title: "W",
+        body: "",
+      },
+    ],
+    sourceRows: [
+      {
+        documentId: "doc",
+        revisionId: "doc-rev",
+        sourceRowId: "row",
+        disposition: "CONTENT_WORK" as const,
+        nodeIds: ["work"],
+      },
+    ],
+  };
+  assert.throws(
+    () => importContentWbs(null, 0, source, "project-a", "actor", requestId, 1, (seed) => seed),
+    /work package/i,
+  );
+});
+
+test("Published Content imports retain source coverage after edits", () => {
+  const source = {
+    repositoryId: "repo-a",
+    revisionId: "content-rev",
+    version: 1,
+    nodes: [
+      {
+        id: "subject",
+        parentId: null,
+        position: 0,
+        kind: "SUBJECT" as const,
+        title: "S",
+        body: "",
+      },
+      {
+        id: "object",
+        parentId: "subject",
+        position: 0,
+        kind: "OBJECT" as const,
+        title: "O",
+        body: "",
+      },
+      {
+        id: "subobject",
+        parentId: "object",
+        position: 0,
+        kind: "SUBOBJECT" as const,
+        title: "SO",
+        body: "",
+      },
+      {
+        id: "work",
+        parentId: "subobject",
+        position: 0,
+        kind: "WORK" as const,
+        title: "W",
+        body: "",
+      },
+      { id: "task", parentId: "work", position: 0, kind: "TASK" as const, title: "T", body: "" },
+    ],
+    sourceRows: [
+      {
+        documentId: "doc",
+        revisionId: "doc-rev",
+        sourceRowId: "row",
+        disposition: "CONTENT_WORK" as const,
+        nodeIds: ["work", "task"],
+      },
+    ],
+  };
+  let idSequence = 0;
+  const stableId = (_seed: string) =>
+    `00000000-0000-4000-8000-${String(++idSequence).padStart(12, "0")}`;
+  const imported = importContentWbs(null, 0, source, "project-a", "actor", requestId, 1, stableId);
+  const taskId = imported.contentImport?.sourceRows[0]?.wbsNodeIds[1];
+  assert.ok(taskId);
+  const { contentImport: _importEvidence, ...candidateBase } = imported;
+  const candidate: WbsRevision = {
+    ...candidateBase,
+    id: "candidate",
+    parentRevisionId: imported.id,
+    version: 2,
+    action: "update-node",
+    document: {
+      ...imported.document,
+      nodes: imported.document.nodes.filter((node) => node.id !== taskId),
+    },
+  };
+  assert.throws(() => assertContentImportCoverage([candidate, imported]), /imported source node/i);
 });
 
 test("Project content uses projectId and reauthorizes the current role before exact replay", async () => {

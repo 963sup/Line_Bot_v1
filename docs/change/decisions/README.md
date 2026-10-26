@@ -17,5 +17,5 @@
 ## Owner 與治理決策
 
 - [Repository owner governance](repository-owner-governance-design.md)：Personal / Organization Repository 的所有權、Repository ADMIN、Organization Owner、成員資格與補登審核邊界。
-- [Document intake owner decision](document-intake-owner-design.md)：File 儲存、Intelligence 擷取與目標 Owner 結構化資料，Contract → Content → WBS 固定全量映射與既有資料退役條件；尚未實作。
+- [Document intake owner decision](document-intake-owner-design.md)：File 儲存、Intelligence 擷取與目標 Owner 結構化資料，Contract → Content → WBS 固定全量映射與既有資料退役條件；current source 已具備主要 implementation boundary，live provider／正式入口／device acceptance 仍依 evidence contract separately 驗證。
 - [Namespace route topology](namespace-route-topology.md)：全域 login path、root namespace reservation 與公開／受保護路由邊界。

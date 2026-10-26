@@ -19,5 +19,5 @@ Status: ACCEPTANCE CONTRACT；PR #412 已完成 source/path cutover，但此文�
 ## 綠燈後治理
 - 提案採用：將 durable decisions 更新到 `docs/owners/*`、`docs/reference/platform/*`、`architecture/*`、原生 config、source/tests；只保留有未來取捨價值的 ADR，避免 RFC 和 current truth 平行維護。
 - 歷史：以 Git commits/PR/CI job URL 記錄，不在 `docs/change/proposals` 建另一本 release ledger。
-- #413 與 #412 的堆疊依賴必須保留：**#414 的 base 為 #413 head branch**，待上游變更合併或重定位，先重新檢查 base/head 與全量 CI。不可因本 proposal 調整其他 PR 的 Merge protection。
+- #413/#414 的堆疊關係是歷史交付背景；它們已合併到中間 refactor branch，不等於目前 main 已完成本 acceptance contract。任何重新定位或 promotion 都必須先重新檢查 base/head 與全量 CI，不可因本 proposal 調整其他 PR 的 Merge protection。
 - **未通過任何一項 = Not Done**；可保留提案與已安全完成的獨立重構，但不能宣稱雙根目錄已完整遷移、也不能部署 production。
