@@ -51,6 +51,38 @@ function invalidDocumentIntake(): never {
   );
 }
 
+function exactKeys(value: Record<string, unknown>, keys: readonly string[]): boolean {
+  return Object.keys(value).length === keys.length && keys.every((key) => key in value);
+}
+
+function nullableText(value: unknown): boolean {
+  return value === null || typeof value === "string";
+}
+
+function pages(value: unknown): value is number[] {
+  return (
+    Array.isArray(value) &&
+    value.every((page) => Number.isSafeInteger(page) && page > 0) &&
+    new Set(value).size === value.length
+  );
+}
+
+function decimal(value: unknown): boolean {
+  return (
+    value === null ||
+    (typeof value === "string" && /^-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?$/.test(value))
+  );
+}
+
+function validateParty(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    exactKeys(value, ["name", "registrationNumber"]) &&
+    nullableText(value.name) &&
+    nullableText(value.registrationNumber)
+  );
+}
+
 /** Checks the provider boundary only; Contract remains the business validator. */
 export function parseDocumentIntakeOutput(value: unknown) {
   if (!isRecord(value)) invalidDocumentIntake();
@@ -68,10 +100,27 @@ export function parseDocumentIntakeOutput(value: unknown) {
   }
   if (
     !isRecord(value.header) ||
-    !isRecord(value.buyer) ||
-    !isRecord(value.seller) ||
+    !exactKeys(value.header, ["documentNumber", "revision", "issueDate", "title", "currency"]) ||
+    !nullableText(value.header.documentNumber) ||
+    !nullableText(value.header.revision) ||
+    !nullableText(value.header.issueDate) ||
+    !nullableText(value.header.title) ||
+    !nullableText(value.header.currency) ||
+    !validateParty(value.buyer) ||
+    !validateParty(value.seller) ||
     !isRecord(value.totals) ||
+    !exactKeys(value.totals, ["gross", "discount", "net", "tax", "total"]) ||
+    ![
+      value.totals.gross,
+      value.totals.discount,
+      value.totals.net,
+      value.totals.tax,
+      value.totals.total,
+    ].every(decimal) ||
     !isRecord(value.terms) ||
+    !exactKeys(value.terms, ["text", "sourcePages"]) ||
+    !nullableText(value.terms.text) ||
+    !pages(value.terms.sourcePages) ||
     !isRecord(value.fieldEvidence) ||
     !Array.isArray(value.lines) ||
     !Array.isArray(value.corrections) ||
@@ -85,12 +134,63 @@ export function parseDocumentIntakeOutput(value: unknown) {
       typeof line.sourceRowId !== "string" ||
       line.sourceRowId.length === 0 ||
       rowIds.has(line.sourceRowId) ||
-      !Array.isArray(line.sourcePages) ||
-      !line.sourcePages.every((page) => Number.isInteger(page) && page >= 1) ||
+      !exactKeys(line, [
+        "sourceRowId",
+        "itemNumber",
+        "category",
+        "materialCode",
+        "description",
+        "quantity",
+        "unit",
+        "unitPrice",
+        "grossAmount",
+        "discountAmount",
+        "netAmount",
+        "deliveryDate",
+        "sourcePages",
+        "uncertain",
+      ]) ||
+      !nullableText(line.itemNumber) ||
+      !["material", "service", "freight", "other", null].includes(line.category) ||
+      !nullableText(line.materialCode) ||
+      !nullableText(line.description) ||
+      !decimal(line.quantity) ||
+      !nullableText(line.unit) ||
+      !decimal(line.unitPrice) ||
+      !decimal(line.grossAmount) ||
+      !decimal(line.discountAmount) ||
+      !decimal(line.netAmount) ||
+      !nullableText(line.deliveryDate) ||
+      !pages(line.sourcePages) ||
       typeof line.uncertain !== "boolean"
     )
       invalidDocumentIntake();
     rowIds.add(line.sourceRowId);
+  }
+  for (const entries of Object.values(value.fieldEvidence)) {
+    if (
+      !Array.isArray(entries) ||
+      entries.some(
+        (entry) =>
+          !isRecord(entry) ||
+          !exactKeys(entry, ["sourcePages", "rawText", "confidence"]) ||
+          !pages(entry.sourcePages) ||
+          !nullableText(entry.rawText) ||
+          !nullableText(entry.confidence),
+      )
+    )
+      invalidDocumentIntake();
+  }
+  for (const correction of value.corrections) {
+    if (
+      !isRecord(correction) ||
+      !exactKeys(correction, ["field", "original", "replacement", "reason"]) ||
+      typeof correction.field !== "string" ||
+      !nullableText(correction.original) ||
+      typeof correction.replacement !== "string" ||
+      typeof correction.reason !== "string"
+    )
+      invalidDocumentIntake();
   }
   if (
     (typeof value.terms.text !== "string" && value.terms.text !== null) ||
