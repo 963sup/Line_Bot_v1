@@ -9,11 +9,6 @@
 !scripts/runtime/next.mjs
 !scripts/runtime/bounded-output.mjs
 !scripts/runtime/load-env.mjs
-!vercel
-!vercel/integrations
-!vercel/integrations/gateway.ts
-!vercel/integrations/gateway-config.ts
-!vercel/integrations/gateway-document.ts
 !apps
 !apps/web
 !apps/web/package.json
