@@ -406,6 +406,19 @@ test("schema scope expands typecheck and tests to the full workspace by default"
   );
 });
 
+test("database owner changes select the schema and database gates", () => {
+  for (const file of [
+    "packages/file/src/adapters/outbound/persistence/files.ts",
+    "packages/repository/src/postgres/management.ts",
+    "packages/intelligence/src/composition/bootstrap/document-intake.ts",
+  ]) {
+    const scope = classifyChangedFiles([file]);
+    assert.equal(scope.schemaAffected, true, file);
+    assert.equal(shouldRunFast("schema:check", scope), true, file);
+    assert.equal(shouldRunFast("test:database", scope), true, file);
+  }
+});
+
 test("tooling metadata stays separate while root build metadata expands conservatively", () => {
   for (const file of ["AGENTS.md", "packages/AGENTS.md", "apps/web/src/modules/AGENTS.md"])
     assert.deepEqual(classifyChangedFiles([file]), {

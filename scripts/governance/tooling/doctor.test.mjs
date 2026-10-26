@@ -148,7 +148,10 @@ test("MCP configuration requires local locked executables in their owning worksp
   assert.equal(inspectMcpConfiguration(root).ok, true);
   const invalid = [
     config.replace('["exec", "next-devtools-mcp"]', '["dlx", "next-devtools-mcp@latest"]'),
-    config.replace('command = "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/uvx"', 'command = "other-serena"'),
+    config.replace(
+      'command = "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/uvx"',
+      'command = "other-serena"',
+    ),
     config.replace("startup_timeout_sec = 120", "startup_timeout_sec = 30"),
     config.replace('["--dir", "apps/web", "exec", "shadcn", "mcp"]', '["exec", "shadcn", "mcp"]'),
     config.replace("[mcp_servers.shadcn]", "[mcp_servers.shadcn]\nenabled = false"),

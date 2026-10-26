@@ -78,6 +78,11 @@ export function classifyChangedFiles(files) {
   const isSchemaSource = (file) =>
     file.startsWith("packages/integration-supabase/src/schemas/") ||
     file === "packages/integration-supabase/src/config.toml";
+  const isDatabaseOwnerSource = (file) =>
+    file.startsWith("packages/") &&
+    (file.includes("/src/postgres/") ||
+      file.includes("/src/adapters/outbound/persistence/") ||
+      file.includes("/src/composition/bootstrap/"));
   const isToolingMetadata = (file) =>
     file === "AGENTS.md" ||
     file.endsWith("/AGENTS.md") ||
@@ -129,6 +134,7 @@ export function classifyChangedFiles(files) {
   const schemaAffected = changed.some(
     (file) =>
       isSchemaSource(file) ||
+      isDatabaseOwnerSource(file) ||
       file.startsWith("scripts/providers/supabase/") ||
       file === "packages/platform/src/testing/postgres.ts" ||
       file === "packages/platform/test/schema-contract.schema.ts" ||
