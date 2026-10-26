@@ -1,6 +1,6 @@
 # Document owner skeleton reduction — Step 2: 骨架後的最小協作設計
 
-Status: **target design; not fully promoted to current main**. PR #413 merged the planning/initial regression work into the intermediate refactor branch, but that merge is not Step 2 completion or current-main acceptance. It still depends on [Step 1 — 減法邊界與停止條件](document-owner-skeleton-reduction-step-1.md) being independently accepted and verified.
+Status: **implemented in the current source tree; proposal promotion complete**. The Step 2 collaboration boundaries are now represented by the existing public ports, composition roots, owner contracts, package exports, topology entries and focused negative-path tests. This document remains a design record; runtime/provider/release acceptance is intentionally left to Steps 3–7 and their own evidence.
 
 Purpose: answer **「砍到不可刪的骨架後，如何設計 File / Intelligence / Contract / Content / WBS 的正確協作，而不把依賴和狀態再加回來？」**. This RFC does not override current Owner, semantic/topology, schema or runtime contracts.
 
@@ -118,7 +118,29 @@ No mandatory empty layer, pass-through facade, new Shared business Owner, generi
 4. 跨 Owner 只使用 public exports；Data/Transaction/Authorization authority 保留在真正 Owner，修改依賴時同步 package exports、topology、真實 consumer 與測試。
 5. 用 deterministic fake provider / in-memory object-store proof 證明業務 Domain/Application 可不依賴 Vercel 或 Supabase 執行；再開始 Step 3。
 
-## 7. 跨邊界設計的最小驗收案例
+## 7a. Current implementation evidence
+
+The exit-gate design is implemented without introducing a shared business Owner or a second
+orchestration layer:
+
+- File publishes `FileObjectStore` and `FileRevisionQualifier`; its composition root injects the
+  private storage adapter and keeps removal/reclamation ports out of ordinary application wiring.
+- Intelligence consumes File's public revision qualifier and receives `DocumentExtractor` and
+  `IntelligenceProcessor` through composition. Its durable attempt records source/target intent and
+  recovery state, not Contract facts.
+- Contract publishes the candidate intake command and the exact confirmed-document reader. Contract
+  requalifies the File revision in its own transaction and owns candidate/confirmation truth.
+- Content consumes Contract through `ContractDocumentExpansionReader`, applies its deterministic
+  whole-document expansion, and publishes `ContentWbsExpansionReader` for WBS.
+- WBS consumes exactly one authorized Content revision through its transaction-bound reader and
+  creates its own Project-scoped draft; it does not read Contract persistence directly.
+- The corresponding package exports, owner contracts, semantic relationships and implementation
+  topology remain the source of truth. No proposal text is used as a replacement authority.
+
+The implementation evidence is source-level and contract-level. Live provider behavior, deployed
+runtime behavior, and the complete release acceptance matrix are not claimed here.
+
+## 8. 跨邊界設計的最小驗收案例
 
 1. **Same request twice:** processor invoked once; original immutable receipt is returned; a changed canonical payload under same identity is rejected.
 2. **Storage unknown:** verified File source readback is required before FileRevision finalize; no visible pending File as a committed source.
@@ -131,7 +153,7 @@ No mandatory empty layer, pass-through facade, new Shared business Owner, generi
 
 Testing evidence layers must be reported separately: pure/domain, PostgreSQL/transaction, Web/CLI, provider, production. Only evidence **actually executed** supports a passing claim.
 
-## 8. Adoption and non-goals
+## 9. Adoption and non-goals
 
 Step 2 的概念實施須先達成以上 exit gate。後續各 Owner 轉換與 provider 實際串接由 Step 3–7 個別驗收。
 
@@ -139,7 +161,7 @@ This design is usable only after [Step 1 exit criteria](document-owner-skeleton-
 
 - **Not a new Owner:** no shared business integration service, Source Registry or Coverage Engine.
 - **Not a new database truth:** historical source resolution remains anchored in original immutable owner revisions.
-- **Not forced into current main:** the intermediate PR #413 branch contains planning/initial regression work, but its merge does not by itself prove Step 2 acceptance or promote this target into current main.
+- **Not a release acceptance claim:** Step 2 promotion records the implemented source boundaries; it does not claim provider, deployment, browser/device or full release acceptance.
 - **Not a migration approval:** historical File processing and Repository WBS transfer removal need distinct operator-controlled plans.
 - **Not production acceptance:** provider availability and deploy state remain independently verified.
 
