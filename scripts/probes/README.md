@@ -6,7 +6,7 @@
 | --- | --- |
 | `check-agent.mjs` | 探測 Assistant/agent 的真實 provider path 與基本 response contract。 |
 | `check-expense-card.mjs` | 驗證 Expense card 的真實 LINE/provider message path。 |
-| `check-gemini.mjs` | 驗證 Gemini credential、model request 與最小 response contract。 |
+| `check-ai-gateway.mjs` | 驗證 Vercel AI Gateway credential、model request 與最小 response contract。 |
 | `check-line.mjs` | 驗證 LINE channel/provider credential 與可讀 API contract。 |
 | `check-receipt.mjs` | 驗證 receipt/vision extraction 的真實 provider path。 |
 | `check-redis.mjs` | 驗證 Redis connection 與 coordination/cache 所需 provider contract。 |

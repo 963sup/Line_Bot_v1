@@ -50,7 +50,6 @@
     "test": "node --no-wasm-code-gc --import tsx --test --test-concurrency=2 test/*.test.ts"
   },
   "dependencies": {
-    "@google/genai": "catalog:",
     "@line_bot_v1/file": "workspace:*",
     "@line_bot_v1/platform": "workspace:*",
     "@line_bot_v1/repository": "workspace:*"

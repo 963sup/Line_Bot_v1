@@ -181,7 +181,7 @@ function harness(
       },
     },
     extractor: {
-      id: "gemini",
+      id: "vercel-ai-gateway",
       version: "document-intake-v1:test",
       async extract(input) {
         calls.extracts++;

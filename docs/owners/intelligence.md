@@ -26,9 +26,9 @@ Contract intake is separate: Intelligence reads an exact File revision through F
 
 File owns source qualification and original bytes. Contract owns structured candidate validation and confirmation. Intelligence owns processing revisions and provider attempts; Repository owns current access authorization.
 
-Gemini output is candidate evidence. Intelligence may submit it only through Contract's public SAVE command; it cannot authorize or confirm a Contract transition. Raw bytes, provider output, credentials and personal data must not enter diagnostic logs.
+Vercel AI Gateway output is candidate evidence. Intelligence may submit it only through Contract's public SAVE command; it cannot authorize or confirm a Contract transition. Raw bytes, provider output, credentials and personal data must not enter diagnostic logs.
 
-The existing processor identity remains `observations-v1:<model>`. Contract intake first records a durable technical attempt keyed by source and target intent. It keeps only source/intent identity, `STARTED` / `UNKNOWN` / `COMPLETED` state and a target receipt reference, never the candidate. Only a fresh attempt calls the provider; duplicate or unknown attempts read Contract's receipt and never make a second provider call. This is recovery for uncertain external delivery, not fallback or automatic retry. Supported Gemini inputs are PDF, JPEG, PNG and WebP. Native UTF-8 plain-text parsing is also an Intelligence processor. Excel/Word processors and standalone OCR, when implemented, belong here rather than in File because they interpret bytes and produce untrusted evidence; File remains format-neutral storage and source qualification.
+The existing processor identity remains `observations-v1:<model>`. Contract intake first records a durable technical attempt keyed by source and target intent. It keeps only source/intent identity, `STARTED` / `UNKNOWN` / `COMPLETED` state and a target receipt reference, never the candidate. Only a fresh attempt calls the provider; duplicate or unknown attempts read Contract's receipt and never make a second provider call. This is recovery for uncertain external delivery, not fallback or automatic retry. Supported Vercel AI Gateway inputs are PDF, JPEG, PNG and WebP. Native UTF-8 plain-text parsing is also an Intelligence processor. Excel/Word processors and standalone OCR, when implemented, belong here rather than in File because they interpret bytes and produce untrusted evidence; File remains format-neutral storage and source qualification.
 
 ## Processing retirement
 
@@ -40,4 +40,4 @@ The attempt is a narrow technical record, not a generic AI framework or schema r
 
 ## Evidence
 
-Source lives in `packages/intelligence`; canonical ownership and dependency direction live in `architecture/semantic-model.json` and `architecture/implementation-topology.json`. Simulated provider tests verify protocol mapping, bounded failures, source/intent recovery and processor identity, but do not prove live Gemini availability, extraction accuracy, provider acceptance, production configuration or LINE-device behavior.
+Source lives in `packages/intelligence` and `vercel/integrations`; canonical ownership and dependency direction live in `architecture/semantic-model.json` and `architecture/implementation-topology.json`. Simulated provider tests verify protocol mapping, bounded failures, source/intent recovery and processor identity, but do not prove live Vercel AI Gateway availability, extraction accuracy, provider acceptance, production configuration or LINE-device behavior.

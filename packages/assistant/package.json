@@ -4,14 +4,6 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./gateway": {
-      "types": "./dist/composition/bootstrap/gateway.d.ts",
-      "default": "./dist/composition/bootstrap/gateway.js"
-    },
-    "./gemini": {
-      "types": "./dist/gemini.d.ts",
-      "default": "./dist/gemini.js"
-    },
     "./agents/intake": {
       "types": "./dist/composition/bootstrap/intake-agent.d.ts",
       "default": "./dist/composition/bootstrap/intake-agent.js"
@@ -29,10 +21,7 @@
     "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
     "test": "tsx --test test/*.test.ts"
   },
-  "dependencies": {
-    "@google/genai": "catalog:",
-    "ai": "catalog:"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/node": "catalog:",
     "tsx": "catalog:",

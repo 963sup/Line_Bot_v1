@@ -237,9 +237,7 @@ export default function ExpensePanel({ liffId }: { liffId: string }) {
       ) : expense?.status === "pending" && !hasRecognition ? (
         <section>
           <p>辨識後，在這裡核對收據與補齊資料。</p>
-          <p className="expense-hint">
-            圖片將送至 Gemini 免費 API，內容可能用於改善產品。請使用非敏感測試憑證。
-          </p>
+          <p className="expense-hint">圖片將送至 Vercel AI Gateway 處理。請使用非敏感測試憑證。</p>
           <button disabled={busy} onClick={() => command("recognize")}>
             辨識收據
           </button>

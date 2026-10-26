@@ -3,7 +3,7 @@ import test from "node:test";
 import { runCli } from "../runtime/cli-subprocess-test-helper.mjs";
 
 const script = "scripts/intelligence/run.mjs";
-const environment = { GEMINI_API_KEY: "TOP_SECRET_KEY", GEMINI_MODEL: "test-model" };
+const environment = { AI_GATEWAY_MODEL: "google/gemini-2.5-flash" };
 const command = {
   action: "save",
   repositoryId: "repo-1",
@@ -31,7 +31,7 @@ function failure(scenario, input) {
     result.json.error,
     "Intelligence operation failed; credentials, source bytes and provider payload are not logged.",
   );
-  assert.doesNotMatch(`${result.stdout}${result.stderr}`, /TOP_SECRET|secret-proof|TOP_SECRET_KEY/);
+  assert.doesNotMatch(`${result.stdout}${result.stderr}`, /secret-proof/);
   return result.json;
 }
 

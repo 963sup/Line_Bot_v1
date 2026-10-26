@@ -4,11 +4,9 @@ import { createPostgresFileDependencies } from "@line_bot_v1/file/composition/bo
 import { FileError } from "@line_bot_v1/file/domain/error";
 import { fileLimits } from "@line_bot_v1/file/domain/file";
 import { createPostgresIntelligenceProcessing } from "@line_bot_v1/intelligence/composition/bootstrap/processing";
-import {
-  createGeminiFileProcessor,
-  plainTextProcessor,
-} from "@line_bot_v1/intelligence/composition/bootstrap/processors";
+import { plainTextProcessor } from "@line_bot_v1/intelligence/composition/bootstrap/processors";
 import { PostgresDatabase } from "@line_bot_v1/platform/postgres";
+import { createVercelAiGateway } from "../../vercel/integrations/ai-gateway.mjs";
 import { classifyInternalFailure } from "../runtime/internal-failure.mjs";
 import {
   InternalInputError,
@@ -56,13 +54,13 @@ try {
   } else if (input.operation === "run") {
     let extractor;
     if (input.processor === "plain-text") extractor = plainTextProcessor;
-    else if (input.processor === "gemini") {
-      if (!process.env.GEMINI_API_KEY || !process.env.GEMINI_MODEL)
+    else if (input.processor === "vercel-ai-gateway") {
+      if (
+        !process.env.AI_GATEWAY_MODEL ||
+        !(process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN)
+      )
         throw new InternalInputError("Configure the selected extractor.");
-      extractor = createGeminiFileProcessor({
-        apiKey: process.env.GEMINI_API_KEY,
-        model: process.env.GEMINI_MODEL,
-      });
+      extractor = createVercelAiGateway(process.env.AI_GATEWAY_MODEL).fileProcessor();
     } else throw new InternalInputError("Explicit processor selection is required.");
     mutationStarted = true;
     result = await processing.run(actor, input.command, extractor);

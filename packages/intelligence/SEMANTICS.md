@@ -36,7 +36,7 @@ No Bounded Context is selected or declared for this owner in the canonical seman
 | intake-contract-document | required | implemented | intelligence-file-source, intelligence-contract-document-intake, intelligence-platform-persistence | Read an authorized File source, extract a complete purchase-order candidate using the target owner's schema, and submit it through the target's public SAVE command. |
 | manage-file-result | required | implemented | repository-intelligence-processing-scope, intelligence-platform-persistence | A user may locally edit Preview, then explicitly Save a version-bound result or Discard it; neither operation mutates downstream business owners. |
 | run-file-processing | required | implemented | intelligence-file-source, repository-intelligence-processing-scope, intelligence-platform-persistence | Execute only the explicitly user-selected compatible processor against a pinned File revision and produce untrusted Preview without implicit fallback or Save. |
-| understand-file-document | required | implemented | intelligence-file-source | Map explicitly supplied PDF or image evidence through a configured Gemini model into bounded, source-located candidate observations without approving, persisting or importing business facts. |
+| understand-file-document | required | implemented | intelligence-file-source | Map explicitly supplied PDF or image evidence through the configured Vercel AI Gateway model into bounded, source-located candidate observations without approving, persisting or importing business facts. |
 
 ## Context Relationships
 

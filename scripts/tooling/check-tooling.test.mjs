@@ -1665,7 +1665,7 @@ for (const content of [
 for (const [script, args, message] of [
   ["scripts/probes/check-agent.mjs", [], "--live"],
   ["scripts/probes/check-expense-card.mjs", [], "--live"],
-  ["scripts/probes/check-gemini.mjs", [], "--live"],
+  ["scripts/probes/check-ai-gateway.mjs", [], "--live"],
   ["scripts/probes/check-line.mjs", [], "--live"],
   ["scripts/probes/check-receipt.mjs", [], "--live"],
   ["scripts/probes/check-redis.mjs", [], "--live"],
