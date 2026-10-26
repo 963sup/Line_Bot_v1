@@ -41,7 +41,7 @@ export function assertCurrentSourceCoverage(
       );
     const definition = JSON.stringify({
       disposition: row.disposition,
-      nodeIds: [...row.nodeIds],
+      nodeIds: [...row.nodeIds].sort(),
     });
     const previousDefinition = sourceDefinitions.get(sourceKey);
     if (previousDefinition !== undefined && previousDefinition !== definition)

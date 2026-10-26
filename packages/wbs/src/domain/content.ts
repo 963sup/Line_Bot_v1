@@ -101,7 +101,7 @@ export function assertContentImportCoverage(lineage: readonly WbsRevision[]): vo
     const key = `${row.documentId}:${row.revisionId}:${row.sourceRowId}`;
     const definition = JSON.stringify({
       disposition: row.disposition,
-      wbsNodeIds: [...row.wbsNodeIds],
+      wbsNodeIds: [...row.wbsNodeIds].sort(),
     });
     const previousDefinition = sourceDefinitions.get(key);
     if (previousDefinition !== undefined && previousDefinition !== definition)
@@ -182,7 +182,7 @@ export function importContentWbs(
     const sourceKey = `${row.documentId}:${row.revisionId}:${row.sourceRowId}`;
     const definition = JSON.stringify({
       disposition: row.disposition,
-      nodeIds: [...row.nodeIds],
+      nodeIds: [...row.nodeIds].sort(),
     });
     const previousDefinition = sourceDefinitions.get(sourceKey);
     if (previousDefinition !== undefined && previousDefinition !== definition)
