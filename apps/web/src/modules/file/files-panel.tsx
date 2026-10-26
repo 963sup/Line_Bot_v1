@@ -7,7 +7,6 @@ import { Button } from "../../shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../shared/ui/card";
 import { Input } from "../../shared/ui/input";
 import { Label } from "../../shared/ui/label";
-import { NativeSelect, NativeSelectOption } from "../../shared/ui/native-select";
 import { Textarea } from "../../shared/ui/textarea";
 
 type FileInfo = {
@@ -18,6 +17,7 @@ type FileInfo = {
   name: string;
   mediaType: string;
   byteLength: number;
+  sha256: string;
 };
 type Processor = { id: string; kind: "parser" | "ocr" | "ai"; version: string };
 type PendingUpload = {
@@ -91,6 +91,32 @@ type ResultCommand = {
   action: "save" | "discard";
   edits?: Edit[];
 };
+type DocumentIntakeReceipt = {
+  documentId: string;
+  revisionId: string;
+  version: number;
+  intentFingerprint: string;
+};
+type DocumentSource = { fileId: string; fileRevisionId: string; fileSha256: string };
+type DocumentIntakeRevision = {
+  documentId: string;
+  revisionId: string;
+  version: number;
+  state: "DRAFT" | "CONFIRMED";
+  source: DocumentSource;
+  expectedLineCount: number;
+  candidate: Record<string, unknown>;
+  diagnostics: string[];
+};
+type DocumentIntakeCommand = {
+  action: "save";
+  repositoryId: string;
+  documentId: string;
+  requestId: string;
+  expectedVersion: number;
+  expectedLineCount: number;
+  source: { fileId: string; fileRevisionId: string; fileSha256: string };
+};
 type Pending =
   | { kind: "upload"; command: UploadCommand; file: File }
   | { kind: "run"; command: RunCommand; processor: string }
@@ -134,6 +160,7 @@ function parseFile(value: unknown): FileInfo {
     name: stringValue(r.name),
     mediaType: stringValue(r.mediaType),
     byteLength: intValue(r.byteLength),
+    sha256: stringValue(r.sha256),
   };
 }
 function parseProcessor(value: unknown): Processor {
@@ -258,6 +285,69 @@ function errorMessage(cause: unknown) {
   return cause instanceof Error ? cause.message : "File 操作暫不可用，請重新讀取後重試。";
 }
 
+function parseDocumentIntakeReceipt(value: unknown): DocumentIntakeReceipt {
+  const r = record(value);
+  return {
+    documentId: stringValue(r.documentId),
+    revisionId: stringValue(r.revisionId),
+    version: intValue(r.version),
+    intentFingerprint: stringValue(r.intentFingerprint),
+  };
+}
+function parseDocumentSource(value: unknown): DocumentSource {
+  const r = record(value);
+  return {
+    fileId: stringValue(r.fileId),
+    fileRevisionId: stringValue(r.fileRevisionId),
+    fileSha256: stringValue(r.fileSha256),
+  };
+}
+function parseDocumentIntakeRevision(value: unknown): DocumentIntakeRevision {
+  const r = record(value);
+  const state = stringValue(r.state);
+  if (state !== "DRAFT" && state !== "CONFIRMED")
+    throw new Error("ContractDocument state is invalid.");
+  return {
+    documentId: stringValue(r.documentId),
+    revisionId: stringValue(r.id),
+    version: intValue(r.version),
+    state,
+    source: parseDocumentSource(r.source),
+    expectedLineCount: intValue(r.expectedLineCount),
+    candidate: record(r.candidate),
+    diagnostics: listOf(r.diagnostics, stringValue),
+  };
+}
+function candidateLines(candidate: Record<string, unknown>) {
+  return listOf(candidate.lines, (value) => {
+    const line = record(value);
+    return {
+      sourceRowId: stringValue(line.sourceRowId),
+      description: line.description === null ? null : stringValue(line.description),
+      quantity: line.quantity === null ? null : stringValue(line.quantity),
+      unit: line.unit === null ? null : stringValue(line.unit),
+      grossAmount: line.grossAmount === null ? null : stringValue(line.grossAmount),
+      sourcePages: listOf(line.sourcePages, intValue),
+    };
+  });
+}
+function sourceReviewPages(candidate: Record<string, unknown>): number[] {
+  const pages = new Set<number>();
+  const visit = (value: unknown) => {
+    if (Array.isArray(value)) {
+      value.forEach(visit);
+      return;
+    }
+    if (!value || typeof value !== "object") return;
+    const object = record(value);
+    if (Array.isArray(object.sourcePages))
+      for (const page of object.sourcePages) if (typeof page === "number") pages.add(page);
+    Object.values(object).forEach(visit);
+  };
+  visit(candidate);
+  return [...pages].sort((left, right) => left - right);
+}
+
 /** Presentation progress only; File supplies source storage while Intelligence owns ProcessingRuns. */
 export function fileIntakeStep(
   hasSelectedFile: boolean,
@@ -287,6 +377,21 @@ export default function FilesPanel({
   const [runs, setRuns] = useState<RunSummary[]>([]);
   const [runsNext, setRunsNext] = useState<string | null>(null);
   const [processing, setProcessing] = useState<Processing | null>(null);
+  const [expectedLineCount, setExpectedLineCount] = useState("");
+  const [documentIntakeReceipt, setDocumentIntakeReceipt] = useState<DocumentIntakeReceipt | null>(
+    null,
+  );
+  const [documentIntakeRevision, setDocumentIntakeRevision] =
+    useState<DocumentIntakeRevision | null>(null);
+  const [sourceReviewConfirmed, setSourceReviewConfirmed] = useState(false);
+  const [acknowledgementReason, setAcknowledgementReason] = useState("");
+  const [pendingDocumentConfirmation, setPendingDocumentConfirmation] = useState<Record<
+    string,
+    unknown
+  > | null>(null);
+  const [pendingDocumentIntake, setPendingDocumentIntake] = useState<DocumentIntakeCommand | null>(
+    null,
+  );
   const [edits, setEdits] = useState<Record<string, EditChoice>>({});
   const [sourceFile, setSourceFile] = useState<File | null>(null);
   const [pendingUploads, setPendingUploads] = useState<PendingUpload[]>([]);
@@ -308,6 +413,13 @@ export default function FilesPanel({
     setRuns([]);
     setRunsNext(null);
     setProcessing(null);
+    setExpectedLineCount("");
+    setDocumentIntakeReceipt(null);
+    setDocumentIntakeRevision(null);
+    setSourceReviewConfirmed(false);
+    setAcknowledgementReason("");
+    setPendingDocumentConfirmation(null);
+    setPendingDocumentIntake(null);
     setEdits({});
     setSourceFile(null);
     setPendingUploads([]);
@@ -370,6 +482,38 @@ export default function FilesPanel({
       return value;
     },
     [clear, liffId, ownerLogin, repositoryName],
+  );
+
+  const requestDocumentIntake = useCallback(
+    async (query: Record<string, string>, command?: object) => {
+      const ticket = epoch.current;
+      const session = await liffClient.ensureSession(liffId);
+      if (ticket !== epoch.current) throw new StaleRequest();
+      if (!session) throw new Error("請完成 LINE 登入後重試。");
+      const search = new URLSearchParams({ owner: ownerLogin, name: repositoryName, ...query });
+      const response = await fetch(`/api/repository-document-intake?${search}`, {
+        method: command ? "POST" : "GET",
+        headers: {
+          ...(command ? { "Content-Type": "application/json" } : {}),
+          "X-App-Session-Generation": session,
+        },
+        ...(command ? { body: JSON.stringify(command) } : {}),
+        cache: "no-store",
+      });
+      const value: unknown = await response.json();
+      if (ticket !== epoch.current) throw new StaleRequest();
+      if (!response.ok) {
+        const message =
+          value && typeof value === "object" && "error" in value && typeof value.error === "string"
+            ? value.error
+            : query.operation === "read"
+              ? "ContractDocument 讀取失敗。"
+              : "採購單操作失敗。";
+        throw Object.assign(new Error(message), { status: response.status });
+      }
+      return value;
+    },
+    [liffId, ownerLogin, repositoryName],
   );
 
   const load = useCallback(async () => {
@@ -453,7 +597,13 @@ export default function FilesPanel({
       const previous = parseRunPage(history);
       setSelected(data.file);
       setProcessors(data.processors);
-      setSelectedProcessor("");
+      setSelectedProcessor(data.processors[0]?.id ?? "");
+      setExpectedLineCount("");
+      setDocumentIntakeReceipt(null);
+      setDocumentIntakeRevision(null);
+      setSourceReviewConfirmed(false);
+      setAcknowledgementReason("");
+      setPendingDocumentConfirmation(null);
       setRuns(previous.runs);
       setRunsNext(previous.next);
       setProcessing(null);
@@ -584,7 +734,7 @@ export default function FilesPanel({
   function run() {
     if (!view?.canEdit || !selected || pending) return;
     if (!selectedProcessor || !processors.some((method) => method.id === selectedProcessor)) {
-      setError("請選擇目前支援的 Parser 或 AI Processor。");
+      setError("目前檔案沒有可用的 Processor。");
       return;
     }
     const next: Pending = {
@@ -601,6 +751,136 @@ export default function FilesPanel({
     };
     setPending(next);
     void send(next);
+  }
+
+  async function intakePurchaseOrder(command: DocumentIntakeCommand) {
+    if (!view?.canEdit || pending || busy) return;
+    setPendingDocumentIntake(command);
+    setBusy(true);
+    setError("");
+    try {
+      const receipt = parseDocumentIntakeReceipt(
+        await requestDocumentIntake({ operation: "intake" }, command),
+      );
+      const revision = parseDocumentIntakeRevision(
+        await requestDocumentIntake({
+          operation: "read",
+          documentId: receipt.documentId,
+          revisionId: receipt.revisionId,
+        }),
+      );
+      setDocumentIntakeReceipt(receipt);
+      setDocumentIntakeRevision(revision);
+      setSourceReviewConfirmed(false);
+      setAcknowledgementReason("");
+      setPendingDocumentConfirmation(null);
+      setPendingDocumentIntake(null);
+    } catch (cause) {
+      if (cause instanceof StaleRequest) return;
+      setError(errorMessage(cause));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function confirmPurchaseOrder() {
+    if (!view?.canEdit || !documentIntakeReceipt || !documentIntakeRevision || busy || pending)
+      return;
+    if (documentIntakeRevision.state !== "DRAFT") return;
+    if (!sourceReviewConfirmed) {
+      setError("請先逐行核對原始檔，再確認 ContractDocument。");
+      return;
+    }
+    const lines = candidateLines(documentIntakeRevision.candidate);
+    const reviewedSourcePages = sourceReviewPages(documentIntakeRevision.candidate);
+    if (
+      lines.length !== documentIntakeRevision.expectedLineCount ||
+      reviewedSourcePages.length === 0
+    ) {
+      setError("候選資料缺少完整行數或來源頁，不能確認。");
+      return;
+    }
+    const command =
+      pendingDocumentConfirmation ??
+      (() => {
+        const financialDiagnostic = documentIntakeRevision.diagnostics.some((item) =>
+          item.includes("MISMATCH"),
+        );
+        if (financialDiagnostic && !acknowledgementReason.trim()) {
+          setError("存在金額差異，請填寫明確的差異確認理由。");
+          return null;
+        }
+        return {
+          action: "confirm",
+          repositoryId: view.repository.id,
+          documentId: documentIntakeRevision.documentId,
+          requestId: crypto.randomUUID(),
+          intentFingerprint: documentIntakeReceipt.intentFingerprint,
+          expectedVersion: documentIntakeRevision.version,
+          expectedLineCount: documentIntakeRevision.expectedLineCount,
+          source: documentIntakeRevision.source,
+          candidate: documentIntakeRevision.candidate,
+          sourceReviewAttestation: {
+            verifiedLineCount: lines.length,
+            reviewedSourcePages,
+            reviewedSourceRowIds: lines.map((line) => line.sourceRowId),
+            confirmedFromOriginal: true,
+          },
+          ...(financialDiagnostic
+            ? { acknowledgement: { reason: acknowledgementReason.trim() } }
+            : {}),
+        };
+      })();
+    if (!command) return;
+    setPendingDocumentConfirmation(command);
+    setBusy(true);
+    setError("");
+    try {
+      const receipt = parseDocumentIntakeReceipt(
+        await requestDocumentIntake(
+          { operation: "contract", documentId: documentIntakeRevision.documentId },
+          command,
+        ),
+      );
+      const revision = parseDocumentIntakeRevision(
+        await requestDocumentIntake({
+          operation: "read",
+          documentId: receipt.documentId,
+          revisionId: receipt.revisionId,
+        }),
+      );
+      setDocumentIntakeReceipt(receipt);
+      setDocumentIntakeRevision(revision);
+      setSourceReviewConfirmed(false);
+      setPendingDocumentConfirmation(null);
+    } catch (cause) {
+      if (cause instanceof StaleRequest) return;
+      setError(errorMessage(cause));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function startPurchaseOrderIntake() {
+    if (!view?.canEdit || !selected || pending || busy) return;
+    const lineCount = Number(expectedLineCount);
+    if (!Number.isSafeInteger(lineCount) || lineCount < 1) {
+      setError("請輸入原始採購單標示的正確行數。");
+      return;
+    }
+    void intakePurchaseOrder({
+      action: "save",
+      repositoryId: view.repository.id,
+      documentId: crypto.randomUUID(),
+      requestId: crypto.randomUUID(),
+      expectedVersion: 0,
+      expectedLineCount: lineCount,
+      source: {
+        fileId: selected.fileId,
+        fileRevisionId: selected.revisionId,
+        fileSha256: selected.sha256,
+      },
+    });
   }
 
   async function retryRun(historical: Processing) {
@@ -722,7 +1002,7 @@ export default function FilesPanel({
         aria-label="File 處理步驟"
         className="col-span-full grid gap-2 rounded-lg border p-3 text-sm sm:grid-cols-4"
       >
-        {["上傳原始檔", "選擇解析方式", "預覽與修正", "儲存結果"].map((title, index) => (
+        {["上傳原始檔", "固定處理", "預覽與修正", "儲存結果"].map((title, index) => (
           <li
             key={title}
             aria-current={index + 1 === currentStep ? "step" : undefined}
@@ -852,9 +1132,7 @@ export default function FilesPanel({
       <Card>
         <CardHeader>
           <CardTitle>{selected ? selected.name : "選擇 File"}</CardTitle>
-          <CardDescription>
-            手動選擇 Processor → Run → Preview → Edit / Discard / Save。
-          </CardDescription>
+          <CardDescription>原始檔保存、固定採購單解析，或一般檔案預覽。</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3">
           {busy && <p role="status">File 操作中…</p>}
@@ -905,28 +1183,126 @@ export default function FilesPanel({
               )}
               {view?.canEdit && (
                 <>
-                  <Label htmlFor="file-processor">選擇解析方式</Label>
-                  <NativeSelect
-                    id="file-processor"
-                    value={selectedProcessor}
-                    disabled={busy || !!pending}
-                    onChange={(event) => setSelectedProcessor(event.target.value)}
-                  >
-                    <NativeSelectOption value="">請選擇支援的解析方式</NativeSelectOption>
-                    {processors.map((processor) => (
-                      <NativeSelectOption key={processor.id} value={processor.id}>
-                        {processor.kind.toUpperCase()} · {processor.id}
-                      </NativeSelectOption>
-                    ))}
-                  </NativeSelect>
                   {processors.length === 0 && (
                     <p className="text-sm text-muted-foreground">
                       此格式目前只有原始檔保存功能，尚無可用的 Processor。
                     </p>
                   )}
-                  <Button disabled={!selectedProcessor || busy || !!pending} onClick={() => run()}>
-                    開始解析（只執行選定方法）
-                  </Button>
+                  {processors.length > 0 && (
+                    <Button disabled={busy || !!pending} onClick={() => run()}>
+                      開始一般檔案預覽
+                    </Button>
+                  )}
+                  <div className="grid gap-2 rounded-md border p-3">
+                    <div>
+                      <Label htmlFor="document-line-count">採購單來源行數</Label>
+                      <p className="text-xs text-muted-foreground">
+                        系統會固定使用 ContractDocument 結構化解析；行數只作為完整性核對輸入。
+                      </p>
+                    </div>
+                    <Input
+                      id="document-line-count"
+                      inputMode="numeric"
+                      min={1}
+                      placeholder="例如 54"
+                      value={expectedLineCount}
+                      disabled={busy || !!pending}
+                      onChange={(event) => setExpectedLineCount(event.target.value)}
+                    />
+                    <Button
+                      disabled={busy || !!pending || !expectedLineCount}
+                      onClick={() => startPurchaseOrderIntake()}
+                    >
+                      解析採購單並建立待審草稿
+                    </Button>
+                    {pendingDocumentIntake && (
+                      <Button
+                        variant="outline"
+                        disabled={busy || !!pending}
+                        onClick={() => void intakePurchaseOrder(pendingDocumentIntake)}
+                      >
+                        重試原採購單命令
+                      </Button>
+                    )}
+                    {documentIntakeReceipt && (
+                      <p className="text-xs text-muted-foreground">
+                        草稿已保存：Revision v{documentIntakeReceipt.version}
+                        ，下方可直接檢視並確認。
+                      </p>
+                    )}
+                  </div>
+                  {documentIntakeRevision && (
+                    <div className="grid gap-3 rounded-md border p-3">
+                      <div>
+                        <p className="font-medium">ContractDocument Review</p>
+                        <p className="text-xs text-muted-foreground">
+                          {documentIntakeRevision.state === "CONFIRMED"
+                            ? "此版本已由 Contract 明確確認。"
+                            : `候選 v${documentIntakeRevision.version} · ${candidateLines(documentIntakeRevision.candidate).length} 行 · 預期 ${documentIntakeRevision.expectedLineCount} 行`}
+                        </p>
+                      </div>
+                      {documentIntakeRevision.diagnostics.length > 0 && (
+                        <p className="text-sm text-destructive">
+                          診斷：{documentIntakeRevision.diagnostics.join("、")}
+                        </p>
+                      )}
+                      <div className="grid gap-2">
+                        {candidateLines(documentIntakeRevision.candidate).map((line) => (
+                          <div key={line.sourceRowId} className="rounded border p-2 text-sm">
+                            <p>
+                              {line.sourceRowId} · {line.description ?? "未提供品項描述"}
+                            </p>
+                            <p className="text-muted-foreground">
+                              {line.quantity ?? "—"} {line.unit ?? ""} · 毛額{" "}
+                              {line.grossAmount ?? "—"} · 來源頁{" "}
+                              {line.sourcePages.join(", ") || "—"}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                      {documentIntakeRevision.state === "DRAFT" && (
+                        <>
+                          <label className="flex items-start gap-2 text-sm">
+                            <input
+                              type="checkbox"
+                              checked={sourceReviewConfirmed}
+                              disabled={busy || !!pending}
+                              onChange={(event) => setSourceReviewConfirmed(event.target.checked)}
+                            />
+                            <span>
+                              我已逐行對照原始檔、來源頁與金額，確認以上候選資料可送出 Contract
+                              確認。
+                            </span>
+                          </label>
+                          {documentIntakeRevision.diagnostics.some((item) =>
+                            item.includes("MISMATCH"),
+                          ) && (
+                            <Input
+                              placeholder="金額差異確認理由"
+                              value={acknowledgementReason}
+                              disabled={busy || !!pending}
+                              onChange={(event) => setAcknowledgementReason(event.target.value)}
+                            />
+                          )}
+                          <Button
+                            disabled={busy || !!pending || !sourceReviewConfirmed}
+                            onClick={() => void confirmPurchaseOrder()}
+                          >
+                            確認 ContractDocument
+                          </Button>
+                          {pendingDocumentConfirmation && (
+                            <Button
+                              variant="outline"
+                              disabled={busy || !!pending}
+                              onClick={() => void confirmPurchaseOrder()}
+                            >
+                              重試原確認命令
+                            </Button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
                 </>
               )}
               <div className="grid gap-2">
