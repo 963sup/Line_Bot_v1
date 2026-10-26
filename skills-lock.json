@@ -35,7 +35,7 @@
       "source": "mattpocock/skills",
       "sourceType": "github",
       "skillPath": "skills/engineering/codebase-design/SKILL.md",
-      "computedHash": "fb1d8ab98ad151551eeade003e3ae55a46578a380fd9fc3ed4dbf9c2fbce0a9f"
+      "computedHash": "b2888e4f4e8c0af3bfd557575a64b905c44e6248c3101d72077816882b3a92b9"
     },
     "create-github-action-workflow-specification": {
       "source": "github/awesome-copilot",
@@ -149,7 +149,7 @@
       "source": "anthropics/skills",
       "sourceType": "github",
       "skillPath": "skills/frontend-design/SKILL.md",
-      "computedHash": "106acf230014cbb43ca34e6410371321b56ca742f9ee0442e8ec05bf02eb0384"
+      "computedHash": "89496d5dd00f4810205f351759594fc2742bf8eea85a2f2b2d1de59f4bd91576"
     },
     "github-actions": {
       "source": "callstackincubator/agent-skills",
@@ -168,6 +168,12 @@
       "sourceType": "github",
       "skillPath": "skills/github-issues/SKILL.md",
       "computedHash": "7c576643e9d3c622f18526a5554e8533410049dfc77e9bb10328081c4ea53d8c"
+    },
+    "improve-codebase-architecture": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/improve-codebase-architecture/SKILL.md",
+      "computedHash": "ac2c94885f34ff8492dc12aa4543182f661f32ea1722b8d6b6c2c7045af33ae3"
     },
     "learning-from-outcomes": {
       "source": "romainsimon/skills-for-decision-making",
@@ -325,6 +331,12 @@
       "skillPath": "skills/engineering/resolving-merge-conflicts/SKILL.md",
       "computedHash": "436698459190d8e9f03dc32ada08401b56e352fb6a19bf71a2227fad8b80d98f"
     },
+    "security-and-hardening": {
+      "source": "addyosmani/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/security-and-hardening/SKILL.md",
+      "computedHash": "32a1243d6eb45fd342c1f4e9f9ee5f1651a1e9fdccb86dcbbbee5d6f455ed362"
+    },
     "shadcn": {
       "source": "vercel/vercel-plugin",
       "sourceType": "github",
@@ -366,6 +378,12 @@
       "sourceType": "github",
       "skillPath": "plugins/supply-chain-risk-auditor/skills/supply-chain-risk-auditor/SKILL.md",
       "computedHash": "e6d82cea342371dfd421021d6ef97e6cf498c12fca0430d75c350f07d7405570"
+    },
+    "systematic-debugging": {
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "skillPath": "skills/systematic-debugging/SKILL.md",
+      "computedHash": "276fb0aadb002ab930cc2a56de89e16995a2e3e70b33587652bf0a5fb123148d"
     },
     "tdd": {
       "source": "mattpocock/skills",
