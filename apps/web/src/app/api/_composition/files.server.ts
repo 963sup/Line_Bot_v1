@@ -3,6 +3,7 @@ import { createPostgresFileDependencies } from "@line_bot_v1/file/composition/bo
 import { createPostgresIntelligenceProcessing } from "@line_bot_v1/intelligence/composition/bootstrap/processing";
 import { plainTextProcessor } from "@line_bot_v1/intelligence/composition/bootstrap/processors";
 import { createVercelAiGateway } from "../../../../../../vercel/integrations/gateway.ts";
+import { gatewayConfiguration } from "../../../../../../vercel/integrations/gateway-config.ts";
 import type { FilesWebRuntime } from "../../../modules/file/files-http.server";
 import { repositoryOwnerScope } from "./repository-owner-scope.server";
 
@@ -14,9 +15,8 @@ export const files: FilesWebRuntime = {
   owner: () => createFiles({ ...fileDependencies(), now: Date.now }),
   processors: () => {
     const processors = [plainTextProcessor];
-    const model = process.env.AI_GATEWAY_MODEL;
-    const hasCredentials = Boolean(process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN);
-    if (model && hasCredentials) processors.push(createVercelAiGateway({ model }).fileProcessor());
+    const gateway = gatewayConfiguration();
+    if (gateway) processors.push(createVercelAiGateway(gateway).fileProcessor());
     return processors;
   },
   processingOwner: () => createPostgresIntelligenceProcessing(),
