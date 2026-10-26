@@ -28,7 +28,7 @@ Current manual data-cutover recovery gate預設使用 provider API machine-read 
 
 ## Release evidence horizon
 
-Release／recovery operations owns this evidence contract. Schema reconciliation、Storage publication 與 identifier activation artifacts 在 [Release workflow](../../../.github/workflows/release.yml) 維持 `retention-days: 7`：這是原始發布證據的設定保存時間窗，不是 business receipts、provider logs 或 backup 的保存期限，也不保證 artifact 未被提前刪除。每次取證仍須讀回 artifact 的實際 expiry、availability 與內容；七天內缺失與到期後缺失採相同的 fail-closed 處置。
+Release／recovery operations owns this evidence contract. Provider workflows retain their own run artifacts and readbacks according to their configured retention window; this is not a business receipt, provider log or backup retention guarantee. 每次取證仍須讀回 artifact 的實際 expiry、availability 與內容；證據缺失採 fail-closed 處置。
 
 先固定 exact source SHA、run ID／attempt、owner job 與 target；需要 artifact 時記錄其 ID、digest、建立／到期時間，核對內容的 target、revision、plan hash 與 result。Job conclusion 只證明 orchestration；可取得的同次 job logs／provider records 可證明其中明確記錄的操作或 readback，不能由 success 補出未保存的 facts。Artifact digest 驗證整包 bytes，不取代包內 plan hash。Skipped／已驗證 no-op 與遺失證據不同：記錄未執行原因，不要求不存在的 mutation plan，也不將 skipped 當成 provider 已收斂。
 
@@ -37,7 +37,7 @@ Release／recovery operations owns this evidence contract. Schema reconciliation
 | Schema 已變更、Web 未就緒 | Schema/job 的 exact SHA、attempt、實際 plan／hash、所需 before／after 與 post-write verification；Web deployment ID、SHA、target、結果與適用 alias readback | `pnpm schema:remote plan`／`verify` 與 Vercel read-only list／inspect；目前 catalog／deployment 不能重建先前 state 或證明舊 runtime 相容。 |
 | Identifier activation fail／unknown | Exact SHA／attempt、是否執行 activation、執行的 SQL 或 verified no-op、migration history comparison、scoped-identifier readiness readback | `pnpm schema:remote verify`；目前 marker／readiness 不能回填舊 attempt 的 intermediate outcome。 |
 | Storage publication fail／unknown | Exact SHA／attempt、該 SHA 的 desired config、實際 write 或 no-op 結果、`storage-bucket-readback.json` 或同次等價 provider evidence；未保存的 preflight 明示 unknown | `pnpm storage:remote plan`／`verify`；目前一致不能證明舊 write 是否發生。 |
-| Rerun／forward-fix | 新舊 SHA／run／attempt、各 owner 操作與上述適用 evidence；分開保留 failed／unknown 與新結果 | `pnpm github:release-plan --sha <sha>` 加受影響 provider 的唯讀查證；planner 的成功 ancestor 不是歷史 artifact 保證，重跑成功不改寫舊 attempt。 |
+| Rerun／forward-fix | 新舊 SHA／run／attempt、各 owner 操作與上述適用 evidence；分開保留 failed／unknown 與新結果 | 讀取對應 GitHub workflow run 與受影響 provider 的唯讀查證；目前 readback 不能重建舊 attempt 的 intermediate outcome。 |
 
 Evidence 是否充分由要採取的 recovery action 決定，不能用另一種 evidence 冒充缺少的 facts。到期或缺失時先列出「已證實／未知／不適用」，保留仍可驗證的 logs／records，再取得有新查詢時間的 current readback。Current convergence 只證明目前狀態；需要歷史 before／after、plan 或 outcome 卻無法取得時，該歷史問題保持 unknown，禁止推定成功，以及禁止依賴該假設執行 rollback、重播或解凍。Forward-fix 必須依 current facts、既有授權與 validated current-main Release 契約重新證明安全性；缺少必要證據時保持停止。涉及 backup 能力時另用 `pnpm schema:remote recovery` 查證，不以 artifact 代替 backup。
 

@@ -11,3 +11,5 @@ export type RichMenuDefinition = {
       | { type: "richmenuswitch"; label: string; richMenuAliasId: string; data: string };
   }>;
 };
+
+export type RichMenuSummary = { richMenuId: string; name: string };

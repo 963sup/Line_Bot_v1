@@ -1,0 +1,43 @@
+name: Rich Menu Preview
+
+on:
+  pull_request:
+    paths:
+      - assets/line/rich-menu/**
+      - apps/web/src/modules/assistant/rich-menu/**
+      - apps/web/test/rich-menu-*.test.ts
+      - packages/line/src/rich-menu/**
+      - packages/line/src/mini-app/**
+      - packages/line/package.json
+      - packages/attendance/src/domain/value-objects/attendance-action.ts
+      - apps/web/src/shared/presentation/entry-route.ts
+      - packages/line/test/rich-menu.test.ts
+      - scripts/providers/line-rich-menu.ts
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - .github/workflows/rich-menu-preview.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+      - uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+          cache: true
+          cache_dependency_path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile --prefer-offline
+      - run: pnpm --filter @line_bot_v1/line build
+      - run: pnpm line:rich-menu preview all
+      - run: pnpm --filter @line_bot_v1/line exec node --import tsx --test test/rich-menu.test.ts
+      - run: pnpm --filter @line_bot_v1/web exec node --import tsx --test test/rich-menu-desired-state.test.ts test/rich-menu-publication.test.ts test/rich-menu-user.test.ts

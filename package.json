@@ -18,6 +18,7 @@
     "schema:check": "turbo run schema:check",
     "provider:supabase": "tsx scripts/providers/supabase.ts",
     "provider:vercel": "tsx scripts/providers/vercel.ts",
+    "line:rich-menu": "tsx scripts/providers/line-rich-menu.ts",
     "supabase:stop": "pnpm exec supabase stop --no-backup",
     "start": "pnpm --filter @line_bot_v1/web start"
   },

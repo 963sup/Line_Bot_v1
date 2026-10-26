@@ -43,10 +43,10 @@ LINE Rich Menu provider capability
 → packages/line
 
 Rich Menu repository operations
-→ scripts/providers/line/rich-menu
+→ `pnpm line:rich-menu` at repository root
 
 Release orchestration
-→ .github/workflows/release.yml
+→ `.github/workflows/rich-menu-release.yml`
 
 Business behavior / data
 → actual owning package / schema

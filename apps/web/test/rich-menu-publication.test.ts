@@ -5,6 +5,7 @@ import {
   activateRichMenuBatch,
   createRichMenuBatch,
   publishRichMenuBatch,
+  publishRichMenuChanges,
   type RichMenuPublicationConfig,
 } from "../src/modules/assistant/rich-menu/publication.server";
 
@@ -17,6 +18,7 @@ function publicationClient(overrides: Partial<PublicationClient>): PublicationCl
     upload: async () => new Response(null, { status: 200 }),
     get: async () => ({}),
     delete: async () => new Response(null, { status: 200 }),
+    list: async () => [],
     getAlias: async () => null,
     createAlias: async () => {},
     updateAlias: async () => {},
@@ -38,6 +40,9 @@ const config = (page: RichMenuPublicationConfig["page"]): RichMenuPublicationCon
   page,
   image: `assets/${page}.jpg`,
   upload: new Uint8Array([1, 2, 3]),
+  fingerprint: page,
+  assetSha256: page,
+  definitionSha256: page,
   menu: {
     size: { width: 800, height: 250 },
     selected: true,
@@ -45,6 +50,54 @@ const config = (page: RichMenuPublicationConfig["page"]): RichMenuPublicationCon
     chatBarText: page,
     areas: [],
   },
+});
+
+test("publishes only changed menus and preserves the current default", async () => {
+  const forms = config("forms");
+  const aliases = new Map([["line_bot_v1-forms", "richmenu-old0abcd"]]);
+  let defaultId: string | null = "richmenu-default0";
+  const client = publicationClient({
+    create: async () => ({ richMenuId: "richmenu-new0abcd" }),
+    get: async () => forms.menu,
+    getAlias: async (alias: string) => aliases.get(alias) ?? null,
+    updateAlias: async (alias: string, id: string) => {
+      aliases.set(alias, id);
+    },
+    getDefault: async () => defaultId,
+    activate: async (id: string) => {
+      defaultId = id;
+      return new Response(null, { status: 200 });
+    },
+  });
+  const result = await publishRichMenuChanges(client, [forms]);
+  assert.deepEqual(result.published, ["forms"]);
+  assert.equal(aliases.get("line_bot_v1-forms"), "richmenu-new0abcd");
+  assert.equal(defaultId, "richmenu-default0");
+});
+
+test("changed-menu publication restores default after an activation failure", async () => {
+  const home = config("attendance-in");
+  const aliases = new Map([["line_bot_v1-attendance-in", "richmenu-old0abcd"]]);
+  let defaultId: string | null = "richmenu-old0abcd";
+  let activationAttempts = 0;
+  const client = publicationClient({
+    create: async () => ({ richMenuId: "richmenu-new0abcd" }),
+    get: async () => home.menu,
+    getAlias: async (alias: string) => aliases.get(alias) ?? null,
+    updateAlias: async (alias: string, id: string) => {
+      aliases.set(alias, id);
+    },
+    activate: async (id: string) => {
+      defaultId = id;
+      activationAttempts++;
+      if (activationAttempts === 1) throw new Error("synthetic activation failure");
+      return new Response(null, { status: 200 });
+    },
+    getDefault: async () => defaultId,
+  });
+  await assert.rejects(publishRichMenuChanges(client, [home]), /synthetic activation failure/);
+  assert.equal(defaultId, "richmenu-old0abcd");
+  assert.equal(aliases.get("line_bot_v1-attendance-in"), "richmenu-old0abcd");
 });
 
 test("all six aliases survive publication and submenu targets activate before main entries", async () => {

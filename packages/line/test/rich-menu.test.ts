@@ -40,6 +40,7 @@ test("rich menu client keeps its existing public method surface", () => {
     "upload",
     "get",
     "delete",
+    "list",
     "getAlias",
     "createAlias",
     "updateAlias",
@@ -98,6 +99,22 @@ test("default absence is distinct from API failure; no retry or error-body expos
   const missing = createRichMenuClient("test", async () => new Response(null, { status: 404 }));
   assert.equal(await missing.getDefault(), null);
   assert.throws(() => client.activate("../bad"), /Invalid/);
+});
+
+test("lists remote menu summaries with validated IDs", async () => {
+  const requests: Request[] = [];
+  const client = createRichMenuClient("test", async (input, init) => {
+    const request = new Request(input, init);
+    requests.push(request);
+    return Response.json({
+      richmenus: [{ richMenuId: "richmenu-0123abcd", name: "Line_Bot_v1-forms/rm-0123456789ab" }],
+    });
+  });
+  assert.deepEqual(await client.list(), [
+    { richMenuId: "richmenu-0123abcd", name: "Line_Bot_v1-forms/rm-0123456789ab" },
+  ]);
+  assert.equal(requests[0]?.method, "GET");
+  assert.equal(requests[0]?.url, "https://api.line.me/v2/bot/richmenu/list");
 });
 
 test("linking a user validates both identifiers and sends one official request", async () => {
