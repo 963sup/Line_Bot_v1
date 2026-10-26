@@ -5,6 +5,7 @@ Database current-state SSOT 是 `packages/integration-supabase/src/schemas/*.sql
 | Script | 用途 |
 | --- | --- |
 | `schema-source.mjs` | 依 canonical lexical order 讀取/組合 `packages/integration-supabase/src/schemas/*.sql` declarative source。 |
+| `cli-adapter.mjs` | 共用 Supabase CLI subprocess、bounded output、secret redaction 與 exit-status handling；不承擔 schema/storage 規則。 |
 | `schema-source.test.mjs` | 驗證 schema source discovery、ordering 與 current-state contract。 |
 | `postgres.mjs` | Bounded PostgreSQL execution helper，區分 local/remote failure semantics。 |
 | `postgres.test.mjs` | 驗證 PostgreSQL adapter target、timeout/error handling。 |

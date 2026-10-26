@@ -1,12 +1,10 @@
-import { spawnSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { createRequire } from "node:module";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { runSupabaseCli } from "./cli-adapter.mjs";
 import { executeSql } from "./postgres.mjs";
 import { declaredSchemaSql } from "./schema-source.mjs";
 
 const root = new URL("../../", import.meta.url);
-const cli = createRequire(import.meta.url).resolve("supabase/dist/supabase.js");
 
 export const localDatabaseCommands = {
   start: ["db", "start"],
@@ -18,20 +16,7 @@ export function localSchemaCommands() {
   return Object.values(localDatabaseCommands);
 }
 
-function run(args, { capture = false } = {}) {
-  const result = spawnSync(process.execPath, [cli, ...args], {
-    cwd: fileURLToPath(root),
-    encoding: "utf8",
-    maxBuffer: 64 * 1024,
-    stdio: ["ignore", "pipe", "pipe"],
-  });
-  if (result.error) throw result.error;
-  if (result.status !== 0) {
-    const detail = capture ? `${result.stderr || result.stdout}`.trim() : "";
-    throw new Error(`supabase ${args.join(" ")} failed${detail ? `: ${detail}` : ""}`);
-  }
-  return capture ? result.stdout : "";
-}
+const run = (args, options) => runSupabaseCli(args, { ...options, cwd: fileURLToPath(root) });
 
 function localDatabaseUrl() {
   const status = JSON.parse(run(localDatabaseCommands.status, { capture: true }));

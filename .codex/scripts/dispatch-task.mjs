@@ -137,16 +137,38 @@ function validateHandoff(handoff) {
   }
 }
 
-function runExecutor(cli, args, artifactPath) {
+function dispatchTimeoutMs() {
+  const raw = process.env.CODEX_DISPATCH_TIMEOUT_MS ?? "1800000";
+  const value = Number(raw);
+  if (!Number.isSafeInteger(value) || value < 60_000 || value > 7_200_000) {
+    throw new Error("CODEX_DISPATCH_TIMEOUT_MS must be an integer from 60000 to 7200000");
+  }
+  return value;
+}
+
+function runExecutor(cli, args, artifactPath, timeoutMs) {
   return new Promise((resolve, reject) => {
     const artifact = createWriteStream(artifactPath, { flags: "w" });
     const child = spawn(cli, args, { stdio: ["ignore", "pipe", "pipe"], windowsHide: true });
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      child.kill();
+      settled = true;
+      artifact.end(() => resolve({ status: 124, timedOut: true }));
+    }, timeoutMs);
     child.stdout.pipe(artifact, { end: false });
     child.stderr.pipe(artifact, { end: false });
     child.on("error", (error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
       artifact.end(() => reject(error));
     });
     child.on("close", (status) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
       artifact.end(() => resolve({ status }));
     });
   });
@@ -186,10 +208,12 @@ async function main() {
   ].join("\n");
   const cli = process.env.CODEX_CLI || "codex";
   const handoffPath = resolve(outputRoot, `${stamp}.handoff.json`);
+  const timeoutMs = dispatchTimeoutMs();
   const result = await runExecutor(
     cli,
     ["exec", "--json", "-o", handoffPath, "--sandbox", "read-only", "-C", root, prompt],
     artifactPath,
+    timeoutMs,
   );
   let handoff = null;
   let handoffError = null;
@@ -210,9 +234,14 @@ async function main() {
     artifactPath,
     handoffPath: existsSync(handoffPath) ? handoffPath : null,
     handoffError,
+    timedOut: result.timedOut ?? false,
+    timeoutMs,
   };
   console.log(JSON.stringify(receipt));
-  if (result.status !== 0 || handoffError || handoff.status !== "complete") process.exitCode = result.status || 2;
+  // `needs-decision` and `blocked` are valid handoff outcomes. Keep them in
+  // the structured receipt for the caller instead of turning a deliberate
+  // stop condition into a child-process failure that interrupts orchestration.
+  if (result.status !== 0 || handoffError) process.exitCode = result.status || 2;
 }
 
 main().catch((error) => {

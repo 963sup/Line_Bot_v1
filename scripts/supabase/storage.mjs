@@ -1,9 +1,8 @@
-import { spawnSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { createRequire } from "node:module";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { parse } from "smol-toml";
 import { requireCurrentMain } from "../github/current-main.mjs";
+import { runSupabaseCli } from "./cli-adapter.mjs";
 import { withPostgres } from "./postgres.mjs";
 import { assertValidatedMainMutationContext } from "./remote-authorization.mjs";
 import { assertConfirmedProject, assertRemoteTarget } from "./remote-target.mjs";
@@ -11,7 +10,6 @@ import { assertConfirmedProject, assertRemoteTarget } from "./remote-target.mjs"
 const root = new URL("../../", import.meta.url);
 const bucketConfig = new URL("packages/integration-supabase/src/config.toml", root);
 const linkedProjectFile = new URL("packages/integration-supabase/src/.temp/project-ref", root);
-const cli = createRequire(import.meta.url).resolve("supabase/dist/supabase.js");
 const freeMaxObjectBytes = 50_000_000;
 
 function sizeInBytes(value) {
@@ -99,16 +97,12 @@ async function readBucket(postgresUrl, id) {
   });
 }
 
-function runSupabaseCli(args) {
-  const result = spawnSync(process.execPath, [cli, ...args], {
+function runStorageCli(args) {
+  return runSupabaseCli(args, {
     cwd: fileURLToPath(root),
-    env: process.env,
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "pipe"],
     timeout: 120_000,
+    failureMessage: "Supabase CLI Bucket operation failed; provider readback is required.",
   });
-  if (result.error || result.status !== 0)
-    throw new Error("Supabase CLI Bucket operation failed; provider readback is required.");
 }
 
 async function main() {
@@ -149,12 +143,12 @@ async function main() {
     read,
     currentMain,
     link: async () => {
-      runSupabaseCli(["link", "--project-ref", projectRef]);
+      runStorageCli(["link", "--project-ref", projectRef]);
       const linked = readFileSync(linkedProjectFile, "utf8").trim();
       if (linked !== projectRef)
         throw new Error("Supabase CLI link target does not match the confirmed project.");
     },
-    seed: () => runSupabaseCli(["seed", "buckets", "--linked"]),
+    seed: () => runStorageCli(["seed", "buckets", "--linked"]),
   });
   const evidence = { ...result, projectRef, id: desired.id, size: desired.size, private: true };
   const directory = new URL(".artifacts/supabase-remote/", root);

@@ -1,9 +1,8 @@
-import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { createRequire } from "node:module";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { loadRootEnv } from "../runtime/load-env.mjs";
+import { runSupabaseCli } from "./cli-adapter.mjs";
 import {
   assertIdentifierAuthorityCounts,
   assertIdentifierAuthorityMarker,
@@ -31,7 +30,6 @@ import { declaredSchemaSql, schemaFileNames } from "./schema-source.mjs";
 
 const root = new URL("../../", import.meta.url);
 const artifacts = new URL(".artifacts/supabase-remote/", root);
-const cli = createRequire(import.meta.url).resolve("supabase/dist/supabase.js");
 const foundationSql = readFileSync(
   new URL("packages/integration-supabase/src/schemas/000_foundation.sql", root),
   "utf8",
@@ -369,27 +367,13 @@ export function classifyRemoteFoundationState({ appPrivateExists, lineAppExists 
   return "repairable";
 }
 
-function redact(value, secrets) {
-  let result = value;
-  for (const secret of secrets) if (secret) result = result.replaceAll(secret, "<redacted>");
-  return result;
-}
-
 function run(args, { capture = false, secrets = [] } = {}) {
-  const result = spawnSync(process.execPath, [cli, ...args], {
+  return runSupabaseCli(args, {
+    capture,
     cwd: fileURLToPath(root),
-    encoding: "utf8",
-    maxBuffer: 64 * 1024,
-    stdio: ["ignore", "pipe", "pipe"],
     env: process.env,
+    secrets,
   });
-  if (result.error) throw result.error;
-  if (result.status !== 0) {
-    const safeArgs = args.map((arg) => redact(arg, secrets));
-    const detail = capture ? redact(`${result.stderr || result.stdout}`.trim(), secrets) : "";
-    throw new Error(`supabase ${safeArgs.join(" ")} failed${detail ? `: ${detail}` : ""}`);
-  }
-  return capture ? result.stdout : "";
 }
 
 let remoteConfig;
