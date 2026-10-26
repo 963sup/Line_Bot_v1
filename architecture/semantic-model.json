@@ -3333,6 +3333,24 @@
       "integrationMode": "query",
       "authority": "platform",
       "consistency": "transaction-bound"
+    },
+    {
+      "id": "supabase-file-storage-client",
+      "provider": "supabase-integration",
+      "consumer": "file",
+      "meaning": "File adapter uses the server-only Supabase Storage transport client; File retains object keys, SHA-256 verification, errors, writes and readback consistency.",
+      "integrationMode": "reference",
+      "authority": "file",
+      "consistency": "per-operation-verified"
+    },
+    {
+      "id": "intelligence-vercel-processor-port",
+      "provider": "intelligence",
+      "consumer": "vercel-integration",
+      "meaning": "Vercel processor adapter implements the public IntelligenceProcessor contract. Intelligence owns the processing lifecycle, evidence and Contract intake; no target business facts transfer.",
+      "integrationMode": "reference",
+      "authority": "intelligence",
+      "consistency": "injected-at-composition"
     }
   ],
   "capabilities": [
@@ -7258,6 +7276,14 @@
     {
       "semanticOwner": "file",
       "module": "@line_bot_v1/file"
+    },
+    {
+      "semanticOwner": "vercel-integration",
+      "module": "@line_bot_v1/integration-vercel"
+    },
+    {
+      "semanticOwner": "supabase-integration",
+      "module": "@line_bot_v1/integration-supabase"
     }
   ],
   "policies": [
