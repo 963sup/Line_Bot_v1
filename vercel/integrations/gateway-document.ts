@@ -4,8 +4,6 @@ import { IntelligenceError } from "@line_bot_v1/intelligence/domain/error";
 
 const mediaTypes = new Set(["application/pdf", "image/png", "image/jpeg", "image/webp"]);
 
-
-
 // Provider-level structure only. Intelligence and Contract retain business validation.
 const observationsSchema = jsonSchema<{
   documentKind: string;
