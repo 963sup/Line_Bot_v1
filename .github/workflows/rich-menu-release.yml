@@ -46,7 +46,7 @@ jobs:
           cache: true
           cache_dependency_path: pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile --prefer-offline
-      - run: pnpm --filter @line_bot_v1/line build
+      - run: pnpm turbo run build --filter=@line_bot_v1/attendance...
       - run: pnpm line:rich-menu preview all
       - name: Reconcile LINE Rich Menu
         env:
