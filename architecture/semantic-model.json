@@ -258,6 +258,18 @@
       "kind": "business-owner",
       "lifecycle": "current",
       "doc": "docs/owners/file.md"
+    },
+    {
+      "id": "vercel-integration",
+      "kind": "integration-owner",
+      "lifecycle": "current",
+      "doc": "docs/owners/vercel-integration.md"
+    },
+    {
+      "id": "supabase-integration",
+      "kind": "integration-owner",
+      "lifecycle": "current",
+      "doc": "docs/owners/supabase-integration.md"
     }
   ],
   "subdomains": [
@@ -292,7 +304,11 @@
     {
       "id": "organization-governance",
       "classification": "supporting",
-      "owners": ["enterprise", "organization", "team"],
+      "owners": [
+        "enterprise",
+        "organization",
+        "team"
+      ],
       "rationale": "企業、組織與團隊的治理及參與資格支援協作；直接沿用 GitHub 模型，不因共同上層 scope 合併 owner。",
       "sources": [
         "docs/reference/architecture/strategic-design.md",
@@ -304,7 +320,12 @@
     {
       "id": "participation-incentives",
       "classification": "supporting",
-      "owners": ["daily-check-in", "asset", "wallet", "ledger"],
+      "owners": [
+        "daily-check-in",
+        "asset",
+        "wallet",
+        "ledger"
+      ],
       "rationale": "簽到與獎勵支援協作參與；獎勵政策、資產定義、持有量與不可變價值紀錄保留既有責任與一致性邊界，不再宣稱獎勵是核心競爭定位。",
       "sources": [
         "docs/reference/architecture/strategic-design.md",
@@ -317,7 +338,12 @@
     {
       "id": "workforce-operations",
       "classification": "supporting",
-      "owners": ["workforce", "attendance", "payroll", "expense"],
+      "owners": [
+        "workforce",
+        "attendance",
+        "payroll",
+        "expense"
+      ],
       "rationale": "出勤、人力與支出資料支援企業協作營運；分類不啟用尚未實作的排班、薪資、審批或付款能力。",
       "sources": [
         "docs/reference/architecture/strategic-design.md",
@@ -330,14 +356,24 @@
     {
       "id": "partner-network",
       "classification": "supporting",
-      "owners": ["partner-directory"],
+      "owners": [
+        "partner-directory"
+      ],
       "rationale": "合作夥伴名錄與推薦流程支援企業協作，不取得 Team participation 或 Repository access authority。",
-      "sources": ["docs/reference/architecture/strategic-design.md", "docs/owners/partners.md"]
+      "sources": [
+        "docs/reference/architecture/strategic-design.md",
+        "docs/owners/partners.md"
+      ]
     },
     {
       "id": "identity-and-access",
       "classification": "generic",
-      "owners": ["account", "namespace", "numbering", "identity-access"],
+      "owners": [
+        "account",
+        "namespace",
+        "numbering",
+        "identity-access"
+      ],
       "rationale": "主體身分、名稱解析、範圍序列與存取控制是普遍存在的業務能力，採成熟模型而非作為產品差異化；分類不合併 User lifecycle、qualification、resource lifecycle、membership 與 permission。",
       "sources": [
         "docs/reference/architecture/strategic-design.md",
@@ -350,7 +386,10 @@
     {
       "id": "notification-and-audit",
       "classification": "generic",
-      "owners": ["notifications", "audit"],
+      "owners": [
+        "notifications",
+        "audit"
+      ],
       "rationale": "通知、投遞與治理證據查閱是共通業務需求；來源事實與授權仍由原 owner 決定，不因通用分類轉移資料 authority。",
       "sources": [
         "docs/reference/architecture/strategic-design.md",
@@ -361,9 +400,13 @@
     {
       "id": "file-management",
       "classification": "supporting",
-      "owners": ["file"],
+      "owners": [
+        "file"
+      ],
       "rationale": "Upload/List and authorized immutable source reads are supporting capabilities. Intelligence processing never follows Upload automatically and does not import itself.",
-      "sources": ["docs/owners/file.md"]
+      "sources": [
+        "docs/owners/file.md"
+      ]
     }
   ],
   "boundedContexts": [
@@ -392,9 +435,15 @@
       "owner": "account",
       "status": "strong-candidate",
       "evidence": {
-        "ownerContracts": ["docs/owners/account.md"],
-        "sourcePaths": ["packages/account/src/domain/user.ts"],
-        "testPaths": ["packages/account/test/user.test.ts"],
+        "ownerContracts": [
+          "docs/owners/account.md"
+        ],
+        "sourcePaths": [
+          "packages/account/src/domain/user.ts"
+        ],
+        "testPaths": [
+          "packages/account/test/user.test.ts"
+        ],
         "rationale": "User lifecycle 與 qualification 有獨立模型和測試；與 Organization membership、Namespace login 與獎勵 owner 分開。這證明責任邊界，不自動完成 context 選定。"
       }
     },
@@ -403,8 +452,12 @@
       "owner": "attendance",
       "status": "strong-candidate",
       "evidence": {
-        "ownerContracts": ["docs/owners/attendance.md"],
-        "sourcePaths": ["packages/attendance/src/domain/aggregates/attendance-session.ts"],
+        "ownerContracts": [
+          "docs/owners/attendance.md"
+        ],
+        "sourcePaths": [
+          "packages/attendance/src/domain/aggregates/attendance-session.ts"
+        ],
         "testPaths": [
           "packages/attendance/test/attendance.test.ts",
           "packages/attendance/test/repository-attendance.test.ts"
@@ -417,8 +470,12 @@
       "owner": "expense",
       "status": "strong-candidate",
       "evidence": {
-        "ownerContracts": ["docs/owners/expense.md"],
-        "sourcePaths": ["packages/expense/src/domain/aggregates/expense.ts"],
+        "ownerContracts": [
+          "docs/owners/expense.md"
+        ],
+        "sourcePaths": [
+          "packages/expense/src/domain/aggregates/expense.ts"
+        ],
         "testPaths": [
           "packages/expense/test/expense-domain.test.ts",
           "packages/expense/test/postgres-expense-store.test.ts"
@@ -431,12 +488,16 @@
       "owner": "partner-directory",
       "status": "strong-candidate",
       "evidence": {
-        "ownerContracts": ["docs/owners/partners.md"],
+        "ownerContracts": [
+          "docs/owners/partners.md"
+        ],
         "sourcePaths": [
           "packages/partners/src/domain.ts",
           "packages/partners/src/application/partners.ts"
         ],
-        "testPaths": ["apps/web/test/partners-api.test.ts"],
+        "testPaths": [
+          "apps/web/test/partners-api.test.ts"
+        ],
         "rationale": "名錄與推薦案件有獨立模型及 consumer 測試；Team participation 與權限授予不是名錄 owner 的責任。測試路徑不等於遠端或實機驗收。"
       }
     },
@@ -445,8 +506,12 @@
       "owner": "notifications",
       "status": "strong-candidate",
       "evidence": {
-        "ownerContracts": ["docs/owners/notifications.md"],
-        "sourcePaths": ["packages/notifications/src/domain/aggregates/notification.ts"],
+        "ownerContracts": [
+          "docs/owners/notifications.md"
+        ],
+        "sourcePaths": [
+          "packages/notifications/src/domain/aggregates/notification.ts"
+        ],
         "testPaths": [
           "packages/notifications/test/notifications.test.ts",
           "packages/notifications/test/repository-source-access.test.ts"
@@ -456,11 +521,17 @@
     },
     {
       "id": "work-collaboration",
-      "owners": ["team", "repository"],
+      "owners": [
+        "team",
+        "repository"
+      ],
       "status": "candidate",
       "note": "Candidate semantic boundary; Team and Repository remain separate responsibility owners.",
       "evidence": {
-        "ownerContracts": ["docs/owners/team.md", "docs/owners/repository.md"],
+        "ownerContracts": [
+          "docs/owners/team.md",
+          "docs/owners/repository.md"
+        ],
         "sourcePaths": [
           "packages/team/src/domain/team.ts",
           "packages/repository/src/domain/repository/entities/repository.ts"
@@ -502,9 +573,15 @@
       "owner": "file",
       "status": "selected",
       "evidence": {
-        "ownerContracts": ["docs/owners/file.md"],
-        "sourcePaths": ["packages/file/src/domain/file.ts"],
-        "testPaths": ["packages/file/test/persistence.test.ts"],
+        "ownerContracts": [
+          "docs/owners/file.md"
+        ],
+        "sourcePaths": [
+          "packages/file/src/domain/file.ts"
+        ],
+        "testPaths": [
+          "packages/file/test/persistence.test.ts"
+        ],
         "rationale": "File owns original source evidence and immutable bytes; Intelligence owns the separate processing lifecycle and retained interpretation evidence."
       }
     }
@@ -1127,7 +1204,10 @@
     {
       "id": "wbs",
       "canonicalName": "WBS",
-      "aliases": ["wbs expansion", "content wbs expansion"],
+      "aliases": [
+        "wbs expansion",
+        "content wbs expansion"
+      ],
       "kind": "authoritative",
       "owner": "wbs",
       "lifecycle": "current",
@@ -1239,7 +1319,9 @@
       "owner": "wallet",
       "lifecycle": "current",
       "definition": "Derived balance projection over authoritative value facts.",
-      "derivedFrom": ["ledger-entry"],
+      "derivedFrom": [
+        "ledger-entry"
+      ],
       "authorityMode": "derived",
       "persistenceExpectation": "derived"
     },
@@ -1270,7 +1352,9 @@
       "owner": "notifications",
       "lifecycle": "current",
       "definition": "Recipient-scoped read projection over Notifications for navigation and presentation. Inbox is not a second notification authority or package owner.",
-      "derivedFrom": ["notification"],
+      "derivedFrom": [
+        "notification"
+      ],
       "authorityMode": "derived",
       "persistenceExpectation": "derived"
     },
@@ -1678,7 +1762,9 @@
       "definition": "Authorized Repository-scoped composition of Issue activity and current workflow metrics with explicit coverage.",
       "authorityMode": "derived",
       "persistenceExpectation": "none",
-      "derivedFrom": ["issue"]
+      "derivedFrom": [
+        "issue"
+      ]
     },
     {
       "id": "action-rule",
@@ -1839,7 +1925,10 @@
     {
       "id": "intelligence-document-intake-attempt",
       "canonicalName": "IntelligenceDocumentIntakeAttempt",
-      "aliases": ["document-intelligence-intake", "document intelligence"],
+      "aliases": [
+        "document-intelligence-intake",
+        "document intelligence"
+      ],
       "kind": "authoritative",
       "owner": "intelligence",
       "lifecycle": "current",
@@ -1935,7 +2024,10 @@
     {
       "id": "content-plan",
       "canonicalName": "ContentPlan",
-      "aliases": ["contract-content-expansion", "content expansion"],
+      "aliases": [
+        "contract-content-expansion",
+        "content expansion"
+      ],
       "kind": "authoritative",
       "owner": "content",
       "lifecycle": "current",
@@ -1946,7 +2038,9 @@
     {
       "id": "content-plan-revision",
       "canonicalName": "ContentPlanRevision",
-      "aliases": ["content-expansion-revision"],
+      "aliases": [
+        "content-expansion-revision"
+      ],
       "kind": "authoritative",
       "owner": "content",
       "lifecycle": "current",
@@ -3247,7 +3341,10 @@
       "owner": "namespace",
       "kind": "leaf",
       "intent": "Describe cross-owner resource path scopes and construct only active canonical paths from owner-validated locator values.",
-      "preserves": ["K1", "K5"],
+      "preserves": [
+        "K1",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -3258,8 +3355,12 @@
       "implementation": {
         "status": "implemented",
         "scope": "structured active/planned route contract and pure path construction consumed by Web Account and Team navigation",
-        "sourcePaths": ["packages/namespace/src/domain/routes.ts"],
-        "publicExports": ["."],
+        "sourcePaths": [
+          "packages/namespace/src/domain/routes.ts"
+        ],
+        "publicExports": [
+          "."
+        ],
         "entrypoints": [
           "apps/web/src/modules/account/profile-destination.ts",
           "apps/web/src/modules/account/member-avatar.tsx",
@@ -3277,7 +3378,10 @@
       "owner": "namespace",
       "kind": "leaf",
       "intent": "Define and evaluate shared global-root reservations so product root routes cannot be claimed as Account login locators.",
-      "preserves": ["K1", "K5"],
+      "preserves": [
+        "K1",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -3288,10 +3392,19 @@
       "implementation": {
         "status": "implemented",
         "scope": "current shared global-root reservation policy consumed by Account login validation",
-        "sourcePaths": ["packages/namespace/src/domain/root.ts"],
-        "publicExports": ["."],
-        "entrypoints": ["packages/namespace/src/domain/namespace.ts"],
-        "testPaths": ["packages/namespace/test/root.test.ts", "packages/account/test/user.test.ts"],
+        "sourcePaths": [
+          "packages/namespace/src/domain/root.ts"
+        ],
+        "publicExports": [
+          "."
+        ],
+        "entrypoints": [
+          "packages/namespace/src/domain/namespace.ts"
+        ],
+        "testPaths": [
+          "packages/namespace/test/root.test.ts",
+          "packages/account/test/user.test.ts"
+        ],
         "note": "Namespace owns root collision and global Account login naming. Qualification stays with Account."
       }
     },
@@ -3300,10 +3413,19 @@
       "owner": "account",
       "kind": "leaf",
       "intent": "Determine current User qualification for a consumer operation.",
-      "preserves": ["K2", "K5"],
-      "validationProfiles": ["semantic-architecture", "architecture-tests", "fast-repository"],
+      "preserves": [
+        "K2",
+        "K5"
+      ],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "fast-repository"
+      ],
       "runtimeExpectation": "required",
-      "consumes": ["namespace-account-root-reservation"],
+      "consumes": [
+        "namespace-account-root-reservation"
+      ],
       "implementation": {
         "status": "implemented",
         "scope": "current account qualification use case and login identity surface",
@@ -3321,7 +3443,9 @@
           "packages/account/src/adapters/outbound/persistence/google-link.ts",
           "packages/account/src/composition/bootstrap/google-link.ts"
         ],
-        "publicExports": ["./application/user"],
+        "publicExports": [
+          "./application/user"
+        ],
         "entrypoints": [],
         "testPaths": [
           "packages/account/test/user.test.ts",
@@ -3336,7 +3460,11 @@
       "owner": "account",
       "kind": "leaf",
       "intent": "Read and update User profile metadata without changing User identity or login authority.",
-      "preserves": ["K1", "K2", "K5"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -3354,12 +3482,17 @@
           "packages/account/src/domain/profile.ts",
           "packages/account/src/adapters/outbound/persistence/profile.ts"
         ],
-        "publicExports": ["./application/profile", "./contracts/repositories/profile"],
+        "publicExports": [
+          "./application/profile",
+          "./contracts/repositories/profile"
+        ],
         "entrypoints": [
           "apps/web/src/app/api/profile/route.ts",
           "apps/web/src/app/(mobile)/(secondary)/settings/profile/page.tsx"
         ],
-        "testPaths": ["packages/account/test/profile.test.ts"],
+        "testPaths": [
+          "packages/account/test/profile.test.ts"
+        ],
         "note": "Profile source and public exports exist; tests are evidence locations, not proof unless executed."
       }
     },
@@ -3368,7 +3501,14 @@
       "owner": "account",
       "kind": "leaf",
       "intent": "Read managed Users and suspend or restore their Account-owned lifecycle while preserving current authorization, source activity, version, and exact replay semantics.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5",
+        "K6"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -3395,8 +3535,12 @@
           "packages/account/src/adapters/outbound/persistence/user-management.ts",
           "packages/account/src/composition/bootstrap/user-management.ts"
         ],
-        "publicExports": ["./application/manage-users"],
-        "entrypoints": ["apps/web/src/app/api/membership/manage/route.ts"],
+        "publicExports": [
+          "./application/manage-users"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/membership/manage/route.ts"
+        ],
         "testPaths": [
           "packages/account/test/user-management.test.ts",
           "packages/account/test/user-status-command.test.ts",
@@ -3411,7 +3555,13 @@
       "owner": "account",
       "kind": "leaf",
       "intent": "Read publicly visible User status and let the currently qualified User set or clear their own message, emoji, limited-availability flag, and expiry; organization-scoped audience is unsupported.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -3451,7 +3601,11 @@
       "owner": "account",
       "kind": "leaf",
       "intent": "Read the current User's earned Achievement facts without turning recognition into identity or authorization.",
-      "preserves": ["K1", "K2", "K5"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -3468,7 +3622,10 @@
           "packages/account/src/contracts/output/achievements.ts",
           "packages/account/src/postgres/achievements.ts"
         ],
-        "publicExports": ["./application/achievements", "./contracts/output/achievements"],
+        "publicExports": [
+          "./application/achievements",
+          "./contracts/output/achievements"
+        ],
         "entrypoints": [
           "apps/web/src/app/api/profile/achievements/route.ts",
           "apps/web/src/app/(public)/[login]/page.tsx"
@@ -3485,7 +3642,11 @@
       "owner": "account",
       "kind": "leaf",
       "intent": "Manage directional User follow relationships and their follower/following read projections.",
-      "preserves": ["K1", "K2", "K5"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -3503,7 +3664,10 @@
           "packages/account/src/domain/user.ts",
           "packages/account/src/postgres/follows.ts"
         ],
-        "publicExports": ["./application/follows", "./contracts/output/follows"],
+        "publicExports": [
+          "./application/follows",
+          "./contracts/output/follows"
+        ],
         "entrypoints": [
           "apps/web/src/app/api/follows/route.ts",
           "apps/web/src/app/(public)/_components/profile-overview.tsx",
@@ -3522,7 +3686,12 @@
       "owner": "enterprise",
       "kind": "leaf",
       "intent": "Manage Enterprise governance scope without treating Enterprise slug as Repository owner login.",
-      "preserves": ["K1", "K2", "K3", "K5"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -3584,7 +3753,12 @@
       "owner": "enterprise",
       "kind": "leaf",
       "intent": "Manage Enterprise-owned teams, memberships, and Organization assignments.",
-      "preserves": ["K1", "K2", "K3", "K5"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -3612,7 +3786,10 @@
           "packages/enterprise/src/composition/bootstrap/enterprise-governance.ts",
           "packages/enterprise/src/domain.ts"
         ],
-        "publicExports": ["./application/enterprise-governance", "./domain"],
+        "publicExports": [
+          "./application/enterprise-governance",
+          "./domain"
+        ],
         "entrypoints": [
           "apps/web/src/app/(mobile)/(tabs)/enterprises/[slug]/teams/[teamSlug]/page.tsx"
         ],
@@ -3630,7 +3807,12 @@
       "owner": "organization",
       "kind": "leaf",
       "intent": "Manage Organization governance scope, membership state, and public Organization lookup.",
-      "preserves": ["K1", "K2", "K3", "K5"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -3704,7 +3886,12 @@
       "owner": "organization",
       "kind": "leaf",
       "intent": "Manage pending Organization invitations as intent, not active membership or authorization.",
-      "preserves": ["K1", "K2", "K3", "K5"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -3728,7 +3915,10 @@
           "packages/organization/src/contracts/output/organization-membership.ts",
           "packages/organization/src/adapters/outbound/persistence/organization-membership.ts"
         ],
-        "publicExports": ["./domain", "./application/organization-governance"],
+        "publicExports": [
+          "./domain",
+          "./application/organization-governance"
+        ],
         "entrypoints": [
           "apps/web/src/app/api/organization/route.ts",
           "apps/web/src/app/(mobile)/(tabs)/organizations/page.tsx",
@@ -3746,7 +3936,12 @@
       "owner": "team",
       "kind": "leaf",
       "intent": "Manage Organization-scoped Team collaboration, direct/effective membership, hierarchy, privacy, notification setting, maintainer state, and locator access.",
-      "preserves": ["K1", "K2", "K3", "K5"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -3809,7 +4004,13 @@
       "owner": "repository",
       "kind": "aggregate",
       "intent": "Coordinate Repository identity, reads, access, lifecycle, interactions and local extensions without transferring authority to consumers.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -3838,7 +4039,13 @@
       "owner": "repository",
       "kind": "leaf",
       "intent": "Create a User- or Organization-owned Repository with explicit PRIVATE, INTERNAL or PUBLIC visibility, replay-safe owner authorization and immediate creator administration.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -3885,7 +4092,11 @@
       "owner": "repository",
       "kind": "leaf",
       "intent": "Read Repository stable identity through current visibility/access and owner-scoped current or historical locators.",
-      "preserves": ["K1", "K2", "K5"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -3932,7 +4143,13 @@
       "owner": "repository",
       "kind": "leaf",
       "intent": "Rename a Repository, change visibility, and archive or unarchive it while preserving stable identity, current authority, expected-version concurrency, replay and history.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -3980,7 +4197,13 @@
       "owner": "repository",
       "kind": "leaf",
       "intent": "Manage replay-safe User-to-Repository Watch state over the exact FPT SubscriptionState values without granting Repository access.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -4027,7 +4250,13 @@
       "owner": "repository",
       "kind": "leaf",
       "intent": "Manage Repository-owned direct User and Organization Team grants over the exact six-value FPT RepositoryPermission domain, preserving permission identity without a synthetic total order while retaining replay safety and recoverable admin authority.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -4076,7 +4305,12 @@
       "owner": "repository",
       "kind": "leaf",
       "intent": "Manage User star/unstar interaction over Repository resources.",
-      "preserves": ["K1", "K2", "K3", "K5"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -4092,7 +4326,10 @@
           "packages/repository/src/application/stars.ts",
           "packages/repository/src/contracts/repositories/stars.ts"
         ],
-        "publicExports": ["./application/stars", "./contracts/repositories/stars"],
+        "publicExports": [
+          "./application/stars",
+          "./contracts/repositories/stars"
+        ],
         "entrypoints": [
           "apps/web/src/app/api/repositories/explore/route.ts",
           "apps/web/src/app/api/repositories/starred/route.ts",
@@ -4112,7 +4349,13 @@
       "owner": "repository",
       "kind": "leaf",
       "intent": "Manage replay-safe User curated Lists over the User's current Repository stars.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -4153,7 +4396,11 @@
       "owner": "repository",
       "kind": "leaf",
       "intent": "Read authorized Repository Trending and published Repository Star List projections without creating a new Explore authority.",
-      "preserves": ["K1", "K2", "K5"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -4169,7 +4416,10 @@
           "packages/repository/src/postgres/discovery.ts",
           "packages/repository/src/contracts/discovery.ts"
         ],
-        "publicExports": ["./contracts/discovery", "./postgres/discovery"],
+        "publicExports": [
+          "./contracts/discovery",
+          "./postgres/discovery"
+        ],
         "entrypoints": [
           "apps/web/src/app/api/repositories/explore/route.ts",
           "apps/web/src/app/(mobile)/(tabs)/explore/page.tsx",
@@ -4191,7 +4441,13 @@
       "owner": "issue",
       "kind": "leaf",
       "intent": "Manage Repository-scoped Issue creation, canonical OPEN/CLOSED state, assignee collection, editable content, and the separate local work workflow.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -4237,7 +4493,11 @@
       "owner": "issue",
       "kind": "leaf",
       "intent": "Read recent Issue lifecycle activity for currently accessible Repository scopes without transferring Repository authority.",
-      "preserves": ["K1", "K2", "K5"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -4254,7 +4514,11 @@
           "packages/issue/src/contracts/activity.ts",
           "packages/issue/src/adapters/postgres/activity.ts"
         ],
-        "publicExports": ["./application/activity", "./contracts/activity", "./postgres/activity"],
+        "publicExports": [
+          "./application/activity",
+          "./contracts/activity",
+          "./postgres/activity"
+        ],
         "entrypoints": [
           "apps/web/src/app/api/repositories/explore/route.ts",
           "apps/web/src/app/api/_composition/issue-activity.server.ts"
@@ -4271,7 +4535,13 @@
       "owner": "issue",
       "kind": "leaf",
       "intent": "Manage Issue comments, Repository Label links, Repository Milestone assignment, Issue hierarchy/dependencies/related links, and independent conversation lock state without transferring Repository authority.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -4293,7 +4563,9 @@
           "./contracts/collaboration",
           "./composition/bootstrap/collaboration"
         ],
-        "entrypoints": ["apps/web/src/app/api/issue-collaboration/route.ts"],
+        "entrypoints": [
+          "apps/web/src/app/api/issue-collaboration/route.ts"
+        ],
         "testPaths": [
           "packages/issue/test/collaboration.test.ts",
           "packages/issue/test/issues.test.ts"
@@ -4306,7 +4578,13 @@
       "owner": "issue",
       "kind": "leaf",
       "intent": "Manage Organization-scoped IssueType definitions and the optional Issue-to-IssueType relation without granting Repository permission or changing Issue workflow.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -4336,7 +4614,9 @@
           "apps/web/src/app/api/issue-types/route.ts",
           "apps/web/src/app/api/issue-collaboration/route.ts"
         ],
-        "testPaths": ["packages/issue/test/issue-types.test.ts"],
+        "testPaths": [
+          "packages/issue/test/issue-types.test.ts"
+        ],
         "note": "FPT IssueType is Organization-scoped while remaining Issue-owned. Disabled types keep existing assignments readable but cannot be newly assigned; deletion is an immutable tombstone blocked while referenced. Type assignment uses Repository triage authority, never grants permission and never changes Issue state/workflow. Activation is atomic at this revision: schema, semantic overlay, contracts, API and tests coexist; no second adoption ledger or partial gate is used."
       }
     },
@@ -4345,7 +4625,11 @@
       "owner": "discussion",
       "kind": "leaf",
       "intent": "Read authorized Repository-scoped Discussion lists, a Discussion body, and its comments without asserting Discussion write management.",
-      "preserves": ["K1", "K2", "K5"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -4362,7 +4646,11 @@
           "packages/discussion/src/contracts/output/discussion-read.ts",
           "packages/discussion/src/adapters/postgres.ts"
         ],
-        "publicExports": ["./application/discussions", "./contracts/discussions", "./postgres"],
+        "publicExports": [
+          "./application/discussions",
+          "./contracts/discussions",
+          "./postgres"
+        ],
         "entrypoints": [
           "apps/web/src/app/api/discussions/route.ts",
           "apps/web/src/app/api/discussions/[discussionId]/route.ts",
@@ -4381,7 +4669,11 @@
       "owner": "repository",
       "kind": "leaf",
       "intent": "Read authorized Repository Label collections through current Repository visibility/access.",
-      "preserves": ["K1", "K2", "K5"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -4420,7 +4712,11 @@
       "owner": "repository",
       "kind": "leaf",
       "intent": "Read authorized Repository Milestone lists and detail by repository-local number through current Repository visibility/access.",
-      "preserves": ["K1", "K2", "K5"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -4463,7 +4759,13 @@
       "owner": "discussion",
       "kind": "leaf",
       "intent": "Manage Repository-scoped Discussion lifecycle, stable number/category, comments/replies, chosen answer, labels, upvotes, poll and conversation lock without transferring Repository authority.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -4501,7 +4803,13 @@
       "owner": "repository",
       "kind": "leaf",
       "intent": "Manage Repository-owned Label definitions with stable identity, explicit write/maintain/admin authorization, version concurrency, exact replay and reference-safe deletion.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -4523,7 +4831,9 @@
           "./contracts/output/resource-management",
           "./postgres/resource-management"
         ],
-        "entrypoints": ["apps/web/src/app/api/repository-labels/route.ts"],
+        "entrypoints": [
+          "apps/web/src/app/api/repository-labels/route.ts"
+        ],
         "testPaths": [
           "packages/repository/test/resource-management.test.ts",
           "packages/platform/test/schema-contract.schema.ts",
@@ -4537,7 +4847,13 @@
       "owner": "repository",
       "kind": "leaf",
       "intent": "Manage Repository-owned Milestone definitions and OPEN/CLOSED lifecycle with repository-local numbers, explicit write/maintain/admin authorization, version concurrency and exact replay.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -4559,7 +4875,9 @@
           "./contracts/output/resource-management",
           "./postgres/resource-management"
         ],
-        "entrypoints": ["apps/web/src/app/api/repository-milestones/route.ts"],
+        "entrypoints": [
+          "apps/web/src/app/api/repository-milestones/route.ts"
+        ],
         "testPaths": [
           "packages/repository/test/resource-management.test.ts",
           "packages/platform/test/schema-contract.schema.ts",
@@ -4573,7 +4891,11 @@
       "owner": "project",
       "kind": "leaf",
       "intent": "Read authorized Project summaries without asserting Project planning writes or underlying Repository work authority.",
-      "preserves": ["K1", "K2", "K5"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -4598,7 +4920,9 @@
           "apps/web/src/app/api/projects/route.ts",
           "apps/web/src/app/(mobile)/(tabs)/projects/page.tsx"
         ],
-        "testPaths": ["packages/project/test/collection.test.ts"],
+        "testPaths": [
+          "packages/project/test/collection.test.ts"
+        ],
         "note": "Project collection reads combine current Organization viewerCanAdminister capability, Project-owned direct User grants, current Team membership grants and public READ. Source Issue visibility is rechecked separately in Project detail projections."
       }
     },
@@ -4607,7 +4931,13 @@
       "owner": "project",
       "kind": "leaf",
       "intent": "Manage ProjectV2 root lifecycle, owner-scoped number, collaborators, Item/DraftIssue lifecycle, typed fields and values, views, status updates, and Repository/Issue references without taking source-owner authority.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -4634,7 +4964,9 @@
           "./composition/bootstrap/postgres-project-management-store",
           "./composition/bootstrap/repository-imports"
         ],
-        "entrypoints": ["apps/web/src/app/api/project-management/route.ts"],
+        "entrypoints": [
+          "apps/web/src/app/api/project-management/route.ts"
+        ],
         "testPaths": [
           "packages/project/test/collection.test.ts",
           "packages/project/test/management.test.ts",
@@ -4648,7 +4980,13 @@
       "owner": "attendance",
       "kind": "leaf",
       "intent": "Record valid attendance while preserving eligibility, replay, version, and isolation semantics.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -4657,7 +4995,9 @@
         "fast-repository"
       ],
       "runtimeExpectation": "required",
-      "consumes": ["ledger-attendance-posting"],
+      "consumes": [
+        "ledger-attendance-posting"
+      ],
       "implementation": {
         "status": "implemented",
         "scope": "Clock-in validates Repository coordinates, radius, current GPS accuracy and effective member access; clock-out uses the original immutable point snapshot even after member removal.",
@@ -4692,8 +5032,18 @@
       "owner": "attendance",
       "kind": "leaf",
       "intent": "Let an active User propose a missing complete session or a missing end time without directly changing authoritative Attendance facts.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5"],
-      "validationProfiles": ["semantic-architecture", "schema", "fast-repository"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5"
+      ],
+      "validationProfiles": [
+        "semantic-architecture",
+        "schema",
+        "fast-repository"
+      ],
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
@@ -4723,8 +5073,18 @@
       "owner": "attendance",
       "kind": "leaf",
       "intent": "Let a current effective Repository ADMIN User approve or reject a pending Attendance supplement, with approval atomically appending the Attendance fact and decision event.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5"],
-      "validationProfiles": ["semantic-architecture", "schema", "fast-repository"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5"
+      ],
+      "validationProfiles": [
+        "semantic-architecture",
+        "schema",
+        "fast-repository"
+      ],
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
@@ -4757,7 +5117,12 @@
       "owner": "daily-check-in",
       "kind": "leaf",
       "intent": "Create at most one authorized business-day check-in effect.",
-      "preserves": ["K2", "K3", "K4", "K5"],
+      "preserves": [
+        "K2",
+        "K3",
+        "K4",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -4766,7 +5131,10 @@
         "fast-repository"
       ],
       "runtimeExpectation": "required",
-      "consumes": ["ledger-daily-check-in-posting", "ledger-daily-check-in-readback"],
+      "consumes": [
+        "ledger-daily-check-in-posting",
+        "ledger-daily-check-in-readback"
+      ],
       "implementation": {
         "status": "implemented",
         "scope": "current DailyCheckIn application surface",
@@ -4785,7 +5153,9 @@
           "./composition/bootstrap/postgres-daily-check-in-store",
           "./domain/error"
         ],
-        "entrypoints": ["apps/web/src/app/(mobile)/(tabs)/home/page.tsx"],
+        "entrypoints": [
+          "apps/web/src/app/(mobile)/(tabs)/home/page.tsx"
+        ],
         "testPaths": [
           "packages/daily-check-in/test/daily-check-in.test.ts",
           "packages/daily-check-in/test/daily-check-in-policy.test.ts",
@@ -4799,7 +5169,11 @@
       "owner": "ledger",
       "kind": "leaf",
       "intent": "Append an immutable value fact with stable identity.",
-      "preserves": ["K1", "K3", "K4"],
+      "preserves": [
+        "K1",
+        "K3",
+        "K4"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -4808,7 +5182,10 @@
         "fast-repository"
       ],
       "runtimeExpectation": "required",
-      "consumes": ["attendance-ledger-posting", "daily-check-in-ledger-posting"],
+      "consumes": [
+        "attendance-ledger-posting",
+        "daily-check-in-ledger-posting"
+      ],
       "implementation": {
         "status": "implemented",
         "scope": "current Ledger domain and repository port",
@@ -4816,7 +5193,10 @@
           "packages/ledger/src/adapters/postgres.ts",
           "packages/ledger/src/domain/value-objects/ledger-credit.ts"
         ],
-        "publicExports": ["./postgres", "./domain/value-objects/ledger-credit"],
+        "publicExports": [
+          "./postgres",
+          "./domain/value-objects/ledger-credit"
+        ],
         "entrypoints": [
           "packages/daily-check-in/src/adapters/outbound/persistence/postgres-daily-check-in-store.ts",
           "packages/attendance/src/adapters/outbound/persistence/postgres-attendance-store.ts"
@@ -4833,7 +5213,10 @@
       "owner": "identity-access",
       "kind": "leaf",
       "intent": "Decide current scoped feature permission without treating identity or membership as authorization.",
-      "preserves": ["K2", "K5"],
+      "preserves": [
+        "K2",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -4855,8 +5238,13 @@
           "packages/identity-access/src/composition/bootstrap/permissions.ts",
           "packages/identity-access/src/domain/permission.ts"
         ],
-        "publicExports": ["./application/permissions", "./domain/permission"],
-        "entrypoints": ["apps/web/src/app/(mobile)/(secondary)/settings/permissions/page.tsx"],
+        "publicExports": [
+          "./application/permissions",
+          "./domain/permission"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/(mobile)/(secondary)/settings/permissions/page.tsx"
+        ],
         "testPaths": [
           "packages/identity-access/test/permission.test.ts",
           "packages/identity-access/test/permission-change.test.ts",
@@ -4872,7 +5260,13 @@
       "owner": "namespace",
       "kind": "leaf",
       "intent": "Claim, resolve, conditionally rename and release typed scoped names according to frozen family profiles, without changing resource identity, lifecycle or authorization.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -4892,7 +5286,10 @@
           "packages/namespace/src/application/resolve-namespace.ts",
           "packages/namespace/src/postgres.ts"
         ],
-        "publicExports": [".", "./postgres"],
+        "publicExports": [
+          ".",
+          "./postgres"
+        ],
         "entrypoints": [
           "packages/account/src/adapters/outbound/persistence/user.ts",
           "packages/discussion/src/adapters/postgres-management.ts",
@@ -4917,7 +5314,13 @@
       "owner": "numbering",
       "kind": "leaf",
       "intent": "Allocate and resolve positive monotonic numbers inside typed stable scopes with immutable committed allocations and idempotency by resource.",
-      "preserves": ["K1", "K3", "K4", "K5", "K6"],
+      "preserves": [
+        "K1",
+        "K3",
+        "K4",
+        "K5",
+        "K6"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -4934,7 +5337,10 @@
           "packages/numbering/src/index.ts",
           "packages/numbering/src/postgres.ts"
         ],
-        "publicExports": [".", "./postgres"],
+        "publicExports": [
+          ".",
+          "./postgres"
+        ],
         "entrypoints": [
           "packages/discussion/src/adapters/postgres-management-helpers.ts",
           "packages/issue/src/adapters/postgres.ts",
@@ -4955,7 +5361,12 @@
       "owner": "audit",
       "kind": "leaf",
       "intent": "Read bounded governance event history for an exact currently authorized Enterprise or Organization scope.",
-      "preserves": ["K1", "K2", "K5", "K6"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K5",
+        "K6"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -4966,9 +5377,15 @@
       "implementation": {
         "status": "implemented",
         "scope": "Readonly keyset-paginated governance evidence; current effective owner required on every page; no raw result or reason text",
-        "sourcePaths": ["packages/audit/src/application/use-cases/read-governance-audit.ts"],
-        "publicExports": ["./application/use-cases/read-governance-audit"],
-        "entrypoints": ["apps/web/src/app/api/audit/route.ts"],
+        "sourcePaths": [
+          "packages/audit/src/application/use-cases/read-governance-audit.ts"
+        ],
+        "publicExports": [
+          "./application/use-cases/read-governance-audit"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/audit/route.ts"
+        ],
         "testPaths": [
           "packages/audit/test/query.test.ts",
           "packages/identity-access/test/audit.test.ts",
@@ -4982,7 +5399,13 @@
       "owner": "repository",
       "kind": "leaf",
       "intent": "Maintain the Repository attendance point, consisting of coordinates and radius with an optional address description.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -5020,7 +5443,12 @@
       "owner": "project",
       "kind": "leaf",
       "intent": "Provide the current active-User, Project access and lifecycle decision used by Project-scoped WBS and Actions without transferring Project authority.",
-      "preserves": ["K1", "K2", "K3", "K5"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K5"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -5041,7 +5469,9 @@
           "./composition/bootstrap/project-content-scope"
         ],
         "entrypoints": [],
-        "testPaths": ["packages/project/test/content-scope.test.ts"],
+        "testPaths": [
+          "packages/project/test/content-scope.test.ts"
+        ],
         "note": "READ allows reads only; WRITE allows WBS edit/propose/review; ADMIN additionally allows publish, policy and fixed Actions. Closed is read/exact-replay only and deleted resolves as not found."
       }
     },
@@ -5050,7 +5480,14 @@
       "owner": "wbs",
       "kind": "leaf",
       "intent": "Move one eligible Repository WBS into an empty Project scope exactly once while preserving immutable history and command replay evidence.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5",
+        "K6"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -5069,7 +5506,10 @@
           "packages/wbs/src/contracts/repositories/transfer.ts",
           "packages/wbs/src/adapters/outbound/persistence/transfer.ts"
         ],
-        "publicExports": ["./application/use-cases/transfer", "./composition/bootstrap/transfer"],
+        "publicExports": [
+          "./application/use-cases/transfer",
+          "./composition/bootstrap/transfer"
+        ],
         "entrypoints": [
           "apps/web/src/app/api/repository-wbs/transfer/route.ts",
           "apps/web/src/app/api/repository-wbs/transfer/cancel/route.ts",
@@ -5088,7 +5528,14 @@
       "owner": "wbs",
       "kind": "leaf",
       "intent": "Manage Project-scoped WBS content, immutable Revision history, governance, Baselines and publication events through current Project access and lifecycle.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5",
+        "K6"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -5147,7 +5594,14 @@
       "owner": "wbs",
       "kind": "leaf",
       "intent": "Read, initialize and edit Repository-WBS scope with immutable revision history, current access, expected version and exact replay; not acceptance, baseline, Issue execution or Project planning.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5",
+        "K6"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -5182,7 +5636,10 @@
           "apps/web/src/app/api/repository-wbs/history/route.ts",
           "apps/web/src/app/(resource)/[login]/[repository]/wbs/page.tsx"
         ],
-        "testPaths": ["packages/wbs/test/wbs.test.ts", "apps/web/test/wbs-http.test.ts"],
+        "testPaths": [
+          "packages/wbs/test/wbs.test.ts",
+          "apps/web/test/wbs-http.test.ts"
+        ],
         "note": "R1 transfer-only runtime. Saved Revision is not approval or Baseline; no new Project scope dual-write or permanent legacy coexistence is allowed."
       }
     },
@@ -5191,7 +5648,14 @@
       "owner": "wbs",
       "kind": "leaf",
       "intent": "Propose frozen WBS scope, review exact candidate and policy versions, and atomically publish immutable Baselines without overwriting drafts; recheck current reviewer authority.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5",
+        "K6"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -5238,7 +5702,14 @@
       "owner": "wiki",
       "kind": "leaf",
       "intent": "Read and revise Repository Wiki pages with immutable history, version comparison, restoration, current access and durable exact replay.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5",
+        "K6"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -5271,7 +5742,10 @@
           "apps/web/src/app/(resource)/[login]/[repository]/wiki/page.tsx",
           "apps/web/src/app/(resource)/[login]/[repository]/wiki/[pageId]/page.tsx"
         ],
-        "testPaths": ["packages/wiki/test/wiki.test.ts", "apps/web/test/wiki-http.test.ts"],
+        "testPaths": [
+          "packages/wiki/test/wiki.test.ts",
+          "apps/web/test/wiki-http.test.ts"
+        ],
         "note": "Authenticated CLI/Web capability; no Markdown HTML rendering, attachments or page-specific grants. Current Repository authorization and atomic immutable revisions/replay remain owner authority."
       }
     },
@@ -5280,7 +5754,12 @@
       "owner": "insights",
       "kind": "leaf",
       "intent": "Compose authorized Repository Pulse from owner-published Issue metrics, preserving time boundaries, source coverage and explicit unavailability.",
-      "preserves": ["K1", "K2", "K5", "K6"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K5",
+        "K6"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -5291,7 +5770,9 @@
       "implementation": {
         "status": "implemented",
         "scope": "Repository Pulse query through authenticated internal CLI and read-only Web delivery for Issue period events and current workflow.",
-        "sourcePaths": ["packages/insights/src/application/use-cases/repository-pulse.ts"],
+        "sourcePaths": [
+          "packages/insights/src/application/use-cases/repository-pulse.ts"
+        ],
         "publicExports": [
           "./application/use-cases/repository-pulse",
           "./contracts/dto/repository-pulse"
@@ -5313,16 +5794,34 @@
       "owner": "issue",
       "kind": "leaf",
       "intent": "Read authorized issue-owned Repository metrics without transferring source or authorization authority to Insights.",
-      "preserves": ["K1", "K2", "K5", "K6"],
-      "validationProfiles": ["semantic-architecture", "tests", "fast-repository"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K5",
+        "K6"
+      ],
+      "validationProfiles": [
+        "semantic-architecture",
+        "tests",
+        "fast-repository"
+      ],
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
         "scope": "Repository-scoped issue metrics through an owner public query.",
-        "sourcePaths": ["packages/issue/src/adapters/outbound/persistence/metrics.ts"],
-        "publicExports": ["./contracts/output/metrics", "./composition/bootstrap/metrics"],
-        "entrypoints": ["scripts/insights/run.mjs"],
-        "testPaths": ["packages/issue/test/metrics.test.ts"],
+        "sourcePaths": [
+          "packages/issue/src/adapters/outbound/persistence/metrics.ts"
+        ],
+        "publicExports": [
+          "./contracts/output/metrics",
+          "./composition/bootstrap/metrics"
+        ],
+        "entrypoints": [
+          "scripts/insights/run.mjs"
+        ],
+        "testPaths": [
+          "packages/issue/test/metrics.test.ts"
+        ],
         "note": "Owner query performs current Repository qualification/access checks; composition does not acquire business truth."
       }
     },
@@ -5331,19 +5830,32 @@
       "owner": "wbs",
       "kind": "leaf",
       "intent": "Read authorized WBS-owned Project metrics through current Project access without transferring source authority to a consumer.",
-      "preserves": ["K1", "K2", "K5", "K6"],
-      "validationProfiles": ["semantic-architecture", "tests", "fast-repository"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K5",
+        "K6"
+      ],
+      "validationProfiles": [
+        "semantic-architecture",
+        "tests",
+        "fast-repository"
+      ],
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
         "scope": "Project-scoped open proposals, published Baseline, draft Revision and structural differences through an owner public query.",
-        "sourcePaths": ["packages/wbs/src/adapters/outbound/persistence/project-metrics.ts"],
+        "sourcePaths": [
+          "packages/wbs/src/adapters/outbound/persistence/project-metrics.ts"
+        ],
         "publicExports": [
           "./contracts/output/project-metrics",
           "./composition/bootstrap/project-metrics"
         ],
         "entrypoints": [],
-        "testPaths": ["packages/wbs/test/project-postgres.test.ts"],
+        "testPaths": [
+          "packages/wbs/test/project-postgres.test.ts"
+        ],
         "note": "The owner query consumes Project current access; no Insights Project screen or independent metric persistence is claimed."
       }
     },
@@ -5352,7 +5864,14 @@
       "owner": "actions",
       "kind": "leaf",
       "intent": "Manage and recover two fixed Project business automations under current Project ADMIN and WBS publication identity.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5",
+        "K6"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -5391,7 +5910,14 @@
       "owner": "actions",
       "kind": "leaf",
       "intent": "Manage and recover two fixed, delegated Repository business automations.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5",
+        "K6"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -5417,7 +5943,10 @@
           "./contracts/output/fixed-steps",
           "./composition/bootstrap/automation"
         ],
-        "entrypoints": ["scripts/actions/run.mjs", "scripts/actions/worker.mjs"],
+        "entrypoints": [
+          "scripts/actions/run.mjs",
+          "scripts/actions/worker.mjs"
+        ],
         "testPaths": [
           "packages/actions/test/actions.test.ts",
           "packages/actions/test/actions-postgres.test.ts"
@@ -5430,7 +5959,14 @@
       "owner": "wbs",
       "kind": "leaf",
       "intent": "Atomically enqueue Project-scoped version-bound Baseline events and expose leased claim/acknowledge.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5",
+        "K6"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -5450,7 +5986,9 @@
           "./composition/bootstrap/project-baseline-events"
         ],
         "entrypoints": [],
-        "testPaths": ["packages/wbs/test/project-postgres.test.ts"],
+        "testPaths": [
+          "packages/wbs/test/project-postgres.test.ts"
+        ],
         "note": "Publication and enqueueing share the WBS transaction; a consumer accepts idempotently before acknowledge."
       }
     },
@@ -5459,7 +5997,14 @@
       "owner": "wbs",
       "kind": "leaf",
       "intent": "Atomically enqueue version-bound Baseline events and expose leased claim/acknowledge.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5",
+        "K6"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -5471,7 +6016,9 @@
       "implementation": {
         "status": "implemented",
         "scope": "Atomically enqueue version-bound Baseline events and expose leased claim/acknowledge.",
-        "sourcePaths": ["packages/wbs/src/adapters/outbound/persistence/baseline-events.ts"],
+        "sourcePaths": [
+          "packages/wbs/src/adapters/outbound/persistence/baseline-events.ts"
+        ],
         "publicExports": [
           "./contracts/output/baseline-events",
           "./composition/bootstrap/baseline-events"
@@ -5489,7 +6036,14 @@
       "owner": "notifications",
       "kind": "leaf",
       "intent": "Create explicit-recipient Project WBS Inbox records and recover fixed LINE delivery intents under current Project source access.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5",
+        "K6"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -5512,7 +6066,9 @@
           "./composition/bootstrap/project-baseline-delivery"
         ],
         "entrypoints": [],
-        "testPaths": ["packages/notifications/test/project-baseline-delivery.test.ts"],
+        "testPaths": [
+          "packages/notifications/test/project-baseline-delivery.test.ts"
+        ],
         "note": "WBS owns Baseline/Revision truth, Project owns current access, Account owns active User/provider binding and Notifications owns Inbox/delivery. Provider acceptance is not device delivery."
       }
     },
@@ -5521,7 +6077,14 @@
       "owner": "notifications",
       "kind": "leaf",
       "intent": "Create explicit-recipient WBS Inbox records and recover fixed LINE delivery intents.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5",
+        "K6"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -5544,7 +6107,9 @@
           "./composition/bootstrap/baseline-delivery"
         ],
         "entrypoints": [],
-        "testPaths": ["packages/notifications/test/baseline-delivery.test.ts"],
+        "testPaths": [
+          "packages/notifications/test/baseline-delivery.test.ts"
+        ],
         "note": "R1 transfer-only Repository notification path. Internal execution evidence does not prove Project transfer, production activation or real LINE device delivery."
       }
     },
@@ -5553,20 +6118,35 @@
       "owner": "wbs",
       "kind": "leaf",
       "intent": "Report whether a currently readable Repository needs a legacy WBS recovery entry using durable source evidence or the current actor's live transfer, without exposing a destination Project.",
-      "preserves": ["K1", "K2", "K5", "K6"],
-      "validationProfiles": ["semantic-architecture", "tests", "fast-repository"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K5",
+        "K6"
+      ],
+      "validationProfiles": [
+        "semantic-architecture",
+        "tests",
+        "fast-repository"
+      ],
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
         "scope": "Read-only lightweight legacy-entry eligibility under current Repository scope; remains queryable after Repository-WBS content retirement.",
-        "sourcePaths": ["packages/wbs/src/application/use-cases/legacy-entry.ts"],
+        "sourcePaths": [
+          "packages/wbs/src/application/use-cases/legacy-entry.ts"
+        ],
         "publicExports": [
           "./application/use-cases/legacy-entry",
           "./contracts/output/legacy-entry",
           "./composition/bootstrap/legacy-entry"
         ],
-        "entrypoints": ["apps/web/src/app/api/repository-overview/route.ts"],
-        "testPaths": ["packages/wbs/test/legacy-entry.test.ts"],
+        "entrypoints": [
+          "apps/web/src/app/api/repository-overview/route.ts"
+        ],
+        "testPaths": [
+          "packages/wbs/test/legacy-entry.test.ts"
+        ],
         "note": "No content initialization, transfer activation, destination disclosure or second source of truth. Infrastructure failure remains unavailable, not absent."
       }
     },
@@ -5575,20 +6155,33 @@
       "owner": "platform",
       "kind": "leaf",
       "intent": "Normalize a bounded title and preserve an unmodified body for Resources, Wiki and Contract without acquiring identity, revisions, storage or rendering authority.",
-      "preserves": ["K1", "K6"],
-      "validationProfiles": ["semantic-architecture", "tests", "fast-repository"],
+      "preserves": [
+        "K1",
+        "K6"
+      ],
+      "validationProfiles": [
+        "semantic-architecture",
+        "tests",
+        "fast-repository"
+      ],
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
         "scope": "Trim a 1..200 UTF-16-code-unit title and validate a body of at most 262144 UTF-16 code units; return field-specific failures without consumer error or transport semantics.",
-        "sourcePaths": ["packages/platform/src/text.ts"],
-        "publicExports": ["./text"],
+        "sourcePaths": [
+          "packages/platform/src/text.ts"
+        ],
+        "publicExports": [
+          "./text"
+        ],
         "entrypoints": [
           "packages/resources/src/domain/resource.ts",
           "packages/wiki/src/domain/wiki-page.ts",
           "packages/contract/src/domain/contract.ts"
         ],
-        "testPaths": ["packages/platform/test/text.test.ts"],
+        "testPaths": [
+          "packages/platform/test/text.test.ts"
+        ],
         "note": "Neutral shared text validation; Content now owns Repository work definitions, not shared text support."
       }
     },
@@ -5597,7 +6190,15 @@
       "owner": "contract",
       "kind": "leaf",
       "intent": "Manage formal commitments against exact Content Work/Task plan items, freezing agreed quantities on activation.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6", "CONTRACT1"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5",
+        "K6",
+        "CONTRACT1"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -5641,7 +6242,15 @@
       "owner": "execution",
       "kind": "leaf",
       "intent": "Record actual Task quantities against exact Content and Contract bases, with versioned prerequisites, resource use and internal review.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6", "EXECUTION1"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5",
+        "K6",
+        "EXECUTION1"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -5687,7 +6296,14 @@
       "owner": "content",
       "kind": "leaf",
       "intent": "Manage Repository work definitions in a strict five-level hierarchy with coherent immutable plan revisions and physical resource pins, including a fixed whole-document expansion of one confirmed ContractDocument revision.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5",
+        "K6"
+      ],
       "consumes": [
         "content-repository-scope",
         "content-physical-resource-pins",
@@ -5738,7 +6354,14 @@
       "owner": "resources",
       "kind": "leaf",
       "intent": "Manage shared Location/Equipment/Material identity and lifecycle with immutable revisions and exact replay.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5",
+        "K6"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -5767,7 +6390,9 @@
           "packages/resources/test/resource-domain.test.ts",
           "packages/resources/test/resource-persistence.test.ts"
         ],
-        "entrypoints": ["apps/web/src/app/api/repository-resources/route.ts"],
+        "entrypoints": [
+          "apps/web/src/app/api/repository-resources/route.ts"
+        ],
         "note": "Web consumes public owner application/composition contracts. Source implementation, local verification and production publication are separate evidence."
       }
     },
@@ -5776,8 +6401,19 @@
       "owner": "contract",
       "kind": "leaf",
       "intent": "Persist, read and explicitly confirm a complete Contract-owned purchase-order document candidate from one exact authorized File revision.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6", "CONTRACT2"],
-      "consumes": ["contract-repository-scope", "contract-file-source"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5",
+        "K6",
+        "CONTRACT2"
+      ],
+      "consumes": [
+        "contract-repository-scope",
+        "contract-file-source"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -5796,8 +6432,13 @@
           "packages/contract/src/adapters/outbound/persistence/documents.ts",
           "packages/contract/src/contracts/input/document-intake.ts"
         ],
-        "publicExports": ["./contracts/input/document-intake", "./composition/bootstrap/documents"],
-        "entrypoints": ["scripts/contract/run.mjs"],
+        "publicExports": [
+          "./contracts/input/document-intake",
+          "./composition/bootstrap/documents"
+        ],
+        "entrypoints": [
+          "scripts/contract/run.mjs"
+        ],
         "testPaths": [
           "packages/contract/test/document-intake-domain.test.ts",
           "packages/contract/test/documents-postgres.test.ts",
@@ -5811,8 +6452,20 @@
       "owner": "file",
       "kind": "leaf",
       "intent": "Preserve protected Repository-scoped files via explicit durable Upload Intent, private immutable Storage Object readback, atomic File revision/head/receipt Finalize and exact replay; list/read/download require current access.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6", "FILE1", "FILE2"],
-      "consumes": ["file-repository-scope", "file-platform-persistence"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5",
+        "K6",
+        "FILE1",
+        "FILE2"
+      ],
+      "consumes": [
+        "file-repository-scope",
+        "file-platform-persistence"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -5864,7 +6517,16 @@
       "owner": "intelligence",
       "kind": "leaf",
       "intent": "Execute only the explicitly user-selected compatible processor against a pinned File revision and produce untrusted Preview without implicit fallback or Save.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6", "FILE1", "FILE2"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5",
+        "K6",
+        "FILE1",
+        "FILE2"
+      ],
       "consumes": [
         "intelligence-file-source",
         "repository-intelligence-processing-scope",
@@ -5914,8 +6576,20 @@
       "owner": "intelligence",
       "kind": "leaf",
       "intent": "A user may locally edit Preview, then explicitly Save a version-bound result or Discard it; neither operation mutates downstream business owners.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6", "FILE1", "FILE2"],
-      "consumes": ["repository-intelligence-processing-scope", "intelligence-platform-persistence"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5",
+        "K6",
+        "FILE1",
+        "FILE2"
+      ],
+      "consumes": [
+        "repository-intelligence-processing-scope",
+        "intelligence-platform-persistence"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -5957,8 +6631,16 @@
       "owner": "intelligence",
       "kind": "leaf",
       "intent": "Map explicitly supplied PDF or image evidence through the configured Vercel AI Gateway model into bounded, source-located candidate observations without approving, persisting or importing business facts.",
-      "preserves": ["K1", "K2", "K5", "FILE2", "INTELLIGENCE1"],
-      "consumes": ["intelligence-file-source"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K5",
+        "FILE2",
+        "INTELLIGENCE1"
+      ],
+      "consumes": [
+        "intelligence-file-source"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -5973,12 +6655,17 @@
           "packages/intelligence/src/application/use-cases/processing.ts",
           "packages/intelligence/src/composition/bootstrap/processors.ts"
         ],
-        "publicExports": ["./composition/bootstrap/processors"],
+        "publicExports": [
+          "./composition/bootstrap/processors"
+        ],
         "entrypoints": [
           "scripts/file/run.mjs",
           "apps/web/src/app/api/_composition/files.server.ts"
         ],
-        "testPaths": ["packages/intelligence/test/processing.test.ts", "scripts/file/run.test.mjs"],
+        "testPaths": [
+          "packages/intelligence/test/processing.test.ts",
+          "scripts/file/run.test.mjs"
+        ],
         "note": "The processor preserves observations-v1:<model> identity, performs one provider attempt without fallback and supports configured PDF/JPEG/PNG/WebP inputs. Output remains candidate evidence; simulated tests do not prove live provider accuracy or acceptance."
       }
     },
@@ -6025,7 +6712,9 @@
           "./contracts/output/document-intake",
           "./contracts/output/document-attempts"
         ],
-        "entrypoints": ["scripts/intelligence/run.mjs"],
+        "entrypoints": [
+          "scripts/intelligence/run.mjs"
+        ],
         "testPaths": [
           "packages/intelligence/test/intake-document.test.ts",
           "packages/intelligence/test/document-attempts-postgres.test.ts",
@@ -6041,118 +6730,224 @@
       "scope": "system",
       "statement": "Each durable business fact has exactly one authoritative owner; cache/projection loss cannot change correctness.",
       "severity": "error",
-      "enforcement": ["semantic-policy", "source-code", "schema", "tests"],
-      "tags": ["ownership", "data-authority"]
+      "enforcement": [
+        "semantic-policy",
+        "source-code",
+        "schema",
+        "tests"
+      ],
+      "tags": [
+        "ownership",
+        "data-authority"
+      ]
     },
     {
       "id": "K2",
       "scope": "system",
       "statement": "Identity proof is not business authorization; protected transitions re-evaluate actor, scope, and owning policy.",
       "severity": "error",
-      "enforcement": ["application", "authorization-tests", "schema-policy"],
-      "tags": ["security", "authorization", "trust"]
+      "enforcement": [
+        "application",
+        "authorization-tests",
+        "schema-policy"
+      ],
+      "tags": [
+        "security",
+        "authorization",
+        "trust"
+      ]
     },
     {
       "id": "K3",
       "scope": "system",
       "statement": "Mutable conditional state does not silently use last-write-wins; replay-sensitive effects use stable request identity.",
       "severity": "error",
-      "enforcement": ["application", "database", "tests"],
-      "tags": ["concurrency", "replay"]
+      "enforcement": [
+        "application",
+        "database",
+        "tests"
+      ],
+      "tags": [
+        "concurrency",
+        "replay"
+      ]
     },
     {
       "id": "K4",
       "scope": "system",
       "statement": "Effects that jointly maintain an invariant commit atomically or use durable idempotent recovery.",
       "severity": "error",
-      "enforcement": ["transaction", "outbox-or-recovery", "tests"],
-      "tags": ["transaction", "recovery"]
+      "enforcement": [
+        "transaction",
+        "outbox-or-recovery",
+        "tests"
+      ],
+      "tags": [
+        "transaction",
+        "recovery"
+      ]
     },
     {
       "id": "K5",
       "scope": "system",
       "statement": "Each responsibility has one owner and consumers use explicit public contracts with directional dependencies.",
       "severity": "error",
-      "enforcement": ["semantic-policy", "manifest", "package-exports", "architecture-check"],
-      "tags": ["architecture", "dependency", "contract"]
+      "enforcement": [
+        "semantic-policy",
+        "manifest",
+        "package-exports",
+        "architecture-check"
+      ],
+      "tags": [
+        "architecture",
+        "dependency",
+        "contract"
+      ]
     },
     {
       "id": "K6",
       "scope": "system",
       "statement": "Static, test, build, schema, deployment, API, and device evidence only prove their actual scopes.",
       "severity": "error",
-      "enforcement": ["validation-pipeline", "acceptance-evidence"],
-      "tags": ["evidence", "validation"]
+      "enforcement": [
+        "validation-pipeline",
+        "acceptance-evidence"
+      ],
+      "tags": [
+        "evidence",
+        "validation"
+      ]
     },
     {
       "id": "SA1",
       "scope": "semantic-architecture",
       "statement": "Bounded Context, Module Boundary, Data Boundary, Consistency Boundary, Trust Boundary, and Runtime Boundary are distinct dimensions.",
       "severity": "error",
-      "enforcement": ["semantic-policy", "manifest"],
-      "tags": ["architecture", "boundary"]
+      "enforcement": [
+        "semantic-policy",
+        "manifest"
+      ],
+      "tags": [
+        "architecture",
+        "boundary"
+      ]
     },
     {
       "id": "SA2",
       "scope": "semantic-architecture",
       "statement": "Vendored GitHub FPT JSON is canonical local domain truth for GitHub GraphQL semantics; the product overlay may add Line_Bot_v1 ownership, invariants, lifecycle, capability, persistence, and implementation mappings but must not redefine FPT semantics.",
       "severity": "error",
-      "enforcement": ["semantic-policy", "fpt-domain-truth"],
-      "tags": ["fpt", "domain-truth", "authority"]
+      "enforcement": [
+        "semantic-policy",
+        "fpt-domain-truth"
+      ],
+      "tags": [
+        "fpt",
+        "domain-truth",
+        "authority"
+      ]
     },
     {
       "id": "SA3",
       "scope": "semantic-architecture",
       "statement": "Derived projections and references cannot become writable authoritative truth.",
       "severity": "error",
-      "enforcement": ["semantic-policy"],
-      "tags": ["projection", "authority"]
+      "enforcement": [
+        "semantic-policy"
+      ],
+      "tags": [
+        "projection",
+        "authority"
+      ]
     },
     {
       "id": "SA4",
       "scope": "semantic-architecture",
       "statement": "Selected-target semantics cannot be reported as current runtime capability solely because they exist in the semantic model.",
       "severity": "error",
-      "enforcement": ["semantic-policy", "governance"],
-      "tags": ["lifecycle", "evidence"]
+      "enforcement": [
+        "semantic-policy",
+        "governance"
+      ],
+      "tags": [
+        "lifecycle",
+        "evidence"
+      ]
     },
     {
       "id": "SA5",
       "scope": "semantic-architecture",
       "statement": "Runtime, provider, deployment, device, and human observations are evidence only; they may produce a revision proposal but never auto-modify canonical semantic authority.",
       "severity": "error",
-      "enforcement": ["semantic-policy", "runtime-feedback"]
+      "enforcement": [
+        "semantic-policy",
+        "runtime-feedback"
+      ]
     },
     {
       "id": "SA6",
       "scope": "semantic-architecture",
       "statement": "Every persisted app_private relation has exactly one relation-level data authority; relation ownership must agree with semantic concept ownership, and every concept that requires relation persistence must resolve to at least one authoritative relation.",
       "severity": "error",
-      "enforcement": ["data-topology", "architecture-check"],
-      "tags": ["data", "ownership", "boundary"]
+      "enforcement": [
+        "data-topology",
+        "architecture-check"
+      ],
+      "tags": [
+        "data",
+        "ownership",
+        "boundary"
+      ]
     },
     {
       "id": "CONTRACT1",
       "scope": "contract",
       "statement": "Commitments bind exact Content Work/Task plan items and frozen agreed quantities. Draft edits and ADMIN activation/closure preserve current qualification, permission-before-replay, expected-version concurrency and atomic revisions/receipts.",
       "severity": "error",
-      "enforcement": ["semantic-policy", "source-code", "schema", "tests"],
-      "tags": ["ownership", "authorization", "immutable-history", "transaction", "replay"]
+      "enforcement": [
+        "semantic-policy",
+        "source-code",
+        "schema",
+        "tests"
+      ],
+      "tags": [
+        "ownership",
+        "authorization",
+        "immutable-history",
+        "transaction",
+        "replay"
+      ]
     },
     {
       "id": "EXECUTION1",
       "scope": "execution",
       "statement": "New actual reports bind an exact Content Task under a currently ACTIVE Contract Work/Task line, observed Task prerequisite version and optional qualified physical Resource pins. Review preserves immutable original facts. Current authority precedes replay; writes and receipts are atomic. Quantities do not imply Task completion, payment or legal acceptance.",
       "severity": "error",
-      "enforcement": ["semantic-policy", "source-code", "schema", "tests"],
-      "tags": ["ownership", "authorization", "immutable-history", "transaction", "replay"]
+      "enforcement": [
+        "semantic-policy",
+        "source-code",
+        "schema",
+        "tests"
+      ],
+      "tags": [
+        "ownership",
+        "authorization",
+        "immutable-history",
+        "transaction",
+        "replay"
+      ]
     },
     {
       "id": "CONTRACT2",
       "scope": "contract",
       "statement": "ContractDocument revisions retain the complete target-owned structured candidate and an exact transaction-qualified File source. Current authorization precedes replay; expected version, aggregate head, immutable revision and command receipt commit atomically. Only an explicit Contract confirmation may confirm a candidate, and an acknowledged financial discrepancy is retained rather than silently normalized.",
       "severity": "error",
-      "enforcement": ["semantic-policy", "source-code", "schema", "tests"],
+      "enforcement": [
+        "semantic-policy",
+        "source-code",
+        "schema",
+        "tests"
+      ],
       "tags": [
         "ownership",
         "authorization",
@@ -6167,32 +6962,70 @@
       "scope": "file",
       "statement": "Original file bytes reside in immutable private Storage objects keyed by exact Repository/File/Revision; an object never becomes a visible FileRevision before verified upload and transactional Finalize. Current Repository authorization precedes access/replay, and storage paths/keys do not grant access. Uncertain external outcome is resolved by explicit readback, never blind overwrite.",
       "severity": "error",
-      "enforcement": ["source-code", "schema", "tests"],
-      "tags": ["file", "privacy", "immutable-evidence"]
+      "enforcement": [
+        "source-code",
+        "schema",
+        "tests"
+      ],
+      "tags": [
+        "file",
+        "privacy",
+        "immutable-evidence"
+      ]
     },
     {
       "id": "FILE2",
       "scope": "file",
       "statement": "File only owns original bytes and immutable file revisions. File does not invoke processors, persist processing runs/results, or own processing history.",
       "severity": "error",
-      "enforcement": ["source-code", "schema", "tests"],
-      "tags": ["file", "processing", "user-intent", "recovery", "trust"]
+      "enforcement": [
+        "source-code",
+        "schema",
+        "tests"
+      ],
+      "tags": [
+        "file",
+        "processing",
+        "user-intent",
+        "recovery",
+        "trust"
+      ]
     },
     {
       "id": "INTELLIGENCE1",
       "scope": "intelligence",
       "statement": "Intelligence owns authorized processing lifecycle, provider protocol, immutable run revisions, saved extraction evidence and processing receipts. It reads exact File sources only through File's public reader; extracted data remains untrusted, and target business facts remain owned by their target contracts.",
       "severity": "error",
-      "enforcement": ["semantic-policy", "source-code", "tests"],
-      "tags": ["intelligence", "trust", "ownership", "provider-boundary"]
+      "enforcement": [
+        "semantic-policy",
+        "source-code",
+        "tests"
+      ],
+      "tags": [
+        "intelligence",
+        "trust",
+        "ownership",
+        "provider-boundary"
+      ]
     },
     {
       "id": "INTELLIGENCE2",
       "scope": "intelligence",
       "statement": "Before provider execution, Intelligence durably records one source-qualified target-intent attempt. Only a fresh STARTED attempt may call the provider; duplicate or UNKNOWN attempts never trigger a second provider call. Target receipt readback may complete the attempt, and the attempt never stores extracted candidate or assumes Contract confirmation.",
       "severity": "error",
-      "enforcement": ["semantic-policy", "source-code", "schema", "tests"],
-      "tags": ["intelligence", "provider-attempt", "recovery", "replay", "trust"]
+      "enforcement": [
+        "semantic-policy",
+        "source-code",
+        "schema",
+        "tests"
+      ],
+      "tags": [
+        "intelligence",
+        "provider-attempt",
+        "recovery",
+        "replay",
+        "trust"
+      ]
     }
   ],
   "truthRegistry": [
@@ -6699,29 +7532,48 @@
       {
         "id": "semantic-architecture",
         "evidenceClass": "architecture",
-        "proves": ["semantic ownership, type, contract and mapping consistency"],
-        "doesNotProve": ["runtime behavior", "deployment", "device behavior"],
+        "proves": [
+          "semantic ownership, type, contract and mapping consistency"
+        ],
+        "doesNotProve": [
+          "runtime behavior",
+          "deployment",
+          "device behavior"
+        ],
         "command": "pnpm semantic check"
       },
       {
         "id": "architecture",
         "evidenceClass": "architecture",
-        "proves": ["semantic + implementation topology and dependency invariants"],
-        "doesNotProve": ["deployment", "provider current state"],
+        "proves": [
+          "semantic + implementation topology and dependency invariants"
+        ],
+        "doesNotProve": [
+          "deployment",
+          "provider current state"
+        ],
         "command": "pnpm architecture"
       },
       {
         "id": "architecture-tests",
         "evidenceClass": "integration-test",
-        "proves": ["legal, violating and repaired architecture cases"],
-        "doesNotProve": ["production behavior"],
+        "proves": [
+          "legal, violating and repaired architecture cases"
+        ],
+        "doesNotProve": [
+          "production behavior"
+        ],
         "command": "pnpm architecture:test"
       },
       {
         "id": "docs",
         "evidenceClass": "static",
-        "proves": ["documentation structure and local-link integrity"],
-        "doesNotProve": ["business behavior"],
+        "proves": [
+          "documentation structure and local-link integrity"
+        ],
+        "doesNotProve": [
+          "business behavior"
+        ],
         "command": "pnpm docs:check"
       },
       {
@@ -6730,42 +7582,71 @@
         "proves": [
           "declarative database contract and security constraints exercised by schema tests"
         ],
-        "doesNotProve": ["remote database equality"],
+        "doesNotProve": [
+          "remote database equality"
+        ],
         "command": "pnpm schema:check"
       },
       {
         "id": "typecheck",
         "evidenceClass": "type",
-        "proves": ["TypeScript type correctness"],
-        "doesNotProve": ["tests", "build", "deployment"],
+        "proves": [
+          "TypeScript type correctness"
+        ],
+        "doesNotProve": [
+          "tests",
+          "build",
+          "deployment"
+        ],
         "command": "pnpm typecheck"
       },
       {
         "id": "tests",
         "evidenceClass": "integration-test",
-        "proves": ["repository test behavior in executed scope"],
-        "doesNotProve": ["deployment", "device behavior"],
+        "proves": [
+          "repository test behavior in executed scope"
+        ],
+        "doesNotProve": [
+          "deployment",
+          "device behavior"
+        ],
         "command": "pnpm test"
       },
       {
         "id": "build",
         "evidenceClass": "build",
-        "proves": ["repository build succeeds"],
-        "doesNotProve": ["deployment", "runtime correctness"],
+        "proves": [
+          "repository build succeeds"
+        ],
+        "doesNotProve": [
+          "deployment",
+          "runtime correctness"
+        ],
         "command": "pnpm build"
       },
       {
         "id": "fast-repository",
         "evidenceClass": "static",
-        "proves": ["affected fast repository validation selected by canonical planner"],
-        "doesNotProve": ["full merge validation", "deployment"],
+        "proves": [
+          "affected fast repository validation selected by canonical planner"
+        ],
+        "doesNotProve": [
+          "full merge validation",
+          "deployment"
+        ],
         "command": "pnpm check"
       },
       {
         "id": "full-repository",
         "evidenceClass": "integration-test",
-        "proves": ["full repository validation pipeline"],
-        "doesNotProve": ["deployment", "provider readback", "device verification"],
+        "proves": [
+          "full repository validation pipeline"
+        ],
+        "doesNotProve": [
+          "deployment",
+          "provider readback",
+          "device verification"
+        ],
         "command": "pnpm validate"
       }
     ],
@@ -6776,33 +7657,57 @@
         {
           "id": "deployment",
           "evidenceClass": "deployment",
-          "mayRevise": ["implementation mapping", "runtime assumptions"]
+          "mayRevise": [
+            "implementation mapping",
+            "runtime assumptions"
+          ]
         },
         {
           "id": "provider-readback",
           "evidenceClass": "provider-readback",
-          "mayRevise": ["external integration assumptions", "drift status"]
+          "mayRevise": [
+            "external integration assumptions",
+            "drift status"
+          ]
         },
         {
           "id": "runtime",
           "evidenceClass": "runtime",
-          "mayRevise": ["capability assumptions", "failure semantics", "quality attributes"]
+          "mayRevise": [
+            "capability assumptions",
+            "failure semantics",
+            "quality attributes"
+          ]
         },
         {
           "id": "device",
           "evidenceClass": "device",
-          "mayRevise": ["browser/WebView assumptions"]
+          "mayRevise": [
+            "browser/WebView assumptions"
+          ]
         },
         {
           "id": "human-acceptance",
           "evidenceClass": "human-acceptance",
-          "mayRevise": ["business semantics", "acceptance criteria"]
+          "mayRevise": [
+            "business semantics",
+            "acceptance criteria"
+          ]
         }
       ],
       "bundleVersion": 1,
       "claimSubject": "capability",
-      "statuses": ["pass", "fail", "unknown"],
-      "comparisonPrecedence": ["drift", "review", "inconclusive", "aligned"],
+      "statuses": [
+        "pass",
+        "fail",
+        "unknown"
+      ],
+      "comparisonPrecedence": [
+        "drift",
+        "review",
+        "inconclusive",
+        "aligned"
+      ],
       "revisionProposal": {
         "derived": true,
         "autoApply": false,
@@ -6815,10 +7720,14 @@
       "id": "user-login",
       "concept": "user",
       "status": "active",
-      "fields": ["login"],
+      "fields": [
+        "login"
+      ],
       "scope": "shared-account-login-namespace",
       "scopeAuthority": "namespace",
-      "routeFiles": ["apps/web/src/app/(public)/[login]/page.tsx"],
+      "routeFiles": [
+        "apps/web/src/app/(public)/[login]/page.tsx"
+      ],
       "note": "User and Organization share the login namespace. URL/resourcePath is locator evidence, not authorization or stable database identity.",
       "fpt": {
         "file": "schema-users.json",
@@ -6830,10 +7739,14 @@
       "id": "organization-login",
       "concept": "organization",
       "status": "active",
-      "fields": ["login"],
+      "fields": [
+        "login"
+      ],
       "scope": "shared-account-login-namespace",
       "scopeAuthority": "namespace",
-      "routeFiles": ["apps/web/src/app/(public)/[login]/page.tsx"],
+      "routeFiles": [
+        "apps/web/src/app/(public)/[login]/page.tsx"
+      ],
       "note": "Organization login shares the account login namespace and is resolved by the public owner page. Rename/display concerns stay separate from stable account identity.",
       "fpt": {
         "file": "schema-orgs.json",
@@ -6845,10 +7758,14 @@
       "id": "enterprise-slug",
       "concept": "enterprise",
       "status": "active",
-      "fields": ["slug"],
+      "fields": [
+        "slug"
+      ],
       "scope": "enterprise-slug-namespace",
       "scopeAuthority": "namespace",
-      "routeFiles": ["apps/web/src/app/(mobile)/(tabs)/enterprises/[slug]/page.tsx"],
+      "routeFiles": [
+        "apps/web/src/app/(mobile)/(tabs)/enterprises/[slug]/page.tsx"
+      ],
       "note": "Enterprise slug is independent from shared User/Organization login and Repository owner login.",
       "fpt": {
         "file": "schema-enterprise-admin.json",
@@ -6860,10 +7777,15 @@
       "id": "repository-owner-name",
       "concept": "repository",
       "status": "active",
-      "fields": ["ownerLogin", "name"],
+      "fields": [
+        "ownerLogin",
+        "name"
+      ],
       "scope": "repository-owner-login-and-name",
       "scopeAuthority": "namespace",
-      "routeFiles": ["apps/web/src/app/(resource)/[login]/[repository]/page.tsx"],
+      "routeFiles": [
+        "apps/web/src/app/(resource)/[login]/[repository]/page.tsx"
+      ],
       "note": "Repository URL derives from owner login plus Repository name; access still comes from authorization checks.",
       "fpt": {
         "file": "schema-repos.json",
@@ -6875,17 +7797,25 @@
       "id": "repository-star-list-id",
       "concept": "repository-star-list",
       "status": "active",
-      "fields": ["listId"],
+      "fields": [
+        "listId"
+      ],
       "scope": "repository-star-list-global-id",
       "scopeAuthority": "repository",
-      "routeFiles": ["apps/web/src/app/(mobile)/(tabs)/repositories/lists/[listId]/page.tsx"],
+      "routeFiles": [
+        "apps/web/src/app/(mobile)/(tabs)/repositories/lists/[listId]/page.tsx"
+      ],
       "note": "Repository Star List uses its opaque stable ListId as the detail locator under the already-reserved /repositories root; the locator never grants Repository or List authority."
     },
     {
       "id": "issue-number",
       "concept": "issue",
       "status": "active",
-      "fields": ["ownerLogin", "repositoryName", "number"],
+      "fields": [
+        "ownerLogin",
+        "repositoryName",
+        "number"
+      ],
       "scope": "repository-scoped-issue-number",
       "scopeAuthority": "numbering",
       "routeFiles": [
@@ -6902,7 +7832,11 @@
       "id": "discussion-number",
       "concept": "discussion",
       "status": "active",
-      "fields": ["ownerLogin", "repositoryName", "number"],
+      "fields": [
+        "ownerLogin",
+        "repositoryName",
+        "number"
+      ],
       "scope": "repository-scoped-discussion-number",
       "scopeAuthority": "numbering",
       "routeFiles": [
@@ -6919,7 +7853,11 @@
       "id": "discussion-opaque-id",
       "concept": "discussion",
       "status": "active",
-      "fields": ["ownerLogin", "repositoryName", "discussionId"],
+      "fields": [
+        "ownerLogin",
+        "repositoryName",
+        "discussionId"
+      ],
       "scope": "repository-scoped-local-discussion-id",
       "scopeAuthority": "repository",
       "routeFiles": [
@@ -6931,7 +7869,11 @@
       "id": "repository-milestone-number",
       "concept": "repository-milestone",
       "status": "active",
-      "fields": ["ownerLogin", "repositoryName", "milestoneNumber"],
+      "fields": [
+        "ownerLogin",
+        "repositoryName",
+        "milestoneNumber"
+      ],
       "scope": "repository-scoped-milestone-number",
       "scopeAuthority": "numbering",
       "routeFiles": [
@@ -6948,10 +7890,15 @@
       "id": "organization-team-slug",
       "concept": "team",
       "status": "active",
-      "fields": ["organizationLogin", "teamSlug"],
+      "fields": [
+        "organizationLogin",
+        "teamSlug"
+      ],
       "scope": "organization-scoped-team-slug",
       "scopeAuthority": "namespace",
-      "routeFiles": ["apps/web/src/app/(mobile)/(tabs)/orgs/[login]/teams/[teamSlug]/page.tsx"],
+      "routeFiles": [
+        "apps/web/src/app/(mobile)/(tabs)/orgs/[login]/teams/[teamSlug]/page.tsx"
+      ],
       "note": "Team slug is Organization-scoped and mutable separately from Team identity.",
       "fpt": {
         "file": "schema-teams.json",
@@ -6963,7 +7910,10 @@
       "id": "enterprise-team-slug",
       "concept": "enterprise-team",
       "status": "active",
-      "fields": ["enterpriseSlug", "teamSlug"],
+      "fields": [
+        "enterpriseSlug",
+        "teamSlug"
+      ],
       "scope": "enterprise-scoped-team-slug",
       "scopeAuthority": "namespace",
       "routeFiles": [
