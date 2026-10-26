@@ -228,7 +228,7 @@ async function main(): Promise<void> {
   console.log(
     JSON.stringify({ ...response, artifact: relative(process.cwd(), response.artifact) }),
   );
-  process.exitCode = result.exitCode;
+  process.exitCode = result.ok ? 0 : result.exitCode;
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
