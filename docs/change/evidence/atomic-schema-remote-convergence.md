@@ -14,6 +14,6 @@
 
 ## Boundary
 
-Current desired schema 只由 `supabase/schemas/` 擁有。這份 2026-09-18 remote evidence 不得用來推導目前 operational target、目前 row counts 或目前 remote parity。
+Current desired schema 只由 `packages/integration-supabase/src/schemas/` 擁有。這份 2026-09-18 remote evidence 不得用來推導目前 operational target、目前 row counts 或目前 remote parity。
 
 原始 provider identifiers、deployment ID、advisor snapshot、row counts 與逐項 catalog output 已從 working tree 蒸餾；需要稽核時由 Git history 取得。

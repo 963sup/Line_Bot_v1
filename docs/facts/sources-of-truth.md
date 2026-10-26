@@ -9,7 +9,7 @@ Conflicting answers use the authority below; do not load more background first.
 | Product owner/relationship/invariant/capability/implementation expectation | `architecture/semantic-model.json` |
 | Module path/kind/dependency allowlist | `architecture/implementation-topology.json` |
 | Persisted relation owner/schema mapping | `architecture/data-topology.json` |
-| PostgreSQL DDL/constraint/RLS | `supabase/schemas/` |
+| PostgreSQL DDL/constraint/RLS | `packages/integration-supabase/src/schemas/` |
 | Public package API | owner `package.json#exports` |
 | Global login lifecycle / root reservation / selected path contract | `packages/namespace/src/domain/namespace.ts` / `packages/namespace/src/domain/root.ts` / `packages/namespace/src/domain/routes.ts`；actual delivery evidence remains App Router source |
 | Commands/versions | root `package.json`, lockfile, runtime config |

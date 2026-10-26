@@ -4,7 +4,7 @@ Status: pending physical contract cleanup. Business runtime parity is active in 
 
 ## Authority
 
-Issue owns the mapping. Current PostgreSQL structure remains authoritative only in `supabase/schemas/`. This document does not become schema authority and is not a Supabase migration. Production mutation remains restricted to the validated current-main Release / explicitly authorized data-cutover path.
+Issue owns the mapping. Current PostgreSQL structure remains authoritative only in `packages/integration-supabase/src/schemas/`. This document does not become schema authority and is not a Supabase migration. Production mutation remains restricted to the validated current-main Release / explicitly authorized data-cutover path.
 
 ## Stages
 

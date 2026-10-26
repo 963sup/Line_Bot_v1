@@ -202,12 +202,12 @@ export function compileDataTopology(model, dataTopology, schemaFiles, relationsB
 export async function loadDataTopologySources(root = repositoryRoot) {
   const [dataTopology, names] = await Promise.all([
     readFile(resolve(root, "architecture/data-topology.json"), "utf8").then(JSON.parse),
-    readdir(resolve(root, "supabase/schemas")),
+    readdir(resolve(root, "packages/integration-supabase/src/schemas")),
   ]);
   const schemaFiles = names
     .filter((name) => name.endsWith(".sql"))
     .sort()
-    .map((name) => "supabase/schemas/" + name);
+    .map((name) => "packages/integration-supabase/src/schemas/" + name);
   const relationsByFile = new Map();
   for (const path of schemaFiles) {
     const sql = await readFile(resolve(root, path), "utf8");

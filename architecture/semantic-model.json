@@ -11,7 +11,7 @@
     "implementationTopology": "architecture/implementation-topology.json",
     "businessOwnerDocs": "docs/owners/",
     "runtimeBehavior": "source-code-and-tests",
-    "persistenceCurrentState": "supabase/schemas/",
+    "persistenceCurrentState": "packages/integration-supabase/src/schemas/",
     "historicalChange": "docs/change/",
     "dataTopology": "architecture/data-topology.json",
     "githubFptDomainTruth": "architecture/domain/fpt/*.json",
@@ -6258,7 +6258,7 @@
     },
     {
       "id": "persistence-current-state",
-      "authority": "supabase/schemas/",
+      "authority": "packages/integration-supabase/src/schemas/",
       "scope": "database current structure"
     },
     {
@@ -6603,7 +6603,7 @@
     {
       "id": "data",
       "meaning": "Persisted facts, access and isolation ownership.",
-      "source": "implementationMappings.data + supabase/schemas"
+      "source": "implementationMappings.data + packages/integration-supabase/src/schemas"
     },
     {
       "id": "consistency",

@@ -4,7 +4,10 @@ import { PGlite } from "@electric-sql/pglite";
 import { createSql, type Database, type SqlRow } from "../database/postgres/database.js";
 
 function schemaFiles() {
-  const directory = new URL("../../../../supabase/schemas/", import.meta.url);
+  const directory = new URL(
+    "../../../../packages/integration-supabase/src/schemas/",
+    import.meta.url,
+  );
   return readdirSync(directory)
     .filter((name) => name.endsWith(".sql"))
     .sort()

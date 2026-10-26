@@ -1,10 +1,10 @@
 # Supabase operation scripts
 
-Database current-state SSOT 是 `supabase/schemas/*.sql`。本目錄只負責 declarative schema source 組裝、本機重建、remote plan/apply/readback 與 PostgreSQL execution mechanism；不維護 migration history。
+Database current-state SSOT 是 `packages/integration-supabase/src/schemas/*.sql`。本目錄只負責 declarative schema source 組裝、本機重建、remote plan/apply/readback 與 PostgreSQL execution mechanism；不維護 migration history。
 
 | Script | 用途 |
 | --- | --- |
-| `schema-source.mjs` | 依 canonical lexical order 讀取/組合 `supabase/schemas/*.sql` declarative source。 |
+| `schema-source.mjs` | 依 canonical lexical order 讀取/組合 `packages/integration-supabase/src/schemas/*.sql` declarative source。 |
 | `schema-source.test.mjs` | 驗證 schema source discovery、ordering 與 current-state contract。 |
 | `postgres.mjs` | Bounded PostgreSQL execution helper，區分 local/remote failure semantics。 |
 | `postgres.test.mjs` | 驗證 PostgreSQL adapter target、timeout/error handling。 |
@@ -18,7 +18,7 @@ Database current-state SSOT 是 `supabase/schemas/*.sql`。本目錄只負責 de
 | `remote.test.mjs` | 驗證 remote SQL authorization 邊界、unknown-result、schema diff/readback 與 no-migration-history constraints。 |
 | `identifier-cutover.mjs` | Scoped Numbering / Namespace authority 的 one-time catalog detection、persistent writer freeze、post-deployment runtime activation 與 readback contract。 |
 
-任何 schema change 先修改 `supabase/schemas/*.sql`；remote 是部署結果，不是反向 source of truth。Storage Bucket 只宣告於 `supabase/config.toml`，不進本 schema source、migration history 或 provider-owned storage tables DDL。詳細規則見同層 `AGENTS.md`。
+任何 schema change 先修改 `packages/integration-supabase/src/schemas/*.sql`；remote 是部署結果，不是反向 source of truth。Storage Bucket 只宣告於 `packages/integration-supabase/src/config.toml`，不進本 schema source、migration history 或 provider-owned storage tables DDL。詳細規則見同層 `AGENTS.md`。
 
 Diff 使用已鎖定 CLI 的 explicit `--from <remote> --to local --schema app_private --strict-coverage`，不使用 migrations baseline。CLI 輸出為 review SQL；本 operator 僅支援單一 transaction 可執行的 DDL，拒絕 transaction control、concurrent index 等非交易操作；其他 SQL 失敗會 rollback，不會拆成部分提交。未涵蓋的 schema object 由 strict coverage 拒絕。參見 [Supabase CLI](https://supabase.com/docs/reference/cli/supabase-db-diff)。
 

@@ -9,13 +9,13 @@ architecture/semantic-model.json
 architecture/data-topology.json
   → persisted relation authority / role / physical file
 
-supabase/schemas/*.sql
+packages/integration-supabase/src/schemas/*.sql
   → actual PostgreSQL definition
 ```
 
 This document explains the cross-owner data invariants only. Physical object inventory belongs to
 [Data topology](../../../architecture/data-topology.json) and the
-[Schema tree](../../../supabase/schemas/README.md).
+[Schema tree](../../../packages/integration-supabase/src/schemas/README.md).
 
 ## Account identity
 

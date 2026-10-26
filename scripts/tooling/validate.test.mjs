@@ -185,7 +185,7 @@ test("fast plan explains skips and conservative workspace selection without chan
   for (const scope of [
     null,
     classifyChangedFiles(["README.md"]),
-    classifyChangedFiles(["supabase/schemas/600_repositories.sql"]),
+    classifyChangedFiles(["packages/integration-supabase/src/schemas/600_repositories.sql"]),
     { ...classifyChangedFiles(["packages/account/src/new.ts"]), hasUntrackedFiles: true },
   ]) {
     const plan = describeFastPlan(stages, scope, ["--affected"]);
@@ -202,7 +202,9 @@ test("fast plan explains skips and conservative workspace selection without chan
       shouldRunFast("build", scope),
     );
   }
-  const schema = classifyChangedFiles(["supabase/schemas/600_repositories.sql"]);
+  const schema = classifyChangedFiles([
+    "packages/integration-supabase/src/schemas/600_repositories.sql",
+  ]);
   const filtered = describeFastPlan(stages, schema, ["--filter=@line_bot_v1/account"], true);
   assert.deepEqual(filtered.stages[2].selection, ["--filter=@line_bot_v1/account"]);
   assert.match(filtered.stages[2].selectionReason, /caller must cover all consumers/);
@@ -322,7 +324,7 @@ test("local fast scope includes staged edits, unstaged edits, deletions, and ren
 
 test("untracked declarative schemas select schema validation and the full workspace", (t) => {
   const directory = gitFixture(t);
-  const schemaDirectory = join(directory, "supabase", "schemas");
+  const schemaDirectory = join(directory, "packages", "integration-supabase", "src", "schemas");
   mkdirSync(schemaDirectory, { recursive: true });
   writeFileSync(join(schemaDirectory, "99_fixture.sql"), "select 1;\n");
 
@@ -362,7 +364,7 @@ test("CI compares an exact base SHA instead of requiring a remote branch name", 
 });
 
 test("schema-only changes run schema, remote-contract, architecture and product test gates", () => {
-  const scope = classifyChangedFiles(["supabase/schemas/42_expenses.sql"]);
+  const scope = classifyChangedFiles(["packages/integration-supabase/src/schemas/42_expenses.sql"]);
   assert.deepEqual(scope, {
     codeAffected: false,
     docsAffected: false,
@@ -379,9 +381,11 @@ test("schema-only changes run schema, remote-contract, architecture and product 
 test("schema scope expands typecheck and tests to the full workspace by default", () => {
   const command = ["turbo", "run", "typecheck", "test"];
   const selection = ["--affected"];
-  const schemaOnly = classifyChangedFiles(["supabase/schemas/600_repositories.sql"]);
+  const schemaOnly = classifyChangedFiles([
+    "packages/integration-supabase/src/schemas/600_repositories.sql",
+  ]);
   const mixed = classifyChangedFiles([
-    "supabase/schemas/600_repositories.sql",
+    "packages/integration-supabase/src/schemas/600_repositories.sql",
     "scripts/architecture/semantic-core.mjs",
   ]);
 

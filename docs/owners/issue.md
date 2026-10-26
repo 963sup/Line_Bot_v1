@@ -90,7 +90,7 @@ FPT `schema-issues.json#IssueType` is implemented inside the Issue owner; FPT ca
 
 Runtime owner: `packages/issue`. Repository scope provider: `packages/repository`. Web presentation remains on Repository resource routes without acquiring Issue authority.
 
-Persisted relation ownership is authoritative in [data topology](../../architecture/data-topology.json); SQL definitions remain under `supabase/schemas/`.
+Persisted relation ownership is authoritative in [data topology](../../architecture/data-topology.json); SQL definitions remain under `packages/integration-supabase/src/schemas/`.
 
 Adjacent owners: [Repository](repository.md) · [Project](project.md) · [Notifications](notifications.md)
 

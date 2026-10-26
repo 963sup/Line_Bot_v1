@@ -102,7 +102,7 @@ export function assertSchemaOwnership(name, sql) {
 }
 
 export function schemaFileNames() {
-  const directory = new URL("supabase/schemas/", root);
+  const directory = new URL("packages/integration-supabase/src/schemas/", root);
   const names = readdirSync(directory)
     .filter((name) => name.endsWith(".sql"))
     .sort();
@@ -111,7 +111,7 @@ export function schemaFileNames() {
 }
 
 export function declaredSchemaSql() {
-  const directory = new URL("supabase/schemas/", root);
+  const directory = new URL("packages/integration-supabase/src/schemas/", root);
   return schemaFileNames()
     .map((name) => {
       const sql = readFileSync(new URL(name, directory), "utf8");

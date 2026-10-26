@@ -21,7 +21,7 @@
 | Product owner、invariant、relationship、capability、context | [Semantic model](../architecture/semantic-model.json) |
 | Module path/kind、dependency allowlist、selected targets | [Implementation topology](../architecture/implementation-topology.json) |
 | Persisted relation authority / projection / reference | [Data topology](../architecture/data-topology.json) |
-| SQL / constraints / RLS | [Declarative schemas](../supabase/schemas/README.md) |
+| SQL / constraints / RLS | [Declarative schemas](../packages/integration-supabase/src/schemas/README.md) |
 | Public package surface | 各 package 的 `package.json#exports` |
 | Dependency / formatting / reachability checks | [Dependency Cruiser](../.dependency-cruiser.mjs)、[Biome](../biome.json)、[Knip](../knip.jsonc) |
 

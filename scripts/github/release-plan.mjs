@@ -48,12 +48,16 @@ export function releaseSha(displayTitle) {
 }
 
 export function schemaChanged(files) {
-  return files.some((file) => /^supabase\/schemas\/[^/]+\.sql$/.test(file));
+  return files.some((file) =>
+    /^packages\/integration-supabase\/supabase\/schemas\/[^/]+\.sql$/.test(file),
+  );
 }
 
 export function storageChanged(files) {
   return files.some(
-    (file) => file === "supabase/config.toml" || file === "scripts/supabase/storage.mjs",
+    (file) =>
+      file === "packages/integration-supabase/src/config.toml" ||
+      file === "scripts/supabase/storage.mjs",
   );
 }
 

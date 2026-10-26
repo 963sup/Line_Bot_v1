@@ -2,7 +2,7 @@
   "version": 2,
   "role": "relation-data-topology",
   "semanticModel": "architecture/semantic-model.json",
-  "schemaRoot": "supabase/schemas",
+  "schemaRoot": "packages/integration-supabase/src/schemas",
   "databaseSchema": "app_private",
   "rules": {
     "everySchemaFileDeclared": true,
@@ -14,441 +14,441 @@
   },
   "files": [
     {
-      "path": "supabase/schemas/000_foundation.sql",
+      "path": "packages/integration-supabase/src/schemas/000_foundation.sql",
       "role": "foundation",
       "mechanismOwner": "platform"
     },
     {
-      "path": "supabase/schemas/100_accounts.sql",
+      "path": "packages/integration-supabase/src/schemas/100_accounts.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/101_account_logins.sql",
+      "path": "packages/integration-supabase/src/schemas/101_account_logins.sql",
       "role": "derived-projection"
     },
     {
-      "path": "supabase/schemas/102_numbering.sql",
+      "path": "packages/integration-supabase/src/schemas/102_numbering.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/103_namespace_bindings.sql",
+      "path": "packages/integration-supabase/src/schemas/103_namespace_bindings.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/110_users.sql",
+      "path": "packages/integration-supabase/src/schemas/110_users.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/111_user_external_identities.sql",
+      "path": "packages/integration-supabase/src/schemas/111_user_external_identities.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/112_user_provisioning.sql",
+      "path": "packages/integration-supabase/src/schemas/112_user_provisioning.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/113_user_profiles.sql",
+      "path": "packages/integration-supabase/src/schemas/113_user_profiles.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/114_user_achievements.sql",
+      "path": "packages/integration-supabase/src/schemas/114_user_achievements.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/115_user_follows.sql",
+      "path": "packages/integration-supabase/src/schemas/115_user_follows.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/116_user_profile_statuses.sql",
+      "path": "packages/integration-supabase/src/schemas/116_user_profile_statuses.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/200_enterprises.sql",
+      "path": "packages/integration-supabase/src/schemas/200_enterprises.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/201_enterprise_affiliations.sql",
+      "path": "packages/integration-supabase/src/schemas/201_enterprise_affiliations.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/202_enterprise_organizations.sql",
+      "path": "packages/integration-supabase/src/schemas/202_enterprise_organizations.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/210_enterprise_teams.sql",
+      "path": "packages/integration-supabase/src/schemas/210_enterprise_teams.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/211_enterprise_team_memberships.sql",
+      "path": "packages/integration-supabase/src/schemas/211_enterprise_team_memberships.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/212_enterprise_team_organization_assignments.sql",
+      "path": "packages/integration-supabase/src/schemas/212_enterprise_team_organization_assignments.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/220_enterprise_invitations.sql",
+      "path": "packages/integration-supabase/src/schemas/220_enterprise_invitations.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/300_organizations.sql",
+      "path": "packages/integration-supabase/src/schemas/300_organizations.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/301_organization_memberships.sql",
+      "path": "packages/integration-supabase/src/schemas/301_organization_memberships.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/302_organization_invitations.sql",
+      "path": "packages/integration-supabase/src/schemas/302_organization_invitations.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/400_teams.sql",
+      "path": "packages/integration-supabase/src/schemas/400_teams.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/401_team_memberships.sql",
+      "path": "packages/integration-supabase/src/schemas/401_team_memberships.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/402_team_commands.sql",
+      "path": "packages/integration-supabase/src/schemas/402_team_commands.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/500_enterprise_role_assignments.sql",
+      "path": "packages/integration-supabase/src/schemas/500_enterprise_role_assignments.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/501_organization_role_assignments.sql",
+      "path": "packages/integration-supabase/src/schemas/501_organization_role_assignments.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/502_team_role_assignments.sql",
+      "path": "packages/integration-supabase/src/schemas/502_team_role_assignments.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/510_permission_definitions.sql",
+      "path": "packages/integration-supabase/src/schemas/510_permission_definitions.sql",
       "role": "authoritative-definition",
       "mechanismOwner": "identity-access"
     },
     {
-      "path": "supabase/schemas/511_permission_grants.sql",
+      "path": "packages/integration-supabase/src/schemas/511_permission_grants.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/512_permission_administration.sql",
+      "path": "packages/integration-supabase/src/schemas/512_permission_administration.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/520_governance_evidence.sql",
+      "path": "packages/integration-supabase/src/schemas/520_governance_evidence.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/600_repositories.sql",
+      "path": "packages/integration-supabase/src/schemas/600_repositories.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/601_repository_user_access.sql",
+      "path": "packages/integration-supabase/src/schemas/601_repository_user_access.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/602_repository_team_access.sql",
+      "path": "packages/integration-supabase/src/schemas/602_repository_team_access.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/603_repository_stars.sql",
+      "path": "packages/integration-supabase/src/schemas/603_repository_stars.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/604_repository_commands.sql",
+      "path": "packages/integration-supabase/src/schemas/604_repository_commands.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/605_repository_star_lists.sql",
+      "path": "packages/integration-supabase/src/schemas/605_repository_star_lists.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/606_repository_name_history.sql",
+      "path": "packages/integration-supabase/src/schemas/606_repository_name_history.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/607_repository_subscriptions.sql",
+      "path": "packages/integration-supabase/src/schemas/607_repository_subscriptions.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/608_repository_events.sql",
+      "path": "packages/integration-supabase/src/schemas/608_repository_events.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/609_repository_wbs.sql",
+      "path": "packages/integration-supabase/src/schemas/609_repository_wbs.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/610_repository_labels.sql",
+      "path": "packages/integration-supabase/src/schemas/610_repository_labels.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/610_wiki.sql",
+      "path": "packages/integration-supabase/src/schemas/610_wiki.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/611_repository_milestones.sql",
+      "path": "packages/integration-supabase/src/schemas/611_repository_milestones.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/611_wbs_outbox.sql",
+      "path": "packages/integration-supabase/src/schemas/611_wbs_outbox.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/612_actions.sql",
+      "path": "packages/integration-supabase/src/schemas/612_actions.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/615_files.sql",
+      "path": "packages/integration-supabase/src/schemas/615_files.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/619_intelligence_processing.sql",
+      "path": "packages/integration-supabase/src/schemas/619_intelligence_processing.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/616_contracts.sql",
+      "path": "packages/integration-supabase/src/schemas/616_contracts.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/617_executions.sql",
+      "path": "packages/integration-supabase/src/schemas/617_executions.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/618_content_plans.sql",
+      "path": "packages/integration-supabase/src/schemas/618_content_plans.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/619_resources.sql",
+      "path": "packages/integration-supabase/src/schemas/619_resources.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/619_contract_documents.sql",
+      "path": "packages/integration-supabase/src/schemas/619_contract_documents.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/619_intelligence_intakes.sql",
+      "path": "packages/integration-supabase/src/schemas/619_intelligence_intakes.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/620_issues.sql",
+      "path": "packages/integration-supabase/src/schemas/620_issues.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/620_task_dependencies.sql",
+      "path": "packages/integration-supabase/src/schemas/620_task_dependencies.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/621_issue_commands.sql",
+      "path": "packages/integration-supabase/src/schemas/621_issue_commands.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/622_issue_events.sql",
+      "path": "packages/integration-supabase/src/schemas/622_issue_events.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/623_issue_labels.sql",
+      "path": "packages/integration-supabase/src/schemas/623_issue_labels.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/624_issue_assignees.sql",
+      "path": "packages/integration-supabase/src/schemas/624_issue_assignees.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/625_issue_comments.sql",
+      "path": "packages/integration-supabase/src/schemas/625_issue_comments.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/626_issue_relations.sql",
+      "path": "packages/integration-supabase/src/schemas/626_issue_relations.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/627_issue_types.sql",
+      "path": "packages/integration-supabase/src/schemas/627_issue_types.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/630_discussions.sql",
+      "path": "packages/integration-supabase/src/schemas/630_discussions.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/631_discussion_comments.sql",
+      "path": "packages/integration-supabase/src/schemas/631_discussion_comments.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/632_discussion_categories.sql",
+      "path": "packages/integration-supabase/src/schemas/632_discussion_categories.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/633_discussion_collaboration.sql",
+      "path": "packages/integration-supabase/src/schemas/633_discussion_collaboration.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/634_discussion_commands.sql",
+      "path": "packages/integration-supabase/src/schemas/634_discussion_commands.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/700_projects.sql",
+      "path": "packages/integration-supabase/src/schemas/700_projects.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/701_project_items.sql",
+      "path": "packages/integration-supabase/src/schemas/701_project_items.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/702_project_wbs.sql",
+      "path": "packages/integration-supabase/src/schemas/702_project_wbs.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/703_project_milestones.sql",
+      "path": "packages/integration-supabase/src/schemas/703_project_milestones.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/704_project_repository_references.sql",
+      "path": "packages/integration-supabase/src/schemas/704_project_repository_references.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/705_project_access.sql",
+      "path": "packages/integration-supabase/src/schemas/705_project_access.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/706_project_commands.sql",
+      "path": "packages/integration-supabase/src/schemas/706_project_commands.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/707_project_fields.sql",
+      "path": "packages/integration-supabase/src/schemas/707_project_fields.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/708_project_views.sql",
+      "path": "packages/integration-supabase/src/schemas/708_project_views.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/709_project_status_updates.sql",
+      "path": "packages/integration-supabase/src/schemas/709_project_status_updates.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/710_project_wbs_governance.sql",
+      "path": "packages/integration-supabase/src/schemas/710_project_wbs_governance.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/711_project_wbs_outbox.sql",
+      "path": "packages/integration-supabase/src/schemas/711_project_wbs_outbox.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/712_project_actions.sql",
+      "path": "packages/integration-supabase/src/schemas/712_project_actions.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/713_wbs_scope_transfers.sql",
+      "path": "packages/integration-supabase/src/schemas/713_wbs_scope_transfers.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/800_asset_definitions.sql",
+      "path": "packages/integration-supabase/src/schemas/800_asset_definitions.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/805_daily_check_in_claims.sql",
+      "path": "packages/integration-supabase/src/schemas/805_daily_check_in_claims.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/810_ledger_entries.sql",
+      "path": "packages/integration-supabase/src/schemas/810_ledger_entries.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/820_expenses.sql",
+      "path": "packages/integration-supabase/src/schemas/820_expenses.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/821_expense_events.sql",
+      "path": "packages/integration-supabase/src/schemas/821_expense_events.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/822_receipt_intents.sql",
+      "path": "packages/integration-supabase/src/schemas/822_receipt_intents.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/830_attendance.sql",
+      "path": "packages/integration-supabase/src/schemas/830_attendance.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/831_attendance_commands.sql",
+      "path": "packages/integration-supabase/src/schemas/831_attendance_commands.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/832_attendance_events.sql",
+      "path": "packages/integration-supabase/src/schemas/832_attendance_events.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/833_attendance_outbox.sql",
+      "path": "packages/integration-supabase/src/schemas/833_attendance_outbox.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/834_attendance_supplements.sql",
+      "path": "packages/integration-supabase/src/schemas/834_attendance_supplements.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/840_workplaces.sql",
+      "path": "packages/integration-supabase/src/schemas/840_workplaces.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/841_workplace_memberships.sql",
+      "path": "packages/integration-supabase/src/schemas/841_workplace_memberships.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/842_workplace_commands.sql",
+      "path": "packages/integration-supabase/src/schemas/842_workplace_commands.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/843_workplace_chat.sql",
+      "path": "packages/integration-supabase/src/schemas/843_workplace_chat.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/850_notifications.sql",
+      "path": "packages/integration-supabase/src/schemas/850_notifications.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/851_notification_deliveries.sql",
+      "path": "packages/integration-supabase/src/schemas/851_notification_deliveries.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/852_notification_receipts.sql",
+      "path": "packages/integration-supabase/src/schemas/852_notification_receipts.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/860_partners.sql",
+      "path": "packages/integration-supabase/src/schemas/860_partners.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/861_partner_contacts.sql",
+      "path": "packages/integration-supabase/src/schemas/861_partner_contacts.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/862_partner_referrals.sql",
+      "path": "packages/integration-supabase/src/schemas/862_partner_referrals.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/863_partner_commands.sql",
+      "path": "packages/integration-supabase/src/schemas/863_partner_commands.sql",
       "role": "authoritative"
     },
     {
-      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
       "role": "derived-projection"
     },
     {
-      "path": "supabase/schemas/910_cross_owner_constraints.sql",
+      "path": "packages/integration-supabase/src/schemas/910_cross_owner_constraints.sql",
       "role": "invariant-enforcement"
     },
     {
-      "path": "supabase/schemas/920_transaction_coordinators.sql",
+      "path": "packages/integration-supabase/src/schemas/920_transaction_coordinators.sql",
       "role": "transaction-coordinator"
     },
     {
-      "path": "supabase/schemas/930_access_enforcement.sql",
+      "path": "packages/integration-supabase/src/schemas/930_access_enforcement.sql",
       "role": "access-enforcement"
     }
   ],
@@ -456,21 +456,21 @@
     {
       "name": "scoped_identifier_authority",
       "kind": "table",
-      "path": "supabase/schemas/000_foundation.sql",
+      "path": "packages/integration-supabase/src/schemas/000_foundation.sql",
       "authority": true,
       "semanticOwner": "platform"
     },
     {
       "name": "accounts",
       "kind": "table",
-      "path": "supabase/schemas/100_accounts.sql",
+      "path": "packages/integration-supabase/src/schemas/100_accounts.sql",
       "authority": true,
       "semanticOwner": "account"
     },
     {
       "name": "account_logins",
       "kind": "table",
-      "path": "supabase/schemas/101_account_logins.sql",
+      "path": "packages/integration-supabase/src/schemas/101_account_logins.sql",
       "authority": false,
       "role": "constrained-projection",
       "participants": ["account", "namespace"]
@@ -478,7 +478,7 @@
     {
       "name": "number_series",
       "kind": "table",
-      "path": "supabase/schemas/102_numbering.sql",
+      "path": "packages/integration-supabase/src/schemas/102_numbering.sql",
       "authority": true,
       "semanticOwner": "numbering",
       "concept": "number-series"
@@ -486,7 +486,7 @@
     {
       "name": "number_allocations",
       "kind": "table",
-      "path": "supabase/schemas/102_numbering.sql",
+      "path": "packages/integration-supabase/src/schemas/102_numbering.sql",
       "authority": true,
       "semanticOwner": "numbering",
       "concept": "number-allocation"
@@ -494,7 +494,7 @@
     {
       "name": "namespace_bindings",
       "kind": "table",
-      "path": "supabase/schemas/103_namespace_bindings.sql",
+      "path": "packages/integration-supabase/src/schemas/103_namespace_bindings.sql",
       "authority": true,
       "semanticOwner": "namespace",
       "concept": "namespace-binding"
@@ -502,7 +502,7 @@
     {
       "name": "namespace_claims",
       "kind": "table",
-      "path": "supabase/schemas/103_namespace_bindings.sql",
+      "path": "packages/integration-supabase/src/schemas/103_namespace_bindings.sql",
       "authority": true,
       "semanticOwner": "namespace",
       "concept": "namespace-claim"
@@ -510,7 +510,7 @@
     {
       "name": "namespace_binding_history",
       "kind": "table",
-      "path": "supabase/schemas/103_namespace_bindings.sql",
+      "path": "packages/integration-supabase/src/schemas/103_namespace_bindings.sql",
       "authority": true,
       "semanticOwner": "namespace",
       "concept": "namespace-binding-history"
@@ -518,7 +518,7 @@
     {
       "name": "users",
       "kind": "table",
-      "path": "supabase/schemas/110_users.sql",
+      "path": "packages/integration-supabase/src/schemas/110_users.sql",
       "authority": true,
       "semanticOwner": "account",
       "concept": "user"
@@ -526,63 +526,63 @@
     {
       "name": "user_events",
       "kind": "table",
-      "path": "supabase/schemas/110_users.sql",
+      "path": "packages/integration-supabase/src/schemas/110_users.sql",
       "authority": true,
       "semanticOwner": "account"
     },
     {
       "name": "user_management_commands",
       "kind": "table",
-      "path": "supabase/schemas/110_users.sql",
+      "path": "packages/integration-supabase/src/schemas/110_users.sql",
       "authority": true,
       "semanticOwner": "account"
     },
     {
       "name": "user_identities",
       "kind": "table",
-      "path": "supabase/schemas/111_user_external_identities.sql",
+      "path": "packages/integration-supabase/src/schemas/111_user_external_identities.sql",
       "authority": true,
       "semanticOwner": "account"
     },
     {
       "name": "google_link_requests",
       "kind": "table",
-      "path": "supabase/schemas/112_user_provisioning.sql",
+      "path": "packages/integration-supabase/src/schemas/112_user_provisioning.sql",
       "authority": true,
       "semanticOwner": "account"
     },
     {
       "name": "user_profiles",
       "kind": "table",
-      "path": "supabase/schemas/113_user_profiles.sql",
+      "path": "packages/integration-supabase/src/schemas/113_user_profiles.sql",
       "authority": true,
       "semanticOwner": "account"
     },
     {
       "name": "achievement_definitions",
       "kind": "table",
-      "path": "supabase/schemas/114_user_achievements.sql",
+      "path": "packages/integration-supabase/src/schemas/114_user_achievements.sql",
       "authority": true,
       "semanticOwner": "account"
     },
     {
       "name": "user_achievements",
       "kind": "table",
-      "path": "supabase/schemas/114_user_achievements.sql",
+      "path": "packages/integration-supabase/src/schemas/114_user_achievements.sql",
       "authority": true,
       "semanticOwner": "account"
     },
     {
       "name": "user_contribution_days",
       "kind": "table",
-      "path": "supabase/schemas/114_user_achievements.sql",
+      "path": "packages/integration-supabase/src/schemas/114_user_achievements.sql",
       "authority": true,
       "semanticOwner": "account"
     },
     {
       "name": "user_follows",
       "kind": "table",
-      "path": "supabase/schemas/115_user_follows.sql",
+      "path": "packages/integration-supabase/src/schemas/115_user_follows.sql",
       "authority": true,
       "semanticOwner": "account",
       "concept": "user-follow"
@@ -590,7 +590,7 @@
     {
       "name": "user_profile_statuses",
       "kind": "table",
-      "path": "supabase/schemas/116_user_profile_statuses.sql",
+      "path": "packages/integration-supabase/src/schemas/116_user_profile_statuses.sql",
       "authority": true,
       "semanticOwner": "account",
       "concept": "user-profile-status"
@@ -598,14 +598,14 @@
     {
       "name": "user_profile_status_change_receipts",
       "kind": "table",
-      "path": "supabase/schemas/116_user_profile_statuses.sql",
+      "path": "packages/integration-supabase/src/schemas/116_user_profile_statuses.sql",
       "authority": true,
       "semanticOwner": "account"
     },
     {
       "name": "enterprises",
       "kind": "table",
-      "path": "supabase/schemas/200_enterprises.sql",
+      "path": "packages/integration-supabase/src/schemas/200_enterprises.sql",
       "authority": true,
       "semanticOwner": "enterprise",
       "concept": "enterprise"
@@ -613,14 +613,14 @@
     {
       "name": "enterprise_direct_affiliations",
       "kind": "table",
-      "path": "supabase/schemas/201_enterprise_affiliations.sql",
+      "path": "packages/integration-supabase/src/schemas/201_enterprise_affiliations.sql",
       "authority": true,
       "semanticOwner": "enterprise"
     },
     {
       "name": "enterprise_organizations",
       "kind": "table",
-      "path": "supabase/schemas/202_enterprise_organizations.sql",
+      "path": "packages/integration-supabase/src/schemas/202_enterprise_organizations.sql",
       "authority": true,
       "semanticOwner": "enterprise",
       "concept": "enterprise-organization-link"
@@ -628,7 +628,7 @@
     {
       "name": "enterprise_teams",
       "kind": "table",
-      "path": "supabase/schemas/210_enterprise_teams.sql",
+      "path": "packages/integration-supabase/src/schemas/210_enterprise_teams.sql",
       "authority": true,
       "semanticOwner": "enterprise",
       "concept": "enterprise-team"
@@ -636,7 +636,7 @@
     {
       "name": "enterprise_team_memberships",
       "kind": "table",
-      "path": "supabase/schemas/211_enterprise_team_memberships.sql",
+      "path": "packages/integration-supabase/src/schemas/211_enterprise_team_memberships.sql",
       "authority": true,
       "semanticOwner": "enterprise",
       "concept": "enterprise-team-membership"
@@ -644,7 +644,7 @@
     {
       "name": "enterprise_team_organizations",
       "kind": "table",
-      "path": "supabase/schemas/212_enterprise_team_organization_assignments.sql",
+      "path": "packages/integration-supabase/src/schemas/212_enterprise_team_organization_assignments.sql",
       "authority": true,
       "semanticOwner": "enterprise",
       "concept": "enterprise-team-organization-assignment"
@@ -652,7 +652,7 @@
     {
       "name": "enterprise_invitations",
       "kind": "table",
-      "path": "supabase/schemas/220_enterprise_invitations.sql",
+      "path": "packages/integration-supabase/src/schemas/220_enterprise_invitations.sql",
       "authority": true,
       "semanticOwner": "enterprise",
       "concept": "enterprise-invitation"
@@ -660,7 +660,7 @@
     {
       "name": "organizations",
       "kind": "table",
-      "path": "supabase/schemas/300_organizations.sql",
+      "path": "packages/integration-supabase/src/schemas/300_organizations.sql",
       "authority": true,
       "semanticOwner": "organization",
       "concept": "organization"
@@ -668,7 +668,7 @@
     {
       "name": "organization_memberships",
       "kind": "table",
-      "path": "supabase/schemas/301_organization_memberships.sql",
+      "path": "packages/integration-supabase/src/schemas/301_organization_memberships.sql",
       "authority": true,
       "semanticOwner": "organization",
       "concept": "organization-membership"
@@ -676,14 +676,14 @@
     {
       "name": "organization_direct_memberships",
       "kind": "table",
-      "path": "supabase/schemas/301_organization_memberships.sql",
+      "path": "packages/integration-supabase/src/schemas/301_organization_memberships.sql",
       "authority": true,
       "semanticOwner": "organization"
     },
     {
       "name": "organization_invitations",
       "kind": "table",
-      "path": "supabase/schemas/302_organization_invitations.sql",
+      "path": "packages/integration-supabase/src/schemas/302_organization_invitations.sql",
       "authority": true,
       "semanticOwner": "organization",
       "concept": "organization-invitation"
@@ -691,7 +691,7 @@
     {
       "name": "teams",
       "kind": "table",
-      "path": "supabase/schemas/400_teams.sql",
+      "path": "packages/integration-supabase/src/schemas/400_teams.sql",
       "authority": true,
       "semanticOwner": "team",
       "concept": "team"
@@ -699,7 +699,7 @@
     {
       "name": "team_memberships",
       "kind": "table",
-      "path": "supabase/schemas/401_team_memberships.sql",
+      "path": "packages/integration-supabase/src/schemas/401_team_memberships.sql",
       "authority": true,
       "semanticOwner": "team",
       "concept": "team-membership"
@@ -707,14 +707,14 @@
     {
       "name": "team_commands",
       "kind": "table",
-      "path": "supabase/schemas/402_team_commands.sql",
+      "path": "packages/integration-supabase/src/schemas/402_team_commands.sql",
       "authority": true,
       "semanticOwner": "team"
     },
     {
       "name": "enterprise_role_assignments",
       "kind": "table",
-      "path": "supabase/schemas/500_enterprise_role_assignments.sql",
+      "path": "packages/integration-supabase/src/schemas/500_enterprise_role_assignments.sql",
       "authority": true,
       "semanticOwner": "enterprise",
       "concept": "enterprise-role-assignment"
@@ -722,7 +722,7 @@
     {
       "name": "organization_role_assignments",
       "kind": "table",
-      "path": "supabase/schemas/501_organization_role_assignments.sql",
+      "path": "packages/integration-supabase/src/schemas/501_organization_role_assignments.sql",
       "authority": true,
       "semanticOwner": "organization",
       "concept": "organization-owner-assignment"
@@ -730,7 +730,7 @@
     {
       "name": "team_role_assignments",
       "kind": "table",
-      "path": "supabase/schemas/502_team_role_assignments.sql",
+      "path": "packages/integration-supabase/src/schemas/502_team_role_assignments.sql",
       "authority": true,
       "semanticOwner": "team",
       "concept": "team-role-assignment"
@@ -738,7 +738,7 @@
     {
       "name": "permission_grants",
       "kind": "table",
-      "path": "supabase/schemas/511_permission_grants.sql",
+      "path": "packages/integration-supabase/src/schemas/511_permission_grants.sql",
       "authority": true,
       "semanticOwner": "identity-access",
       "concept": "permission"
@@ -746,49 +746,49 @@
     {
       "name": "permission_subject_versions",
       "kind": "table",
-      "path": "supabase/schemas/512_permission_administration.sql",
+      "path": "packages/integration-supabase/src/schemas/512_permission_administration.sql",
       "authority": true,
       "semanticOwner": "identity-access"
     },
     {
       "name": "permission_administrators",
       "kind": "table",
-      "path": "supabase/schemas/512_permission_administration.sql",
+      "path": "packages/integration-supabase/src/schemas/512_permission_administration.sql",
       "authority": true,
       "semanticOwner": "identity-access"
     },
     {
       "name": "permission_commands",
       "kind": "table",
-      "path": "supabase/schemas/512_permission_administration.sql",
+      "path": "packages/integration-supabase/src/schemas/512_permission_administration.sql",
       "authority": true,
       "semanticOwner": "identity-access"
     },
     {
       "name": "governance_bootstrap_receipts",
       "kind": "table",
-      "path": "supabase/schemas/520_governance_evidence.sql",
+      "path": "packages/integration-supabase/src/schemas/520_governance_evidence.sql",
       "authority": true,
       "semanticOwner": "identity-access"
     },
     {
       "name": "governance_command_receipts",
       "kind": "table",
-      "path": "supabase/schemas/520_governance_evidence.sql",
+      "path": "packages/integration-supabase/src/schemas/520_governance_evidence.sql",
       "authority": true,
       "semanticOwner": "identity-access"
     },
     {
       "name": "governance_audit_events",
       "kind": "table",
-      "path": "supabase/schemas/520_governance_evidence.sql",
+      "path": "packages/integration-supabase/src/schemas/520_governance_evidence.sql",
       "authority": true,
       "semanticOwner": "identity-access"
     },
     {
       "name": "repositories",
       "kind": "table",
-      "path": "supabase/schemas/600_repositories.sql",
+      "path": "packages/integration-supabase/src/schemas/600_repositories.sql",
       "authority": true,
       "semanticOwner": "repository",
       "concept": "repository"
@@ -796,7 +796,7 @@
     {
       "name": "repository_access",
       "kind": "table",
-      "path": "supabase/schemas/601_repository_user_access.sql",
+      "path": "packages/integration-supabase/src/schemas/601_repository_user_access.sql",
       "authority": true,
       "semanticOwner": "repository",
       "concept": "repository-user-access"
@@ -804,7 +804,7 @@
     {
       "name": "repository_team_access",
       "kind": "table",
-      "path": "supabase/schemas/602_repository_team_access.sql",
+      "path": "packages/integration-supabase/src/schemas/602_repository_team_access.sql",
       "authority": true,
       "semanticOwner": "repository",
       "concept": "repository-team-access"
@@ -812,7 +812,7 @@
     {
       "name": "repository_stars",
       "kind": "table",
-      "path": "supabase/schemas/603_repository_stars.sql",
+      "path": "packages/integration-supabase/src/schemas/603_repository_stars.sql",
       "authority": true,
       "semanticOwner": "repository",
       "concept": "repository-star"
@@ -820,14 +820,14 @@
     {
       "name": "repository_commands",
       "kind": "table",
-      "path": "supabase/schemas/604_repository_commands.sql",
+      "path": "packages/integration-supabase/src/schemas/604_repository_commands.sql",
       "authority": true,
       "semanticOwner": "repository"
     },
     {
       "name": "repository_star_lists",
       "kind": "table",
-      "path": "supabase/schemas/605_repository_star_lists.sql",
+      "path": "packages/integration-supabase/src/schemas/605_repository_star_lists.sql",
       "authority": true,
       "semanticOwner": "repository",
       "concept": "repository-star-list"
@@ -835,7 +835,7 @@
     {
       "name": "repository_star_list_items",
       "kind": "table",
-      "path": "supabase/schemas/605_repository_star_lists.sql",
+      "path": "packages/integration-supabase/src/schemas/605_repository_star_lists.sql",
       "authority": true,
       "semanticOwner": "repository",
       "concept": "repository-star-list-item"
@@ -843,14 +843,14 @@
     {
       "name": "repository_name_history",
       "kind": "table",
-      "path": "supabase/schemas/606_repository_name_history.sql",
+      "path": "packages/integration-supabase/src/schemas/606_repository_name_history.sql",
       "authority": true,
       "semanticOwner": "repository"
     },
     {
       "name": "repository_subscriptions",
       "kind": "table",
-      "path": "supabase/schemas/607_repository_subscriptions.sql",
+      "path": "packages/integration-supabase/src/schemas/607_repository_subscriptions.sql",
       "authority": true,
       "semanticOwner": "repository",
       "concept": "repository-subscription"
@@ -858,14 +858,14 @@
     {
       "name": "repository_events",
       "kind": "table",
-      "path": "supabase/schemas/608_repository_events.sql",
+      "path": "packages/integration-supabase/src/schemas/608_repository_events.sql",
       "authority": true,
       "semanticOwner": "repository"
     },
     {
       "name": "repository_labels",
       "kind": "table",
-      "path": "supabase/schemas/610_repository_labels.sql",
+      "path": "packages/integration-supabase/src/schemas/610_repository_labels.sql",
       "authority": true,
       "semanticOwner": "repository",
       "concept": "repository-label"
@@ -873,7 +873,7 @@
     {
       "name": "repository_milestones",
       "kind": "table",
-      "path": "supabase/schemas/611_repository_milestones.sql",
+      "path": "packages/integration-supabase/src/schemas/611_repository_milestones.sql",
       "authority": true,
       "semanticOwner": "repository",
       "concept": "repository-milestone"
@@ -881,7 +881,7 @@
     {
       "name": "issues",
       "kind": "table",
-      "path": "supabase/schemas/620_issues.sql",
+      "path": "packages/integration-supabase/src/schemas/620_issues.sql",
       "authority": true,
       "semanticOwner": "issue",
       "concept": "issue"
@@ -889,14 +889,14 @@
     {
       "name": "issue_commands",
       "kind": "table",
-      "path": "supabase/schemas/621_issue_commands.sql",
+      "path": "packages/integration-supabase/src/schemas/621_issue_commands.sql",
       "authority": true,
       "semanticOwner": "issue"
     },
     {
       "name": "issue_assignees",
       "kind": "table",
-      "path": "supabase/schemas/624_issue_assignees.sql",
+      "path": "packages/integration-supabase/src/schemas/624_issue_assignees.sql",
       "authority": true,
       "semanticOwner": "issue",
       "concept": "issue-assignment"
@@ -904,14 +904,14 @@
     {
       "name": "issue_events",
       "kind": "table",
-      "path": "supabase/schemas/622_issue_events.sql",
+      "path": "packages/integration-supabase/src/schemas/622_issue_events.sql",
       "authority": true,
       "semanticOwner": "issue"
     },
     {
       "name": "issue_labels",
       "kind": "table",
-      "path": "supabase/schemas/623_issue_labels.sql",
+      "path": "packages/integration-supabase/src/schemas/623_issue_labels.sql",
       "authority": true,
       "semanticOwner": "issue",
       "concept": "issue-label-link"
@@ -919,7 +919,7 @@
     {
       "name": "issue_comments",
       "kind": "table",
-      "path": "supabase/schemas/625_issue_comments.sql",
+      "path": "packages/integration-supabase/src/schemas/625_issue_comments.sql",
       "authority": true,
       "semanticOwner": "issue",
       "concept": "issue-comment"
@@ -927,7 +927,7 @@
     {
       "name": "issue_sub_issues",
       "kind": "table",
-      "path": "supabase/schemas/626_issue_relations.sql",
+      "path": "packages/integration-supabase/src/schemas/626_issue_relations.sql",
       "authority": true,
       "semanticOwner": "issue",
       "concept": "issue-parent-link"
@@ -935,7 +935,7 @@
     {
       "name": "issue_dependencies",
       "kind": "table",
-      "path": "supabase/schemas/626_issue_relations.sql",
+      "path": "packages/integration-supabase/src/schemas/626_issue_relations.sql",
       "authority": true,
       "semanticOwner": "issue",
       "concept": "issue-dependency-link"
@@ -943,7 +943,7 @@
     {
       "name": "issue_related",
       "kind": "table",
-      "path": "supabase/schemas/626_issue_relations.sql",
+      "path": "packages/integration-supabase/src/schemas/626_issue_relations.sql",
       "authority": true,
       "semanticOwner": "issue",
       "concept": "issue-related-link"
@@ -951,7 +951,7 @@
     {
       "name": "issue_types",
       "kind": "table",
-      "path": "supabase/schemas/627_issue_types.sql",
+      "path": "packages/integration-supabase/src/schemas/627_issue_types.sql",
       "authority": true,
       "semanticOwner": "issue",
       "concept": "issue-type"
@@ -959,7 +959,7 @@
     {
       "name": "issue_type_assignments",
       "kind": "table",
-      "path": "supabase/schemas/627_issue_types.sql",
+      "path": "packages/integration-supabase/src/schemas/627_issue_types.sql",
       "authority": true,
       "semanticOwner": "issue",
       "concept": "issue-type-link"
@@ -967,14 +967,14 @@
     {
       "name": "issue_type_events",
       "kind": "table",
-      "path": "supabase/schemas/627_issue_types.sql",
+      "path": "packages/integration-supabase/src/schemas/627_issue_types.sql",
       "authority": true,
       "semanticOwner": "issue"
     },
     {
       "name": "discussions",
       "kind": "table",
-      "path": "supabase/schemas/630_discussions.sql",
+      "path": "packages/integration-supabase/src/schemas/630_discussions.sql",
       "authority": true,
       "semanticOwner": "discussion",
       "concept": "discussion"
@@ -982,7 +982,7 @@
     {
       "name": "discussion_comments",
       "kind": "table",
-      "path": "supabase/schemas/631_discussion_comments.sql",
+      "path": "packages/integration-supabase/src/schemas/631_discussion_comments.sql",
       "authority": true,
       "semanticOwner": "discussion",
       "concept": "discussion-comment"
@@ -990,7 +990,7 @@
     {
       "name": "discussion_categories",
       "kind": "table",
-      "path": "supabase/schemas/632_discussion_categories.sql",
+      "path": "packages/integration-supabase/src/schemas/632_discussion_categories.sql",
       "authority": true,
       "semanticOwner": "discussion",
       "concept": "discussion-category"
@@ -998,7 +998,7 @@
     {
       "name": "discussion_answers",
       "kind": "table",
-      "path": "supabase/schemas/633_discussion_collaboration.sql",
+      "path": "packages/integration-supabase/src/schemas/633_discussion_collaboration.sql",
       "authority": true,
       "semanticOwner": "discussion",
       "concept": "discussion-answer"
@@ -1006,7 +1006,7 @@
     {
       "name": "discussion_labels",
       "kind": "table",
-      "path": "supabase/schemas/633_discussion_collaboration.sql",
+      "path": "packages/integration-supabase/src/schemas/633_discussion_collaboration.sql",
       "authority": true,
       "semanticOwner": "discussion",
       "concept": "discussion-label-link"
@@ -1014,7 +1014,7 @@
     {
       "name": "discussion_upvotes",
       "kind": "table",
-      "path": "supabase/schemas/633_discussion_collaboration.sql",
+      "path": "packages/integration-supabase/src/schemas/633_discussion_collaboration.sql",
       "authority": true,
       "semanticOwner": "discussion",
       "concept": "discussion-upvote"
@@ -1022,7 +1022,7 @@
     {
       "name": "discussion_comment_upvotes",
       "kind": "table",
-      "path": "supabase/schemas/633_discussion_collaboration.sql",
+      "path": "packages/integration-supabase/src/schemas/633_discussion_collaboration.sql",
       "authority": true,
       "semanticOwner": "discussion",
       "concept": "discussion-comment-upvote"
@@ -1030,7 +1030,7 @@
     {
       "name": "discussion_polls",
       "kind": "table",
-      "path": "supabase/schemas/633_discussion_collaboration.sql",
+      "path": "packages/integration-supabase/src/schemas/633_discussion_collaboration.sql",
       "authority": true,
       "semanticOwner": "discussion",
       "concept": "discussion-poll"
@@ -1038,7 +1038,7 @@
     {
       "name": "discussion_poll_options",
       "kind": "table",
-      "path": "supabase/schemas/633_discussion_collaboration.sql",
+      "path": "packages/integration-supabase/src/schemas/633_discussion_collaboration.sql",
       "authority": true,
       "semanticOwner": "discussion",
       "concept": "discussion-poll-option"
@@ -1046,7 +1046,7 @@
     {
       "name": "discussion_poll_votes",
       "kind": "table",
-      "path": "supabase/schemas/633_discussion_collaboration.sql",
+      "path": "packages/integration-supabase/src/schemas/633_discussion_collaboration.sql",
       "authority": true,
       "semanticOwner": "discussion",
       "concept": "discussion-poll-vote"
@@ -1054,28 +1054,28 @@
     {
       "name": "discussion_commands",
       "kind": "table",
-      "path": "supabase/schemas/634_discussion_commands.sql",
+      "path": "packages/integration-supabase/src/schemas/634_discussion_commands.sql",
       "authority": true,
       "semanticOwner": "discussion"
     },
     {
       "name": "discussion_events",
       "kind": "table",
-      "path": "supabase/schemas/634_discussion_commands.sql",
+      "path": "packages/integration-supabase/src/schemas/634_discussion_commands.sql",
       "authority": true,
       "semanticOwner": "discussion"
     },
     {
       "name": "discussion_category_events",
       "kind": "table",
-      "path": "supabase/schemas/634_discussion_commands.sql",
+      "path": "packages/integration-supabase/src/schemas/634_discussion_commands.sql",
       "authority": true,
       "semanticOwner": "discussion"
     },
     {
       "name": "projects",
       "kind": "table",
-      "path": "supabase/schemas/700_projects.sql",
+      "path": "packages/integration-supabase/src/schemas/700_projects.sql",
       "authority": true,
       "semanticOwner": "project",
       "concept": "project"
@@ -1083,7 +1083,7 @@
     {
       "name": "project_items",
       "kind": "table",
-      "path": "supabase/schemas/701_project_items.sql",
+      "path": "packages/integration-supabase/src/schemas/701_project_items.sql",
       "authority": true,
       "semanticOwner": "project",
       "concept": "project-item"
@@ -1091,7 +1091,7 @@
     {
       "name": "project_wbs",
       "kind": "table",
-      "path": "supabase/schemas/702_project_wbs.sql",
+      "path": "packages/integration-supabase/src/schemas/702_project_wbs.sql",
       "authority": true,
       "semanticOwner": "wbs",
       "concept": "wbs"
@@ -1099,7 +1099,7 @@
     {
       "name": "project_wbs_revisions",
       "kind": "table",
-      "path": "supabase/schemas/702_project_wbs.sql",
+      "path": "packages/integration-supabase/src/schemas/702_project_wbs.sql",
       "authority": true,
       "semanticOwner": "wbs",
       "concept": "wbs-revision"
@@ -1107,7 +1107,7 @@
     {
       "name": "project_wbs_commands",
       "kind": "table",
-      "path": "supabase/schemas/702_project_wbs.sql",
+      "path": "packages/integration-supabase/src/schemas/702_project_wbs.sql",
       "authority": true,
       "semanticOwner": "wbs",
       "concept": "wbs-command-receipt"
@@ -1115,7 +1115,7 @@
     {
       "name": "project_wbs_governance",
       "kind": "table",
-      "path": "supabase/schemas/710_project_wbs_governance.sql",
+      "path": "packages/integration-supabase/src/schemas/710_project_wbs_governance.sql",
       "authority": true,
       "semanticOwner": "wbs",
       "concept": "wbs-governance"
@@ -1123,7 +1123,7 @@
     {
       "name": "project_wbs_policies",
       "kind": "table",
-      "path": "supabase/schemas/710_project_wbs_governance.sql",
+      "path": "packages/integration-supabase/src/schemas/710_project_wbs_governance.sql",
       "authority": true,
       "semanticOwner": "wbs",
       "concept": "wbs-governance-policy"
@@ -1131,7 +1131,7 @@
     {
       "name": "project_wbs_proposals",
       "kind": "table",
-      "path": "supabase/schemas/710_project_wbs_governance.sql",
+      "path": "packages/integration-supabase/src/schemas/710_project_wbs_governance.sql",
       "authority": true,
       "semanticOwner": "wbs",
       "concept": "wbs-change-proposal"
@@ -1139,7 +1139,7 @@
     {
       "name": "project_wbs_reviews",
       "kind": "table",
-      "path": "supabase/schemas/710_project_wbs_governance.sql",
+      "path": "packages/integration-supabase/src/schemas/710_project_wbs_governance.sql",
       "authority": true,
       "semanticOwner": "wbs",
       "concept": "wbs-proposal-review"
@@ -1147,7 +1147,7 @@
     {
       "name": "project_wbs_baselines",
       "kind": "table",
-      "path": "supabase/schemas/710_project_wbs_governance.sql",
+      "path": "packages/integration-supabase/src/schemas/710_project_wbs_governance.sql",
       "authority": true,
       "semanticOwner": "wbs",
       "concept": "wbs-baseline"
@@ -1155,7 +1155,7 @@
     {
       "name": "project_wbs_governance_commands",
       "kind": "table",
-      "path": "supabase/schemas/710_project_wbs_governance.sql",
+      "path": "packages/integration-supabase/src/schemas/710_project_wbs_governance.sql",
       "authority": true,
       "semanticOwner": "wbs",
       "concept": "wbs-governance-receipt"
@@ -1163,7 +1163,7 @@
     {
       "name": "project_wbs_proposal_versions",
       "kind": "table",
-      "path": "supabase/schemas/710_project_wbs_governance.sql",
+      "path": "packages/integration-supabase/src/schemas/710_project_wbs_governance.sql",
       "authority": true,
       "semanticOwner": "wbs",
       "concept": "wbs-proposal-version"
@@ -1171,7 +1171,7 @@
     {
       "name": "project_wbs_outbox",
       "kind": "table",
-      "path": "supabase/schemas/711_project_wbs_outbox.sql",
+      "path": "packages/integration-supabase/src/schemas/711_project_wbs_outbox.sql",
       "authority": true,
       "semanticOwner": "wbs",
       "concept": "wbs-baseline-event"
@@ -1179,7 +1179,7 @@
     {
       "name": "project_action_rules",
       "kind": "table",
-      "path": "supabase/schemas/712_project_actions.sql",
+      "path": "packages/integration-supabase/src/schemas/712_project_actions.sql",
       "authority": true,
       "semanticOwner": "actions",
       "concept": "action-rule"
@@ -1187,7 +1187,7 @@
     {
       "name": "project_action_rule_versions",
       "kind": "table",
-      "path": "supabase/schemas/712_project_actions.sql",
+      "path": "packages/integration-supabase/src/schemas/712_project_actions.sql",
       "authority": true,
       "semanticOwner": "actions",
       "concept": "action-rule"
@@ -1195,7 +1195,7 @@
     {
       "name": "project_action_events",
       "kind": "table",
-      "path": "supabase/schemas/712_project_actions.sql",
+      "path": "packages/integration-supabase/src/schemas/712_project_actions.sql",
       "authority": true,
       "semanticOwner": "actions",
       "concept": "action-event-receipt"
@@ -1203,7 +1203,7 @@
     {
       "name": "project_action_runs",
       "kind": "table",
-      "path": "supabase/schemas/712_project_actions.sql",
+      "path": "packages/integration-supabase/src/schemas/712_project_actions.sql",
       "authority": true,
       "semanticOwner": "actions",
       "concept": "action-run"
@@ -1211,7 +1211,7 @@
     {
       "name": "project_action_attempts",
       "kind": "table",
-      "path": "supabase/schemas/712_project_actions.sql",
+      "path": "packages/integration-supabase/src/schemas/712_project_actions.sql",
       "authority": true,
       "semanticOwner": "actions",
       "concept": "action-attempt"
@@ -1219,7 +1219,7 @@
     {
       "name": "project_action_commands",
       "kind": "table",
-      "path": "supabase/schemas/712_project_actions.sql",
+      "path": "packages/integration-supabase/src/schemas/712_project_actions.sql",
       "authority": true,
       "semanticOwner": "actions",
       "concept": "action-command-receipt"
@@ -1227,7 +1227,7 @@
     {
       "name": "wbs_scope_transfers",
       "kind": "table",
-      "path": "supabase/schemas/713_wbs_scope_transfers.sql",
+      "path": "packages/integration-supabase/src/schemas/713_wbs_scope_transfers.sql",
       "authority": true,
       "semanticOwner": "wbs",
       "concept": "wbs-scope-transfer"
@@ -1235,7 +1235,7 @@
     {
       "name": "legacy_wbs_command_evidence",
       "kind": "table",
-      "path": "supabase/schemas/713_wbs_scope_transfers.sql",
+      "path": "packages/integration-supabase/src/schemas/713_wbs_scope_transfers.sql",
       "authority": true,
       "semanticOwner": "wbs",
       "concept": "legacy-wbs-command-evidence"
@@ -1243,7 +1243,7 @@
     {
       "name": "project_milestones",
       "kind": "table",
-      "path": "supabase/schemas/703_project_milestones.sql",
+      "path": "packages/integration-supabase/src/schemas/703_project_milestones.sql",
       "authority": true,
       "semanticOwner": "project",
       "concept": "project-milestone"
@@ -1251,7 +1251,7 @@
     {
       "name": "project_repository_references",
       "kind": "table",
-      "path": "supabase/schemas/704_project_repository_references.sql",
+      "path": "packages/integration-supabase/src/schemas/704_project_repository_references.sql",
       "authority": true,
       "semanticOwner": "project",
       "concept": "project-repository-link"
@@ -1259,7 +1259,7 @@
     {
       "name": "project_draft_issues",
       "kind": "table",
-      "path": "supabase/schemas/701_project_items.sql",
+      "path": "packages/integration-supabase/src/schemas/701_project_items.sql",
       "authority": true,
       "semanticOwner": "project",
       "concept": "project-draft-issue"
@@ -1267,7 +1267,7 @@
     {
       "name": "project_draft_issue_assignees",
       "kind": "table",
-      "path": "supabase/schemas/701_project_items.sql",
+      "path": "packages/integration-supabase/src/schemas/701_project_items.sql",
       "authority": true,
       "semanticOwner": "project",
       "concept": "project-draft-issue-assignee"
@@ -1275,7 +1275,7 @@
     {
       "name": "project_user_access",
       "kind": "table",
-      "path": "supabase/schemas/705_project_access.sql",
+      "path": "packages/integration-supabase/src/schemas/705_project_access.sql",
       "authority": true,
       "semanticOwner": "project",
       "concept": "project-collaborator"
@@ -1283,7 +1283,7 @@
     {
       "name": "project_team_access",
       "kind": "table",
-      "path": "supabase/schemas/705_project_access.sql",
+      "path": "packages/integration-supabase/src/schemas/705_project_access.sql",
       "authority": true,
       "semanticOwner": "project",
       "concept": "project-collaborator"
@@ -1291,21 +1291,21 @@
     {
       "name": "project_commands",
       "kind": "table",
-      "path": "supabase/schemas/706_project_commands.sql",
+      "path": "packages/integration-supabase/src/schemas/706_project_commands.sql",
       "authority": true,
       "semanticOwner": "project"
     },
     {
       "name": "project_events",
       "kind": "table",
-      "path": "supabase/schemas/706_project_commands.sql",
+      "path": "packages/integration-supabase/src/schemas/706_project_commands.sql",
       "authority": true,
       "semanticOwner": "project"
     },
     {
       "name": "project_fields",
       "kind": "table",
-      "path": "supabase/schemas/707_project_fields.sql",
+      "path": "packages/integration-supabase/src/schemas/707_project_fields.sql",
       "authority": true,
       "semanticOwner": "project",
       "concept": "project-field"
@@ -1313,7 +1313,7 @@
     {
       "name": "project_field_options",
       "kind": "table",
-      "path": "supabase/schemas/707_project_fields.sql",
+      "path": "packages/integration-supabase/src/schemas/707_project_fields.sql",
       "authority": true,
       "semanticOwner": "project",
       "concept": "project-field-option"
@@ -1321,7 +1321,7 @@
     {
       "name": "project_field_iterations",
       "kind": "table",
-      "path": "supabase/schemas/707_project_fields.sql",
+      "path": "packages/integration-supabase/src/schemas/707_project_fields.sql",
       "authority": true,
       "semanticOwner": "project",
       "concept": "project-field-iteration"
@@ -1329,7 +1329,7 @@
     {
       "name": "project_item_field_values",
       "kind": "table",
-      "path": "supabase/schemas/707_project_fields.sql",
+      "path": "packages/integration-supabase/src/schemas/707_project_fields.sql",
       "authority": true,
       "semanticOwner": "project",
       "concept": "project-item-field-value"
@@ -1337,7 +1337,7 @@
     {
       "name": "project_item_multi_select_values",
       "kind": "table",
-      "path": "supabase/schemas/707_project_fields.sql",
+      "path": "packages/integration-supabase/src/schemas/707_project_fields.sql",
       "authority": true,
       "semanticOwner": "project",
       "concept": "project-item-field-value"
@@ -1345,7 +1345,7 @@
     {
       "name": "project_views",
       "kind": "table",
-      "path": "supabase/schemas/708_project_views.sql",
+      "path": "packages/integration-supabase/src/schemas/708_project_views.sql",
       "authority": true,
       "semanticOwner": "project",
       "concept": "project-view"
@@ -1353,7 +1353,7 @@
     {
       "name": "project_view_visible_fields",
       "kind": "table",
-      "path": "supabase/schemas/708_project_views.sql",
+      "path": "packages/integration-supabase/src/schemas/708_project_views.sql",
       "authority": true,
       "semanticOwner": "project",
       "concept": "project-view"
@@ -1361,7 +1361,7 @@
     {
       "name": "project_status_updates",
       "kind": "table",
-      "path": "supabase/schemas/709_project_status_updates.sql",
+      "path": "packages/integration-supabase/src/schemas/709_project_status_updates.sql",
       "authority": true,
       "semanticOwner": "project",
       "concept": "project-status-update"
@@ -1369,7 +1369,7 @@
     {
       "name": "asset_definitions",
       "kind": "view",
-      "path": "supabase/schemas/800_asset_definitions.sql",
+      "path": "packages/integration-supabase/src/schemas/800_asset_definitions.sql",
       "authority": true,
       "semanticOwner": "asset",
       "concept": "asset"
@@ -1377,7 +1377,7 @@
     {
       "name": "daily_check_in_claims",
       "kind": "table",
-      "path": "supabase/schemas/805_daily_check_in_claims.sql",
+      "path": "packages/integration-supabase/src/schemas/805_daily_check_in_claims.sql",
       "authority": true,
       "semanticOwner": "daily-check-in",
       "concept": "daily-check-in"
@@ -1385,7 +1385,7 @@
     {
       "name": "asset_ledger_entries",
       "kind": "table",
-      "path": "supabase/schemas/810_ledger_entries.sql",
+      "path": "packages/integration-supabase/src/schemas/810_ledger_entries.sql",
       "authority": true,
       "semanticOwner": "ledger",
       "concept": "ledger-entry"
@@ -1393,7 +1393,7 @@
     {
       "name": "expenses",
       "kind": "table",
-      "path": "supabase/schemas/820_expenses.sql",
+      "path": "packages/integration-supabase/src/schemas/820_expenses.sql",
       "authority": true,
       "semanticOwner": "expense",
       "concept": "expense"
@@ -1401,35 +1401,35 @@
     {
       "name": "expense_events",
       "kind": "table",
-      "path": "supabase/schemas/821_expense_events.sql",
+      "path": "packages/integration-supabase/src/schemas/821_expense_events.sql",
       "authority": true,
       "semanticOwner": "expense"
     },
     {
       "name": "receipt_intents",
       "kind": "table",
-      "path": "supabase/schemas/822_receipt_intents.sql",
+      "path": "packages/integration-supabase/src/schemas/822_receipt_intents.sql",
       "authority": true,
       "semanticOwner": "expense"
     },
     {
       "name": "member_attendance",
       "kind": "table",
-      "path": "supabase/schemas/830_attendance.sql",
+      "path": "packages/integration-supabase/src/schemas/830_attendance.sql",
       "authority": true,
       "semanticOwner": "attendance"
     },
     {
       "name": "attendance_state",
       "kind": "table",
-      "path": "supabase/schemas/830_attendance.sql",
+      "path": "packages/integration-supabase/src/schemas/830_attendance.sql",
       "authority": true,
       "semanticOwner": "attendance"
     },
     {
       "name": "attendance_sessions",
       "kind": "table",
-      "path": "supabase/schemas/830_attendance.sql",
+      "path": "packages/integration-supabase/src/schemas/830_attendance.sql",
       "authority": true,
       "semanticOwner": "attendance",
       "concept": "attendance"
@@ -1437,35 +1437,35 @@
     {
       "name": "attendance_commands",
       "kind": "table",
-      "path": "supabase/schemas/831_attendance_commands.sql",
+      "path": "packages/integration-supabase/src/schemas/831_attendance_commands.sql",
       "authority": true,
       "semanticOwner": "attendance"
     },
     {
       "name": "attendance_events",
       "kind": "table",
-      "path": "supabase/schemas/832_attendance_events.sql",
+      "path": "packages/integration-supabase/src/schemas/832_attendance_events.sql",
       "authority": true,
       "semanticOwner": "attendance"
     },
     {
       "name": "attendance_menu_outbox",
       "kind": "table",
-      "path": "supabase/schemas/833_attendance_outbox.sql",
+      "path": "packages/integration-supabase/src/schemas/833_attendance_outbox.sql",
       "authority": true,
       "semanticOwner": "attendance"
     },
     {
       "name": "attendance_notification_outbox",
       "kind": "table",
-      "path": "supabase/schemas/833_attendance_outbox.sql",
+      "path": "packages/integration-supabase/src/schemas/833_attendance_outbox.sql",
       "authority": true,
       "semanticOwner": "attendance"
     },
     {
       "name": "attendance_supplement_requests",
       "kind": "table",
-      "path": "supabase/schemas/834_attendance_supplements.sql",
+      "path": "packages/integration-supabase/src/schemas/834_attendance_supplements.sql",
       "authority": true,
       "semanticOwner": "attendance",
       "concept": "attendance-supplement-request"
@@ -1473,7 +1473,7 @@
     {
       "name": "workplaces",
       "kind": "table",
-      "path": "supabase/schemas/840_workplaces.sql",
+      "path": "packages/integration-supabase/src/schemas/840_workplaces.sql",
       "authority": true,
       "semanticOwner": "attendance",
       "concept": "workplace"
@@ -1481,35 +1481,35 @@
     {
       "name": "workplace_members",
       "kind": "table",
-      "path": "supabase/schemas/841_workplace_memberships.sql",
+      "path": "packages/integration-supabase/src/schemas/841_workplace_memberships.sql",
       "authority": true,
       "semanticOwner": "attendance"
     },
     {
       "name": "workplace_commands",
       "kind": "table",
-      "path": "supabase/schemas/842_workplace_commands.sql",
+      "path": "packages/integration-supabase/src/schemas/842_workplace_commands.sql",
       "authority": true,
       "semanticOwner": "attendance"
     },
     {
       "name": "workplace_chat_drafts",
       "kind": "table",
-      "path": "supabase/schemas/843_workplace_chat.sql",
+      "path": "packages/integration-supabase/src/schemas/843_workplace_chat.sql",
       "authority": true,
       "semanticOwner": "attendance"
     },
     {
       "name": "workplace_chat_events",
       "kind": "table",
-      "path": "supabase/schemas/843_workplace_chat.sql",
+      "path": "packages/integration-supabase/src/schemas/843_workplace_chat.sql",
       "authority": true,
       "semanticOwner": "attendance"
     },
     {
       "name": "notifications",
       "kind": "table",
-      "path": "supabase/schemas/850_notifications.sql",
+      "path": "packages/integration-supabase/src/schemas/850_notifications.sql",
       "authority": true,
       "semanticOwner": "notifications",
       "concept": "notification"
@@ -1517,14 +1517,14 @@
     {
       "name": "notification_deliveries",
       "kind": "table",
-      "path": "supabase/schemas/851_notification_deliveries.sql",
+      "path": "packages/integration-supabase/src/schemas/851_notification_deliveries.sql",
       "authority": true,
       "semanticOwner": "notifications"
     },
     {
       "name": "partners",
       "kind": "table",
-      "path": "supabase/schemas/860_partners.sql",
+      "path": "packages/integration-supabase/src/schemas/860_partners.sql",
       "authority": true,
       "semanticOwner": "partner-directory",
       "concept": "partner"
@@ -1532,35 +1532,35 @@
     {
       "name": "partner_contacts",
       "kind": "table",
-      "path": "supabase/schemas/861_partner_contacts.sql",
+      "path": "packages/integration-supabase/src/schemas/861_partner_contacts.sql",
       "authority": true,
       "semanticOwner": "partner-directory"
     },
     {
       "name": "partner_referrals",
       "kind": "table",
-      "path": "supabase/schemas/862_partner_referrals.sql",
+      "path": "packages/integration-supabase/src/schemas/862_partner_referrals.sql",
       "authority": true,
       "semanticOwner": "partner-directory"
     },
     {
       "name": "partner_referral_commands",
       "kind": "table",
-      "path": "supabase/schemas/863_partner_commands.sql",
+      "path": "packages/integration-supabase/src/schemas/863_partner_commands.sql",
       "authority": true,
       "semanticOwner": "partner-directory"
     },
     {
       "name": "partner_management_commands",
       "kind": "table",
-      "path": "supabase/schemas/863_partner_commands.sql",
+      "path": "packages/integration-supabase/src/schemas/863_partner_commands.sql",
       "authority": true,
       "semanticOwner": "partner-directory"
     },
     {
       "name": "organization_membership_sources",
       "kind": "view",
-      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
       "authority": false,
       "role": "derived-projection",
       "participants": ["enterprise", "organization"]
@@ -1568,7 +1568,7 @@
     {
       "name": "enterprise_user_affiliations",
       "kind": "view",
-      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
       "authority": false,
       "role": "derived-projection",
       "participants": ["enterprise", "organization"]
@@ -1576,7 +1576,7 @@
     {
       "name": "team_effective_memberships",
       "kind": "view",
-      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
       "authority": false,
       "role": "derived-projection",
       "participants": ["team"]
@@ -1584,7 +1584,7 @@
     {
       "name": "repository_team_effective_access_sources",
       "kind": "view",
-      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
       "authority": false,
       "role": "derived-projection",
       "participants": ["account", "organization", "team", "repository"]
@@ -1592,7 +1592,7 @@
     {
       "name": "repository_effective_access",
       "kind": "view",
-      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
       "authority": false,
       "role": "derived-projection",
       "participants": ["account", "issue", "organization", "team", "repository"]
@@ -1600,7 +1600,7 @@
     {
       "name": "repository_internal_scopes",
       "kind": "view",
-      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
       "authority": false,
       "role": "derived-projection",
       "participants": ["enterprise", "organization", "repository"]
@@ -1608,7 +1608,7 @@
     {
       "name": "repository_visibility_access",
       "kind": "view",
-      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
       "authority": false,
       "role": "derived-projection",
       "participants": ["account", "enterprise", "organization", "team", "issue", "repository"]
@@ -1616,7 +1616,7 @@
     {
       "name": "project_repository_visible_references",
       "kind": "view",
-      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
       "authority": false,
       "role": "derived-projection",
       "participants": ["project", "repository"]
@@ -1624,7 +1624,7 @@
     {
       "name": "project_visibility_access",
       "kind": "view",
-      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
       "authority": false,
       "role": "derived-projection",
       "participants": ["account", "organization", "team", "project"]
@@ -1632,7 +1632,7 @@
     {
       "name": "notification_repository_source_access",
       "kind": "view",
-      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
       "authority": false,
       "role": "derived-projection",
       "participants": ["issue", "discussion", "repository", "notifications", "wbs", "account"]
@@ -1640,7 +1640,7 @@
     {
       "name": "notification_project_source_access",
       "kind": "view",
-      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
       "authority": false,
       "role": "derived-projection",
       "participants": ["account", "organization", "team", "project", "wbs", "notifications"]
@@ -1648,7 +1648,7 @@
     {
       "name": "organization_repository_collaborators",
       "kind": "view",
-      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
       "authority": false,
       "role": "derived-projection",
       "participants": ["account", "organization", "repository"]
@@ -1656,7 +1656,7 @@
     {
       "name": "enterprise_repository_outside_collaborators",
       "kind": "view",
-      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
       "authority": false,
       "role": "derived-projection",
       "participants": ["account", "enterprise", "organization", "repository"]
@@ -1664,7 +1664,7 @@
     {
       "name": "attendance_identity_bindings",
       "kind": "view",
-      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
       "authority": false,
       "role": "derived-projection",
       "participants": ["account", "attendance"]
@@ -1672,7 +1672,7 @@
     {
       "name": "user_management_activity",
       "kind": "view",
-      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
       "authority": false,
       "role": "derived-projection",
       "participants": ["account", "attendance", "repository"]
@@ -1680,7 +1680,7 @@
     {
       "name": "identity_access_enterprise_scopes",
       "kind": "view",
-      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
       "authority": false,
       "role": "derived-projection",
       "participants": ["enterprise", "identity-access"]
@@ -1688,7 +1688,7 @@
     {
       "name": "identity_access_enterprise_subjects",
       "kind": "view",
-      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
       "authority": false,
       "role": "derived-projection",
       "participants": ["account", "enterprise", "identity-access"]
@@ -1696,7 +1696,7 @@
     {
       "name": "identity_access_organization_scopes",
       "kind": "view",
-      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
       "authority": false,
       "role": "derived-projection",
       "participants": ["organization", "identity-access"]
@@ -1704,7 +1704,7 @@
     {
       "name": "identity_access_organization_subjects",
       "kind": "view",
-      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
       "authority": false,
       "role": "derived-projection",
       "participants": ["account", "organization", "identity-access"]
@@ -1712,7 +1712,7 @@
     {
       "name": "identity_access_team_subjects",
       "kind": "view",
-      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
       "authority": false,
       "role": "derived-projection",
       "participants": ["account", "organization", "team", "identity-access"]
@@ -1720,7 +1720,7 @@
     {
       "name": "user_namespace_projection",
       "kind": "view",
-      "path": "supabase/schemas/900_cross_owner_projections.sql",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
       "authority": false,
       "role": "derived-projection",
       "participants": ["account", "namespace"]
@@ -1728,7 +1728,7 @@
     {
       "name": "repository_wbs",
       "kind": "table",
-      "path": "supabase/schemas/609_repository_wbs.sql",
+      "path": "packages/integration-supabase/src/schemas/609_repository_wbs.sql",
       "authority": true,
       "semanticOwner": "wbs",
       "concept": "repository-wbs"
@@ -1736,7 +1736,7 @@
     {
       "name": "repository_wbs_revisions",
       "kind": "table",
-      "path": "supabase/schemas/609_repository_wbs.sql",
+      "path": "packages/integration-supabase/src/schemas/609_repository_wbs.sql",
       "authority": true,
       "semanticOwner": "wbs",
       "concept": "wbs-revision"
@@ -1744,7 +1744,7 @@
     {
       "name": "repository_wbs_commands",
       "kind": "table",
-      "path": "supabase/schemas/609_repository_wbs.sql",
+      "path": "packages/integration-supabase/src/schemas/609_repository_wbs.sql",
       "authority": true,
       "semanticOwner": "wbs",
       "concept": "wbs-command-receipt"
@@ -1752,7 +1752,7 @@
     {
       "name": "repository_wbs_governance",
       "kind": "table",
-      "path": "supabase/schemas/609_repository_wbs.sql",
+      "path": "packages/integration-supabase/src/schemas/609_repository_wbs.sql",
       "authority": true,
       "semanticOwner": "wbs",
       "concept": "wbs-governance"
@@ -1760,7 +1760,7 @@
     {
       "name": "repository_wbs_policies",
       "kind": "table",
-      "path": "supabase/schemas/609_repository_wbs.sql",
+      "path": "packages/integration-supabase/src/schemas/609_repository_wbs.sql",
       "authority": true,
       "semanticOwner": "wbs",
       "concept": "wbs-governance-policy"
@@ -1768,7 +1768,7 @@
     {
       "name": "repository_wbs_proposals",
       "kind": "table",
-      "path": "supabase/schemas/609_repository_wbs.sql",
+      "path": "packages/integration-supabase/src/schemas/609_repository_wbs.sql",
       "authority": true,
       "semanticOwner": "wbs",
       "concept": "wbs-change-proposal"
@@ -1776,7 +1776,7 @@
     {
       "name": "repository_wbs_reviews",
       "kind": "table",
-      "path": "supabase/schemas/609_repository_wbs.sql",
+      "path": "packages/integration-supabase/src/schemas/609_repository_wbs.sql",
       "authority": true,
       "semanticOwner": "wbs",
       "concept": "wbs-proposal-review"
@@ -1784,7 +1784,7 @@
     {
       "name": "repository_wbs_baselines",
       "kind": "table",
-      "path": "supabase/schemas/609_repository_wbs.sql",
+      "path": "packages/integration-supabase/src/schemas/609_repository_wbs.sql",
       "authority": true,
       "semanticOwner": "wbs",
       "concept": "wbs-baseline"
@@ -1792,7 +1792,7 @@
     {
       "name": "repository_wbs_governance_commands",
       "kind": "table",
-      "path": "supabase/schemas/609_repository_wbs.sql",
+      "path": "packages/integration-supabase/src/schemas/609_repository_wbs.sql",
       "authority": true,
       "semanticOwner": "wbs",
       "concept": "wbs-governance-receipt"
@@ -1800,7 +1800,7 @@
     {
       "name": "repository_wbs_proposal_versions",
       "kind": "table",
-      "path": "supabase/schemas/609_repository_wbs.sql",
+      "path": "packages/integration-supabase/src/schemas/609_repository_wbs.sql",
       "authority": true,
       "semanticOwner": "wbs",
       "concept": "wbs-proposal-version"
@@ -1808,7 +1808,7 @@
     {
       "name": "wiki_pages",
       "kind": "table",
-      "path": "supabase/schemas/610_wiki.sql",
+      "path": "packages/integration-supabase/src/schemas/610_wiki.sql",
       "authority": true,
       "semanticOwner": "wiki",
       "concept": "wiki-page"
@@ -1816,7 +1816,7 @@
     {
       "name": "wiki_revisions",
       "kind": "table",
-      "path": "supabase/schemas/610_wiki.sql",
+      "path": "packages/integration-supabase/src/schemas/610_wiki.sql",
       "authority": true,
       "semanticOwner": "wiki",
       "concept": "wiki-revision"
@@ -1824,7 +1824,7 @@
     {
       "name": "wiki_commands",
       "kind": "table",
-      "path": "supabase/schemas/610_wiki.sql",
+      "path": "packages/integration-supabase/src/schemas/610_wiki.sql",
       "authority": true,
       "semanticOwner": "wiki",
       "concept": "wiki-command-receipt"
@@ -1832,7 +1832,7 @@
     {
       "name": "repository_wbs_outbox",
       "kind": "table",
-      "path": "supabase/schemas/611_wbs_outbox.sql",
+      "path": "packages/integration-supabase/src/schemas/611_wbs_outbox.sql",
       "authority": true,
       "semanticOwner": "wbs",
       "concept": "wbs-baseline-event"
@@ -1840,7 +1840,7 @@
     {
       "name": "action_rules",
       "kind": "table",
-      "path": "supabase/schemas/612_actions.sql",
+      "path": "packages/integration-supabase/src/schemas/612_actions.sql",
       "authority": true,
       "semanticOwner": "actions",
       "concept": "action-rule"
@@ -1848,7 +1848,7 @@
     {
       "name": "action_rule_versions",
       "kind": "table",
-      "path": "supabase/schemas/612_actions.sql",
+      "path": "packages/integration-supabase/src/schemas/612_actions.sql",
       "authority": true,
       "semanticOwner": "actions",
       "concept": "action-rule"
@@ -1856,7 +1856,7 @@
     {
       "name": "action_runs",
       "kind": "table",
-      "path": "supabase/schemas/612_actions.sql",
+      "path": "packages/integration-supabase/src/schemas/612_actions.sql",
       "authority": true,
       "semanticOwner": "actions",
       "concept": "action-run"
@@ -1864,7 +1864,7 @@
     {
       "name": "action_attempts",
       "kind": "table",
-      "path": "supabase/schemas/612_actions.sql",
+      "path": "packages/integration-supabase/src/schemas/612_actions.sql",
       "authority": true,
       "semanticOwner": "actions",
       "concept": "action-attempt"
@@ -1872,7 +1872,7 @@
     {
       "name": "action_commands",
       "kind": "table",
-      "path": "supabase/schemas/612_actions.sql",
+      "path": "packages/integration-supabase/src/schemas/612_actions.sql",
       "authority": true,
       "semanticOwner": "actions",
       "concept": "action-command-receipt"
@@ -1880,7 +1880,7 @@
     {
       "name": "action_events",
       "kind": "table",
-      "path": "supabase/schemas/612_actions.sql",
+      "path": "packages/integration-supabase/src/schemas/612_actions.sql",
       "authority": true,
       "semanticOwner": "actions",
       "concept": "action-event-receipt"
@@ -1888,7 +1888,7 @@
     {
       "name": "notification_receipts",
       "kind": "table",
-      "path": "supabase/schemas/852_notification_receipts.sql",
+      "path": "packages/integration-supabase/src/schemas/852_notification_receipts.sql",
       "authority": true,
       "semanticOwner": "notifications",
       "concept": "notification-receipt"
@@ -1896,7 +1896,7 @@
     {
       "name": "project_repository_imports",
       "kind": "table",
-      "path": "supabase/schemas/704_project_repository_references.sql",
+      "path": "packages/integration-supabase/src/schemas/704_project_repository_references.sql",
       "authority": true,
       "semanticOwner": "project",
       "concept": "project-repository-import"
@@ -1904,7 +1904,7 @@
     {
       "name": "project_repository_import_exclusions",
       "kind": "table",
-      "path": "supabase/schemas/704_project_repository_references.sql",
+      "path": "packages/integration-supabase/src/schemas/704_project_repository_references.sql",
       "authority": true,
       "semanticOwner": "project",
       "concept": "project-repository-import-exclusion"
@@ -1912,7 +1912,7 @@
     {
       "name": "engineering_contracts",
       "kind": "table",
-      "path": "supabase/schemas/616_contracts.sql",
+      "path": "packages/integration-supabase/src/schemas/616_contracts.sql",
       "authority": true,
       "semanticOwner": "contract",
       "concept": "engineering-contract"
@@ -1920,7 +1920,7 @@
     {
       "name": "engineering_contract_revisions",
       "kind": "table",
-      "path": "supabase/schemas/616_contracts.sql",
+      "path": "packages/integration-supabase/src/schemas/616_contracts.sql",
       "authority": true,
       "semanticOwner": "contract",
       "concept": "engineering-contract-revision"
@@ -1928,7 +1928,7 @@
     {
       "name": "engineering_contract_commands",
       "kind": "table",
-      "path": "supabase/schemas/616_contracts.sql",
+      "path": "packages/integration-supabase/src/schemas/616_contracts.sql",
       "authority": true,
       "semanticOwner": "contract",
       "concept": "engineering-contract-command-receipt"
@@ -1936,7 +1936,7 @@
     {
       "name": "contract_documents",
       "kind": "table",
-      "path": "supabase/schemas/619_contract_documents.sql",
+      "path": "packages/integration-supabase/src/schemas/619_contract_documents.sql",
       "authority": true,
       "semanticOwner": "contract",
       "concept": "contract-document"
@@ -1944,7 +1944,7 @@
     {
       "name": "contract_document_revisions",
       "kind": "table",
-      "path": "supabase/schemas/619_contract_documents.sql",
+      "path": "packages/integration-supabase/src/schemas/619_contract_documents.sql",
       "authority": true,
       "semanticOwner": "contract",
       "concept": "contract-document-revision"
@@ -1952,7 +1952,7 @@
     {
       "name": "contract_document_commands",
       "kind": "table",
-      "path": "supabase/schemas/619_contract_documents.sql",
+      "path": "packages/integration-supabase/src/schemas/619_contract_documents.sql",
       "authority": true,
       "semanticOwner": "contract",
       "concept": "contract-document-command-receipt"
@@ -1960,7 +1960,7 @@
     {
       "name": "intelligence_document_intakes",
       "kind": "table",
-      "path": "supabase/schemas/619_intelligence_intakes.sql",
+      "path": "packages/integration-supabase/src/schemas/619_intelligence_intakes.sql",
       "authority": true,
       "semanticOwner": "intelligence",
       "concept": "intelligence-document-intake-attempt"
@@ -1968,7 +1968,7 @@
     {
       "name": "engineering_executions",
       "kind": "table",
-      "path": "supabase/schemas/617_executions.sql",
+      "path": "packages/integration-supabase/src/schemas/617_executions.sql",
       "authority": true,
       "semanticOwner": "execution",
       "concept": "engineering-execution"
@@ -1976,7 +1976,7 @@
     {
       "name": "engineering_execution_revisions",
       "kind": "table",
-      "path": "supabase/schemas/617_executions.sql",
+      "path": "packages/integration-supabase/src/schemas/617_executions.sql",
       "authority": true,
       "semanticOwner": "execution",
       "concept": "engineering-execution-revision"
@@ -1984,7 +1984,7 @@
     {
       "name": "engineering_execution_commands",
       "kind": "table",
-      "path": "supabase/schemas/617_executions.sql",
+      "path": "packages/integration-supabase/src/schemas/617_executions.sql",
       "authority": true,
       "semanticOwner": "execution",
       "concept": "engineering-execution-command-receipt"
@@ -1992,7 +1992,7 @@
     {
       "name": "content_plans",
       "kind": "table",
-      "path": "supabase/schemas/618_content_plans.sql",
+      "path": "packages/integration-supabase/src/schemas/618_content_plans.sql",
       "authority": true,
       "semanticOwner": "content",
       "concept": "content-plan"
@@ -2000,7 +2000,7 @@
     {
       "name": "content_plan_revisions",
       "kind": "table",
-      "path": "supabase/schemas/618_content_plans.sql",
+      "path": "packages/integration-supabase/src/schemas/618_content_plans.sql",
       "authority": true,
       "semanticOwner": "content",
       "concept": "content-plan-revision"
@@ -2008,7 +2008,7 @@
     {
       "name": "content_plan_resource_pins",
       "kind": "table",
-      "path": "supabase/schemas/618_content_plans.sql",
+      "path": "packages/integration-supabase/src/schemas/618_content_plans.sql",
       "authority": true,
       "semanticOwner": "content",
       "concept": "content-plan-resource-pin"
@@ -2016,7 +2016,7 @@
     {
       "name": "content_plan_commands",
       "kind": "table",
-      "path": "supabase/schemas/618_content_plans.sql",
+      "path": "packages/integration-supabase/src/schemas/618_content_plans.sql",
       "authority": true,
       "semanticOwner": "content",
       "concept": "content-plan-command-receipt"
@@ -2024,7 +2024,7 @@
     {
       "name": "repository_resources",
       "kind": "table",
-      "path": "supabase/schemas/619_resources.sql",
+      "path": "packages/integration-supabase/src/schemas/619_resources.sql",
       "authority": true,
       "semanticOwner": "resources",
       "concept": "physical-resource"
@@ -2032,7 +2032,7 @@
     {
       "name": "resource_revisions",
       "kind": "table",
-      "path": "supabase/schemas/619_resources.sql",
+      "path": "packages/integration-supabase/src/schemas/619_resources.sql",
       "authority": true,
       "semanticOwner": "resources",
       "concept": "physical-resource-revision"
@@ -2040,7 +2040,7 @@
     {
       "name": "resource_commands",
       "kind": "table",
-      "path": "supabase/schemas/619_resources.sql",
+      "path": "packages/integration-supabase/src/schemas/619_resources.sql",
       "authority": true,
       "semanticOwner": "resources",
       "concept": "physical-resource-command-receipt"
@@ -2048,7 +2048,7 @@
     {
       "name": "execution_task_dependencies",
       "kind": "table",
-      "path": "supabase/schemas/620_task_dependencies.sql",
+      "path": "packages/integration-supabase/src/schemas/620_task_dependencies.sql",
       "authority": true,
       "semanticOwner": "execution",
       "concept": "task-dependency-plan"
@@ -2056,7 +2056,7 @@
     {
       "name": "execution_task_dependency_revisions",
       "kind": "table",
-      "path": "supabase/schemas/620_task_dependencies.sql",
+      "path": "packages/integration-supabase/src/schemas/620_task_dependencies.sql",
       "authority": true,
       "semanticOwner": "execution",
       "concept": "task-dependency-revision"
@@ -2064,7 +2064,7 @@
     {
       "name": "execution_task_dependency_commands",
       "kind": "table",
-      "path": "supabase/schemas/620_task_dependencies.sql",
+      "path": "packages/integration-supabase/src/schemas/620_task_dependencies.sql",
       "authority": true,
       "semanticOwner": "execution",
       "concept": "task-dependency-command-receipt"
@@ -2072,7 +2072,7 @@
     {
       "name": "intelligence_processing_runs",
       "kind": "table",
-      "path": "supabase/schemas/619_intelligence_processing.sql",
+      "path": "packages/integration-supabase/src/schemas/619_intelligence_processing.sql",
       "authority": true,
       "semanticOwner": "intelligence",
       "concept": "intelligence-processing-run"
@@ -2080,7 +2080,7 @@
     {
       "name": "intelligence_processing_revisions",
       "kind": "table",
-      "path": "supabase/schemas/619_intelligence_processing.sql",
+      "path": "packages/integration-supabase/src/schemas/619_intelligence_processing.sql",
       "authority": true,
       "semanticOwner": "intelligence",
       "concept": "intelligence-processing-revision"
@@ -2088,7 +2088,7 @@
     {
       "name": "intelligence_processing_commands",
       "kind": "table",
-      "path": "supabase/schemas/619_intelligence_processing.sql",
+      "path": "packages/integration-supabase/src/schemas/619_intelligence_processing.sql",
       "authority": true,
       "semanticOwner": "intelligence",
       "concept": "intelligence-processing-command-receipt"
@@ -2096,7 +2096,7 @@
     {
       "name": "intelligence_legacy_processing_runs",
       "kind": "table",
-      "path": "supabase/schemas/619_intelligence_processing.sql",
+      "path": "packages/integration-supabase/src/schemas/619_intelligence_processing.sql",
       "authority": true,
       "semanticOwner": "intelligence",
       "concept": "intelligence-legacy-processing-history"
@@ -2104,7 +2104,7 @@
     {
       "name": "intelligence_legacy_processing_revisions",
       "kind": "table",
-      "path": "supabase/schemas/619_intelligence_processing.sql",
+      "path": "packages/integration-supabase/src/schemas/619_intelligence_processing.sql",
       "authority": true,
       "semanticOwner": "intelligence",
       "concept": "intelligence-legacy-processing-history"
@@ -2112,7 +2112,7 @@
     {
       "name": "intelligence_legacy_processing_commands",
       "kind": "table",
-      "path": "supabase/schemas/619_intelligence_processing.sql",
+      "path": "packages/integration-supabase/src/schemas/619_intelligence_processing.sql",
       "authority": true,
       "semanticOwner": "intelligence",
       "concept": "intelligence-legacy-processing-history"
@@ -2120,7 +2120,7 @@
     {
       "name": "intelligence_processing_history_cutovers",
       "kind": "table",
-      "path": "supabase/schemas/619_intelligence_processing.sql",
+      "path": "packages/integration-supabase/src/schemas/619_intelligence_processing.sql",
       "authority": true,
       "semanticOwner": "intelligence",
       "concept": "intelligence-processing-history-cutover"
@@ -2128,7 +2128,7 @@
     {
       "name": "repository_files",
       "kind": "table",
-      "path": "supabase/schemas/615_files.sql",
+      "path": "packages/integration-supabase/src/schemas/615_files.sql",
       "authority": true,
       "semanticOwner": "file",
       "concept": "file"
@@ -2136,7 +2136,7 @@
     {
       "name": "file_revisions",
       "kind": "table",
-      "path": "supabase/schemas/615_files.sql",
+      "path": "packages/integration-supabase/src/schemas/615_files.sql",
       "authority": true,
       "semanticOwner": "file",
       "concept": "file-revision"
@@ -2144,7 +2144,7 @@
     {
       "name": "file_upload_intents",
       "kind": "table",
-      "path": "supabase/schemas/615_files.sql",
+      "path": "packages/integration-supabase/src/schemas/615_files.sql",
       "authority": true,
       "semanticOwner": "file",
       "concept": "file-upload-intent"
@@ -2152,7 +2152,7 @@
     {
       "name": "file_processing_runs",
       "kind": "table",
-      "path": "supabase/schemas/615_files.sql",
+      "path": "packages/integration-supabase/src/schemas/615_files.sql",
       "authority": true,
       "semanticOwner": "file",
       "concept": "file-processing-run"
@@ -2160,7 +2160,7 @@
     {
       "name": "file_processing_revisions",
       "kind": "table",
-      "path": "supabase/schemas/615_files.sql",
+      "path": "packages/integration-supabase/src/schemas/615_files.sql",
       "authority": true,
       "semanticOwner": "file",
       "concept": "file-processing-revision"
@@ -2168,7 +2168,7 @@
     {
       "name": "file_commands",
       "kind": "table",
-      "path": "supabase/schemas/615_files.sql",
+      "path": "packages/integration-supabase/src/schemas/615_files.sql",
       "authority": true,
       "semanticOwner": "file",
       "concept": "file-command-receipt"

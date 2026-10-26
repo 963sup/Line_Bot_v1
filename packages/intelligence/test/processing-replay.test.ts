@@ -18,9 +18,7 @@ const command = {
 
 const output: ProcessingOutput = {
   documentKind: "text",
-  observations: [
-    { id: "field-1", label: "Value", value: "test", uncertain: false },
-  ],
+  observations: [{ id: "field-1", label: "Value", value: "test", uncertain: false }],
 };
 
 function harness(run: IntelligenceProcessor["run"]) {

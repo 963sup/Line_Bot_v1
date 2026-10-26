@@ -103,15 +103,15 @@ Canonical machine truth:
 [semantic model](../../architecture/semantic-model.json) ·
 [implementation topology](../../architecture/implementation-topology.json) ·
 [data topology](../../architecture/data-topology.json) ·
-[Project root schema](../../supabase/schemas/700_projects.sql) ·
-[Project Item/Draft schema](../../supabase/schemas/701_project_items.sql) ·
-[Project WBS schema](../../supabase/schemas/702_project_wbs.sql) ·
-[Project access schema](../../supabase/schemas/705_project_access.sql) ·
-[Project field schema](../../supabase/schemas/707_project_fields.sql) ·
-[Project view schema](../../supabase/schemas/708_project_views.sql) ·
-[Project status schema](../../supabase/schemas/709_project_status_updates.sql) ·
-[Project WBS governance](../../supabase/schemas/710_project_wbs_governance.sql) ·
-[Project WBS outbox](../../supabase/schemas/711_project_wbs_outbox.sql) ·
-[Project Actions](../../supabase/schemas/712_project_actions.sql).
+[Project root schema](../../packages/integration-supabase/src/schemas/700_projects.sql) ·
+[Project Item/Draft schema](../../packages/integration-supabase/src/schemas/701_project_items.sql) ·
+[Project WBS schema](../../packages/integration-supabase/src/schemas/702_project_wbs.sql) ·
+[Project access schema](../../packages/integration-supabase/src/schemas/705_project_access.sql) ·
+[Project field schema](../../packages/integration-supabase/src/schemas/707_project_fields.sql) ·
+[Project view schema](../../packages/integration-supabase/src/schemas/708_project_views.sql) ·
+[Project status schema](../../packages/integration-supabase/src/schemas/709_project_status_updates.sql) ·
+[Project WBS governance](../../packages/integration-supabase/src/schemas/710_project_wbs_governance.sql) ·
+[Project WBS outbox](../../packages/integration-supabase/src/schemas/711_project_wbs_outbox.sql) ·
+[Project Actions](../../packages/integration-supabase/src/schemas/712_project_actions.sql).
 
 Adjacent owners: [Account](account.md) · [Organization](organization.md) · [Team](team.md) · [Repository](repository.md) · [Issue](issue.md)

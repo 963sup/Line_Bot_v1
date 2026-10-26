@@ -122,19 +122,21 @@ test("Enterprise, Team, and Repository locators use Namespace with their origina
     },
   );
 
-  const enterpriseSchema = readRepoFile("supabase/schemas/200_enterprises.sql");
+  const enterpriseSchema = readRepoFile(
+    "packages/integration-supabase/src/schemas/200_enterprises.sql",
+  );
   assert.match(enterpriseSchema, /slug text unique/);
   assert.match(enterpriseSchema, /enterprises_identity_completeness_check/);
   assert.match(
-    readRepoFile("supabase/schemas/400_teams.sql"),
+    readRepoFile("packages/integration-supabase/src/schemas/400_teams.sql"),
     /create unique index teams_organization_slug\s+on app_private\.teams\(organization_account_id, slug\);/,
   );
   assert.match(
-    readRepoFile("supabase/schemas/210_enterprise_teams.sql"),
+    readRepoFile("packages/integration-supabase/src/schemas/210_enterprise_teams.sql"),
     /create unique index enterprise_teams_enterprise_slug\s+on app_private\.enterprise_teams\(enterprise_account_id, slug\);/,
   );
   assert.match(
-    readRepoFile("supabase/schemas/600_repositories.sql"),
+    readRepoFile("packages/integration-supabase/src/schemas/600_repositories.sql"),
     /create unique index repositories_owner_name on app_private\.repositories \(owner_account_id, lower\(name\)\);/,
   );
 });
@@ -148,18 +150,18 @@ test("Repository child locators remain scoped while Numbering owns sequential lo
   assert.equal(locator("discussion-opaque-id").scope, "repository-scoped-local-discussion-id");
 
   assert.match(
-    readRepoFile("supabase/schemas/620_issues.sql"),
+    readRepoFile("packages/integration-supabase/src/schemas/620_issues.sql"),
     /constraint "issues_repository_id_number_unique" unique \(repository_id, number\)/,
   );
   assert.match(
-    readRepoFile("supabase/schemas/611_repository_milestones.sql"),
+    readRepoFile("packages/integration-supabase/src/schemas/611_repository_milestones.sql"),
     /constraint repository_milestones_repository_number_unique unique \(repository_id, number\)/,
   );
 });
 
 test("Repository Label name remains a Repository-local namespace key", () => {
   assert.match(
-    readRepoFile("supabase/schemas/610_repository_labels.sql"),
+    readRepoFile("packages/integration-supabase/src/schemas/610_repository_labels.sql"),
     /constraint repository_labels_repository_name_unique unique \(repository_id, name\)/,
   );
 });

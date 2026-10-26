@@ -21,7 +21,10 @@ test("existing-target reconciliation can reapply the neutral foundation without 
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
   const foundation = readFileSync(
-    new URL("../../../supabase/schemas/000_foundation.sql", import.meta.url),
+    new URL(
+      "../../../packages/integration-supabase/src/schemas/000_foundation.sql",
+      import.meta.url,
+    ),
     "utf8",
   );
   const contract = () =>

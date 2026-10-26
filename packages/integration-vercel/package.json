@@ -5,12 +5,12 @@
   "type": "module",
   "exports": {
     "./gateway": {
-      "types": "./dist/gateway.d.ts",
-      "default": "./dist/gateway.js"
+      "types": "./dist/adapters/outbound/ai-gateway/gateway.d.ts",
+      "default": "./dist/adapters/outbound/ai-gateway/gateway.js"
     },
     "./gateway-config": {
-      "types": "./dist/gateway-config.d.ts",
-      "default": "./dist/gateway-config.js"
+      "types": "./dist/adapters/outbound/ai-gateway/config.d.ts",
+      "default": "./dist/adapters/outbound/ai-gateway/config.js"
     }
   },
   "files": [
@@ -18,7 +18,8 @@
   ],
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test \"test/**/*.test.ts\""
   },
   "dependencies": {
     "@line_bot_v1/intelligence": "workspace:*",
@@ -26,6 +27,7 @@
   },
   "devDependencies": {
     "@types/node": "catalog:",
+    "tsx": "catalog:",
     "typescript": "catalog:"
   }
 }

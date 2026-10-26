@@ -9,7 +9,7 @@
 | 業務子域分類與 candidate context 證據在哪？ | [Product domain overlay](semantic-model.json) 的 `subdomains` / `boundedContexts` | `pnpm semantic view subdomains`、`pnpm semantic view contexts` |
 | 哪個 module 實作 owner、允許依賴誰，以及哪些 FPT package boundary 已選為非 runtime target？ | [Implementation topology](implementation-topology.json) | `pnpm boundaries`、`pnpm semantic view modules` |
 | 哪個 owner 擁有 persisted relation、誰只 projection/reference？ | [Data topology](data-topology.json) | `pnpm architecture` |
-| 實際 SQL / constraint / RLS 是什麼？ | [Declarative schemas](../supabase/schemas/README.md) | `pnpm schema:check` |
+| 實際 SQL / constraint / RLS 是什麼？ | [Declarative schemas](../packages/integration-supabase/src/schemas/README.md) | `pnpm schema:check` |
 | Current human meaning / routing 在哪？ | [Core docs](../docs/README.md) + [Domain owners](../docs/owners/README.md) | `pnpm docs:check` |
 | Dated release / remote / device evidence 在哪？ | [Acceptance](../docs/change/evidence/README.md) | evidence 自己的日期 / revision / environment |
 

@@ -85,7 +85,6 @@
     "@line_bot_v1/wbs": "workspace:*",
     "@line_bot_v1/wiki": "workspace:*",
     "@modelcontextprotocol/sdk": "1.32.1",
-    "ai": "catalog:",
     "dependency-cruiser": "catalog:",
     "knip": "catalog:",
     "libpg-query": "17.7.4",

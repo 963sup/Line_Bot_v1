@@ -7,11 +7,11 @@
 ```text
 semantic-model
 → data-topology
-→ supabase/schemas/*.sql
+→ packages/integration-supabase/src/schemas/*.sql
 → owner adapter / use case
 ```
 
-- `supabase/schemas/` 是 current declarative DDL；migration history不是 current authority。
+- `packages/integration-supabase/src/schemas/` 是 current declarative DDL；migration history不是 current authority。
 - Authoritative relation恰好一個 semantic owner；cross-owner mechanism不能取得 business truth。
 - Domain model不等於 table model；transaction boundary由必須一起成立的 invariants決定。
 
@@ -25,7 +25,7 @@ semantic-model
 
 ## Shared governance transaction protocol
 
-`app_private.lock_governance('shared' | 'exclusive')` 是 qualification/access 與治理 writer 的共同 PostgreSQL 契約。Key 的唯一實作來源為 [`000_foundation.sql`](../../supabase/schemas/000_foundation.sql)；TypeScript Adapter 與 SQL coordinator／trigger 呼叫同一函數，不能另選 key。此中立機制不決定 business authorization、Owner 或 replay policy。
+`app_private.lock_governance('shared' | 'exclusive')` 是 qualification/access 與治理 writer 的共同 PostgreSQL 契約。Key 的唯一實作來源為 [`000_foundation.sql`](../../packages/integration-supabase/src/schemas/000_foundation.sql)；TypeScript Adapter 與 SQL coordinator／trigger 呼叫同一函數，不能另選 key。此中立機制不決定 business authorization、Owner 或 replay policy。
 
 | Mode | Current participants / protected facts |
 | --- | --- |

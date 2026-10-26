@@ -26,4 +26,4 @@ Task
 
 Quick routing: [owners](owners/README.md) · [system facts](facts/system.md) · [sources of truth](facts/sources-of-truth.md) · [glossary](facts/glossary.md) · [reference](reference/README.md) · [change/history](change/README.md).
 
-Do not preload `reference/` or `change/`. Machine current facts remain authoritative in `architecture/*.json`, source/tests, package exports and `supabase/schemas/`.
+Do not preload `reference/` or `change/`. Machine current facts remain authoritative in `architecture/*.json`, source/tests, package exports and `packages/integration-supabase/src/schemas/`.

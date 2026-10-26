@@ -29,6 +29,6 @@ Notifications owns user-facing Notification facts, recipient read state, and del
 
 ## Data and modules
 
-Current persistence is split between [`850_notifications.sql`](../../supabase/schemas/850_notifications.sql) and [`851_notification_deliveries.sql`](../../supabase/schemas/851_notification_deliveries.sql). Runtime authority belongs under `packages/notifications`; Web presentation remains under `apps/web/src/modules/notifications`. The current authenticated destination is named Inbox in the UI while the published Web/API transport remains `/notifications` / `/api/notifications`; transport naming does not create a second owner.
+Current persistence is split between [`850_notifications.sql`](../../packages/integration-supabase/src/schemas/850_notifications.sql) and [`851_notification_deliveries.sql`](../../packages/integration-supabase/src/schemas/851_notification_deliveries.sql). Runtime authority belongs under `packages/notifications`; Web presentation remains under `apps/web/src/modules/notifications`. The current authenticated destination is named Inbox in the UI while the published Web/API transport remains `/notifications` / `/api/notifications`; transport naming does not create a second owner.
 
 `notification_project_source_access` is a non-authoritative cross-owner projection over WBS, Project, Account, Organization, Team and Notifications facts. It exists to enforce current source access; it never becomes Project/WBS/Notification truth.

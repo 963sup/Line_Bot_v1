@@ -75,7 +75,12 @@ test("successful owner jobs advance independently while other jobs in the Releas
       hasCommit: () => true,
       isAncestor: () => true,
       changedFiles: (baseline) =>
-        baseline ? [] : ["assets/line/rich-menu/menu.jpg", "supabase/schemas/200_enterprises.sql"],
+        baseline
+          ? []
+          : [
+              "assets/line/rich-menu/menu.jpg",
+              "packages/integration-supabase/src/schemas/200_enterprises.sql",
+            ],
     },
     turbo: { webBuildAffected: () => false },
   });
@@ -86,12 +91,15 @@ test("successful owner jobs advance independently while other jobs in the Releas
 });
 
 test("release source classifiers preserve owner boundaries", () => {
-  assert.equal(schemaChanged(["supabase/schemas/200_enterprises.sql"]), true);
+  assert.equal(
+    schemaChanged(["packages/integration-supabase/src/schemas/200_enterprises.sql"]),
+    true,
+  );
   assert.equal(schemaChanged(["scripts/supabase/remote.mjs"]), false);
-  assert.equal(storageChanged(["supabase/config.toml"]), true);
+  assert.equal(storageChanged(["packages/integration-supabase/src/config.toml"]), true);
   assert.equal(storageChanged(["scripts/supabase/storage.mjs"]), true);
   assert.equal(storageChanged(["scripts/supabase/storage.test.mjs"]), false);
-  assert.equal(storageChanged(["supabase/schemas/615_files.sql"]), false);
+  assert.equal(storageChanged(["packages/integration-supabase/src/schemas/615_files.sql"]), false);
   assert.equal(richMenuChanged(["assets/line/rich-menu/menu.jpg"]), true);
   assert.equal(richMenuChanged(["apps/web/src/modules/assistant/rich-menu/definition.ts"]), true);
   assert.equal(publicationOnlyRichMenuSource("apps/web/src/app/page.tsx"), false);
@@ -295,7 +303,9 @@ function plannerFixture({
 }
 
 test("schema-only changes sync schema without publishing Rich Menu or deploying Web", async () => {
-  const plan = await planRelease(plannerFixture({ files: ["supabase/schemas/100_accounts.sql"] }));
+  const plan = await planRelease(
+    plannerFixture({ files: ["packages/integration-supabase/src/schemas/100_accounts.sql"] }),
+  );
   assert.equal(plan.schema_changed, true);
   assert.equal(plan.web_affected, false);
   assert.equal(plan.rich_menu_changed, false);
@@ -334,7 +344,9 @@ test("each current Rich Menu asset triggers independent publication even when Tu
 });
 
 test("Storage Bucket changes publish separately from declarative SQL and Web", async () => {
-  const plan = await planRelease(plannerFixture({ files: ["supabase/config.toml"] }));
+  const plan = await planRelease(
+    plannerFixture({ files: ["packages/integration-supabase/src/config.toml"] }),
+  );
   assert.equal(plan.schema_changed, false);
   assert.equal(plan.storage_changed, true);
   assert.equal(plan.web_affected, false);
@@ -346,7 +358,8 @@ test("Storage tracks its own successful Release baseline", async () => {
   const plan = await planRelease(
     plannerFixture({
       previousJobs: [{ name: "supabase_storage", conclusion: "success" }],
-      byBaseline: (baseline) => (baseline === PREVIOUS ? [] : ["supabase/config.toml"]),
+      byBaseline: (baseline) =>
+        baseline === PREVIOUS ? [] : ["packages/integration-supabase/src/config.toml"],
     }),
   );
   assert.equal(plan.baselines.storage, PREVIOUS);
@@ -395,7 +408,7 @@ test("Rich Menu watches publication code and its actual inputs", () => {
     "apps/web/src/app/page.tsx",
   ])
     assert.equal(richMenuChanged([file]), false, file);
-  assert.equal(schemaChanged(["supabase/schemas/nested/100.sql"]), false);
+  assert.equal(schemaChanged(["packages/integration-supabase/src/schemas/nested/100.sql"]), false);
   assert.equal(schedulerChanged(["scripts/attendance/scheduler.test.mjs"]), false);
 });
 
@@ -532,7 +545,8 @@ test("successful same-SHA publication is not repeated on rerun", async () => {
   const plan = await planRelease(
     plannerFixture({
       runs: [{ id: 1, display_title: `Release ${SHA}`, status: "completed" }],
-      byBaseline: (baseline) => (baseline === SHA ? [] : ["supabase/schemas/100.sql"]),
+      byBaseline: (baseline) =>
+        baseline === SHA ? [] : ["packages/integration-supabase/src/schemas/100.sql"],
     }),
   );
   assert.equal(plan.baselines.supabase, SHA);

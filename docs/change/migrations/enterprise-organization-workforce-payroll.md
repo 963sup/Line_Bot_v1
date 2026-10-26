@@ -41,7 +41,7 @@ DailyCheckIn 不併入 Attendance，也不成 Payroll input。Payroll 不把 Acc
 2. 保留 stable existing IDs 與 historical facts。
 3. 新舊 writer 不並行成永久 dual writer。
 4. migration/backfill 不能猜 business metadata。
-5. current DDL 進 `supabase/schemas/`；一次性 transition 不成 clean rebuild dependency。
+5. current DDL 進 `packages/integration-supabase/src/schemas/`；一次性 transition 不成 clean rebuild dependency。
 6. PGlite/local validation 不取代 multi-connection / remote PostgreSQL evidence。
 
 Adapter ownership 搬移不等於 Data Boundary 搬移；跨 owner relation 使用 reference/projection/transaction coordinator，而不是 direct private-table dependency。

@@ -278,7 +278,10 @@ function fixture(t) {
       globalDependencies: ["tsconfig.base.json"],
       tasks: {
         test: {
-          inputs: ["$TURBO_DEFAULT$", "$TURBO_ROOT$/supabase/schemas/*.sql"],
+          inputs: [
+            "$TURBO_DEFAULT$",
+            "$TURBO_ROOT$/packages/integration-supabase/src/schemas/*.sql",
+          ],
         },
         "@line_bot_v1/web#build": {
           cache: false,
@@ -806,7 +809,7 @@ test("remote Supabase migration history cannot become an executable repository p
   rejects(root, "remote Supabase migration-history command is forbidden");
 
   write("scripts/remote.mjs", "");
-  write("supabase/migrations/20260101000000_forbidden.sql", "select 1;\n");
+  write("packages/integration-supabase/src/migrations/20260101000000_forbidden.sql", "select 1;\n");
   rejects(root, "remote migration files are not a current repository contract");
 });
 
@@ -820,10 +823,19 @@ test("current repository surfaces reject retired User vocabulary", (t) => {
   rejects(root, "retired User vocabulary");
 
   write("packages/demo/src/user.ts", "export type User = string;\n");
-  write("supabase/schemas/10_users.sql", `create table app_private.${retiredTable}(id text);\n`);
+  write("packages/integration-supabase/AGENTS.md", "# Scope\n");
+  write("packages/integration-supabase/README.md", "# Integration\n");
+  write("packages/integration-supabase/SEMANTICS.md", "# generated\n");
+  write(
+    "packages/integration-supabase/src/schemas/10_users.sql",
+    `create table app_private.${retiredTable}(id text);\n`,
+  );
   rejects(root, "retired User vocabulary");
 
-  write("supabase/schemas/10_users.sql", "create table app_private.users(id text);\n");
+  write(
+    "packages/integration-supabase/src/schemas/10_users.sql",
+    "create table app_private.users(id text);\n",
+  );
   write("scripts/probes/check-user.mjs", `export const payload = { ${retiredField}: "a" };\n`);
   rejects(root, "retired User vocabulary");
 

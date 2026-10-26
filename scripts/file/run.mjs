@@ -3,10 +3,10 @@ import { createFiles } from "@line_bot_v1/file/application/use-cases/files";
 import { createPostgresFileDependencies } from "@line_bot_v1/file/composition/bootstrap/files";
 import { FileError } from "@line_bot_v1/file/domain/error";
 import { fileLimits } from "@line_bot_v1/file/domain/file";
+import { createVercelAiGateway } from "@line_bot_v1/integration-vercel/gateway";
 import { createPostgresIntelligenceProcessing } from "@line_bot_v1/intelligence/composition/bootstrap/processing";
 import { plainTextProcessor } from "@line_bot_v1/intelligence/composition/bootstrap/processors";
 import { PostgresDatabase } from "@line_bot_v1/platform/postgres";
-import { createVercelAiGateway } from "../../vercel/integrations/ai-gateway.mjs";
 import { classifyInternalFailure } from "../runtime/internal-failure.mjs";
 import {
   InternalInputError,
@@ -60,7 +60,7 @@ try {
         !(process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN)
       )
         throw new InternalInputError("Configure the selected extractor.");
-      extractor = createVercelAiGateway(process.env.AI_GATEWAY_MODEL).fileProcessor();
+      extractor = createVercelAiGateway({ model: process.env.AI_GATEWAY_MODEL }).fileProcessor();
     } else throw new InternalInputError("Explicit processor selection is required.");
     mutationStarted = true;
     result = await processing.run(actor, input.command, extractor);
