@@ -30,7 +30,12 @@
 - [Platform integrations — Step End：完成定義](platform-integration-root-migration-step-end.md)
 
 - [Document owner skeleton — Step 1（減法邊界與停止條件）](document-owner-skeleton-reduction-step-1.md)
-- [Document owner skeleton — Step 2（減法後的最小協作設計）](document-owner-skeleton-reduction-step-2.md)
+- [Document owner skeleton — Step 2（Integration / Port / Composition）](document-owner-skeleton-reduction-step-2.md)
+- [Document owner skeleton — Step 3（File → Intelligence → Vercel AI Gateway / 結構化候選）](document-owner-skeleton-reduction-step-3.md)
+- [Document owner skeleton — Step 4（Contract 驗證與人工確認）](document-owner-skeleton-reduction-step-4.md)
+- [Document owner skeleton — Step 5（Contract → Content 確定性全量轉換）](document-owner-skeleton-reduction-step-5.md)
+- [Document owner skeleton — Step 6（Content → WBS 與正式 Baseline）](document-owner-skeleton-reduction-step-6.md)
+- [Document owner skeleton — Step 7（E2E／反向證據／失敗恢復）](document-owner-skeleton-reduction-step-7.md)
 - [Domain target](domain-target.md)
 - [Data target](data-target.md)
 - [Security target](security-target.md)
