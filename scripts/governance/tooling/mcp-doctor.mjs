@@ -19,8 +19,11 @@ const servers = [
   },
   {
     name: "serena",
-    command: "serena",
+    command: "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/uvx",
     args: [
+      "--from",
+      "serena-agent",
+      "serena",
       "start-mcp-server",
       "--project-from-cwd",
       "--context=codex",
@@ -71,7 +74,10 @@ export function inspectMcpConfiguration(root, configuration) {
             server?.command === command &&
             server.cwd === undefined &&
             JSON.stringify(server.args) === JSON.stringify(args) &&
-            server.startup_timeout_sec === 15 &&
+            server.startup_timeout_sec === 120 &&
+            server.env?.UV_CACHE_DIR === "/tmp/codex-uv-cache" &&
+            server.env?.UV_TOOL_DIR === "/tmp/codex-uv-tools" &&
+            server.env?.SERENA_HOME === "/tmp/codex-serena" &&
             server.default_tools_approval_mode === "approve",
           command,
           args,
