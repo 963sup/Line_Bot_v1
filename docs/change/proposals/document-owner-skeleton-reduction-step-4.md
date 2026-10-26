@@ -26,7 +26,6 @@ type DocumentIntakeInput = {
   repositoryId: string; documentId: string; requestId: string;
   intentFingerprint: string; expectedVersion: number;
   source: { fileId: string; fileRevisionId: string; fileSha256: string };
-  expectedLineCount: number;
   candidate: PurchaseOrderCandidate;   // Step 3 的完整 header/buyer/seller/lines/totals/terms/evidence/corrections
   acknowledgement?: { reason: string };
 };
@@ -36,7 +35,7 @@ type ContractDocumentRevision = {
   actorUserId: string; at: number;
   state: "DRAFT" | "CONFIRMED";
   source: DocumentIntakeInput["source"];
-  expectedLineCount: number; candidate: PurchaseOrderCandidate;
+  candidate: PurchaseOrderCandidate;
   diagnostics: string[]; acknowledgementReason: string | null;
 };
 ```
@@ -50,7 +49,7 @@ type ContractDocumentRevision = {
 | 檢查 | 現有代碼證據 | 完整閉環標準 |
 | --- | --- | --- |
 | 完整 schema | 公開 `purchaseOrderExtractionSchema`，Contract input 解析 | **所有欄位**由 Contract original schema/domain 重驗，不能只接受 provider JSON 結構 |
-| 行數 | `lines.length === expectedLineCount` | 加上**原件頁面人工核對的獨立行數／範圍確認**；caller 期待數不是原件真相 |
+| 行數 | `candidate.lines.length` 由 AI 擷取結果導出 | 人工確認保存實際核對的列數、row IDs 與來源頁覆蓋；caller 不得提供行數 |
 | 行身份 | 非空 `sourceRowId`、檢查重複 | 每 source revision 穩定唯一，跨頁續行不能錯誤合併／重算 |
 | 不確定性 | `uncertain`，必需欄位與 `sourcePages` | `uncertain` 或必要來源位置缺失不得 CONFIRM，明確保留證據 |
 | 數量價格 | 目前檢查 quantity>0、unitPrice>=0 | 補 exact-decimal `quantity * unitPrice` 與 gross 的一致性／例外政策；不得暗中推定計價方式 |
@@ -58,19 +57,19 @@ type ContractDocumentRevision = {
 | 單據總額 | 目前檢查 lines gross / discount / net sums、`net + tax = total` | 精確十進位、稅與折扣之合法例外須明確、可追溯；金額差異不等於缺資料 |
 | 商業確認 | DRAFT → CONFIRMED，只能確認未修改的 review facts | 真實 reviewer/actor 意圖清楚、版本固定、不能自動 Confirm |
 
-**已完成的修正與仍存在的邊界**：Contract domain 現在以 exact decimal 比較 `quantity * unitPrice` 與 `grossAmount`，並以 `LINE_GROSS_MISMATCH` 保留差異；`expectedLineCount` 仍是 caller 宣告，不能單獨證明原 PDF 行數。
+**已完成的修正與仍存在的邊界**：Contract domain 現在以 exact decimal 比較 `quantity * unitPrice` 與 `grossAmount`，並以 `LINE_GROSS_MISMATCH` 保留差異；行數只由 AI candidate 與人工來源核對產生，不能由 caller 宣告。
 
 **設計決定：** 財務差異可用明確 `acknowledgementReason` 例外，但**不能用一段任意理由豁免缺少必要行、來源頁、重複 ID、未確定欄位、無效數量或未核對原件行數**。當實際商業單據存在手寫價格、折扣或特殊稅務例外時，應保留精確原始值及來源位置，而不是用公式強迫偽造一致。引入新的例外種類前先確立 domain 語意與測試；不加通用規則引擎。
 
 ## 4. 原件人工核對必須有獨立可查的確認證據
 
-**原文件無法僅以** `expectedLineCount`、`candidate.lines.length`、`sourcePages` **或** `state=CONFIRMED` **證明已逐頁核對。** `ContractDocumentRevision` 現在另行保存 `sourceReviewAttestation`，記載人工確認的行數、頁碼、source row IDs 與 `confirmedFromOriginal: true`；它是「誰聲明核對過」的證據，不宣稱系統自動證明 PDF 內容必然正確。
+**原文件無法僅以** `candidate.lines.length`、`sourcePages` **或** `state=CONFIRMED` **證明已逐頁核對。** `ContractDocumentRevision` 現在另行保存 `sourceReviewAttestation`，記載人工確認的行數、頁碼、source row IDs 與 `confirmedFromOriginal: true`；它是「誰聲明核對過」的證據，不宣稱系統自動證明 PDF 內容必然正確。
 
 實際契約：由 **Contract Owner** 在確認命令與同一不可變確認 Revision 中持久化一份原件核對聲明：
 
 ```ts
 type SourceReviewAttestation = {
-  verifiedLineCount: number;      // reviewer 看原件所確認的行數，不抄用 expectedLineCount
+  verifiedLineCount: number;      // reviewer 看原件所確認的行數
   reviewedSourcePages: number[];  // reviewer 確認的頁碼範圍
   reviewedSourceRowIds: string[]; // 人工檢視過的 candidate row ID 清單
   confirmedFromOriginal: true;   // 明確的人類確認動作

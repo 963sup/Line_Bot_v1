@@ -26,7 +26,6 @@ type IntakeCommand = {
   documentId: string;
   requestId: string;
   expectedVersion: number;        // ContractDocument optimistic version
-  expectedLineCount: number;      // caller supplied; not independent source proof
   source: {
     fileId: string;
     fileRevisionId: string;
@@ -80,7 +79,7 @@ type PurchaseOrderCandidate = {
 2. `sourceRowId` 僅保證在**該份 ContractDocument 的該次來源／修訂範圍內**唯一；對同一原件重跑理想上應穩定。**現行 Schema 只有自由字串，Gateway prompt 不足以保證穩定或原文對應。** 目標做法是在 Intake 對來源頁／表格列位置建立經驗證的定位證據，對跨頁續列做明確合併規則；若無法建立可信定位，保留未確定性並交由人工覆核，不能單靠雜湊或 AI 自行編號宣稱原件行身份確定。正式切換前需用 fixtures 驗證；跨多份文件／版本的比較一律使用 `(documentId, revisionId, sourceRowId)` 複合鍵。
 3. 金額與數量**維持 decimal 字串**。不得轉 `number`、補估稅率、四捨五入、轉換幣別、推定折扣符號或將缺失欄位填成 `0`。
 4. 無法確認的值用 `null`，並保留 `uncertain`／`sourcePages`／`fieldEvidence`；不以猜測值和 `uncertain=false` 假裝有來源證據。
-5. `expectedLineCount` 來自呼叫者，**僅是可供驗證的宣告**。不得把 `lines.length === expectedLineCount` 當成獨立的真實 PDF 完整性證明；需要人員對照原件頁面／表格計數。
+5. 行數由 AI 擷取的 `candidate.lines` 導出；caller 不得宣告、輸入或驗證列數。人工核對保存 candidate row IDs 與來源頁面覆蓋證據。
 6. `schemaId`、`schemaVersion`、extractor identity/version、精確 File source identity 必須包含在 Attempt 的不可變意圖 fingerprint（依現有 Intake 介面）；不同意圖不可共用 requestId。
 
 ## 4. 每個邊界做自己的驗證
