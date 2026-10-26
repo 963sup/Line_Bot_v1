@@ -10,7 +10,7 @@ No generic AI framework, provider router, schema registry, persistence model, Do
 
 ## Contract and dependency direction
 
-File supplies an exact, already authorized `FileRevision` and bytes through its public source reader. Intelligence invokes the processor port and records run revisions and receipts; the application host injects the Vercel AI implementation from `integration-vercel`.
+File supplies an exact, already authorized `FileRevision` and bytes through its public source reader. Intelligence invokes processors and records run revisions and receipts.
 
 ```text
 CLI / Web application host

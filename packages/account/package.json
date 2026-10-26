@@ -83,8 +83,8 @@
   },
   "dependencies": {
     "@line_bot_v1/namespace": "workspace:*",
-    "@line_bot_v1/integration-supabase": "workspace:*",
-    "@line_bot_v1/platform": "workspace:*"
+    "@line_bot_v1/platform": "workspace:*",
+    "@supabase/supabase-js": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",

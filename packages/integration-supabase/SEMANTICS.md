@@ -30,7 +30,6 @@ No owner capability is currently declared in the canonical semantic model.
 
 | Direction | Counterparty | Mode | Authority | Consistency | Meaning |
 | --- | --- | --- | --- | --- | --- |
-| provides | account | reference | supabase-integration | per-request-verified | Account identity verification uses the Supabase Auth transport through the integration boundary; Account owns Google identity qualification and domain error mapping. |
 | provides | file | reference | supabase-integration | per-operation-verified | File adapter uses the server-only Supabase Storage transport client; File retains object keys, SHA-256 verification, errors, writes and readback consistency. |
 
 ## Tactical Model Boundary

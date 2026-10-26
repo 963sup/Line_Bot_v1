@@ -31,11 +31,7 @@
       "path": "packages/account",
       "moduleKind": "domain-module",
       "semanticOwner": "account",
-      "allowedWorkspaceDependencies": [
-        "@line_bot_v1/namespace",
-        "@line_bot_v1/platform",
-        "@line_bot_v1/integration-supabase"
-      ]
+      "allowedWorkspaceDependencies": ["@line_bot_v1/namespace", "@line_bot_v1/platform"]
     },
     "@line_bot_v1/notifications": {
       "path": "packages/notifications",
@@ -520,8 +516,7 @@
         "@line_bot_v1/contract",
         "@line_bot_v1/execution",
         "@line_bot_v1/file",
-        "@line_bot_v1/integration-vercel",
-        "@line_bot_v1/integration-supabase"
+        "@line_bot_v1/integration-vercel"
       ]
     }
   }
