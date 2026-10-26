@@ -185,6 +185,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@line_bot_v1/integration-vercel':
+        specifier: workspace:*
+        version: link:../../packages/integration-vercel
       '@base-ui/react':
         specifier: 1.9.0
         version: 1.9.0(@date-fns/tz@1.5.0)(@types/react@19.2.18)(date-fns@4.4.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -706,9 +709,9 @@ importers:
       '@line_bot_v1/repository':
         specifier: workspace:*
         version: link:../repository
-      '@supabase/supabase-js':
-        specifier: 'catalog:'
-        version: 2.115.0(@opentelemetry/api@1.9.1)
+      '@line_bot_v1/integration-supabase':
+        specifier: workspace:*
+        version: link:../integration-supabase
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -763,6 +766,35 @@ importers:
       tsx:
         specifier: 'catalog:'
         version: 4.23.13
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
+  packages/integration-supabase:
+    dependencies:
+      '@supabase/supabase-js':
+        specifier: 'catalog:'
+        version: 2.115.0(@opentelemetry/api@1.9.1)
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.3
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
+  packages/integration-vercel:
+    dependencies:
+      '@line_bot_v1/intelligence':
+        specifier: workspace:*
+        version: link:../intelligence
+      ai:
+        specifier: 'catalog:'
+        version: 7.0.149(zod@4.3.6)
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.3
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
