@@ -3,10 +3,10 @@
 Current persisted business truth is defined by three owners:
 
 ```text
-architecture/semantic-model.json
+architecture/registry.json#domain
   → business concept / semantic owner
 
-architecture/data-topology.json
+architecture/registry.json#data
   → persisted relation authority / role / physical file
 
 packages/integration-supabase/src/schemas/*.sql
@@ -14,7 +14,7 @@ packages/integration-supabase/src/schemas/*.sql
 ```
 
 This document explains the cross-owner data invariants only. Physical object inventory belongs to
-[Data topology](../../../architecture/data-topology.json) and the
+[Data topology](../../../architecture/registry.json#data) and the
 [Schema tree](../../../packages/integration-supabase/src/schemas/README.md).
 
 ## Account identity

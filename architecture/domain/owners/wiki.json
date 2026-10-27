@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "owner": {
+    "id": "wiki",
+    "kind": "business-owner",
+    "lifecycle": "current",
+    "doc": "docs/owners/wiki.md"
+  },
+  "boundedContexts": [],
+  "concepts": [
+    {
+      "id": "wiki-page",
+      "canonicalName": "WikiPage",
+      "kind": "authoritative",
+      "owner": "wiki",
+      "lifecycle": "current",
+      "definition": "Repository-scoped page with stable identity and an independently versioned immutable content head.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "wiki-revision",
+      "canonicalName": "WikiRevision",
+      "kind": "authoritative",
+      "owner": "wiki",
+      "lifecycle": "current",
+      "definition": "Immutable Wiki page content, lifecycle and actor snapshot; restoration creates a new revision.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "wiki-command-receipt",
+      "canonicalName": "WikiCommandReceipt",
+      "kind": "authoritative",
+      "owner": "wiki",
+      "lifecycle": "current",
+      "definition": "Durable exact-replay command identity referencing the committed Wiki revision.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    }
+  ],
+  "relationships": [],
+  "capabilities": [
+    {
+      "id": "manage-repository-wiki",
+      "owner": "wiki",
+      "kind": "leaf",
+      "intent": "Read and revise Repository Wiki pages with immutable history, version comparison, restoration, current access and durable exact replay.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Repository Wiki lifecycle, history, comparison and restoration through authenticated internal CLI and Web delivery.",
+        "sourcePaths": [
+          "packages/wiki/src/domain/wiki-page.ts",
+          "packages/wiki/src/application/use-cases/pages.ts",
+          "packages/wiki/src/adapters/outbound/persistence/wiki-pages.ts"
+        ],
+        "publicExports": [
+          "./application/use-cases/pages",
+          "./application/use-cases/history",
+          "./contracts/dto/wiki",
+          "./contracts/repositories/wiki-pages",
+          "./composition/bootstrap/wiki-pages",
+          "./domain/wiki-error",
+          "./domain/policies/wiki-access",
+          "./application/commands/pages"
+        ],
+        "entrypoints": [
+          "scripts/operations/wiki/run.mjs",
+          "apps/web/src/app/api/repository-wiki/route.ts",
+          "apps/web/src/app/(resource)/[login]/[repository]/wiki/page.tsx",
+          "apps/web/src/app/(resource)/[login]/[repository]/wiki/[pageId]/page.tsx"
+        ],
+        "testPaths": ["packages/wiki/test/wiki.test.ts", "apps/web/test/wiki-http.test.ts"],
+        "note": "Authenticated CLI/Web capability; no Markdown HTML rendering, attachments or page-specific grants. Current Repository authorization and atomic immutable revisions/replay remain owner authority."
+      }
+    }
+  ],
+  "locators": []
+}

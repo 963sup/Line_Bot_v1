@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "@line_bot_v1/identity-access",
+  "status": "current",
+  "path": "packages/identity-access",
+  "moduleKind": "domain-module",
+  "semanticOwner": "identity-access",
+  "allowedWorkspaceDependencies": ["@line_bot_v1/account", "@line_bot_v1/platform"],
+  "primaryOwnerImplementation": true
+}

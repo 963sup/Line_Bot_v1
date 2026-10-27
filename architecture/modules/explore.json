@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "@line_bot_v1/explore",
+  "status": "current",
+  "path": "packages/explore",
+  "moduleKind": "application-module",
+  "semanticOwner": "repository",
+  "allowedWorkspaceDependencies": ["@line_bot_v1/repository"]
+}

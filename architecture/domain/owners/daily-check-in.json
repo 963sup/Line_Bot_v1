@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "owner": {
+    "id": "daily-check-in",
+    "kind": "business-owner",
+    "lifecycle": "current",
+    "doc": "docs/owners/daily-check-in.md"
+  },
+  "boundedContexts": [
+    {
+      "id": "daily-check-in",
+      "owner": "daily-check-in",
+      "status": "selected"
+    }
+  ],
+  "concepts": [
+    {
+      "id": "daily-check-in",
+      "canonicalName": "DailyCheckIn",
+      "kind": "authoritative",
+      "owner": "daily-check-in",
+      "lifecycle": "current",
+      "definition": "Business-day check-in and reward decision.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    }
+  ],
+  "relationships": [
+    {
+      "id": "daily-check-in-ledger-posting",
+      "provider": "daily-check-in",
+      "consumer": "ledger",
+      "meaning": "Authorized reward decision committed with required transaction semantics.",
+      "integrationMode": "command",
+      "authority": "daily-check-in",
+      "consistency": "atomic-where-required"
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "claim-daily-check-in",
+      "owner": "daily-check-in",
+      "kind": "leaf",
+      "intent": "Create at most one authorized business-day check-in effect.",
+      "preserves": ["K2", "K3", "K4", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "consumes": ["ledger-daily-check-in-posting", "ledger-daily-check-in-readback"],
+      "implementation": {
+        "status": "implemented",
+        "scope": "current DailyCheckIn application surface",
+        "sourcePaths": [
+          "packages/daily-check-in/src/application/daily-check-in.ts",
+          "packages/daily-check-in/src/contracts/daily-check-in.ts",
+          "packages/daily-check-in/src/domain/policies/reward-policy.ts",
+          "packages/daily-check-in/src/domain/value-objects/daily-check-in-claim.ts",
+          "packages/daily-check-in/src/domain/value-objects/daily-check-in-day.ts",
+          "packages/daily-check-in/src/domain/value-objects/ledger-source.ts",
+          "packages/daily-check-in/src/adapters/outbound/persistence/postgres-daily-check-in-store.ts",
+          "packages/daily-check-in/src/composition/bootstrap/postgres-daily-check-in-store.ts"
+        ],
+        "publicExports": [
+          "./application/daily-check-in",
+          "./composition/bootstrap/postgres-daily-check-in-store",
+          "./domain/error"
+        ],
+        "entrypoints": ["apps/web/src/app/(mobile)/(tabs)/home/page.tsx"],
+        "testPaths": [
+          "packages/daily-check-in/test/daily-check-in.test.ts",
+          "packages/daily-check-in/test/daily-check-in-policy.test.ts",
+          "packages/daily-check-in/test/daily-check-in-postgres.test.ts"
+        ],
+        "note": "Source/export evidence exists; one-per-day behavior requires test evidence."
+      }
+    }
+  ],
+  "locators": []
+}

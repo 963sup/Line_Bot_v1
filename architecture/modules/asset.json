@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "@line_bot_v1/asset",
+  "status": "current",
+  "path": "packages/asset",
+  "moduleKind": "domain-module",
+  "semanticOwner": "asset",
+  "allowedWorkspaceDependencies": ["@line_bot_v1/platform"],
+  "primaryOwnerImplementation": true
+}

@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "owner": "file",
+  "files": [
+    {
+      "path": "packages/integration-supabase/src/schemas/615_files.sql",
+      "role": "authoritative"
+    }
+  ],
+  "relations": [
+    {
+      "name": "repository_files",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/615_files.sql",
+      "authority": true,
+      "semanticOwner": "file",
+      "concept": "file"
+    },
+    {
+      "name": "file_revisions",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/615_files.sql",
+      "authority": true,
+      "semanticOwner": "file",
+      "concept": "file-revision"
+    },
+    {
+      "name": "file_upload_intents",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/615_files.sql",
+      "authority": true,
+      "semanticOwner": "file",
+      "concept": "file-upload-intent"
+    },
+    {
+      "name": "file_processing_runs",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/615_files.sql",
+      "authority": true,
+      "semanticOwner": "file",
+      "concept": "file-processing-run"
+    },
+    {
+      "name": "file_processing_revisions",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/615_files.sql",
+      "authority": true,
+      "semanticOwner": "file",
+      "concept": "file-processing-revision"
+    },
+    {
+      "name": "file_commands",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/615_files.sql",
+      "authority": true,
+      "semanticOwner": "file",
+      "concept": "file-command-receipt"
+    }
+  ]
+}

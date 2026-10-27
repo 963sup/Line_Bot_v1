@@ -19,7 +19,7 @@ Current URL、route partition、app-shell 與 runtime contract 以 [Web runtime]
 
 ## GitHub domain truth and external benchmarks
 
-Vendored [GitHub FPT JSON](../architecture/domain/fpt/) 是 GitHub GraphQL semantics 的本地 domain truth，不是 benchmark；[provenance](../architecture/domain/fpt-source.json) 只證明來源與完整性。[Semantic model](../architecture/semantic-model.json) 只能補 Line_Bot_v1 owner/invariant/capability/implementation overlay。只有 GitHub Mobile / visual interaction 可作 UX / information hierarchy benchmark，不能從畫面推導 permission、route 或 runtime activation。
+Vendored [GitHub FPT JSON](../architecture/domain/fpt/) 是 GitHub GraphQL semantics 的本地 domain truth，不是 benchmark；[provenance](../architecture/domain/fpt-source.json) 只證明來源與完整性。[Semantic model](../architecture/registry.json#domain) 只能補 Line_Bot_v1 owner/invariant/capability/implementation overlay。只有 GitHub Mobile / visual interaction 可作 UX / information hierarchy benchmark，不能從畫面推導 permission、route 或 runtime activation。
 
 ## Nested routing
 
@@ -36,7 +36,7 @@ Vendored [GitHub FPT JSON](../architecture/domain/fpt/) 是 GitHub GraphQL seman
 
 1. 先核對現行 route、consumer、owner public contract、tests、trust boundary 與 current capability status。
 2. URL / entry 變更同步 page/route、Link/back、login/LIFF continuation、Rich Menu entry、tests 與 canonical locator；已發布 URL 先查 consumer/compatibility。
-3. Owner / capability 語意改變時先修 `architecture/semantic-model.json`；module dependency/path 改變才修 `implementation-topology.json`。
+3. Owner / capability 語意改變時先修 `architecture/registry.json#domain`；module dependency/path 改變才修 `registry.json#modules`。
 4. 未啟用能力不得用 fake data、disabled shell 或空 route 冒充完成。
 5. 文件變更檢查 local links；app/tooling 變更依 root validation contract。Git push 不等於部署或 LINE/device acceptance。
 

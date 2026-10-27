@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+  "owner": "attendance",
+  "files": [
+    {
+      "path": "packages/integration-supabase/src/schemas/830_attendance.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/831_attendance_commands.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/832_attendance_events.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/833_attendance_outbox.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/834_attendance_supplements.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/840_workplaces.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/841_workplace_memberships.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/842_workplace_commands.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/843_workplace_chat.sql",
+      "role": "authoritative"
+    }
+  ],
+  "relations": [
+    {
+      "name": "member_attendance",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/830_attendance.sql",
+      "authority": true,
+      "semanticOwner": "attendance"
+    },
+    {
+      "name": "attendance_state",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/830_attendance.sql",
+      "authority": true,
+      "semanticOwner": "attendance"
+    },
+    {
+      "name": "attendance_sessions",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/830_attendance.sql",
+      "authority": true,
+      "semanticOwner": "attendance",
+      "concept": "attendance"
+    },
+    {
+      "name": "attendance_commands",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/831_attendance_commands.sql",
+      "authority": true,
+      "semanticOwner": "attendance"
+    },
+    {
+      "name": "attendance_events",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/832_attendance_events.sql",
+      "authority": true,
+      "semanticOwner": "attendance"
+    },
+    {
+      "name": "attendance_menu_outbox",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/833_attendance_outbox.sql",
+      "authority": true,
+      "semanticOwner": "attendance"
+    },
+    {
+      "name": "attendance_notification_outbox",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/833_attendance_outbox.sql",
+      "authority": true,
+      "semanticOwner": "attendance"
+    },
+    {
+      "name": "attendance_supplement_requests",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/834_attendance_supplements.sql",
+      "authority": true,
+      "semanticOwner": "attendance",
+      "concept": "attendance-supplement-request"
+    },
+    {
+      "name": "workplaces",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/840_workplaces.sql",
+      "authority": true,
+      "semanticOwner": "attendance",
+      "concept": "workplace"
+    },
+    {
+      "name": "workplace_members",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/841_workplace_memberships.sql",
+      "authority": true,
+      "semanticOwner": "attendance"
+    },
+    {
+      "name": "workplace_commands",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/842_workplace_commands.sql",
+      "authority": true,
+      "semanticOwner": "attendance"
+    },
+    {
+      "name": "workplace_chat_drafts",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/843_workplace_chat.sql",
+      "authority": true,
+      "semanticOwner": "attendance"
+    },
+    {
+      "name": "workplace_chat_events",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/843_workplace_chat.sql",
+      "authority": true,
+      "semanticOwner": "attendance"
+    }
+  ]
+}

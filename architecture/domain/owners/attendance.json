@@ -1,0 +1,189 @@
+{
+  "schemaVersion": 1,
+  "owner": {
+    "id": "attendance",
+    "kind": "business-owner",
+    "lifecycle": "current",
+    "doc": "docs/owners/attendance.md"
+  },
+  "boundedContexts": [
+    {
+      "id": "attendance",
+      "owner": "attendance",
+      "status": "strong-candidate",
+      "evidence": {
+        "ownerContracts": ["docs/owners/attendance.md"],
+        "sourcePaths": ["packages/attendance/src/domain/aggregates/attendance-session.ts"],
+        "testPaths": [
+          "packages/attendance/test/attendance.test.ts",
+          "packages/attendance/test/repository-attendance.test.ts"
+        ],
+        "rationale": "出勤 session、時間與重播規則由 Attendance 擁有；Repository 提供當下存取與打卡點。跨 owner 原子交易不代表合併模型，保留既有 context status。"
+      }
+    }
+  ],
+  "concepts": [
+    {
+      "id": "attendance",
+      "canonicalName": "Attendance",
+      "kind": "authoritative",
+      "owner": "attendance",
+      "lifecycle": "current",
+      "definition": "Actual attendance lifecycle, Repository-member clock eligibility, immutable point snapshots and attendance facts.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "attendance-supplement-request",
+      "canonicalName": "Attendance Supplement Request",
+      "kind": "authoritative",
+      "owner": "attendance",
+      "lifecycle": "current",
+      "definition": "A User-submitted proposal to append a complete historical Attendance session or close that User's existing open session; it is not an Attendance fact until a current effective Repository ADMIN approves it.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "workplace",
+      "canonicalName": "Workplace",
+      "kind": "authoritative",
+      "owner": "attendance",
+      "lifecycle": "current-data-only",
+      "definition": "Retained pre-cutover Workplace records only; no runtime writer, membership or management. Current clock points are Repository-owned coordinates and radius with an optional address description.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    }
+  ],
+  "relationships": [
+    {
+      "id": "attendance-ledger-posting",
+      "provider": "attendance",
+      "consumer": "ledger",
+      "meaning": "Authorized attendance reward decision.",
+      "integrationMode": "command",
+      "authority": "attendance",
+      "consistency": "atomic-where-required"
+    },
+    {
+      "id": "attendance-account-management-activity",
+      "provider": "attendance",
+      "consumer": "account",
+      "meaning": "Account User administration reads the Attendance-owned open-session activity projection for administrative display; it does not authorize User suspension or transfer Attendance writer or lifecycle authority to Account.",
+      "integrationMode": "projection",
+      "authority": "attendance",
+      "consistency": "current-state"
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "record-attendance",
+      "owner": "attendance",
+      "kind": "leaf",
+      "intent": "Record valid attendance while preserving eligibility, replay, version, and isolation semantics.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "consumes": ["ledger-attendance-posting"],
+      "implementation": {
+        "status": "implemented",
+        "scope": "Clock-in validates Repository coordinates, radius, current GPS accuracy and effective member access; clock-out uses the original immutable point snapshot even after member removal.",
+        "sourcePaths": [
+          "packages/attendance/src/application/clock.ts",
+          "packages/attendance/src/contracts/clock.ts",
+          "packages/attendance/src/contracts/input/attendance-command.ts",
+          "packages/attendance/src/domain/policies/session-transition.ts"
+        ],
+        "publicExports": [
+          "./application/clock",
+          "./contracts/clock",
+          "./contracts/input/attendance-command",
+          "./domain/error",
+          "./domain/policies/attendance-view",
+          "./domain/value-objects/location"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/(mobile)/(tabs)/attendance/page.tsx",
+          "apps/web/src/app/(mobile)/attendance/clock-in/page.tsx",
+          "apps/web/src/app/(mobile)/attendance/clock-out/page.tsx"
+        ],
+        "testPaths": [
+          "packages/attendance/test/attendance.test.ts",
+          "packages/attendance/test/attendance-shifts.test.ts"
+        ],
+        "note": "Attendance implementation evidence is static; remote/device acceptance is separate."
+      }
+    },
+    {
+      "id": "submit-attendance-supplement",
+      "owner": "attendance",
+      "kind": "leaf",
+      "intent": "Let an active User propose a missing complete session or a missing end time without directly changing authoritative Attendance facts.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "validationProfiles": ["semantic-architecture", "schema", "fast-repository"],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "The submitting User can propose a closed session for a currently eligible Repository point, or propose only an end time for their own open Repository session; each proposal snapshot is durable and remains pending until reviewed.",
+        "sourcePaths": [
+          "packages/attendance/src/application/supplements.ts",
+          "packages/attendance/src/contracts/supplements.ts",
+          "packages/attendance/src/contracts/input/attendance-supplement.ts",
+          "packages/attendance/src/adapters/outbound/persistence/postgres-attendance-store.ts"
+        ],
+        "publicExports": [
+          "./application/supplements",
+          "./contracts/supplements",
+          "./contracts/input/attendance-supplement",
+          "./contracts/dto/attendance-supplement"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/attendance/[[...operation]]/route.ts",
+          "apps/web/src/modules/attendance/panel.tsx"
+        ],
+        "testPaths": [],
+        "note": "A proposal never mutates an existing started time or a closed session."
+      }
+    },
+    {
+      "id": "review-attendance-supplement",
+      "owner": "attendance",
+      "kind": "leaf",
+      "intent": "Let a current effective Repository ADMIN User approve or reject a pending Attendance supplement, with approval atomically appending the Attendance fact and decision event.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "validationProfiles": ["semantic-architecture", "schema", "fast-repository"],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "User-owned Repository owner access and Organization-owned Repository effective ADMIN access are checked on every read and decision; current OrganizationOwner grants implicit ADMIN for its Organization-owned Repositories without a persisted Repository grant, and requesters cannot approve their own requests. Review responses disclose only replayed. Exact actor-bound replay remains available after ADMIN or all Repository access is revoked, but still requires active qualification and matching identity; malformed durable receipts cannot establish success. Submission receipts remain unchanged.",
+        "sourcePaths": [
+          "packages/attendance/src/application/supplements.ts",
+          "packages/attendance/src/contracts/supplements.ts",
+          "packages/attendance/src/contracts/input/attendance-supplement.ts",
+          "packages/attendance/src/adapters/outbound/persistence/postgres-attendance-store.ts"
+        ],
+        "publicExports": [
+          "./application/supplements",
+          "./contracts/supplements",
+          "./contracts/input/attendance-supplement",
+          "./contracts/dto/attendance-supplement"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/attendance/[[...operation]]/route.ts",
+          "apps/web/src/modules/attendance/panel.tsx"
+        ],
+        "testPaths": [
+          "packages/attendance/test/repository-attendance.test.ts",
+          "packages/attendance/test/attendance-point-dto.test.ts"
+        ],
+        "note": "Approval adds or closes an Attendance session and records the reviewer in the same transaction; it does not grant Ledger rewards or calculate payroll."
+      }
+    }
+  ],
+  "locators": []
+}

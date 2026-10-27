@@ -48,6 +48,6 @@ Runtime owner: `packages/repository`. Discovery projection: `packages/explore`. 
 
 The canonical Web root is Repository Overview: public metadata is anonymous-readable, while current authenticated Repository scope controls private/internal metadata and management links. Overview composes WBS-owned legacy recovery eligibility without acquiring WBS authority or exposing a destination Project. Source failure remains unavailable and retryable. All available resources share one ordered navigation grid without a disclosure. Settings and Access remain visible only to current admins. Projects remains an independent planning entry and does not imply a Repository association or inherited authorization.
 
-Persisted relation ownership is authoritative in [data topology](../../architecture/data-topology.json); SQL definitions remain under `packages/integration-supabase/src/schemas/`.
+Persisted relation ownership is authoritative in [data topology](../../architecture/registry.json#data); SQL definitions remain under `packages/integration-supabase/src/schemas/`.
 
 Adjacent owners: [Issue](issue.md) · [Discussion](discussion.md) · [Project](project.md) · [Notifications](notifications.md) · [Organization](organization.md) · [Authorization](../reference/security/permissions.md)

@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 1,
+  "owner": "account",
+  "files": [
+    {
+      "path": "packages/integration-supabase/src/schemas/100_accounts.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/110_users.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/111_user_external_identities.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/112_user_provisioning.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/113_user_profiles.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/114_user_achievements.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/115_user_follows.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/116_user_profile_statuses.sql",
+      "role": "authoritative"
+    }
+  ],
+  "relations": [
+    {
+      "name": "accounts",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/100_accounts.sql",
+      "authority": true,
+      "semanticOwner": "account"
+    },
+    {
+      "name": "users",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/110_users.sql",
+      "authority": true,
+      "semanticOwner": "account",
+      "concept": "user"
+    },
+    {
+      "name": "user_events",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/110_users.sql",
+      "authority": true,
+      "semanticOwner": "account"
+    },
+    {
+      "name": "user_management_commands",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/110_users.sql",
+      "authority": true,
+      "semanticOwner": "account"
+    },
+    {
+      "name": "user_identities",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/111_user_external_identities.sql",
+      "authority": true,
+      "semanticOwner": "account"
+    },
+    {
+      "name": "google_link_requests",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/112_user_provisioning.sql",
+      "authority": true,
+      "semanticOwner": "account"
+    },
+    {
+      "name": "user_profiles",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/113_user_profiles.sql",
+      "authority": true,
+      "semanticOwner": "account"
+    },
+    {
+      "name": "achievement_definitions",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/114_user_achievements.sql",
+      "authority": true,
+      "semanticOwner": "account"
+    },
+    {
+      "name": "user_achievements",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/114_user_achievements.sql",
+      "authority": true,
+      "semanticOwner": "account"
+    },
+    {
+      "name": "user_contribution_days",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/114_user_achievements.sql",
+      "authority": true,
+      "semanticOwner": "account"
+    },
+    {
+      "name": "user_follows",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/115_user_follows.sql",
+      "authority": true,
+      "semanticOwner": "account",
+      "concept": "user-follow"
+    },
+    {
+      "name": "user_profile_statuses",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/116_user_profile_statuses.sql",
+      "authority": true,
+      "semanticOwner": "account",
+      "concept": "user-profile-status"
+    },
+    {
+      "name": "user_profile_status_change_receipts",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/116_user_profile_statuses.sql",
+      "authority": true,
+      "semanticOwner": "account"
+    }
+  ]
+}

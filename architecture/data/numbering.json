@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "owner": "numbering",
+  "files": [
+    {
+      "path": "packages/integration-supabase/src/schemas/102_numbering.sql",
+      "role": "authoritative"
+    }
+  ],
+  "relations": [
+    {
+      "name": "number_series",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/102_numbering.sql",
+      "authority": true,
+      "semanticOwner": "numbering",
+      "concept": "number-series"
+    },
+    {
+      "name": "number_allocations",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/102_numbering.sql",
+      "authority": true,
+      "semanticOwner": "numbering",
+      "concept": "number-allocation"
+    }
+  ]
+}

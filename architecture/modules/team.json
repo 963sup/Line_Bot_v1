@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "@line_bot_v1/team",
+  "status": "current",
+  "path": "packages/team",
+  "moduleKind": "domain-module",
+  "semanticOwner": "team",
+  "allowedWorkspaceDependencies": [
+    "@line_bot_v1/account",
+    "@line_bot_v1/identity-access",
+    "@line_bot_v1/organization",
+    "@line_bot_v1/platform",
+    "@line_bot_v1/namespace"
+  ],
+  "primaryOwnerImplementation": true
+}

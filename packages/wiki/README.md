@@ -1,6 +1,6 @@
 # Wiki
 
-Repository-scoped versioned knowledge pages. See [owner contract](../../docs/owners/wiki.md), [semantic model](../../architecture/semantic-model.json), [implementation topology](../../architecture/implementation-topology.json) and [data topology](../../architecture/data-topology.json).
+Repository-scoped versioned knowledge pages. See [owner contract](../../docs/owners/wiki.md), [semantic model](../../architecture/registry.json#domain), [implementation topology](../../architecture/registry.json#modules) and [data topology](../../architecture/registry.json#data).
 
 Source responsibilities: Domain page transitions and revision comparison; Application input validation and use cases; Contracts published DTOs and transactional persistence ports; outbound persistence adapters; explicit bootstrap construction.
 

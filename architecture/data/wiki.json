@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "owner": "wiki",
+  "files": [
+    {
+      "path": "packages/integration-supabase/src/schemas/610_wiki.sql",
+      "role": "authoritative"
+    }
+  ],
+  "relations": [
+    {
+      "name": "wiki_pages",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/610_wiki.sql",
+      "authority": true,
+      "semanticOwner": "wiki",
+      "concept": "wiki-page"
+    },
+    {
+      "name": "wiki_revisions",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/610_wiki.sql",
+      "authority": true,
+      "semanticOwner": "wiki",
+      "concept": "wiki-revision"
+    },
+    {
+      "name": "wiki_commands",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/610_wiki.sql",
+      "authority": true,
+      "semanticOwner": "wiki",
+      "concept": "wiki-command-receipt"
+    }
+  ]
+}

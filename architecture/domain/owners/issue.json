@@ -1,0 +1,361 @@
+{
+  "schemaVersion": 1,
+  "owner": {
+    "id": "issue",
+    "kind": "business-owner",
+    "lifecycle": "current",
+    "doc": "docs/owners/issue.md"
+  },
+  "boundedContexts": [],
+  "concepts": [
+    {
+      "id": "issue",
+      "kind": "authoritative",
+      "owner": "issue",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-issues.json",
+        "symbol": "Issue"
+      }
+    },
+    {
+      "id": "issue-assignment",
+      "kind": "authoritative",
+      "owner": "issue",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-issues.json",
+        "symbol": "Issue",
+        "field": "assignees"
+      }
+    },
+    {
+      "id": "issue-label-link",
+      "kind": "authoritative",
+      "owner": "issue",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-issues.json",
+        "symbol": "Issue",
+        "field": "labels"
+      }
+    },
+    {
+      "id": "issue-comment",
+      "kind": "authoritative",
+      "owner": "issue",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-issues.json",
+        "symbol": "IssueComment"
+      }
+    },
+    {
+      "id": "issue-parent-link",
+      "kind": "authoritative",
+      "owner": "issue",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-issues.json",
+        "symbol": "Issue",
+        "field": "parent"
+      }
+    },
+    {
+      "id": "issue-dependency-link",
+      "kind": "authoritative",
+      "owner": "issue",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-issues.json",
+        "symbol": "Issue",
+        "field": "blockedBy"
+      }
+    },
+    {
+      "id": "issue-related-link",
+      "kind": "authoritative",
+      "owner": "issue",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-issues.json",
+        "symbol": "Issue",
+        "field": "relatesTo"
+      }
+    },
+    {
+      "id": "issue-type",
+      "kind": "authoritative",
+      "owner": "issue",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-issues.json",
+        "symbol": "IssueType"
+      }
+    },
+    {
+      "id": "issue-type-link",
+      "kind": "authoritative",
+      "owner": "issue",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-issues.json",
+        "symbol": "Issue",
+        "field": "issueType"
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "id": "project-issue-reference",
+      "provider": "issue",
+      "consumer": "project",
+      "meaning": "Project Item references Issue-owned work; Project metadata cannot rewrite Issue state. Optional Repository import uses the Issue public bounded projection, stores only Project-owned Issue references, and rechecks source access before each batch.",
+      "integrationMode": "reference",
+      "authority": "issue",
+      "consistency": "current-access-and-identity"
+    },
+    {
+      "id": "project-issue-draft-conversion",
+      "provider": "issue",
+      "consumer": "project",
+      "meaning": "Project DraftIssue conversion delegates Issue creation to the Issue owner in the same transaction; Project retains Item identity while never writing Issue truth directly.",
+      "integrationMode": "command",
+      "authority": "issue",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "issue-account-management-activity",
+      "provider": "issue",
+      "consumer": "account",
+      "meaning": "Account User administration reads the Issue-owned unfinished-assignment activity projection for administrative display; it does not authorize User suspension or transfer Issue writer or lifecycle authority to Account.",
+      "integrationMode": "projection",
+      "authority": "issue",
+      "consistency": "current-state"
+    },
+    {
+      "id": "insights-issue-metrics",
+      "from": "repository-pulse",
+      "to": "issue",
+      "kind": "reference",
+      "owner": "insights",
+      "meaning": "Insights consumes issue-owned authorized current queries; source facts and authorization remain with the provider.",
+      "provider": "issue",
+      "consumer": "insights",
+      "integrationMode": "query",
+      "authority": "issue",
+      "consistency": "current-state"
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "manage-issues",
+      "owner": "issue",
+      "kind": "leaf",
+      "intent": "Manage Repository-scoped Issue creation, canonical OPEN/CLOSED state, assignee collection, editable content, and the separate local work workflow.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Issue-owned canonical state/stateReason, title/body editing, 0..N assignees, local workflow responsibility, structured immutable events, replay/version invariants, and explicit RepositoryPermission operation policy",
+        "sourcePaths": [
+          "packages/issue/src/domain/issue/policies/issue-repository-operation.ts",
+          "packages/issue/src/domain/issue/policies/issue-transition.ts",
+          "packages/issue/src/application/issues.ts",
+          "packages/issue/src/contracts/repositories/issues.ts",
+          "packages/issue/src/contracts/input/issues.ts",
+          "packages/issue/src/adapters/postgres.ts"
+        ],
+        "publicExports": [
+          "./domain",
+          "./application/issues",
+          "./contracts/input/issues",
+          "./contracts/repositories/issues"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/issues/route.ts",
+          "apps/web/src/app/api/issues/[issueNumber]/route.ts",
+          "apps/web/src/app/(resource)/[login]/[repository]/issues/page.tsx",
+          "apps/web/src/app/(mobile)/(tabs)/issues/page.tsx",
+          "apps/web/src/app/(resource)/[login]/[repository]/issues/[issueNumber]/page.tsx"
+        ],
+        "testPaths": [
+          "packages/issue/test/issues.test.ts",
+          "apps/web/test/repository-navigation.test.ts",
+          "apps/web/test/repository-pending-storage.test.ts"
+        ],
+        "note": "Issue keeps FPT IssueState/IssueStateReason separate from the local pending/active/review/completed workflow. Assignees are a 0..N Issue-owned relation and author self-assignment is valid. Current create uses schema-issues.json#IssueCreationPolicy COLLABORATORS_ONLY: every exact RepositoryPermission may open an unassigned Issue, while adding assignees, editing content, and close/reopen use the generic TRIAGE/TRIAGE_PLUS/WRITE/MAINTAIN/ADMIN management set. READ collaborators can still perform the required local workflow when they are the publisher/current assignee. PUBLIC/INTERNAL visibility may grant read-only Issue visibility but never synthesizes RepositoryPermission or Issue write authority. Structured immutable Issue events preserve state, assignment, workflow and content-change evidence; comment/label/milestone/relation/lock operations remain separate capability slices."
+      }
+    },
+    {
+      "id": "read-issue-activity",
+      "owner": "issue",
+      "kind": "leaf",
+      "intent": "Read recent Issue lifecycle activity for currently accessible Repository scopes without transferring Repository authority.",
+      "preserves": ["K1", "K2", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Issue-owned activity projection filtered by current Repository access",
+        "sourcePaths": [
+          "packages/issue/src/application/activity.ts",
+          "packages/issue/src/contracts/activity.ts",
+          "packages/issue/src/adapters/postgres/activity.ts"
+        ],
+        "publicExports": ["./application/activity", "./contracts/activity", "./postgres/activity"],
+        "entrypoints": [
+          "apps/web/src/app/api/repositories/explore/route.ts",
+          "apps/web/src/app/api/_composition/issue-activity.server.ts"
+        ],
+        "testPaths": [
+          "packages/issue/test/activity.test.ts",
+          "apps/web/test/profile-discovery-api.test.ts"
+        ],
+        "note": "Activity reads Issue-owned lifecycle evidence and consumes Repository-owned current access plus Namespace-owned actor locators; Web composes it with Repository discovery without moving authority."
+      }
+    },
+    {
+      "id": "manage-issue-collaboration",
+      "owner": "issue",
+      "kind": "leaf",
+      "intent": "Manage Issue comments, Repository Label links, Repository Milestone assignment, Issue hierarchy/dependencies/related links, and independent conversation lock state without transferring Repository authority.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Issue-owned comments, classification links, milestone assignment, typed Issue relations, and conversation lock/unlock with current access, expectedVersion, exact replay and immutable Issue events.",
+        "sourcePaths": [
+          "packages/issue/src/application/collaboration.ts",
+          "packages/issue/src/contracts/collaboration.ts",
+          "packages/issue/src/adapters/postgres/collaboration.ts"
+        ],
+        "publicExports": [
+          "./application/collaboration",
+          "./contracts/collaboration",
+          "./composition/bootstrap/collaboration"
+        ],
+        "entrypoints": ["apps/web/src/app/api/issue-collaboration/route.ts"],
+        "testPaths": [
+          "packages/issue/test/collaboration.test.ts",
+          "packages/issue/test/issues.test.ts"
+        ],
+        "note": "Repository retains Label and Milestone definition authority. Cross-Repository Issue relations recheck both endpoint repositories; relation reads hide inaccessible endpoints. Comments retain stable identity on delete and Issue events remain audit evidence."
+      }
+    },
+    {
+      "id": "manage-issue-types",
+      "owner": "issue",
+      "kind": "leaf",
+      "intent": "Manage Organization-scoped IssueType definitions and the optional Issue-to-IssueType relation without granting Repository permission or changing Issue workflow.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Issue-owned Organization-scoped type definitions, enabled/tombstone lifecycle, optional same-Organization Issue assignment, exact replay and immutable type/Issue history.",
+        "sourcePaths": [
+          "packages/issue/src/application/issue-types.ts",
+          "packages/issue/src/contracts/issue-types.ts",
+          "packages/issue/src/adapters/postgres/issue-types.ts",
+          "packages/issue/src/adapters/postgres/collaboration.ts"
+        ],
+        "publicExports": [
+          "./application/issue-types",
+          "./contracts/issue-types",
+          "./postgres/issue-types",
+          "./application/collaboration",
+          "./contracts/collaboration",
+          "./composition/bootstrap/collaboration"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/issue-types/route.ts",
+          "apps/web/src/app/api/issue-collaboration/route.ts"
+        ],
+        "testPaths": ["packages/issue/test/issue-types.test.ts"],
+        "note": "FPT IssueType is Organization-scoped while remaining Issue-owned. Disabled types keep existing assignments readable but cannot be newly assigned; deletion is an immutable tombstone blocked while referenced. Type assignment uses Repository triage authority, never grants permission and never changes Issue state/workflow. Activation is atomic at this revision: schema, semantic overlay, contracts, API and tests coexist; no second adoption ledger or partial gate is used."
+      }
+    },
+    {
+      "id": "read-issue-metrics",
+      "owner": "issue",
+      "kind": "leaf",
+      "intent": "Read authorized issue-owned Repository metrics without transferring source or authorization authority to Insights.",
+      "preserves": ["K1", "K2", "K5", "K6"],
+      "validationProfiles": ["semantic-architecture", "tests", "fast-repository"],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Repository-scoped issue metrics through an owner public query.",
+        "sourcePaths": ["packages/issue/src/adapters/outbound/persistence/metrics.ts"],
+        "publicExports": ["./contracts/output/metrics", "./composition/bootstrap/metrics"],
+        "entrypoints": ["scripts/analysis/insights/run.mjs"],
+        "testPaths": ["packages/issue/test/metrics.test.ts"],
+        "note": "Owner query performs current Repository qualification/access checks; composition does not acquire business truth."
+      }
+    }
+  ],
+  "locators": [
+    {
+      "id": "issue-number",
+      "concept": "issue",
+      "status": "active",
+      "fields": ["ownerLogin", "repositoryName", "number"],
+      "scope": "repository-scoped-issue-number",
+      "scopeAuthority": "numbering",
+      "routeFiles": [
+        "apps/web/src/app/(resource)/[login]/[repository]/issues/[issueNumber]/page.tsx"
+      ],
+      "note": "Issue number is scoped to Repository and is not a global stable identifier.",
+      "fpt": {
+        "file": "schema-issues.json",
+        "symbol": "Issue",
+        "field": "number"
+      }
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "owner": {
+    "id": "expense",
+    "kind": "business-owner",
+    "lifecycle": "current",
+    "doc": "docs/owners/expense.md"
+  },
+  "boundedContexts": [
+    {
+      "id": "expense",
+      "owner": "expense",
+      "status": "strong-candidate",
+      "evidence": {
+        "ownerContracts": ["docs/owners/expense.md"],
+        "sourcePaths": ["packages/expense/src/domain/aggregates/expense.ts"],
+        "testPaths": [
+          "packages/expense/test/expense-domain.test.ts",
+          "packages/expense/test/postgres-expense-store.test.ts"
+        ],
+        "rationale": "收據整理與 confirmed/cancelled 終態有獨立 revision 模型；confirmed 不等於審批、付款或會計入帳。證據支持現有責任，不宣告更大費用管理上下文。"
+      }
+    }
+  ],
+  "concepts": [
+    {
+      "id": "expense",
+      "canonicalName": "Expense",
+      "kind": "authoritative",
+      "owner": "expense",
+      "lifecycle": "current",
+      "definition": "Expense intake lifecycle through draft, confirm, or cancel; confirmation is not approval/payment/accounting.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    }
+  ],
+  "relationships": [],
+  "capabilities": [],
+  "locators": []
+}

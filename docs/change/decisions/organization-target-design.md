@@ -57,7 +57,7 @@ Repository outside collaborator 已回 Repository owner：direct grant 不以 Or
 - [Organization owner](../../owners/organization.md)
 - [Enterprise owner](../../owners/enterprise.md)
 - [Team owner](../../owners/team.md)
-- [Semantic model](../../../architecture/semantic-model.json)
+- [Semantic model](../../../architecture/registry.json#domain)
 - [System invariants](../../rules/system-invariants.md)
 - [Security target](../proposals/security-target.md)
 - [Data target](../proposals/data-target.md)

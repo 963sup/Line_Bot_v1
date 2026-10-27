@@ -100,9 +100,9 @@ WBS owns the WBS document head, immutable Revision history, exact-replay receipt
 Runtime owner: `packages/project`.
 
 Canonical machine truth:
-[semantic model](../../architecture/semantic-model.json) ·
-[implementation topology](../../architecture/implementation-topology.json) ·
-[data topology](../../architecture/data-topology.json) ·
+[semantic model](../../architecture/registry.json#domain) ·
+[implementation topology](../../architecture/registry.json#modules) ·
+[data topology](../../architecture/registry.json#data) ·
 [Project root schema](../../packages/integration-supabase/src/schemas/700_projects.sql) ·
 [Project Item/Draft schema](../../packages/integration-supabase/src/schemas/701_project_items.sql) ·
 [Project WBS schema](../../packages/integration-supabase/src/schemas/702_project_wbs.sql) ·

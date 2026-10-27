@@ -10,7 +10,7 @@
 | 修改 scoped number 或 business name registry | [Numbering](../docs/owners/numbering.md) / [Namespace](../docs/owners/namespace.md)；resource lifecycle 與 authorization 仍查原 Owner |
 | 查 DDD/六邊形詞義與選用模式 | [共用詞彙表](../docs/facts/glossary.md#ddd-策略建模) |
 | 找修改影響與最小相關 context | bounded `rg`、package exports、source/tests；[task router](../docs/README.md) |
-| 查所有 current modules 與 selected targets | 直接讀取 `architecture/implementation-topology.json` |
+| 查所有 current modules 與 selected targets | 直接讀取 `architecture/registry.json#modules` |
 | 查驗證與證據邊界 | [Validation rules](../docs/rules/validation-evidence.md) |
 
 ## Authority routing
@@ -18,9 +18,9 @@
 | 真相 | Canonical owner |
 | --- | --- |
 | GitHub GraphQL domain semantics | [Pinned FPT JSON](../architecture/domain/fpt/)；[provenance](../architecture/domain/fpt-source.json) |
-| Product owner、invariant、relationship、capability、context | [Semantic model](../architecture/semantic-model.json) |
-| Module path/kind、dependency allowlist、selected targets | [Implementation topology](../architecture/implementation-topology.json) |
-| Persisted relation authority / projection / reference | [Data topology](../architecture/data-topology.json) |
+| Product owner、invariant、relationship、capability、context | [Semantic model](../architecture/registry.json#domain) |
+| Module path/kind、dependency allowlist、selected targets | [Implementation topology](../architecture/registry.json#modules) |
+| Persisted relation authority / projection / reference | [Data topology](../architecture/registry.json#data) |
 | SQL / constraints / RLS | [Declarative schemas](../packages/integration-supabase/src/schemas/README.md) |
 | Public package surface | 各 package 的 `package.json#exports` |
 | Dependency / formatting / reachability checks | [Dependency Cruiser](../.dependency-cruiser.mjs)、[Biome](../biome.json)、[Knip](../knip.jsonc) |

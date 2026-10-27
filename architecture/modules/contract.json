@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "@line_bot_v1/contract",
+  "status": "current",
+  "path": "packages/contract",
+  "moduleKind": "domain-module",
+  "semanticOwner": "contract",
+  "allowedWorkspaceDependencies": [
+    "@line_bot_v1/content",
+    "@line_bot_v1/file",
+    "@line_bot_v1/platform",
+    "@line_bot_v1/repository"
+  ],
+  "primaryOwnerImplementation": true
+}

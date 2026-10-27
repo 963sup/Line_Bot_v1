@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "owner": "platform",
+  "files": [
+    {
+      "path": "packages/integration-supabase/src/schemas/000_foundation.sql",
+      "role": "foundation",
+      "mechanismOwner": "platform"
+    }
+  ],
+  "relations": [
+    {
+      "name": "scoped_identifier_authority",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/000_foundation.sql",
+      "authority": true,
+      "semanticOwner": "platform"
+    }
+  ]
+}

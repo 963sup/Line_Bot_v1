@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "@line_bot_v1/account",
+  "status": "current",
+  "path": "packages/account",
+  "moduleKind": "domain-module",
+  "semanticOwner": "account",
+  "allowedWorkspaceDependencies": ["@line_bot_v1/namespace", "@line_bot_v1/platform"],
+  "primaryOwnerImplementation": true
+}

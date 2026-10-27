@@ -1,6 +1,6 @@
 # GitHub 非程式碼業務模型與子域策略
 
-本文件只解釋產品取捨與閱讀路徑；current 子域分類、Owner、context status 與證據以 [semantic model](../../../architecture/semantic-model.json) 為準。GitHub 名稱及定義直接取自 [pinned FPT](../../../architecture/domain/fpt/)，不在本文件建立另一套語意或 package 清冊。
+本文件只解釋產品取捨與閱讀路徑；current 子域分類、Owner、context status 與證據以 [semantic model](../../../architecture/registry.json#domain) 為準。GitHub 名稱及定義直接取自 [pinned FPT](../../../architecture/domain/fpt/)，不在本文件建立另一套語意或 package 清冊。
 
 ## 產品策略與範圍
 

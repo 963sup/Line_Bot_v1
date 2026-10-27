@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "@line_bot_v1/workforce",
+  "status": "current",
+  "path": "packages/workforce",
+  "moduleKind": "domain-module",
+  "semanticOwner": "workforce",
+  "allowedWorkspaceDependencies": [],
+  "primaryOwnerImplementation": true,
+  "implementationNote": "Workforce workspace/module ownership is registered; target business capability remains unimplemented."
+}

@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 1,
+  "owner": {
+    "id": "execution",
+    "kind": "business-owner",
+    "lifecycle": "current",
+    "doc": "docs/owners/execution.md"
+  },
+  "boundedContexts": [
+    {
+      "id": "execution",
+      "owner": "execution",
+      "status": "selected"
+    }
+  ],
+  "concepts": [
+    {
+      "id": "engineering-execution",
+      "canonicalName": "EngineeringExecution",
+      "kind": "authoritative",
+      "owner": "execution",
+      "lifecycle": "current",
+      "definition": "Repository-scoped actual Task quantity report bound to an exact Content Task within an ACTIVE Contract Work/Task commitment, physical Resource pins and observed Task-prerequisite version. Internal review preserves the immutable submission basis and does not infer Task completion.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "engineering-execution-revision",
+      "canonicalName": "EngineeringExecutionRevision",
+      "kind": "authoritative",
+      "owner": "execution",
+      "lifecycle": "current",
+      "definition": "Immutable submission/review snapshot with exact Content Task, Contract commitment, physical Resource revisions, observed prerequisite evidence, actual quantity, note and explicit review decision; not payment or legal acceptance.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "engineering-execution-command-receipt",
+      "canonicalName": "EngineeringExecutionCommandReceipt",
+      "kind": "authoritative",
+      "owner": "execution",
+      "lifecycle": "current",
+      "definition": "Immutable actor/request fingerprint and exact committed Execution revision supporting current-authorized replay.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "task-dependency-plan",
+      "canonicalName": "TaskDependencyPlan",
+      "kind": "authoritative",
+      "owner": "execution",
+      "lifecycle": "current",
+      "definition": "Versioned prerequisite DAG for Tasks in one exact Content plan revision; distinct from Content hierarchy and does not infer completion from quantities.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "task-dependency-revision",
+      "canonicalName": "TaskDependencyRevision",
+      "kind": "authoritative",
+      "owner": "execution",
+      "lifecycle": "current",
+      "definition": "Immutable Task prerequisite edge snapshot qualified against exact Content Task identities.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "task-dependency-command-receipt",
+      "canonicalName": "TaskDependencyCommandReceipt",
+      "kind": "authoritative",
+      "owner": "execution",
+      "lifecycle": "current",
+      "definition": "Exact replay evidence for one atomic Task prerequisite replacement.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    }
+  ],
+  "relationships": [],
+  "capabilities": [
+    {
+      "id": "record-engineering-executions",
+      "owner": "execution",
+      "kind": "leaf",
+      "intent": "Record actual Task quantities against exact Content and Contract bases, with versioned prerequisites, resource use and internal review.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6", "EXECUTION1"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Record actual Task quantities against exact Content and Contract bases, with versioned prerequisites, resource use and internal review.",
+        "sourcePaths": [
+          "packages/execution/src/domain/execution.ts",
+          "packages/execution/src/application/use-cases/executions.ts",
+          "packages/execution/src/adapters/outbound/persistence/executions.ts",
+          "packages/execution/src/domain/task-dependencies.ts",
+          "packages/execution/src/application/use-cases/task-dependencies.ts",
+          "packages/execution/src/adapters/outbound/persistence/task-dependencies.ts"
+        ],
+        "publicExports": [
+          "./application/use-cases/executions",
+          "./contracts/dto/executions",
+          "./composition/bootstrap/executions",
+          "./domain/error",
+          "./application/use-cases/task-dependencies",
+          "./contracts/dto/task-dependencies",
+          "./composition/bootstrap/task-dependencies"
+        ],
+        "entrypoints": [
+          "scripts/operations/execution/run.mjs",
+          "apps/web/src/app/api/repository-executions/route.ts"
+        ],
+        "testPaths": [
+          "packages/execution/test/execution.test.ts",
+          "packages/execution/test/execution-pglite.test.ts",
+          "packages/execution/test/execution-postgres.test.ts"
+        ],
+        "note": "Web consumes public owner application/composition contracts. Source implementation, local verification and production publication are separate evidence."
+      }
+    }
+  ],
+  "locators": []
+}

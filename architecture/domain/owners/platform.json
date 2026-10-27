@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "owner": {
+    "id": "platform",
+    "kind": "support-owner",
+    "lifecycle": "current",
+    "doc": "docs/owners/platform.md"
+  },
+  "boundedContexts": [],
+  "concepts": [],
+  "relationships": [
+    {
+      "id": "resources-platform-text",
+      "provider": "platform",
+      "consumer": "resources",
+      "meaning": "Consumes the neutral bounded text mechanism; business identity, errors, revisions, authorization and persistence remain consumer-owned.",
+      "integrationMode": "query",
+      "authority": "platform",
+      "consistency": "pure-value"
+    },
+    {
+      "id": "wiki-platform-text",
+      "provider": "platform",
+      "consumer": "wiki",
+      "meaning": "Consumes the neutral bounded text mechanism; business identity, errors, revisions, authorization and persistence remain consumer-owned.",
+      "integrationMode": "query",
+      "authority": "platform",
+      "consistency": "pure-value"
+    },
+    {
+      "id": "contract-platform-text",
+      "provider": "platform",
+      "consumer": "contract",
+      "meaning": "Consumes the neutral bounded text mechanism; business identity, errors, revisions, authorization and persistence remain consumer-owned.",
+      "integrationMode": "query",
+      "authority": "platform",
+      "consistency": "pure-value"
+    },
+    {
+      "id": "intelligence-platform-persistence",
+      "provider": "platform",
+      "consumer": "intelligence",
+      "meaning": "Intelligence consumes neutral PostgreSQL transaction and value-decoding mechanisms for its technical attempt record. It retains only attempt recovery state; Contract remains the owner of candidate and business revision truth.",
+      "integrationMode": "query",
+      "authority": "platform",
+      "consistency": "transaction-bound"
+    },
+    {
+      "id": "file-platform-persistence",
+      "provider": "platform",
+      "consumer": "file",
+      "meaning": "File consumes neutral PostgreSQL transaction and value-decoding mechanisms. File owns its persisted facts, authorization policy, transition orchestration and recovery.",
+      "integrationMode": "query",
+      "authority": "platform",
+      "consistency": "transaction-bound"
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "normalize-text-content",
+      "owner": "platform",
+      "kind": "leaf",
+      "intent": "Normalize a bounded title and preserve an unmodified body for Resources, Wiki and Contract without acquiring identity, revisions, storage or rendering authority.",
+      "preserves": ["K1", "K6"],
+      "validationProfiles": ["semantic-architecture", "tests", "fast-repository"],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Trim a 1..200 UTF-16-code-unit title and validate a body of at most 262144 UTF-16 code units; return field-specific failures without consumer error or transport semantics.",
+        "sourcePaths": ["packages/platform/src/text.ts"],
+        "publicExports": ["./text"],
+        "entrypoints": [
+          "packages/resources/src/domain/resource.ts",
+          "packages/wiki/src/domain/wiki-page.ts",
+          "packages/contract/src/domain/contract.ts"
+        ],
+        "testPaths": ["packages/platform/test/text.test.ts"],
+        "note": "Neutral shared text validation; Content now owns Repository work definitions, not shared text support."
+      }
+    }
+  ],
+  "locators": []
+}

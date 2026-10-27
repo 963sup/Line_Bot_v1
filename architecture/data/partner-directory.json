@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "owner": "partner-directory",
+  "files": [
+    {
+      "path": "packages/integration-supabase/src/schemas/860_partners.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/861_partner_contacts.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/862_partner_referrals.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/863_partner_commands.sql",
+      "role": "authoritative"
+    }
+  ],
+  "relations": [
+    {
+      "name": "partners",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/860_partners.sql",
+      "authority": true,
+      "semanticOwner": "partner-directory",
+      "concept": "partner"
+    },
+    {
+      "name": "partner_contacts",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/861_partner_contacts.sql",
+      "authority": true,
+      "semanticOwner": "partner-directory"
+    },
+    {
+      "name": "partner_referrals",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/862_partner_referrals.sql",
+      "authority": true,
+      "semanticOwner": "partner-directory"
+    },
+    {
+      "name": "partner_referral_commands",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/863_partner_commands.sql",
+      "authority": true,
+      "semanticOwner": "partner-directory"
+    },
+    {
+      "name": "partner_management_commands",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/863_partner_commands.sql",
+      "authority": true,
+      "semanticOwner": "partner-directory"
+    }
+  ]
+}

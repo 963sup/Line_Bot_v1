@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "@line_bot_v1/wallet",
+  "status": "current",
+  "path": "packages/wallet",
+  "moduleKind": "domain-module",
+  "semanticOwner": "wallet",
+  "allowedWorkspaceDependencies": [
+    "@line_bot_v1/account",
+    "@line_bot_v1/asset",
+    "@line_bot_v1/ledger",
+    "@line_bot_v1/platform"
+  ],
+  "primaryOwnerImplementation": true
+}

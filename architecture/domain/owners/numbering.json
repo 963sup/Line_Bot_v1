@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "owner": {
+    "id": "numbering",
+    "kind": "business-owner",
+    "lifecycle": "current",
+    "doc": "docs/owners/numbering.md"
+  },
+  "boundedContexts": [],
+  "concepts": [
+    {
+      "id": "number-series",
+      "canonicalName": "Number Series",
+      "kind": "authoritative",
+      "owner": "numbering",
+      "lifecycle": "current",
+      "definition": "Monotonic allocation state for one typed number family and stable scope, including its explicit legacy high-water cutover checkpoint.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "number-allocation",
+      "canonicalName": "Number Allocation",
+      "kind": "authoritative",
+      "owner": "numbering",
+      "lifecycle": "current",
+      "definition": "Immutable association of one number with one typed resource inside one Number Series; committed allocations are never released or reused.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    }
+  ],
+  "relationships": [
+    {
+      "id": "numbering-issue-allocation",
+      "provider": "numbering",
+      "consumer": "issue",
+      "meaning": "Issue authorizes and creates its stable resource, then obtains an idempotent Repository work-item number in the same transaction; Numbering owns the shared Issue/future Pull Request series.",
+      "integrationMode": "command",
+      "authority": "numbering",
+      "consistency": "same-transaction"
+    },
+    {
+      "id": "numbering-discussion-allocation",
+      "provider": "numbering",
+      "consumer": "discussion",
+      "meaning": "Discussion retains lifecycle, authorization and replay while Numbering allocates the Repository Discussion number in the same transaction.",
+      "integrationMode": "command",
+      "authority": "numbering",
+      "consistency": "same-transaction"
+    },
+    {
+      "id": "numbering-repository-milestone-allocation",
+      "provider": "numbering",
+      "consumer": "repository",
+      "meaning": "Repository retains Milestone lifecycle, authorization and replay while Numbering allocates the Repository Milestone number in the same transaction.",
+      "integrationMode": "command",
+      "authority": "numbering",
+      "consistency": "same-transaction"
+    },
+    {
+      "id": "numbering-project-allocation",
+      "provider": "numbering",
+      "consumer": "project",
+      "meaning": "Project retains Project and View lifecycle, authorization, version and replay while Numbering allocates Account-scoped Project and Project-scoped View numbers in the same transaction.",
+      "integrationMode": "command",
+      "authority": "numbering",
+      "consistency": "same-transaction"
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "allocate-scoped-numbers",
+      "owner": "numbering",
+      "kind": "leaf",
+      "intent": "Allocate and resolve positive monotonic numbers inside typed stable scopes with immutable committed allocations and idempotency by resource.",
+      "preserves": ["K1", "K3", "K4", "K5", "K6"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Repository work-item, Discussion and Milestone series; Account Project series; Project View series",
+        "sourcePaths": [
+          "packages/numbering/src/domain/numbering.ts",
+          "packages/numbering/src/index.ts",
+          "packages/numbering/src/postgres.ts"
+        ],
+        "publicExports": [".", "./postgres"],
+        "entrypoints": [
+          "packages/discussion/src/adapters/postgres-management-helpers.ts",
+          "packages/issue/src/adapters/postgres.ts",
+          "packages/issue/src/postgres/project-reference.ts",
+          "packages/project/src/adapters/outbound/persistence/postgres-project-management-helpers.ts",
+          "packages/project/src/adapters/outbound/persistence/postgres-project-view-status.ts",
+          "packages/repository/src/postgres/resource-management.ts"
+        ],
+        "testPaths": [
+          "packages/numbering/test/numbering.test.ts",
+          "packages/numbering/test/numbering-postgres.test.ts"
+        ],
+        "note": "Allocation uses the caller Sql transaction after the resource Owner has validated and locked its scope. Committed allocations are never reset, released or reused; rollback does not commit an allocation. Pull Request is a compatible inactive resource kind sharing repository-work-item, not an activated runtime capability."
+      }
+    }
+  ],
+  "locators": []
+}

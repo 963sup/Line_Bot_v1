@@ -19,9 +19,13 @@ function readRepoJson(path: string): Record<string, unknown> {
   return record(JSON.parse(readRepoFile(path)));
 }
 
-const semantic = readRepoJson("architecture/semantic-model.json");
-const rawLocators = semantic.locators;
-assert.ok(Array.isArray(rawLocators));
+const registry = readRepoJson("architecture/registry.json");
+const ownerFiles = record(record(registry.domain).owners);
+const rawLocators = Object.values(ownerFiles).flatMap((path) => {
+  const values = readRepoJson(stringValue(path)).locators;
+  assert.ok(Array.isArray(values));
+  return values;
+});
 const locators: Locator[] = rawLocators.map((value) => {
   const item = record(value);
   return {
@@ -32,8 +36,7 @@ const locators: Locator[] = rawLocators.map((value) => {
     status: stringValue(item.status),
   };
 });
-const topology = readRepoJson("architecture/implementation-topology.json");
-const modules = record(topology.modules);
+const modules = record(record(registry.modules).entries);
 
 function locator(id: string): Locator {
   const value = locators.find((item) => item.id === id);
@@ -43,8 +46,8 @@ function locator(id: string): Locator {
 }
 
 function workspaceDependencies(moduleName: string): string[] {
-  const module = record(modules[moduleName]);
-  assert.ok(module, `implementation module ${moduleName} must exist`);
+  const module = readRepoJson(stringValue(modules[moduleName]));
+  assert.equal(module.status, "current", `implementation module ${moduleName} must exist`);
   return module.allowedWorkspaceDependencies === undefined
     ? []
     : stringArray(module.allowedWorkspaceDependencies);

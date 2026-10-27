@@ -1,0 +1,270 @@
+{
+  "schemaVersion": 1,
+  "owner": {
+    "id": "intelligence",
+    "kind": "integration-owner",
+    "lifecycle": "current",
+    "doc": "docs/owners/intelligence.md"
+  },
+  "boundedContexts": [],
+  "concepts": [
+    {
+      "id": "intelligence-document-intake-attempt",
+      "canonicalName": "IntelligenceDocumentIntakeAttempt",
+      "aliases": ["document-intelligence-intake", "document intelligence"],
+      "kind": "authoritative",
+      "owner": "intelligence",
+      "lifecycle": "current",
+      "definition": "Durable technical intake-attempt state for one source-qualified, target-intent fingerprint. It records only source identity, target intent, lifecycle state and target receipt reference; it never stores the extracted candidate or becomes Contract business truth.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "intelligence-processing-run",
+      "canonicalName": "IntelligenceProcessingRun",
+      "aliases": [
+        "document-processing",
+        "document-understanding-run",
+        "intelligence document processing"
+      ],
+      "kind": "authoritative",
+      "owner": "intelligence",
+      "lifecycle": "current",
+      "definition": "Explicit document-understanding operation against one immutable File revision; its head selects one fenced Intelligence processing revision.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "intelligence-processing-revision",
+      "canonicalName": "IntelligenceProcessingRevision",
+      "kind": "authoritative",
+      "owner": "intelligence",
+      "lifecycle": "current",
+      "definition": "Immutable Intelligence-owned processing lifecycle revision containing provider identity, untrusted raw output, optional explicitly saved output, bounded edits and failure evidence.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "intelligence-processing-command-receipt",
+      "canonicalName": "IntelligenceProcessingCommandReceipt",
+      "kind": "authoritative",
+      "owner": "intelligence",
+      "lifecycle": "current",
+      "definition": "Immutable Intelligence actor/request fingerprint and exact processing revision receipt; it has no File upload request namespace.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "intelligence-legacy-processing-history",
+      "canonicalName": "IntelligenceLegacyProcessingHistory",
+      "kind": "historical-evidence",
+      "owner": "intelligence",
+      "lifecycle": "current-data-only",
+      "definition": "Immutable copies of pre-cutover File processing runs, revisions and request receipts. They are read-only Intelligence evidence in a separate legacy request namespace and never participate in current processing replay.",
+      "authorityMode": "reference-only",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "intelligence-processing-history-cutover",
+      "canonicalName": "IntelligenceProcessingHistoryCutover",
+      "kind": "historical-evidence",
+      "owner": "intelligence",
+      "lifecycle": "current-data-only",
+      "definition": "Immutable operator marker proving one File-to-Intelligence processing-history copy by exact release revision, counts and canonical SHA-256 readback.",
+      "authorityMode": "reference-only",
+      "persistenceExpectation": "relation"
+    }
+  ],
+  "relationships": [
+    {
+      "id": "intelligence-vercel-processor-port",
+      "provider": "intelligence",
+      "consumer": "vercel-integration",
+      "meaning": "Vercel processor adapter implements the public IntelligenceProcessor contract. Intelligence owns processing lifecycle, evidence and Contract intake.",
+      "integrationMode": "reference",
+      "authority": "intelligence",
+      "consistency": "injected-at-composition"
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "run-file-processing",
+      "owner": "intelligence",
+      "kind": "leaf",
+      "intent": "Execute only the explicitly user-selected compatible processor against a pinned File revision and produce untrusted Preview without implicit fallback or Save.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6", "FILE1", "FILE2"],
+      "consumes": [
+        "intelligence-file-source",
+        "repository-intelligence-processing-scope",
+        "intelligence-platform-persistence"
+      ],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Execute and persist an explicitly requested Intelligence processing lifecycle against a pinned File revision, retaining untrusted candidate and explicit save evidence.",
+        "sourcePaths": [
+          "packages/intelligence/src/domain/processing.ts",
+          "packages/intelligence/src/domain/error.ts",
+          "packages/intelligence/src/application/use-cases/processing.ts",
+          "packages/intelligence/src/adapters/outbound/persistence/processing.ts",
+          "packages/intelligence/src/adapters/outbound/processing/plain-text.ts"
+        ],
+        "publicExports": [
+          "./application/use-cases/processing",
+          "./domain/error",
+          "./composition/bootstrap/processing",
+          "./composition/bootstrap/processors",
+          "./contracts/output/processing"
+        ],
+        "entrypoints": [
+          "scripts/operations/file/run.mjs",
+          "apps/web/src/app/api/repository-files/route.ts",
+          "apps/web/src/app/(resource)/[login]/[repository]/files/page.tsx"
+        ],
+        "testPaths": [
+          "packages/intelligence/test/processing.test.ts",
+          "packages/intelligence/test/intake-document.test.ts",
+          "packages/intelligence/test/document-attempts-postgres.test.ts",
+          "apps/web/test/files-owner-http.test.ts"
+        ],
+        "note": "Intelligence owns explicit processor selection, exact source authorization, output validation and its ProcessingRun lifecycle. Its native UTF-8 text Parser is local to Intelligence; configured provider adapters return untrusted candidate output. No OCR or Excel/Word Parser, asynchronous worker, automatic fallback, live provider or LINE device acceptance is asserted."
+      }
+    },
+    {
+      "id": "manage-file-result",
+      "owner": "intelligence",
+      "kind": "leaf",
+      "intent": "A user may locally edit Preview, then explicitly Save a version-bound result or Discard it; neither operation mutates downstream business owners.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6", "FILE1", "FILE2"],
+      "consumes": ["repository-intelligence-processing-scope", "intelligence-platform-persistence"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "A user may locally edit Preview, then explicitly Save a version-bound result or Discard it; neither operation mutates downstream business owners.",
+        "sourcePaths": [
+          "packages/intelligence/src/domain/processing.ts",
+          "packages/intelligence/src/application/use-cases/processing.ts",
+          "packages/intelligence/src/adapters/outbound/persistence/processing.ts"
+        ],
+        "publicExports": [
+          "./application/use-cases/processing",
+          "./composition/bootstrap/processing",
+          "./composition/bootstrap/processors",
+          "./contracts/output/processing"
+        ],
+        "entrypoints": [
+          "scripts/operations/file/run.mjs",
+          "apps/web/src/app/api/repository-files/route.ts",
+          "apps/web/src/app/(resource)/[login]/[repository]/files/page.tsx"
+        ],
+        "testPaths": [
+          "packages/intelligence/test/processing.test.ts",
+          "packages/intelligence/test/intake-document.test.ts",
+          "packages/intelligence/test/document-attempts-postgres.test.ts",
+          "apps/web/test/files-owner-http.test.ts"
+        ],
+        "note": "Intelligence provides explicit Edit, Discard or version-bound Save of a Ready ProcessingRun. RawResult remains unchanged; no downstream business import, live LINE device or production acceptance is asserted."
+      }
+    },
+    {
+      "id": "understand-file-document",
+      "owner": "intelligence",
+      "kind": "leaf",
+      "intent": "Map explicitly supplied PDF or image evidence through the configured Vercel AI Gateway model into bounded, source-located candidate observations without approving, persisting or importing business facts.",
+      "preserves": ["K1", "K2", "K5", "FILE2", "INTELLIGENCE1"],
+      "consumes": ["intelligence-file-source"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Vercel AI Gateway-backed PDF/image document understanding consuming File's public authorized source reader; Intelligence owns processor selection while hosts inject the provider port.",
+        "sourcePaths": [
+          "packages/intelligence/src/application/use-cases/processing.ts",
+          "packages/intelligence/src/composition/bootstrap/processors.ts"
+        ],
+        "publicExports": ["./composition/bootstrap/processors"],
+        "entrypoints": [
+          "scripts/operations/file/run.mjs",
+          "apps/web/src/app/api/_composition/files.server.ts"
+        ],
+        "testPaths": [
+          "packages/intelligence/test/processing.test.ts",
+          "scripts/operations/file/run.test.mjs"
+        ],
+        "note": "The processor preserves observations-v1:<model> identity, performs one provider attempt without fallback and supports configured PDF/JPEG/PNG/WebP inputs. Output remains candidate evidence; simulated tests do not prove live provider accuracy or acceptance."
+      }
+    },
+    {
+      "id": "intake-contract-document",
+      "owner": "intelligence",
+      "kind": "leaf",
+      "intent": "Read an authorized File source, extract a complete purchase-order candidate using the target owner's schema, and submit it through the target's public SAVE command.",
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5",
+        "K6",
+        "INTELLIGENCE1",
+        "INTELLIGENCE2",
+        "CONTRACT2"
+      ],
+      "consumes": [
+        "intelligence-file-source",
+        "intelligence-contract-document-intake",
+        "intelligence-platform-persistence"
+      ],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Vercel AI Gateway-backed orchestration of exact File source read, target-owned schema extraction and Contract SAVE candidate submission.",
+        "sourcePaths": [
+          "packages/intelligence/src/application/use-cases/intake-document.ts",
+          "packages/intelligence/src/adapters/outbound/persistence/document-attempts.ts",
+          "packages/intelligence/src/contracts/output/document-attempts.ts",
+          "packages/intelligence/src/contracts/output/document-intake.ts",
+          "packages/intelligence/src/composition/bootstrap/document-intake.ts"
+        ],
+        "publicExports": [
+          "./composition/bootstrap/document-intake",
+          "./contracts/output/document-intake",
+          "./contracts/output/document-attempts"
+        ],
+        "entrypoints": ["scripts/operations/intelligence/run.mjs"],
+        "testPaths": [
+          "packages/intelligence/test/intake-document.test.ts",
+          "packages/intelligence/test/document-attempts-postgres.test.ts",
+          "scripts/operations/intelligence/run.test.mjs"
+        ],
+        "note": "A single durable provider attempt may produce only an untrusted SAVE candidate. Its technical state preserves source/intent identity and target receipt reference, never the candidate. Provider failure, response loss and live extraction accuracy remain distinct evidence boundaries."
+      }
+    }
+  ],
+  "locators": []
+}

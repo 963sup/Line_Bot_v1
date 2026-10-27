@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "owner": "resources",
+  "files": [
+    {
+      "path": "packages/integration-supabase/src/schemas/619_resources.sql",
+      "role": "authoritative"
+    }
+  ],
+  "relations": [
+    {
+      "name": "repository_resources",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/619_resources.sql",
+      "authority": true,
+      "semanticOwner": "resources",
+      "concept": "physical-resource"
+    },
+    {
+      "name": "resource_revisions",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/619_resources.sql",
+      "authority": true,
+      "semanticOwner": "resources",
+      "concept": "physical-resource-revision"
+    },
+    {
+      "name": "resource_commands",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/619_resources.sql",
+      "authority": true,
+      "semanticOwner": "resources",
+      "concept": "physical-resource-command-receipt"
+    }
+  ]
+}
