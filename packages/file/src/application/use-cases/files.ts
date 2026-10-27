@@ -6,7 +6,12 @@ import type {
 } from "../../contracts/output/files.js";
 import type { FileObjectStore } from "../../contracts/output/object-store.js";
 import { FileError, fileErrorFromUnknown } from "../../domain/error.js";
-import { type FileDescriptor, type FileRevision, type FileUploadIntent, nextFileRevision } from "../../domain/file.js";
+import {
+  type FileDescriptor,
+  type FileRevision,
+  type FileUploadIntent,
+  nextFileRevision,
+} from "../../domain/file.js";
 import { assertWritable, checkVersion, identifier, scopeId } from "../../domain/values.js";
 import { directUploadCommand, uploadCommand } from "../commands/files.js";
 import { createFileSourceReader } from "./sources.js";
@@ -66,10 +71,7 @@ export function createFiles(deps: {
   function uploadIdentity(c: UploadDetails) {
     return { repositoryId: c.repositoryId, kind: "file" as const, id: c.fileId };
   }
-  function uploadEvidence(
-    c: UploadDetails,
-    descriptor: FileDescriptor,
-  ) {
+  function uploadEvidence(c: UploadDetails, descriptor: FileDescriptor) {
     // The same payload fingerprint is used by legacy CLI and signed Web upload.
     return {
       requestId: c.requestId,
@@ -84,11 +86,7 @@ export function createFiles(deps: {
       }),
     };
   }
-  async function prepare(
-    actor: string,
-    c: UploadDetails,
-    descriptor: FileDescriptor,
-  ) {
+  async function prepare(actor: string, c: UploadDetails, descriptor: FileDescriptor) {
     return deps.transactions.transact(
       actor,
       uploadIdentity(c),
@@ -122,11 +120,7 @@ export function createFiles(deps: {
       },
     );
   }
-  async function pending(
-    actor: string,
-    c: UploadDetails,
-    descriptor: FileDescriptor,
-  ) {
+  async function pending(actor: string, c: UploadDetails, descriptor: FileDescriptor) {
     return deps.transactions.transact(
       actor,
       uploadIdentity(c),
@@ -146,11 +140,7 @@ export function createFiles(deps: {
       },
     );
   }
-  async function finalize(
-    actor: string,
-    c: UploadDetails,
-    descriptor: FileDescriptor,
-  ) {
+  async function finalize(actor: string, c: UploadDetails, descriptor: FileDescriptor) {
     return deps.transactions.transact(
       actor,
       uploadIdentity(c),
