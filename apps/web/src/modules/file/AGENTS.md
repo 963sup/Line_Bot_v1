@@ -2,7 +2,7 @@
 
 Inherits [Web modules](../AGENTS.md). This feature consumes the [File owner](../../../../../docs/owners/file.md); it never owns File facts or direct Storage credentials.
 
-- `files-http.server.ts` is host-only identity/Origin/Repository locator mapping. File HTTP dispatch belongs to `@line_bot_v1/file/adapters/inbound/http`; the route delegates to it without File rules or Storage access.
+- `apps/web/src/app/api/_composition/files-request.server.ts` owns host-only identity/Origin/Repository locator mapping; `modules/file` stays browser/UI-only. File HTTP dispatch belongs to `@line_bot_v1/file/adapters/inbound/http`; the route delegates to it without File rules or Storage access.
 - `files-panel.tsx` owns File presentation and session clearing; File projection, browser signed PUT, purchase-order state/retry, review presentation and ContractDocument projection each have their own focused Web file. Contract remains the sole owner of confirmation facts.
 - Resolve owner/name only as a locator, then use verified LINE session plus Repository current authorization. File owner independently rechecks every File read, transition and replay.
 - Web signed private Storage Upload and authorized Web Download are capped to 3 MB; File owner and protected CLI may support larger objects. The Web API accepts only small JSON upload commands, never original upload bytes. Finalize is refused until trusted Storage readback validates size and SHA-256, and the actor is reauthorized. Never assume the host transport supports 45 MiB.

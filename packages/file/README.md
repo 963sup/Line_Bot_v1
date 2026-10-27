@@ -34,7 +34,7 @@ File 是檔案原始內容、版本、來源資格、儲存與回收流程的唯
 ```text
 packages/file/
 ├── src/domain/                 # File entity、value、invariant、domain error
-├── src/application/            # 共用 file-projections、純查詢與 Upload Intent／Finalize Use Cases
+├── src/application/            # File Application 查詢、Upload Intent／Finalize、來源資格等 Use Cases
 ├── src/contracts/              # 查詢／交易／Storage／來源 Port
 ├── src/adapters/inbound/       # File HTTP 指令／查詢轉譯（Web 標準 Request/Response，無 Next.js）
 ├── src/adapters/outbound/      # PostgreSQL File 讀寫、operator-only Reclamation、Storage
@@ -55,8 +55,8 @@ flowchart LR
 
 ## 高內聚責任與依賴方向
 
-- `application/use-cases/files.ts` 只維持既有、真實 consumer 使用的 File Application 入口；`queries.ts` 擁有唯讀資料取得，`uploads.ts` 擁有 durable Upload Intent、Storage 交換及 Finalize。
-- `adapters/inbound/http.ts` 擁有 File 的 Web-standard query/command dispatch、限流與傳輸回應；`apps/web/src/modules/file/files-http.server.ts` 只負責 LINE 身分、Repository locator、Origin 與 host 錯誤投影。
+- `application/use-cases/files.ts` 是唯一且有真實 Consumer 的 File Application 入口，同一檔案依 Use Case 組織查詢、Upload Intent、Storage I/O 及 Finalize；不再保留只負責轉發的查詢／上傳 Factory。
+- `adapters/inbound/http.ts` 擁有 File 的 Web-standard query/command dispatch、限流與傳輸回應；`apps/web/src/app/api/_composition/files-request.server.ts` 負責 LINE 身分、Repository locator、Origin 與 host 錯誤投影；`modules/file` 僅管前端 UI。
 - `adapters/outbound/persistence/files.ts` 擁有正常 File Metadata 與交易；`reclamation.ts` 是 operator-only capability，Web Composition 不可取得回收權限。
 - Browser Signed Upload、File View Projection、採購單的 ContractDocument 審核工作流程，保留在對應 `apps/web/src/modules/file` presentation 檔案；ContractDocument 的正式寫入仍由 Contract Owner 核准。
 - `apps/web/src/app/api/repository-files/route.ts` 不可取得 PostgreSQL／Storage SDK 或自行管理 File Domain 狀態。
