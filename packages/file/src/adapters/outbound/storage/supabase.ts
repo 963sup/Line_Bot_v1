@@ -65,7 +65,7 @@ export function fileObjects(bucket: PrivateBucket, expectedOrigin?: string): Fil
       const url = new URL(result.data.signedUrl);
       if (url.protocol !== "https:" || !/^[a-z0-9-]+\.supabase\.co$/.test(url.hostname) ||
           (expectedOrigin !== undefined && url.origin !== expectedOrigin) ||
-          !url.pathname.startsWith("/storage/v1/object/upload/sign/repository-files/") ||
+          url.pathname !== `/storage/v1/object/upload/sign/repository-files/${key(revision)}` ||
           !url.searchParams.has("token"))
         throw new FileError(503, "Invalid Storage upload ticket.", "UNAVAILABLE");
       return url.toString();
