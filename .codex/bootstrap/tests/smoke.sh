@@ -6,6 +6,7 @@ source "$BOOTSTRAP_DIR/lib/detect.sh"
 # Selecting browser also runs a short local Chromium launch/page check below.
 while IFS= read -r file; do bash -n "$file"; done < <(find "$BOOTSTRAP_DIR" -type f -name '*.sh' | sort)
 bash "$BOOTSTRAP_DIR/verify.sh"
+bash "$BOOTSTRAP_DIR/tests/docker.test.sh"
 if [[ " $(selected_tools) " == *browser* ]]; then
   node - "$BOOTSTRAP_PREFIX/lib/node_modules/playwright" <<'JS'
 const assert = require('node:assert/strict');

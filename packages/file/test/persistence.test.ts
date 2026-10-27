@@ -181,19 +181,22 @@ test("failed File upload receipts roll back metadata and revocation blocks uploa
   const objects = memoryStore();
   const files = intake(db, objects);
   const c = command();
+  const receiptFailure = Object.assign(new Error("injected receipt failure"), { code: "42P01" });
   const failedDb: Database = {
     transaction: (work) =>
       db.transaction((sql) =>
         work(
           createSql((text, values) => {
-            if (text.includes("INSERT INTO file_commands"))
-              throw new Error("injected receipt failure");
+            if (text.includes("INSERT INTO file_commands")) throw receiptFailure;
             return sql.query(text, values);
           }),
         ),
       ),
   };
-  await assert.rejects(intake(failedDb, objects).upload("owner", c, bytes), code("UNAVAILABLE"));
+  await assert.rejects(
+    intake(failedDb, objects).upload("owner", c, bytes),
+    (error) => error === receiptFailure,
+  );
   assert.equal((await files.list("owner", "repo")).files.length, 0);
   assert.equal(
     (
@@ -252,19 +255,23 @@ test("lost Storage result leaves an invisible durable intent and exact retry fin
   );
   const objects = memoryStore();
   let first = true;
+  const storageFailure = new Error("sensitive unknown Storage provider result");
   const uncertain: FileObjectStore = {
     ...objects,
     async putVerified(revision, bytes) {
       await objects.putVerified(revision, bytes);
       if (first) {
         first = false;
-        throw new Error("sensitive unknown Storage provider result");
+        throw storageFailure;
       }
     },
   };
   const commandInput = { ...command(), name: "  source.txt  ", mediaType: " TEXT/PLAIN " };
   const files = intake(db, uncertain);
-  await assert.rejects(files.upload("owner", commandInput, bytes), code("UNAVAILABLE"));
+  await assert.rejects(
+    files.upload("owner", commandInput, bytes),
+    (error) => error === storageFailure,
+  );
   assert.equal((await files.list("owner", "repo")).files.length, 0);
   const pending = await files.pendingUploads("owner", "repo");
   assert.equal(pending.uploads.length, 1);
@@ -335,14 +342,18 @@ test("trusted orphan reclamation quarantines only quiet never-committed Upload I
   const committedCommand = command();
   const committed = await files.upload("owner", committedCommand, bytes);
   const orphanCommand = command();
+  const storageFailure = new Error("unknown provider result");
   const lost: FileObjectStore = {
     ...objects,
     async putVerified(revision, input) {
       await objects.putVerified(revision, input);
-      throw new Error("unknown provider result");
+      throw storageFailure;
     },
   };
-  await assert.rejects(intake(db, lost).upload("owner", orphanCommand, bytes), code("UNAVAILABLE"));
+  await assert.rejects(
+    intake(db, lost).upload("owner", orphanCommand, bytes),
+    (error) => error === storageFailure,
+  );
   const reclaimer = createFileReclaimer({ ...deps, beforeMutation: async () => {} });
   const cutoff = Date.now();
   assert.equal((await reclaimer.plan(cutoff)).candidates, 0);
@@ -381,15 +392,16 @@ test("failed object deletion leaves a durable quarantine for an explicit guarded
   const c = command();
   const objects = memoryStore();
   const deps = createPostgresFileReclamationDependencies(db, objects);
+  const storageFailure = new Error("unknown upload");
   const lost: FileObjectStore = {
     ...objects,
     async putVerified(revision, input) {
       await objects.putVerified(revision, input);
-      throw new Error("unknown upload");
+      throw storageFailure;
     },
   };
   const files = intake(db, lost);
-  await assert.rejects(files.upload("owner", c, bytes), code("UNAVAILABLE"));
+  await assert.rejects(files.upload("owner", c, bytes), (error) => error === storageFailure);
   await pg.query(
     "UPDATE app_private.file_upload_intents SET last_attempt_at=clock_timestamp()-interval '8 days' WHERE request_id=$1",
     [c.requestId],
@@ -520,14 +532,18 @@ test("native sessions protect a renewed Upload Intent from a stale operator recl
   );
   const c = command();
   const objects = memoryStore();
+  const storageFailure = new Error("provider result unknown");
   const unknown: FileObjectStore = {
     ...objects,
     async putVerified(revision, input) {
       await objects.putVerified(revision, input);
-      throw new Error("provider result unknown");
+      throw storageFailure;
     },
   };
-  await assert.rejects(intake(db, unknown).upload("owner", c, bytes), code("UNAVAILABLE"));
+  await assert.rejects(
+    intake(db, unknown).upload("owner", c, bytes),
+    (error) => error === storageFailure,
+  );
   await pool.query(
     "UPDATE app_private.file_upload_intents SET last_attempt_at=clock_timestamp()-interval '8 days' WHERE request_id=$1",
     [c.requestId],

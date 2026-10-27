@@ -40,15 +40,17 @@ pnpm dev
 
 ## Supabase Docker stack
 
-本機 stack 使用 [`packages/integration-supabase/src/config.toml`](packages/integration-supabase/src/config.toml)，因此所有 Supabase CLI 指令都要指向該工作目錄。先確保 Docker daemon 可用，再從 repository root 執行：
+本機 stack 由 [`integration-supabase`](packages/integration-supabase/README.md) 管理；唯一設定是 [`supabase/config.toml`](packages/integration-supabase/supabase/config.toml)。Cloud image 已提供 Docker，bootstrap 會檢查既有 daemon 並準備 stack。從 repository root 執行：
 
 ```sh
-pnpm exec supabase start --workdir packages/integration-supabase/src
-pnpm exec supabase status --workdir packages/integration-supabase/src
-pnpm exec supabase stop --workdir packages/integration-supabase/src --no-backup
+pnpm provider:supabase start
+pnpm provider:supabase verify
+pnpm provider:supabase status
+source packages/integration-supabase/.temp/local.env
+pnpm supabase:stop
 ```
 
-`start` 會建立本機 Docker services，`status` 只讀取狀態，`stop --no-backup` 會停止 stack 且不保留本機資料備份。這些指令不代表 hosted Supabase 已同步；remote publication 仍依 [Supabase platform contract](docs/reference/platform/supabase.md) 執行。Application PostgreSQL 的 current desired state 只在 [`schemas/`](packages/integration-supabase/src/schemas/) 維護；修改後先執行 `pnpm schema:check`。
+預設提供 Database、Auth、REST、Storage 與 Gateway；需要 Studio、Realtime 等額外服務時明確執行 `pnpm provider:supabase start --full`，並預留額外磁碟。`status`／`verify` 不安裝或啟動服務；`stop` 保留本機 volumes。環境檔只含本地 stack 憑證、被 Git 忽略且不輸出到日誌。首次啟動從 [`current schemas`](packages/integration-supabase/src/schemas/) 在單一 transaction 建立應用結構，不建立或重播 migration history；既有資料不自動重設，schema 變動要求明確 reconcile。這些指令不代表 hosted Supabase 已同步；remote publication 仍依 [Supabase platform contract](docs/reference/platform/supabase.md) 執行。
 
 ## 找資訊
 
@@ -136,7 +138,7 @@ Bootstrap 將 `SUPABASE_HOME` 指向 workspace 的 `.cache/supabase`，避免 Su
 
 工具選擇在 [`config/tools.env`](.codex/bootstrap/config/tools.env)，MCP 準備範圍在 [`config/mcp.env`](.codex/bootstrap/config/mcp.env)，額外 exact pins 在 [`config/versions.env`](.codex/bootstrap/config/versions.env)。可用 `BOOTSTRAP_TOOLS` 或 `BOOTSTRAP_MCP_SERVERS` 暫時覆寫清單。Node、pnpm 與 workspace CLI 繼續以 `.node-version`、`package.json`、catalog 與 lockfile 為準。
 
-Docker／Postgres 依任務加入工具清單；Docker 需要 Cloud host 提供 daemon／socket，Postgres 模組只安裝 client。完整責任與 Cloud 接線見 [Cloud bootstrap](docs/reference/engineering/local-environment.md#codex-cloud-bootstrap)。本地工具可執行不代表 MCP 已被當前 session 載入或 OAuth 已完成。
+Docker 預設沿用 Cloud host 提供的 daemon／socket 並準備 Supabase stack；Postgres CLI 依任務加入，該模組只安裝 client。完整責任與 Cloud 接線見 [Cloud bootstrap](docs/reference/engineering/local-environment.md#codex-cloud-bootstrap)。本地工具可執行不代表 MCP 已被當前 session 載入或 OAuth 已完成。
 
 預設也準備 `rg`、`jq`，方便定位程式與投影 JSON。Bash 靜態分析選用 `shellcheck`；需要 native dependency 編譯時選用 `build`；需要 UI 驗收時選用 `browser`，提供固定版 Playwright 與 Chromium。啟用方式與平台權限見 [開發工具](docs/reference/engineering/local-environment.md#cloud-development-tools)。
 

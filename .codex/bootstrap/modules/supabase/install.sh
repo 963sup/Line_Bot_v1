@@ -5,4 +5,8 @@ install_supabase() {
     echo 'Supabase CLI missing after workspace installation; inspect the workspace install log.' >&2
     return 1
   }
+  require_command docker
+  source "$BOOTSTRAP_DIR/modules/docker/install.sh"
+  install_docker
+  run_stage supabase-stack node "$BOOTSTRAP_ROOT/packages/integration-supabase/scripts/local-stack.mjs" start
 }

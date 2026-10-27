@@ -30,7 +30,7 @@ for tool in $tools; do
   source "$BOOTSTRAP_DIR/modules/$tool/install.sh"
   "install_$tool"
 done
-run_stage workspace-install pnpm install --frozen-lockfile --prefer-offline
+run_stage workspace-install env CI=true pnpm install --frozen-lockfile --prefer-offline
 for tool in $tools; do
   case "$tool" in supabase | vercel)
     source "$BOOTSTRAP_DIR/modules/$tool/install.sh"
