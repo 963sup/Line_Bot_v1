@@ -111,7 +111,7 @@ function failure(error: unknown) {
   });
   return jsonResponse(
     {
-      error: known ? error.message : "Document intake service is unavailable.",
+      error: error instanceof Error ? error.message : String(error),
       ...(error instanceof ContractError || error instanceof IntakeError
         ? { code: error.code }
         : {}),
