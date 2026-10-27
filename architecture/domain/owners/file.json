@@ -12,9 +12,15 @@
       "owner": "file",
       "status": "selected",
       "evidence": {
-        "ownerContracts": ["docs/owners/file.md"],
-        "sourcePaths": ["packages/file/src/domain/file.ts"],
-        "testPaths": ["packages/file/test/persistence.test.ts"],
+        "ownerContracts": [
+          "docs/owners/file.md"
+        ],
+        "sourcePaths": [
+          "packages/file/src/domain/file.ts"
+        ],
+        "testPaths": [
+          "packages/file/test/persistence.test.ts"
+        ],
         "rationale": "File owns original source evidence and immutable bytes; Intelligence owns the separate processing lifecycle and retained interpretation evidence."
       }
     }
@@ -107,8 +113,20 @@
       "owner": "file",
       "kind": "leaf",
       "intent": "Preserve protected Repository-scoped files via explicit durable Upload Intent, private immutable Storage Object readback, atomic File revision/head/receipt Finalize and exact replay; list/read/download require current access.",
-      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6", "FILE1", "FILE2"],
-      "consumes": ["file-repository-scope", "file-platform-persistence"],
+      "preserves": [
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5",
+        "K6",
+        "FILE1",
+        "FILE2"
+      ],
+      "consumes": [
+        "file-repository-scope",
+        "file-platform-persistence"
+      ],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",
@@ -132,7 +150,8 @@
           "packages/file/src/adapters/inbound/http.ts",
           "packages/file/src/adapters/outbound/persistence/reclamation.ts",
           "packages/file/src/application/use-cases/queries.ts",
-          "packages/file/src/application/use-cases/uploads.ts"
+          "packages/file/src/application/use-cases/uploads.ts",
+          "packages/file/src/application/file-projections.ts"
         ],
         "publicExports": [
           "./application/use-cases/files",
@@ -155,7 +174,9 @@
           "packages/intelligence/test/document-attempts-postgres.test.ts",
           "packages/file/test/object-store.test.ts",
           "packages/file/test/sources.test.ts",
-          "apps/web/test/files-owner-http.test.ts"
+          "apps/web/test/files-owner-http.test.ts",
+          "packages/file/test/persistence.test.ts",
+          "apps/web/test/files-signed-upload.test.ts"
         ],
         "note": "Authenticated CLI preserves originals up to 45 MiB. Web/LINE Repository Files transport uses bounded 3 MB signed private-object upload with trusted server-side digest readback and authenticated JSON Finalize, bounded 3 MB server-authorized Download, and current-authorized File List; private Supabase Storage remains the only bytes store. Processing lifecycle and result history are Intelligence-owned. No large-file Web transport, live device/production acceptance or business import is asserted."
       }
