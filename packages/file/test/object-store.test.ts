@@ -45,6 +45,7 @@ test("private object upload is write-once, verifies downloaded bytes, and replay
     async upload(key: string, input: Uint8Array, options: { upsert: false; contentType: string }) {
       assert.equal(options.upsert, false);
       assert.equal(options.contentType, "text/plain");
+      assert.strictEqual(input, bytes, "Storage upload must reuse the verified byte view");
       uploads++;
       observedKey = key;
       if (values.has(key)) return { error: { status: 409 } };
