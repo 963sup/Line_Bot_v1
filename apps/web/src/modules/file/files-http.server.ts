@@ -190,19 +190,9 @@ export async function filesRequest(
         return invalid("File processing is owned by Intelligence.");
       if (view === "download") {
         const revisionId = query.get("revisionId") ?? "";
-        const descriptor = await owner.file(
-          scope.actorUserId,
-          scope.repository.id,
-          fileId,
-          revisionId,
-        );
-        if (descriptor.byteLength > uploadLimit)
-          throw new FileError(413, "Web download is limited to 3 MB.", "INVALID_INPUT");
+        // File owner bounds the payload before Storage I/O, while retaining post-I/O authorization.
         const original = await owner.source(
-          scope.actorUserId,
-          scope.repository.id,
-          fileId,
-          revisionId,
+          scope.actorUserId, scope.repository.id, fileId, revisionId, uploadLimit,
         );
         return new Response(Uint8Array.from(original.bytes).buffer, {
           headers: {
@@ -227,6 +217,16 @@ export async function filesRequest(
     if (Object.keys(body).some((key) => !["operation", "command"].includes(key)))
       return invalid("Unknown File operation field.");
     checkScope(body.command, scope);
+    if (body.operation === "prepare-upload" || body.operation === "complete-upload") {
+      const command = commandRecord(body.command);
+      if (typeof command.byteLength !== "number" ||
+          !Number.isSafeInteger(command.byteLength) ||
+          command.byteLength < 1 || command.byteLength > uploadLimit)
+        throw new FileError(413, "Browser upload is limited to 3 MB.", "INVALID_INPUT");
+      return jsonResponse(body.operation === "prepare-upload"
+        ? await owner.prepareUpload(scope.actorUserId, command)
+        : await owner.completeUpload(scope.actorUserId, command));
+    }
     if (body.operation === "run" || body.operation === "result")
       return invalid("File processing is owned by Intelligence.");
     return invalid("Unknown File operation.");
