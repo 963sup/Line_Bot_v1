@@ -98,6 +98,34 @@ function persistError(error: unknown): never {
   throw error;
 }
 
+async function filePage(sql: Sql, scope: string, after?: string) {
+  const rows = (await sql.query(
+    `SELECT ${fileColumns} FROM repository_files file
+    JOIN file_revisions revision ON revision.id=file.head_revision_id AND revision.file_id=file.id
+    WHERE file.repository_id=$1 AND ($2::uuid IS NULL OR file.id>$2) ORDER BY file.id LIMIT 21`,
+    [scope, after ?? null], fileRevision,
+  )).rows;
+  const files = rows.slice(0, 20);
+  return { files, next: rows.length > 20 ? (files.at(-1)?.fileId ?? null) : null };
+}
+async function pendingPage(sql: Sql, actor: string, scope: string, after?: string) {
+  const rows = (await sql.query(
+    `SELECT intent.* FROM file_upload_intents intent
+      WHERE intent.repository_id=$1 AND intent.actor_user_id=$2
+        AND intent.abandoned_at IS NULL
+        AND ($3::uuid IS NULL OR intent.request_id>$3)
+        AND NOT EXISTS (
+          SELECT 1 FROM file_commands receipt
+          WHERE receipt.actor_user_id=intent.actor_user_id
+            AND receipt.request_id=intent.request_id
+        )
+      ORDER BY intent.request_id LIMIT 21`,
+    [scope, actor, after ?? null], uploadIntent,
+  )).rows;
+  const intents = rows.slice(0, 20);
+  return { intents, next: rows.length > 20 ? (intents.at(-1)?.requestId ?? null) : null };
+}
+
 export class PostgresFiles implements FileReads, FileTransactions, FileReclamation {
   constructor(private readonly db: Database = businessDatabase()) {}
   file(actor: string, scope: string, id: string, revision?: string) {
@@ -109,43 +137,21 @@ export class PostgresFiles implements FileReads, FileTransactions, FileReclamati
   list(actor: string, scope: string, after?: string) {
     return this.db.transaction(async (sql) => {
       await currentScope(sql, actor, scope);
-      const rows = (
-        await sql.query(
-          `SELECT ${fileColumns} FROM repository_files file
-    JOIN file_revisions revision ON revision.id=file.head_revision_id AND revision.file_id=file.id
-    WHERE file.repository_id=$1 AND ($2::uuid IS NULL OR file.id>$2) ORDER BY file.id LIMIT 21`,
-          [scope, after ?? null],
-          fileRevision,
-        )
-      ).rows;
-      const files = rows.slice(0, 20);
-      return { files, next: rows.length > 20 ? (files.at(-1)?.fileId ?? null) : null };
+      return filePage(sql, scope, after);
     });
   }
   pendingUploads(actor: string, scope: string, after?: string) {
     return this.db.transaction(async (sql) => {
       await currentScope(sql, actor, scope);
-      const rows = (
-        await sql.query(
-          `SELECT intent.* FROM file_upload_intents intent
-           WHERE intent.repository_id=$1 AND intent.actor_user_id=$2
-             AND intent.abandoned_at IS NULL
-             AND ($3::uuid IS NULL OR intent.request_id>$3)
-             AND NOT EXISTS (
-               SELECT 1 FROM file_commands receipt
-               WHERE receipt.actor_user_id=intent.actor_user_id
-                 AND receipt.request_id=intent.request_id
-             )
-           ORDER BY intent.request_id LIMIT 21`,
-          [scope, actor, after ?? null],
-          uploadIntent,
-        )
-      ).rows;
-      const intents = rows.slice(0, 20);
-      return {
-        intents,
-        next: rows.length > 20 ? (intents.at(-1)?.requestId ?? null) : null,
-      };
+      return pendingPage(sql, actor, scope, after);
+    });
+  }
+  overview(actor: string, scope: string) {
+    return this.db.transaction(async (sql) => {
+      await currentScope(sql, actor, scope);
+      const files = await filePage(sql, scope);
+      const pending = await pendingPage(sql, actor, scope);
+      return { ...files, intents: pending.intents, pendingNext: pending.next };
     });
   }
   /** No public actor can call these: trusted operator scans only never-committed intents. */
