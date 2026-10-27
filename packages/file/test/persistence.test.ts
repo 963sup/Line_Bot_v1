@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import test from "node:test";
 import { createSql, type Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
@@ -620,4 +620,53 @@ test("native sessions keep a late object write reconcilable after an earlier abs
     writeAllowed.resolve();
     await upload.catch(() => {});
   }
+});
+
+
+test("signed upload commits only verified exact bytes and replays across transports", async (t) => {
+  const { pg, db } = await postgresFixture();
+  t.after(() => pg.close());
+  await seed(db);
+  await pg.query(
+    "SELECT * FROM app_private.provision_repository('repo','owner','owner','USER','Files','private')",
+  );
+  const original = memoryStore();
+  let signedRevision: Parameters<FileObjectStore["putVerified"]>[0] | undefined;
+  const objects: FileObjectStore = {
+    ...original,
+    async signUpload(revision) {
+      signedRevision = revision;
+      return "https://test.supabase.co/storage/v1/object/upload/sign/repository-files/key?token=opaque";
+    },
+  };
+  const files = intake(db, objects);
+  const c = command();
+  const direct = {
+    ...c, byteLength: bytes.byteLength,
+    sha256: createHash("sha256").update(bytes).digest("hex"),
+  };
+  await assert.rejects(files.prepareUpload("outsider", direct), code("FORBIDDEN"));
+  const prepared = await files.prepareUpload("owner", direct);
+  assert.equal(prepared.requestId, c.requestId);
+  assert.ok("signedUrl" in prepared);
+  assert.ok(signedRevision);
+  assert.equal((await files.pendingUploads("owner", "repo")).uploads.length, 1);
+  assert.deepEqual((await files.list("owner", "repo")).files, []);
+  await assert.rejects(files.completeUpload("owner", direct), code("UNAVAILABLE"));
+  await assert.rejects(
+    files.prepareUpload("owner", { ...direct, sha256: "0".repeat(64) }),
+    code("REQUEST_ID_REUSED"),
+  );
+  await original.putVerified(signedRevision, bytes);
+  const receipt = await files.completeUpload("owner", direct);
+  assert.equal(receipt.file.sha256, direct.sha256);
+  assert.equal(receipt.file.version, 1);
+  assert.deepEqual(await files.completeUpload("owner", direct), receipt);
+  assert.deepEqual(await files.prepareUpload("owner", direct), receipt);
+  assert.deepEqual(await files.upload("owner", c, bytes), receipt);
+  assert.equal((await files.list("owner", "repo")).files.length, 1);
+  await assert.rejects(files.completeUpload("outsider", direct), code("FORBIDDEN"));
+  const blocked = command();
+  const competing = { ...blocked, fileId: c.fileId, byteLength: direct.byteLength, sha256: direct.sha256 };
+  await assert.rejects(files.prepareUpload("owner", competing), code("VERSION_CONFLICT"));
 });
