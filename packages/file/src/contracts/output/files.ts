@@ -1,6 +1,10 @@
 import type { FileDescriptor, FileRevision, FileUploadIntent } from "../../domain/file.js";
-import type { FileRevisions } from "../repositories/files.js";
 
+/** File revision persistence is scoped to the File transaction, not a separate Repository API. */
+export interface FileRevisions {
+  load(fileId: string, revisionId?: string): Promise<FileRevision | null>;
+  save(next: FileRevision, expectedVersion: number): Promise<void>;
+}
 export type FileReceipt = Readonly<{ kind: "file"; requestId: string; revision: FileRevision }>;
 export interface FileTransaction {
   readonly scope: { repositoryId: string; permissions: readonly string[]; archived: boolean };
