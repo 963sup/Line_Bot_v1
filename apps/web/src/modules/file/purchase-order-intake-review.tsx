@@ -30,7 +30,7 @@ export default function PurchaseOrderIntakeReview({
   confirmPurchaseOrder(): Promise<void>;
 }) {
   const review = useRef<HTMLDivElement>(null);
-  useEffect(() => { review.current?.focus(); }, [revision]);
+  useEffect(() => { if (revision.revisionId) review.current?.focus(); }, [revision.revisionId]);
   return (
 <div
                       ref={review}
