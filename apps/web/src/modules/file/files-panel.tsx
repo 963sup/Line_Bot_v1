@@ -72,6 +72,8 @@ type DocumentIntakeCommand = {
   source: DocumentSource;
 };
 type Pending = { command: UploadCommand; file: File };
+type SignedCommand = UploadCommand & { byteLength: number; sha256: string };
+type FileMutation = Pending | { operation: "prepare-upload" | "complete-upload"; command: SignedCommand };
 const diagnosticLabels: Readonly<Record<string, string>> = {
   UNCERTAIN_LINE: "部分明細尚待釐清",
   MISSING_REQUIRED_FACT: "缺少必要的採購單資料",
@@ -289,7 +291,7 @@ export default function FilesPanel({
   }, [onCanManageChange]);
 
   const request = useCallback(
-    async (query: Record<string, string> = {}, mutation?: Pending): Promise<unknown> => {
+    async (query: Record<string, string> = {}, mutation?: FileMutation): Promise<unknown> => {
       const ticket = epoch.current;
       const session = await liffClient.ensureSession(liffId);
       if (ticket !== epoch.current) throw new StaleRequest();
@@ -297,11 +299,14 @@ export default function FilesPanel({
       const search = new URLSearchParams({ owner: ownerLogin, name: repositoryName, ...query });
       const headers: Record<string, string> = { "X-App-Session-Generation": session };
       let body: BodyInit | undefined;
-      if (mutation) {
+      if (mutation && "file" in mutation) {
         const form = new FormData();
         form.set("command", JSON.stringify(mutation.command));
         form.set("file", mutation.file, mutation.file.name);
         body = form;
+      } else if (mutation) {
+        headers["Content-Type"] = "application/json";
+        body = JSON.stringify({ operation: mutation.operation, command: mutation.command });
       }
       const response = await fetch("/api/repository-files?" + search.toString(), {
         method: mutation ? "POST" : "GET",
@@ -455,7 +460,42 @@ export default function FilesPanel({
     setBusy(true);
     setError("");
     try {
-      const response = parseMutation(await request({}, next));
+      // Browser computes the descriptor without routing the Binary through Next.js.
+      // The server still verifies SHA-256 against trusted Storage bytes before commit.
+      const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", await next.file.arrayBuffer()));
+      if (ticket !== epoch.current) throw new StaleRequest();
+      const sha256 = Array.from(digest, (byte) => byte.toString(16).padStart(2, "0")).join("");
+      const command: SignedCommand = { ...next.command, byteLength: next.file.size, sha256 };
+      const prepared = record(await request({}, { operation: "prepare-upload", command }));
+      let response: { requestId: string; file: FileInfo };
+      if ("file" in prepared) {
+        response = parseMutation(prepared);
+      } else {
+        if (stringValue(prepared.requestId) !== command.requestId)
+          throw new Error("Upload Intent identity mismatch.");
+        const signedUrl = stringValue(prepared.signedUrl);
+        // Signed tickets are capabilities: never send original bytes to an arbitrary URL.
+        const destination = new URL(signedUrl);
+        if (destination.protocol !== "https:" ||
+            !/^[a-z0-9-]+\\.supabase\\.co$/.test(destination.hostname) ||
+            !destination.pathname.startsWith("/storage/v1/object/upload/sign/repository-files/") ||
+            !destination.searchParams.has("token"))
+          throw new Error("Storage ticket is invalid.");
+        const payload = new FormData();
+        payload.set("cacheControl", "0");
+        payload.append("", next.file);
+        // An unknown upload outcome is reconciled by File's exact server-side readback.
+        // A duplicate PUT is harmless: upsert is forbidden and Finalize verifies the original.
+        try {
+          await fetch(signedUrl, {
+            method: "PUT", headers: { "x-upsert": "false" }, body: payload, cache: "no-store",
+          });
+        } catch {
+          // Retry Finalize even if the provider response was lost.
+        }
+        if (ticket !== epoch.current) throw new StaleRequest();
+        response = parseMutation(await request({}, { operation: "complete-upload", command }));
+      }
       if (ticket !== epoch.current) return;
       if (response.requestId !== next.command.requestId)
         throw new Error("File receipt 尚未確認，請使用原命令重試。");
