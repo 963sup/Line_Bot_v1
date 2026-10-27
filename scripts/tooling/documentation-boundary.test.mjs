@@ -19,16 +19,10 @@ const retiredNames = [
     (_, index) => `document-owner-skeleton-reduction-step-${index + 1}.md`,
   ),
 ];
-const retiredPaths = [
-  ...retiredNames.map((name) => `docs/change/proposals/${name}`),
-  ...owners.flatMap((owner) =>
-    ["AGENTS.md", "README.md", "SEMANTICS.md"].map((name) => `packages/${owner}/${name}`),
-  ),
-];
+const retiredPaths = [...retiredNames.map((name) => `docs/change/proposals/${name}`)];
 
-// Retired design must not become current guidance again through generation or copy/paste.
-// Updating documentation after source review requires an intentional update to this guard.
-test("retired document-owner plans and package guidance stay removed", () => {
+// Basic owner documentation is explicitly allowed; the retired proposal series remains blocked.
+test("retired document-owner proposals stay removed", () => {
   const restored = retiredPaths.filter((path) =>
     lstatSync(resolve(root, path), { throwIfNoEntry: false }),
   );
@@ -49,31 +43,23 @@ test("retired document-owner plans and package guidance stay removed", () => {
   );
 });
 
-test("document-owner pages only route to manifest, source and tests until source review", () => {
-  for (const owner of owners) {
-    const route = `docs/owners/${owner}.md`;
-    const allowed = new Set([
-      `../../packages/${owner}/package.json`,
-      `../../packages/${owner}/src/`,
-      `../../packages/${owner}/test/`,
-    ]);
-    const lines = readFileSync(resolve(root, route), "utf8")
-      .split("\n")
-      .map((line) => line.trim())
-      .filter(Boolean);
-    for (const line of lines) {
-      if (/^# [\w]+ source$/.test(line)) continue;
-      const link = /^- \[[^\]]+\]\(([^)]+)\)$/.exec(line);
+test("all five owners have basic documentation with valid local source links", () => {
+  const pages = owners.flatMap((owner) => [
+    ...["AGENTS.md", "README.md", "SEMANTICS.md"].map((name) => `packages/${owner}/${name}`),
+    `docs/owners/${owner}.md`,
+  ]);
+  for (const page of pages) {
+    assert.ok(existsSync(resolve(root, page)), `Missing basic documentation: ${page}`);
+    const content = readFileSync(resolve(root, page), "utf8");
+    assert.ok(content.trim().length > 0, `Empty documentation: ${page}`);
+    for (const match of content.matchAll(/\[[^\]]*\]\(([^)]+)\)/g)) {
+      const raw = match[1].replace(/^<|>$/g, "").split("#")[0];
+      if (!raw || /^[a-z][a-z\d+.-]*:/i.test(raw)) continue;
       assert.ok(
-        link && allowed.has(link[1]),
-        `${route}: design prose must wait for source review.`,
+        existsSync(resolve(root, dirname(page), decodeURIComponent(raw))),
+        `${page}: missing link ${raw}`,
       );
     }
-    for (const path of allowed)
-      assert.ok(
-        existsSync(resolve(root, dirname(route), path)),
-        `${route}: missing source target ${path}`,
-      );
   }
 });
 
