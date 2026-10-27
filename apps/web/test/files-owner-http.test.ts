@@ -44,6 +44,10 @@ function fixture() {
     calls.push({ operation, args });
   };
   const owner: Owner = {
+    async overview(actor, scope) {
+      called("overview", [actor, scope]);
+      return { files: [file], next: null, uploads: [], pendingNext: null };
+    },
     async list(actor, scope, after) {
       called("list", [actor, scope, after]);
       return { files: [file], next: null };
@@ -130,9 +134,10 @@ test("File List is authenticated and always resolves Repository rather than a gl
   assert.equal(result.repository.id, scope.repository.id);
   assert.equal(result.files[0].fileId, file.fileId);
   assert.equal(result.uploadMaxBytes, 3_000_000);
+  assert.deepEqual(result.uploads, []);
   assert.deepEqual(calls[0], {
-    operation: "list",
-    args: ["member", scope.repository.id, undefined],
+    operation: "overview",
+    args: ["member", scope.repository.id],
   });
 });
 
