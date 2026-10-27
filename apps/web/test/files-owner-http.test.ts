@@ -116,29 +116,6 @@ function post(body: object, origin = "https://app.example") {
     body: JSON.stringify(body),
   });
 }
-function uploadRequest(options: { repositoryId?: string; size?: number; name?: string } = {}) {
-  const form = new FormData();
-  const name = options.name ?? file.name;
-  const bytes = new Uint8Array(options.size ?? 3);
-  const input = new File([bytes], name, { type: "text/plain" });
-  form.set(
-    "command",
-    JSON.stringify({
-      repositoryId: options.repositoryId ?? scope.repository.id,
-      fileId: file.fileId,
-      requestId: randomUUID(),
-      expectedVersion: 0,
-      name,
-      mediaType: "text/plain",
-    }),
-  );
-  form.set("file", input, name);
-  return new Request(baseUrl, {
-    method: "POST",
-    headers: { origin: "https://app.example" },
-    body: form,
-  });
-}
 
 test("File List is authenticated and always resolves Repository rather than a global collection", async () => {
   const { calls, runtime } = fixture();
@@ -279,30 +256,18 @@ test("File rejects Intelligence processing commands at the File boundary", async
   });
 });
 
-test("Browser Upload accepts only bounded file bytes, matching metadata and current Repository", async () => {
+test("legacy multipart route is disabled; only bounded JSON signed commands are accepted", async () => {
   await withOrigin(async () => {
     const { calls, runtime } = fixture();
-    const uploaded = await filesRequest(uploadRequest(), runtime, identity);
-    assert.equal(uploaded.status, 200);
-    const write = calls.find((call) => call.operation === "upload");
-    assert.ok(write);
-    assert.equal(write.args[0], "member");
-    const command = write.args[1];
-    assert.ok(command && typeof command === "object" && "repositoryId" in command);
-    assert.equal(command.repositoryId, scope.repository.id);
-    assert.deepEqual(write.args[2], new Uint8Array(3));
-
-    const foreign = await filesRequest(
-      uploadRequest({ repositoryId: "repository-B" }),
-      runtime,
-      identity,
-    );
-    assert.equal(foreign.status, 400);
-    const oversized = await filesRequest(uploadRequest({ size: 3_000_001 }), runtime, identity);
-    assert.equal(oversized.status, 413);
-    assert.equal(calls.filter((call) => call.operation === "upload").length, 1);
+    const response = await filesRequest(new Request(baseUrl, {
+      method: "POST", headers: { origin: "https://app.example" },
+      body: new FormData(),
+    }), runtime, identity);
+    assert.equal(response.status, 415);
+    assert.deepEqual(calls, []);
   });
 });
+
 
 test("Signed upload uses authenticated JSON commands and never transfers Binary through API", async () => {
   await withOrigin(async () => {
