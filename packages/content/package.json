@@ -8,9 +8,9 @@
       "types": "./dist/application/use-cases/plans.d.ts",
       "default": "./dist/application/use-cases/plans.js"
     },
-    "./contracts/dto/plans": {
-      "types": "./dist/contracts/dto/plans.d.ts",
-      "default": "./dist/contracts/dto/plans.js"
+    "./application/use-cases/contract-document-expansion": {
+      "types": "./dist/application/use-cases/contract-document-expansion.d.ts",
+      "default": "./dist/application/use-cases/contract-document-expansion.js"
     },
     "./contracts/output/plan-references": {
       "types": "./dist/contracts/output/plan-references.d.ts",
@@ -19,10 +19,6 @@
     "./contracts/output/wbs-expansion": {
       "types": "./dist/contracts/output/wbs-expansion.d.ts",
       "default": "./dist/contracts/output/wbs-expansion.js"
-    },
-    "./contracts/output/plans": {
-      "types": "./dist/contracts/output/plans.d.ts",
-      "default": "./dist/contracts/output/plans.js"
     },
     "./composition/bootstrap/plans": {
       "types": "./dist/composition/bootstrap/plans.d.ts",

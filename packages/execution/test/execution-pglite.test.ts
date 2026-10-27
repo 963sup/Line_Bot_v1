@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
-import { createContentPlans } from "@line_bot_v1/content/application/use-cases/plans";
-import { createPostgresContentPlanDependencies } from "@line_bot_v1/content/composition/bootstrap/plans";
+import { createPostgresContentPlans } from "@line_bot_v1/content/composition/bootstrap/plans";
 import { createPostgresContracts } from "@line_bot_v1/contract/composition/bootstrap/contracts";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { createResources } from "@line_bot_v1/resources/application/use-cases/resources";
@@ -49,8 +48,8 @@ test("public Content, Resource, Contract, dependency and Execution compositions 
   const workId = randomUUID();
   const prerequisiteId = randomUUID();
   const taskId = randomUUID();
-  const plans = createContentPlans({
-    ...createPostgresContentPlanDependencies(db),
+  const plans = createPostgresContentPlans({
+    db,
     now: () => 20,
   });
   const plan = await plans.execute("owner", {
