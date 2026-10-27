@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { test } from "node:test";
 import { FileError } from "@line_bot_v1/file/domain/error";
+import { fileHttpRequest } from "@line_bot_v1/file/adapters/inbound/http";
 import { type FilesWebRuntime, filesRequest } from "../src/modules/file/files-http.server";
 import { RequestIdentityError } from "../src/shared/server/request-identity-error";
 
@@ -103,6 +104,7 @@ function fixture() {
       return scope;
     },
     owner: () => owner,
+    dispatch: fileHttpRequest,
   };
   return { calls, runtime };
 }

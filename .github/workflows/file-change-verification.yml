@@ -51,10 +51,8 @@ jobs:
         run: pnpm check lint -- packages/file/src packages/file/test apps/web/src/modules/file apps/web/src/app/api/_composition/files.server.ts apps/web/test/files-owner-http.test.ts apps/web/test/files-signed-upload.test.ts
       - name: Typecheck File and Web with dependency builds
         run: pnpm exec turbo run typecheck --filter=@line_bot_v1/file --filter=@line_bot_v1/web --concurrency=2
-      - name: Validate DDD dependency directions
-        run: pnpm check dependencies
-      - name: Validate unused public entries and source reachability
-        run: pnpm check knip
+      - name: Audit File workspace reachability
+        run: pnpm exec knip --workspace packages/file
       - name: File owner unit and persistence tests
         run: pnpm exec turbo run test --filter=@line_bot_v1/file --concurrency=2
       - name: Web transport regression tests

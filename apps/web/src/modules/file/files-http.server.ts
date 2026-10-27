@@ -1,9 +1,13 @@
 import { UserError } from "@line_bot_v1/account/domain/user";
-import {
-  type FileHttpOwner,
-  type FileHttpScope,
-  fileHttpRequest,
-} from "@line_bot_v1/file/adapters/inbound/http";
+import type { createFiles } from "@line_bot_v1/file/application/use-cases/files";
+type FileHttpOwner = ReturnType<typeof createFiles>;
+type FileHttpScope = {
+  actorUserId: string;
+  repository: { id: string; ownerLogin: string; name: string };
+  archived: boolean;
+  canEdit: boolean;
+  canManage: boolean;
+};
 import { FileError } from "@line_bot_v1/file/domain/error";
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
 import { RepositoryError } from "@line_bot_v1/repository/contracts/errors/repository-error";
@@ -18,6 +22,8 @@ export type FilesWebRuntime = {
     selector: { ownerLogin: string; repositoryName: string },
   ): Promise<FileHttpScope>;
   owner(): FileHttpOwner;
+  /** Concrete File inbound adapter is injected only by the outer composition root. */
+  dispatch(request: Request, scope: FileHttpScope, owner: FileHttpOwner): Promise<Response>;
 };
 function invalid(message = "Invalid File request."): never {
   throw new FileError(400, message, "INVALID_INPUT");
@@ -77,7 +83,7 @@ export async function filesRequest(
     if (request.method === "POST") originGuard(request);
     const subject = await identity(request);
     const scope = await runtime.scope(subject, selector(new URL(request.url).searchParams));
-    return await fileHttpRequest(request, scope, runtime.owner());
+    return await runtime.dispatch(request, scope, runtime.owner());
   } catch (error) {
     return failure(error);
   }

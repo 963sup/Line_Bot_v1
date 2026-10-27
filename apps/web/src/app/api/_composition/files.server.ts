@@ -1,4 +1,5 @@
 import { createFiles } from "@line_bot_v1/file/application/use-cases/files";
+import { fileHttpRequest } from "@line_bot_v1/file/adapters/inbound/http";
 import { createPostgresFileDependencies } from "@line_bot_v1/file/composition/bootstrap/files";
 import type { FilesWebRuntime } from "../../../modules/file/files-http.server";
 import { repositoryOwnerScope } from "./repository-owner-scope.server";
@@ -12,4 +13,5 @@ const fileOwner = () => (owner ??= createFiles({ ...fileDependencies(), now: Dat
 export const files: FilesWebRuntime = {
   scope: repositoryOwnerScope,
   owner: fileOwner,
+  dispatch: fileHttpRequest,
 };
