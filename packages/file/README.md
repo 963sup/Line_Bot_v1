@@ -11,6 +11,14 @@ File 是檔案原始內容、版本、來源資格、儲存與回收流程的唯
 - 原始檔識別與解析結果必須分開；來源讀取與資格檢查依 [references contract](./src/contracts/output/references.ts) 執行。
 - 不重複讀取 bytes、不在記憶體複製整個 payload、不以同步 loop 取代可恢復的串流或批次流程。
 
+## Web 快路徑
+
+- Web 只透過受身分及 Repository 範圍保護的 JSON `prepare-upload`／`complete-upload` 指令寫 File。
+- 檔案 Binary 直接 PUT 到私有 Storage 的不可覆寫 Signed Upload URL；它是短效寫入能力，**不是** File Revision 提交授權。
+- File 使用現有持久 Upload Intent、Request ID 與期望版本，完成後必須讀回 Storage 驗證長度與 SHA-256，再於資料庫原子提交 Revision、Head、Receipt。
+- 未完成或不確定的 PUT 保留原 Intent，重試以相同 Request ID 與來源指紋恢復；長期未完成交由受信任 Reclaimer 清理。
+- Web 單次上傳／下載限定 3 MB；CLI 與下游 File source 保留原本 45 MiB 能力。Web 下載保留讀取前後的授權檢查，不簽發撤權後仍可使用的下載 URL。
+
 ## If / Then 決策規則
 
 | If | Then |
