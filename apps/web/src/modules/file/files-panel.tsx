@@ -533,18 +533,12 @@ export default function FilesPanel({
 
   useEffect(() => {
     const unsubscribe = liffClient.onSessionBlocked(clear);
-    const visibility = () => {
-      if (document.visibilityState === "hidden") clear();
-      else void load();
-    };
-    document.addEventListener("visibilitychange", visibility);
     window.addEventListener("pagehide", clear);
     return () => {
       unsubscribe();
-      document.removeEventListener("visibilitychange", visibility);
       window.removeEventListener("pagehide", clear);
     };
-  }, [clear, load]);
+  }, [clear]);
 
   async function listPendingUploads(after: string) {
     const page = parsePendingPage(await request({ view: "uploads", after }));
