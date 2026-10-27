@@ -17,7 +17,7 @@
 
 | 真相 | Canonical owner |
 | --- | --- |
-| GitHub GraphQL domain semantics | [Pinned FPT JSON](../architecture/domain/fpt/)；[provenance](../architecture/domain/fpt-source.json) |
+| GitHub GraphQL domain semantics | [Pinned FPT JSON](../architecture/fpt/)；[provenance](../architecture/fpt-source.json) |
 | Product owner、invariant、relationship、capability、context | [Semantic model](../architecture/registry.json#domain) |
 | Module path/kind、dependency allowlist、selected targets | [Implementation topology](../architecture/registry.json#modules) |
 | Persisted relation authority / projection / reference | [Data topology](../architecture/registry.json#data) |

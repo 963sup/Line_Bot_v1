@@ -5,7 +5,7 @@ Conflicting answers use the authority below; do not load more background first.
 | Question | Authority |
 | --- | --- |
 | Current source behavior | source + tests |
-| GitHub GraphQL domain semantics | `architecture/domain/fpt/*.json` (exact pinned github/docs FPT mirror) |
+| GitHub GraphQL domain semantics | `architecture/fpt/*.json` (exact pinned github/docs FPT mirror) |
 | Product owner/relationship/invariant/capability/implementation expectation | `architecture/registry.json#domain` |
 | Module path/kind/dependency allowlist | `architecture/registry.json#modules` |
 | Persisted relation owner/schema mapping | `architecture/registry.json#data` |
@@ -15,7 +15,7 @@ Conflicting answers use the authority below; do not load more background first.
 | Commands/versions | root `package.json`, lockfile, runtime config |
 | Scoped Agent constraints | root + nearest `AGENTS.md` |
 | Owner rule not inferable from machine truth | `docs/owners/<owner>.md` |
-| FPT provenance / integrity | `architecture/domain/fpt-source.json` |
+| FPT provenance / integrity | `architecture/fpt-source.json` |
 | Target/proposal/migration/gap/risk | `docs/change/` |
 | Deployment/provider/device reality | dated readback |
 | Historical acceptance/recovery evidence | `docs/change/evidence/` |

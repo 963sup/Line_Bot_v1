@@ -19,7 +19,7 @@ Current URL、route partition、app-shell 與 runtime contract 以 [Web runtime]
 
 ## GitHub domain truth and external benchmarks
 
-Vendored [GitHub FPT JSON](../architecture/domain/fpt/) 是 GitHub GraphQL semantics 的本地 domain truth，不是 benchmark；[provenance](../architecture/domain/fpt-source.json) 只證明來源與完整性。[Semantic model](../architecture/registry.json#domain) 只能補 Line_Bot_v1 owner/invariant/capability/implementation overlay。只有 GitHub Mobile / visual interaction 可作 UX / information hierarchy benchmark，不能從畫面推導 permission、route 或 runtime activation。
+Vendored [GitHub FPT JSON](../architecture/fpt/) 是 GitHub GraphQL semantics 的本地 domain truth，不是 benchmark；[provenance](../architecture/fpt-source.json) 只證明來源與完整性。[Semantic model](../architecture/registry.json#domain) 只能補 Line_Bot_v1 owner/invariant/capability/implementation overlay。只有 GitHub Mobile / visual interaction 可作 UX / information hierarchy benchmark，不能從畫面推導 permission、route 或 runtime activation。
 
 ## Nested routing
 

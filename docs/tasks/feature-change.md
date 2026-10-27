@@ -2,7 +2,7 @@
 
 ## Load
 
-1. 若功能使用 GitHub-derived semantics，先直接讀對應 `architecture/domain/fpt/*.json` symbol/field；FPT 是 domain truth。
+1. 若功能使用 GitHub-derived semantics，先直接讀對應 `architecture/fpt/*.json` symbol/field；FPT 是 domain truth。
 2. 讀 affected owner contract、package exports 與 consumers。
 3. 只載入真正受影響的 rule。
 4. 若沒有 owner，再讀 [architecture change](architecture-change.md)。

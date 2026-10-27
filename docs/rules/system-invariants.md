@@ -8,7 +8,7 @@
 4. **Atomicity / recovery**：共同維持 invariant 的 authoritative effects一起成立；跨 transaction side effect需要 durable identity、idempotent retry與 recovery/readback。
 5. **Ownership / dependency**：一個 responsibility一個 owner；consumer只用 owner public contract。
 6. **Evidence integrity**：static、test、build、schema、deployment、provider/API、device evidence只證明各自範圍。
-7. **GitHub domain truth**：vendored `architecture/domain/fpt/*.json` 是 GitHub GraphQL domain semantics 的本地 authority；product overlay、Markdown、UI、runtime absence 都不得重新定義或降級這份 truth。
+7. **GitHub domain truth**：vendored `architecture/fpt/*.json` 是 GitHub GraphQL domain semantics 的本地 authority；product overlay、Markdown、UI、runtime absence 都不得重新定義或降級這份 truth。
 8. **Bounded tool output**：工具完整執行與證據保存不等於把完整 stdout／stderr 載入 Agent context。Repository command、外部 CLI、Git、CI/API 與 provider readback 預設只回傳足以決策的結構化摘要；高量原始輸出寫入忽略的 artifact，成功不展開，失敗只讀固定上限的可行動片段，再依明確問題局部擴展。Nested `AGENTS.md` 只能加嚴此預算，不能改回無界輸出。
 
 另外：

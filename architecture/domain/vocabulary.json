@@ -6,7 +6,7 @@
     "id": "line_bot_v1",
     "domain": "enterprise-workforce-operations-management",
     "objective": "Minimize understanding, decision, change, verification, coordination, and drift-recovery cost while preserving correctness, security, authorization, data integrity, business invariants, consistency, recoverability, and traceability.",
-    "changeFlow": "architecture/domain/fpt/*.json -> product overlay -> implementation topology -> source/schema -> runtime evidence"
+    "changeFlow": "architecture/fpt/*.json -> product overlay -> implementation topology -> source/schema -> runtime evidence"
   },
   "sources": {
     "implementationTopology": "architecture/registry.json#modules",
@@ -15,8 +15,8 @@
     "persistenceCurrentState": "packages/integration-supabase/src/schemas/",
     "historicalChange": "docs/change/",
     "dataTopology": "architecture/registry.json#data",
-    "githubFptDomainTruth": "architecture/domain/fpt/*.json",
-    "githubFptProvenance": "architecture/domain/fpt-source.json"
+    "githubFptDomainTruth": "architecture/fpt/*.json",
+    "githubFptProvenance": "architecture/fpt-source.json"
   },
   "subdomains": [
     {
@@ -297,7 +297,7 @@
     },
     {
       "id": "github-fpt-domain-truth",
-      "authority": "architecture/domain/fpt/*.json",
+      "authority": "architecture/fpt/*.json",
       "scope": "canonical GitHub GraphQL domain semantics vendored exactly from pinned github/docs FPT JSON"
     },
     {
