@@ -79,7 +79,8 @@ export function fileObjects(bucket: PrivateBucket): FileObjectStore & FileObject
       if (await read(revision, true)) return;
       let failure: { error: unknown } | undefined;
       try {
-        const response = await bucket.upload(key(revision), Buffer.from(bytes), {
+        // The payload is already a verified Uint8Array; avoid an additional full-size copy.
+        const response = await bucket.upload(key(revision), bytes, {
           upsert: false,
           contentType: revision.mediaType,
           cacheControl: "0",
