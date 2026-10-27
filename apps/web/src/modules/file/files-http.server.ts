@@ -26,7 +26,6 @@ export type FilesWebRuntime = {
 };
 
 const uploadLimit = 3_000_000;
-const multipartLimit = 3_300_000;
 const jsonLimit = 524_288;
 
 function invalid(message = "Invalid File request."): never {
@@ -76,11 +75,6 @@ function commandRecord(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) return invalid();
   return Object.fromEntries(Object.entries(value));
 }
-function commandString(command: Record<string, unknown>, key: string): string {
-  const value = command[key];
-  if (typeof value !== "string" || !value) return invalid();
-  return value;
-}
 function failure(error: unknown) {
   const known =
     error instanceof FileError ||
@@ -95,7 +89,7 @@ function failure(error: unknown) {
   });
   return jsonResponse(
     {
-      error: error instanceof Error ? error.message : String(error),
+      error: known && error instanceof Error ? error.message : "File operation failed.",
       ...(error instanceof FileError ? { code: error.code } : {}),
     },
     status,
