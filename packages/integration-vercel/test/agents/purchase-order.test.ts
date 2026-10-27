@@ -37,7 +37,7 @@ test("purchase-order agent owns its structured extraction request", async () => 
 
   assert.equal(agent.documentExtractor().version, "purchase-order-v1:google/gemini-2.5-flash");
   assert.equal(received?.maxOutputTokens, 24_000);
-  assert.equal(received?.timeoutMs, 45_000);
+  assert.equal(received?.timeoutMs, 105_000);
   assert.match(String(received?.system), /untrusted data/);
 });
 
