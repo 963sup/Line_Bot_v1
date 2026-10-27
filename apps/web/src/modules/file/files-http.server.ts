@@ -116,7 +116,10 @@ export async function filesRequest(
       if (view === "list")
         return jsonResponse({
           ...scope,
-          ...(await owner.overview(scope.actorUserId, scope.repository.id)),
+          ...(query.has("after")
+            ? { ...(await owner.list(scope.actorUserId, scope.repository.id,
+                query.get("after") ?? undefined)), uploads: [], pendingNext: null }
+            : await owner.overview(scope.actorUserId, scope.repository.id)),
           uploadMaxBytes: uploadLimit,
         });
       if (view === "uploads")
