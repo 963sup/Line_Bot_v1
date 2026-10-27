@@ -1,8 +1,8 @@
+import { z } from "zod";
 import {
   type DocumentSource,
   PURCHASE_ORDER_CATEGORIES,
   type PurchaseOrderCandidate,
-  type PurchaseOrderFieldEvidence,
   type SourceReviewAttestation,
 } from "./document-intake.js";
 import { ContractError } from "./error.js";
@@ -30,24 +30,6 @@ function text(value: unknown): value is string {
   return typeof value === "string";
 }
 
-function nullableText(value: unknown): value is string | null {
-  return value === null || text(value);
-}
-
-function nullableTextValue(value: unknown): string | null {
-  if (nullableText(value)) return value;
-  return fail("Invalid purchase-order text field.");
-}
-
-function decimalText(value: unknown): value is string | null {
-  return value === null || (text(value) && decimal.test(value));
-}
-
-function decimalValue(value: unknown): string | null {
-  if (decimalText(value)) return value;
-  return fail("Invalid purchase-order decimal field.");
-}
-
 function pages(value: unknown): value is readonly number[] {
   return (
     Array.isArray(value) &&
@@ -62,46 +44,80 @@ function isIsoDate(value: string): boolean {
   return !Number.isNaN(date.valueOf()) && date.toISOString().slice(0, 10) === value;
 }
 
-function isPurchaseOrderCategory(
-  value: unknown,
-): value is (typeof PURCHASE_ORDER_CATEGORIES)[number] {
-  return PURCHASE_ORDER_CATEGORIES.some((category) => category === value);
-}
+const nullableText = z.string().nullable();
+const decimalText = z.string().regex(decimal).nullable();
+const sourcePages = z
+  .array(z.number().int().positive())
+  .refine((items) => new Set(items).size === items.length, "Source pages must be unique.");
+const evidence = z
+  .object({ sourcePages, rawText: nullableText, confidence: nullableText })
+  .strict();
 
-function categoryValue(value: unknown): PurchaseOrderCandidate["lines"][number]["category"] {
-  if (value === null) return null;
-  if (isPurchaseOrderCategory(value)) return value;
-  return fail("Invalid purchase-order category.");
-}
-
-function decodeParty(value: unknown): { name: string | null; registrationNumber: string | null } {
-  const keys = ["name", "registrationNumber"];
-  if (!record(value) || !exactKeys(value, keys) || !keys.every((key) => nullableText(value[key])))
-    return fail("Invalid purchase-order party.");
-  return {
-    name: nullableTextValue(value.name),
-    registrationNumber: nullableTextValue(value.registrationNumber),
-  };
-}
-
-function decodeEvidence(value: unknown): PurchaseOrderFieldEvidence {
-  const keys = ["sourcePages", "rawText", "confidence"];
-  if (
-    !record(value) ||
-    !exactKeys(value, keys) ||
-    !pages(value.sourcePages) ||
-    !nullableText(value.rawText) ||
-    !nullableText(value.confidence)
-  )
-    return fail("Invalid purchase-order field evidence.");
-  const rawText = nullableTextValue(value.rawText);
-  const confidence = nullableTextValue(value.confidence);
-  return {
-    sourcePages: [...value.sourcePages],
-    rawText,
-    confidence,
-  };
-}
+/** Runtime authority for every purchase-order candidate accepted by Contract. */
+export const purchaseOrderCandidateSchema = z
+  .object({
+    header: z
+      .object({
+        documentNumber: nullableText,
+        revision: nullableText,
+        issueDate: nullableText.refine((value) => value === null || isIsoDate(value), "Invalid date."),
+        title: nullableText,
+        currency: nullableText,
+      })
+      .strict(),
+    buyer: z.object({ name: nullableText, registrationNumber: nullableText }).strict(),
+    seller: z.object({ name: nullableText, registrationNumber: nullableText }).strict(),
+    lines: z.array(
+      z
+        .object({
+          sourceRowId: z.string().min(1),
+          itemNumber: nullableText,
+          category: z.enum(PURCHASE_ORDER_CATEGORIES).nullable(),
+          materialCode: nullableText,
+          description: nullableText,
+          quantity: decimalText,
+          unit: nullableText,
+          unitPrice: decimalText,
+          grossAmount: decimalText,
+          discountAmount: decimalText,
+          netAmount: decimalText,
+          deliveryDate: nullableText.refine(
+            (value) => value === null || isIsoDate(value),
+            "Invalid date.",
+          ),
+          sourcePages,
+          uncertain: z.boolean(),
+        })
+        .strict(),
+    ),
+    totals: z
+      .object({
+        gross: decimalText,
+        discount: decimalText,
+        net: decimalText,
+        tax: decimalText,
+        total: decimalText,
+      })
+      .strict(),
+    terms: z.object({ text: nullableText, sourcePages }).strict(),
+    fieldEvidence: z.record(z.string(), z.array(evidence)),
+    corrections: z.array(
+      z
+        .object({
+          field: z.string().min(1),
+          original: nullableText,
+          replacement: z.string().min(1),
+          reason: z.string().min(1),
+        })
+        .strict(),
+    ),
+  })
+  .strict()
+  .superRefine((candidate, context) => {
+    const rowIds = candidate.lines.map((line) => line.sourceRowId);
+    if (new Set(rowIds).size !== rowIds.length)
+      context.addIssue({ code: "custom", message: "Source row IDs must be unique.", path: ["lines"] });
+  });
 
 export function decodeDocumentSource(value: unknown): DocumentSource {
   const keys = ["fileId", "fileRevisionId", "fileSha256"];
@@ -153,150 +169,7 @@ export function decodeSourceReviewAttestation(value: unknown): SourceReviewAttes
 }
 
 export function decodePurchaseOrderCandidate(value: unknown): PurchaseOrderCandidate {
-  const keys = [
-    "header",
-    "buyer",
-    "seller",
-    "lines",
-    "totals",
-    "terms",
-    "fieldEvidence",
-    "corrections",
-  ];
-  if (!record(value) || !exactKeys(value, keys)) return fail("Invalid purchase-order candidate.");
-
-  const headerKeys = ["documentNumber", "revision", "issueDate", "title", "currency"];
-  const header = value.header;
-  if (!record(header) || !exactKeys(header, headerKeys))
-    return fail("Invalid purchase-order header.");
-  const documentNumber = nullableTextValue(header.documentNumber);
-  const revision = nullableTextValue(header.revision);
-  const title = nullableTextValue(header.title);
-  const currency = nullableTextValue(header.currency);
-  const issueDate = nullableTextValue(header.issueDate);
-  if (issueDate !== null && !isIsoDate(issueDate))
-    return fail("Invalid purchase-order issue date.");
-
-  if (!Array.isArray(value.lines)) return fail("Invalid purchase-order lines.");
-  const lines: PurchaseOrderCandidate["lines"][number][] = value.lines.map((line) => {
-    const lineKeys = [
-      "sourceRowId",
-      "itemNumber",
-      "category",
-      "materialCode",
-      "description",
-      "quantity",
-      "unit",
-      "unitPrice",
-      "grossAmount",
-      "discountAmount",
-      "netAmount",
-      "deliveryDate",
-      "sourcePages",
-      "uncertain",
-    ];
-    if (!record(line) || !exactKeys(line, lineKeys)) return fail("Invalid purchase-order line.");
-    if (
-      !text(line.sourceRowId) ||
-      line.sourceRowId.length === 0 ||
-      typeof line.uncertain !== "boolean"
-    )
-      return fail("Invalid purchase-order line.");
-    const itemNumber = nullableTextValue(line.itemNumber);
-    const materialCode = nullableTextValue(line.materialCode);
-    const description = nullableTextValue(line.description);
-    const unit = nullableTextValue(line.unit);
-    const deliveryDate = nullableTextValue(line.deliveryDate);
-    const quantity = decimalValue(line.quantity);
-    const unitPrice = decimalValue(line.unitPrice);
-    const grossAmount = decimalValue(line.grossAmount);
-    const discountAmount = decimalValue(line.discountAmount);
-    const netAmount = decimalValue(line.netAmount);
-    const category = categoryValue(line.category);
-    if (!pages(line.sourcePages)) return fail("Invalid purchase-order line pages.");
-    if (deliveryDate !== null && !isIsoDate(deliveryDate))
-      return fail("Invalid purchase-order delivery date.");
-    return {
-      sourceRowId: line.sourceRowId,
-      itemNumber,
-      category,
-      materialCode,
-      description,
-      quantity,
-      unit,
-      unitPrice,
-      grossAmount,
-      discountAmount,
-      netAmount,
-      deliveryDate,
-      sourcePages: [...line.sourcePages],
-      uncertain: line.uncertain,
-    };
-  });
-
-  const totalKeys = ["gross", "discount", "net", "tax", "total"];
-  const totals = value.totals;
-  if (!record(totals) || !exactKeys(totals, totalKeys))
-    return fail("Invalid purchase-order totals.");
-  const gross = decimalValue(totals.gross);
-  const discount = decimalValue(totals.discount);
-  const net = decimalValue(totals.net);
-  const tax = decimalValue(totals.tax);
-  const total = decimalValue(totals.total);
-
-  const terms = value.terms;
-  if (!record(terms) || !exactKeys(terms, ["text", "sourcePages"]) || !pages(terms.sourcePages))
-    return fail("Invalid purchase-order terms.");
-  const termsText = nullableTextValue(terms.text);
-
-  if (!record(value.fieldEvidence)) return fail("Invalid purchase-order field evidence.");
-  const fieldEvidence = Object.fromEntries(
-    Object.entries(value.fieldEvidence).map(([field, entries]) => {
-      if (!Array.isArray(entries)) return fail("Invalid purchase-order field evidence.");
-      return [field, entries.map(decodeEvidence)];
-    }),
-  );
-
-  if (!Array.isArray(value.corrections)) return fail("Invalid purchase-order corrections.");
-  const corrections = value.corrections.map((item) => {
-    const correctionKeys = ["field", "original", "replacement", "reason"];
-    if (
-      !record(item) ||
-      !exactKeys(item, correctionKeys) ||
-      !text(item.field) ||
-      !nullableText(item.original) ||
-      !text(item.replacement) ||
-      !text(item.reason)
-    )
-      return fail("Invalid purchase-order corrections.");
-    return {
-      field: item.field,
-      original: item.original,
-      replacement: item.replacement,
-      reason: item.reason,
-    };
-  });
-
-  return {
-    header: {
-      documentNumber,
-      revision,
-      issueDate,
-      title,
-      currency,
-    },
-    buyer: decodeParty(value.buyer),
-    seller: decodeParty(value.seller),
-    lines,
-    totals: {
-      gross,
-      discount,
-      net,
-      tax,
-      total,
-    },
-    terms: { text: termsText, sourcePages: [...terms.sourcePages] },
-    fieldEvidence,
-    corrections,
-  };
+  const parsed = purchaseOrderCandidateSchema.safeParse(value);
+  if (!parsed.success) return fail("Invalid purchase-order candidate.");
+  return parsed.data;
 }
