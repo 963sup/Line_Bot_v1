@@ -10,6 +10,8 @@
       "apps/**",
       "packages/**",
       "scripts/**/*.{mjs,ts}",
+      ".codex/hooks/**",
+      ".codex/hooks.json",
       "*.json",
       "knip.jsonc",
       "architecture/**/*.json",

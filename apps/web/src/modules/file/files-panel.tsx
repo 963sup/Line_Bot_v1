@@ -7,7 +7,7 @@ import { Button } from "../../shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../shared/ui/card";
 import { Input } from "../../shared/ui/input";
 import { Label } from "../../shared/ui/label";
-import { Textarea } from "../../shared/ui/textarea";
+import PurchaseOrderReview from "./purchase-order-review";
 
 type FileInfo = {
   repositoryId: string;
@@ -19,7 +19,6 @@ type FileInfo = {
   byteLength: number;
   sha256: string;
 };
-type Processor = { id: string; kind: "parser" | "ocr" | "ai"; version: string };
 type PendingUpload = {
   requestId: string;
   fileId: string;
@@ -29,31 +28,6 @@ type PendingUpload = {
   mediaType: string;
   byteLength: number;
   sha256: string;
-};
-type RunSummary = {
-  runId: string;
-  fileId: string;
-  fileRevisionId: string;
-  state: "RUNNING" | "FAILED" | "READY" | "SAVED" | "DISCARDED";
-  version: number;
-  processorId: string;
-  processorKind: Processor["kind"];
-  at: number;
-};
-type Observation = {
-  id: string;
-  label: string;
-  value: string | null;
-  uncertain: boolean;
-  source: { kind: string; [key: string]: unknown } | null;
-};
-type Output = { documentKind: string; observations: Observation[] };
-type Processing = RunSummary & {
-  repositoryId: string;
-  revisionId: string;
-  processorVersion: string;
-  rawResult: Output | null;
-  savedResult: Output | null;
 };
 type View = {
   actorUserId: string;
@@ -72,26 +46,8 @@ type UploadCommand = {
   name: string;
   mediaType: string;
 };
-type RunCommand = {
-  repositoryId: string;
-  runId: string;
-  requestId: string;
-  expectedVersion: number;
-  fileId: string;
-  fileRevisionId: string;
-};
-type Edit =
-  | { observationId: string; action: "replace"; value: string }
-  | { observationId: string; action: "exclude" };
-type ResultCommand = {
-  repositoryId: string;
-  runId: string;
-  requestId: string;
-  expectedVersion: number;
-  action: "save" | "discard";
-  edits?: Edit[];
-};
 type DocumentIntakeReceipt = {
+  requestId: string;
   documentId: string;
   revisionId: string;
   version: number;
@@ -113,13 +69,22 @@ type DocumentIntakeCommand = {
   documentId: string;
   requestId: string;
   expectedVersion: number;
-  source: { fileId: string; fileRevisionId: string; fileSha256: string };
+  source: DocumentSource;
 };
-type Pending =
-  | { kind: "upload"; command: UploadCommand; file: File }
-  | { kind: "run"; command: RunCommand; processor: string }
-  | { kind: "result"; command: ResultCommand };
-type EditChoice = { action: "replace"; value: string } | { action: "exclude" };
+type Pending = { command: UploadCommand; file: File };
+const diagnosticLabels: Readonly<Record<string, string>> = {
+  UNCERTAIN_LINE: "部分明細尚待釐清",
+  MISSING_REQUIRED_FACT: "缺少必要的採購單資料",
+  MISSING_SOURCE_PAGE: "部分明細缺少來源頁",
+  DUPLICATE_SOURCE_ROW_ID: "來源明細重複",
+  INVALID_LINE_MEASURE: "數量或單價不符合要求",
+  LINE_AMOUNT_MISMATCH: "明細毛額、折扣與淨額不一致",
+  LINE_GROSS_MISMATCH: "數量乘以單價與明細毛額不一致",
+  GROSS_TOTAL_MISMATCH: "明細毛額與毛額合計不一致",
+  DISCOUNT_TOTAL_MISMATCH: "明細折扣與折扣合計不一致",
+  LINE_NET_TOTAL_MISMATCH: "明細淨額與淨額合計不一致",
+  NET_TAX_TOTAL_MISMATCH: "淨額加稅額與應付總額不一致",
+};
 class StaleRequest extends Error {}
 
 /** Validate unknown HTTP projections at the browser boundary; server DTOs are not trusted casts. */
@@ -161,67 +126,6 @@ function parseFile(value: unknown): FileInfo {
     sha256: stringValue(r.sha256),
   };
 }
-function parseProcessor(value: unknown): Processor {
-  const r = record(value);
-  const kind = stringValue(r.kind);
-  if (kind !== "parser" && kind !== "ocr" && kind !== "ai")
-    throw new Error("Unknown File Processor kind.");
-  return { id: stringValue(r.id), kind, version: stringValue(r.version) };
-}
-function parseState(value: unknown): RunSummary["state"] {
-  if (
-    value !== "RUNNING" &&
-    value !== "FAILED" &&
-    value !== "READY" &&
-    value !== "SAVED" &&
-    value !== "DISCARDED"
-  )
-    throw new Error("Unknown File Processing state.");
-  return value;
-}
-function parseRun(value: unknown): RunSummary {
-  const r = record(value);
-  const kind = stringValue(r.processorKind);
-  if (kind !== "parser" && kind !== "ocr" && kind !== "ai")
-    throw new Error("Unknown File Processing kind.");
-  return {
-    runId: stringValue(r.runId),
-    fileId: stringValue(r.fileId),
-    fileRevisionId: stringValue(r.fileRevisionId),
-    state: parseState(r.state),
-    version: intValue(r.version),
-    processorId: stringValue(r.processorId),
-    processorKind: kind,
-    at: intValue(r.at),
-  };
-}
-function parseOutput(value: unknown): Output | null {
-  if (value === null) return null;
-  const r = record(value);
-  const observations = listOf(r.observations, (item): Observation => {
-    const o = record(item);
-    const source = o.source === null ? null : record(o.source);
-    return {
-      id: stringValue(o.id),
-      label: stringValue(o.label),
-      value: o.value === null ? null : stringValue(o.value),
-      uncertain: boolValue(o.uncertain),
-      source: source === null ? null : { ...source, kind: stringValue(source.kind) },
-    };
-  });
-  return { documentKind: stringValue(r.documentKind), observations };
-}
-function parseProcessing(value: unknown): Processing {
-  const r = record(value);
-  return {
-    ...parseRun(value),
-    repositoryId: stringValue(r.repositoryId),
-    revisionId: stringValue(r.revisionId),
-    processorVersion: stringValue(r.processorVersion),
-    rawResult: parseOutput(r.rawResult),
-    savedResult: parseOutput(r.savedResult),
-  };
-}
 function parseView(value: unknown): View {
   const r = record(value);
   const repository = record(r.repository);
@@ -254,32 +158,9 @@ function parsePendingPage(value: unknown): { uploads: PendingUpload[]; next: str
     next: optionalString(r.next),
   };
 }
-function parseRunPage(value: unknown): { runs: RunSummary[]; next: string | null } {
+function parseMutation(value: unknown): { requestId: string; file: FileInfo } {
   const r = record(value);
-  return { runs: listOf(r.runs, parseRun), next: optionalString(r.next) };
-}
-function parseFilePage(value: unknown): { file: FileInfo; processors: Processor[] } {
-  const r = record(value);
-  return {
-    file: parseFile(r.file),
-    processors: r.processors === undefined ? [] : listOf(r.processors, parseProcessor),
-  };
-}
-function parseProcessingPage(value: unknown): { processing: Processing } {
-  const r = record(value);
-  return { processing: parseProcessing(r.processing) };
-}
-function parseMutation(value: unknown): {
-  requestId: string;
-  file?: FileInfo;
-  processing?: Processing;
-} {
-  const r = record(value);
-  return {
-    requestId: stringValue(r.requestId),
-    ...(r.file === undefined ? {} : { file: parseFile(r.file) }),
-    ...(r.processing === undefined ? {} : { processing: parseProcessing(r.processing) }),
-  };
+  return { requestId: stringValue(r.requestId), file: parseFile(r.file) };
 }
 
 function errorMessage(cause: unknown) {
@@ -289,6 +170,7 @@ function errorMessage(cause: unknown) {
 function parseDocumentIntakeReceipt(value: unknown): DocumentIntakeReceipt {
   const r = record(value);
   return {
+    requestId: stringValue(r.requestId),
     documentId: stringValue(r.documentId),
     revisionId: stringValue(r.revisionId),
     version: intValue(r.version),
@@ -323,10 +205,6 @@ function candidateLines(candidate: Record<string, unknown>) {
     const line = record(value);
     return {
       sourceRowId: stringValue(line.sourceRowId),
-      description: line.description === null ? null : stringValue(line.description),
-      quantity: line.quantity === null ? null : stringValue(line.quantity),
-      unit: line.unit === null ? null : stringValue(line.unit),
-      grossAmount: line.grossAmount === null ? null : stringValue(line.grossAmount),
       sourcePages: listOf(line.sourcePages, intValue),
     };
   });
@@ -361,11 +239,6 @@ export default function FilesPanel({
 }) {
   const [view, setView] = useState<View | null>(null);
   const [selected, setSelected] = useState<FileInfo | null>(null);
-  const [processors, setProcessors] = useState<Processor[]>([]);
-  const [selectedProcessor, setSelectedProcessor] = useState("");
-  const [runs, setRuns] = useState<RunSummary[]>([]);
-  const [runsNext, setRunsNext] = useState<string | null>(null);
-  const [processing, setProcessing] = useState<Processing | null>(null);
   const [documentIntakeReceipt, setDocumentIntakeReceipt] = useState<DocumentIntakeReceipt | null>(
     null,
   );
@@ -380,7 +253,6 @@ export default function FilesPanel({
   const [pendingDocumentIntake, setPendingDocumentIntake] = useState<DocumentIntakeCommand | null>(
     null,
   );
-  const [edits, setEdits] = useState<Record<string, EditChoice>>({});
   const [sourceFile, setSourceFile] = useState<File | null>(null);
   const [pendingUploads, setPendingUploads] = useState<PendingUpload[]>([]);
   const [pendingUploadsNext, setPendingUploadsNext] = useState<string | null>(null);
@@ -390,24 +262,22 @@ export default function FilesPanel({
   const epoch = useRef(0);
   const mutationLock = useRef(false);
   const fileInput = useRef<HTMLInputElement>(null);
+  const review = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (documentIntakeRevision) review.current?.focus();
+  }, [documentIntakeRevision]);
 
   const clear = useCallback(() => {
     epoch.current++;
     mutationLock.current = false;
     setView(null);
     setSelected(null);
-    setProcessors([]);
-    setSelectedProcessor("");
-    setRuns([]);
-    setRunsNext(null);
-    setProcessing(null);
     setDocumentIntakeReceipt(null);
     setDocumentIntakeRevision(null);
     setSourceReviewConfirmed(false);
     setAcknowledgementReason("");
     setPendingDocumentConfirmation(null);
     setPendingDocumentIntake(null);
-    setEdits({});
     setSourceFile(null);
     setPendingUploads([]);
     setPendingUploadsNext(null);
@@ -427,18 +297,11 @@ export default function FilesPanel({
       const search = new URLSearchParams({ owner: ownerLogin, name: repositoryName, ...query });
       const headers: Record<string, string> = { "X-App-Session-Generation": session };
       let body: BodyInit | undefined;
-      if (mutation?.kind === "upload") {
+      if (mutation) {
         const form = new FormData();
         form.set("command", JSON.stringify(mutation.command));
         form.set("file", mutation.file, mutation.file.name);
         body = form;
-      } else if (mutation) {
-        headers["Content-Type"] = "application/json";
-        body = JSON.stringify({
-          operation: mutation.kind,
-          command: mutation.command,
-          ...(mutation.kind === "run" ? { processor: mutation.processor } : {}),
-        });
       }
       const response = await fetch("/api/repository-files?" + search.toString(), {
         method: mutation ? "POST" : "GET",
@@ -502,7 +365,15 @@ export default function FilesPanel({
           setError(message);
           throw new StaleRequest();
         }
-        throw Object.assign(new Error(message), { status: response.status });
+        const code = value && typeof value === "object" && "code" in value ? value.code : null;
+        throw Object.assign(
+          new Error(
+            code === "UNKNOWN_RESULT"
+              ? "解析結果尚未確認；原命令重試只會查詢已保存回執，不會重新解析。請保留此頁並聯絡管理員查核。"
+              : message,
+          ),
+          { status: response.status, code },
+        );
       }
       return value;
     },
@@ -551,62 +422,24 @@ export default function FilesPanel({
     setPendingUploadsNext(page.next);
   }
 
-  async function listRuns(fileId: string, after?: string) {
-    const page = parseRunPage(
-      await request({
-        view: "runs",
-        fileId,
-        ...(after ? { after } : {}),
-      }),
-    );
-    if (after) {
-      setRuns((current) => [
-        ...current,
-        ...page.runs.filter((run) => !current.some((item) => item.runId === run.runId)),
-      ]);
-    } else {
-      setRuns(page.runs);
-    }
-    setRunsNext(page.next);
+  async function openFile(file: FileInfo) {
+    if (pendingDocumentIntake || pendingDocumentConfirmation || mutationLock.current) return;
+    await loadFileDetails(file);
   }
 
-  async function openFile(file: FileInfo) {
+  async function loadFileDetails(file: FileInfo) {
     const ticket = epoch.current;
     setBusy(true);
     setError("");
     try {
       const current = await request({ view: "file", fileId: file.fileId });
       if (ticket !== epoch.current) return;
-      const data = parseFilePage(current);
-      setSelected(data.file);
-      setProcessors(data.processors);
-      setSelectedProcessor(data.processors[0]?.id ?? "");
+      setSelected(parseFile(record(current).file));
       setDocumentIntakeReceipt(null);
       setDocumentIntakeRevision(null);
       setSourceReviewConfirmed(false);
       setAcknowledgementReason("");
       setPendingDocumentConfirmation(null);
-      setRuns([]);
-      setRunsNext(null);
-      setProcessing(null);
-      setEdits({});
-    } catch (cause) {
-      if (cause instanceof StaleRequest || ticket !== epoch.current) return;
-      setError(errorMessage(cause));
-    } finally {
-      if (ticket === epoch.current) setBusy(false);
-    }
-  }
-
-  async function openRun(runId: string) {
-    const ticket = epoch.current;
-    setBusy(true);
-    setError("");
-    try {
-      const result = parseProcessingPage(await request({ view: "processing", runId }));
-      if (ticket !== epoch.current) return;
-      setProcessing(result.processing);
-      setEdits({});
     } catch (cause) {
       if (cause instanceof StaleRequest || ticket !== epoch.current) return;
       setError(errorMessage(cause));
@@ -627,26 +460,11 @@ export default function FilesPanel({
       if (response.requestId !== next.command.requestId)
         throw new Error("File receipt 尚未確認，請使用原命令重試。");
       setPending(null);
-      if (next.kind === "upload") {
-        if (!response.file) throw new Error("File revision 尚未確認。");
-        setSourceFile(null);
-        if (fileInput.current) fileInput.current.value = "";
-        await load();
-        await openFile(response.file);
-      } else {
-        if (!response.processing) throw new Error("Processing revision 尚未確認。");
-        let current = response.processing;
-        if (current.state === "RUNNING") {
-          const read = parseProcessingPage(
-            await request({ view: "processing", runId: current.runId }),
-          );
-          current = read.processing;
-        }
-        if (ticket !== epoch.current) return;
-        setProcessing(current);
-        setEdits({});
-        if (selected) await listRuns(selected.fileId);
-      }
+      setSourceFile(null);
+      if (fileInput.current) fileInput.current.value = "";
+      await load();
+      if (ticket !== epoch.current) return;
+      await loadFileDetails(response.file);
     } catch (cause) {
       if (cause instanceof StaleRequest || ticket !== epoch.current) return;
       const status =
@@ -665,7 +483,16 @@ export default function FilesPanel({
   }
 
   function resumeUpload(intent: PendingUpload) {
-    if (!view?.canEdit || !sourceFile || pending || busy) return;
+    if (
+      !view?.canEdit ||
+      !sourceFile ||
+      pending ||
+      busy ||
+      pendingDocumentIntake ||
+      pendingDocumentConfirmation ||
+      mutationLock.current
+    )
+      return;
     const mediaType = sourceFile.type || "application/octet-stream";
     if (
       sourceFile.name.trim() !== intent.name ||
@@ -676,7 +503,6 @@ export default function FilesPanel({
       return;
     }
     const next: Pending = {
-      kind: "upload",
       file: sourceFile,
       command: {
         repositoryId: view.repository.id,
@@ -692,13 +518,21 @@ export default function FilesPanel({
   }
 
   function upload() {
-    if (!view?.canEdit || !sourceFile || pending) return;
+    if (
+      !view?.canEdit ||
+      !sourceFile ||
+      pending ||
+      busy ||
+      pendingDocumentIntake ||
+      pendingDocumentConfirmation ||
+      mutationLock.current
+    )
+      return;
     if (!sourceFile.size || sourceFile.size > view.uploadMaxBytes) {
       setError("Browser Upload 上限為 3 MB；更大的檔案目前請使用受保護的 File CLI。");
       return;
     }
     const next: Pending = {
-      kind: "upload",
       file: sourceFile,
       command: {
         repositoryId: view.repository.id,
@@ -713,37 +547,26 @@ export default function FilesPanel({
     void send(next);
   }
 
-  function run() {
-    if (!view?.canEdit || !selected || pending) return;
-    if (!selectedProcessor || !processors.some((method) => method.id === selectedProcessor)) {
-      setError("目前檔案沒有可用的 Processor。");
-      return;
-    }
-    const next: Pending = {
-      kind: "run",
-      processor: selectedProcessor,
-      command: {
-        repositoryId: view.repository.id,
-        runId: crypto.randomUUID(),
-        fileId: selected.fileId,
-        fileRevisionId: selected.revisionId,
-        requestId: crypto.randomUUID(),
-        expectedVersion: 0,
-      },
-    };
-    setPending(next);
-    void send(next);
-  }
-
   async function intakePurchaseOrder(command: DocumentIntakeCommand) {
-    if (!view?.canEdit || pending || busy) return;
+    if (!view?.canEdit || pending || busy || pendingDocumentConfirmation || mutationLock.current)
+      return;
+    mutationLock.current = true;
+    const ticket = epoch.current;
+    const file = view.files.find((item) => item.fileId === command.source.fileId);
+    if (file) setSelected(file);
     setPendingDocumentIntake(command);
     setBusy(true);
     setError("");
+    let saved = false;
     try {
       const receipt = parseDocumentIntakeReceipt(
         await requestDocumentIntake({ operation: "intake" }, command),
       );
+      if (ticket !== epoch.current) return;
+      if (receipt.requestId !== command.requestId || receipt.documentId !== command.documentId)
+        throw new Error("Contract 草稿回執不符，請使用原命令重試。");
+      saved = true;
+      setDocumentIntakeReceipt(receipt);
       const revision = parseDocumentIntakeRevision(
         record(
           await requestDocumentIntake({
@@ -753,26 +576,48 @@ export default function FilesPanel({
           }),
         ).revision,
       );
-      setDocumentIntakeReceipt(receipt);
+      if (ticket !== epoch.current) return;
+      if (
+        revision.documentId !== receipt.documentId ||
+        revision.revisionId !== receipt.revisionId ||
+        revision.source.fileId !== command.source.fileId ||
+        revision.source.fileRevisionId !== command.source.fileRevisionId ||
+        revision.source.fileSha256 !== command.source.fileSha256
+      )
+        throw new Error("Contract 草稿來源不符，請使用原命令重新查核。");
       setDocumentIntakeRevision(revision);
       setSourceReviewConfirmed(false);
       setAcknowledgementReason("");
       setPendingDocumentConfirmation(null);
       setPendingDocumentIntake(null);
     } catch (cause) {
-      if (cause instanceof StaleRequest) return;
+      if (cause instanceof StaleRequest || ticket !== epoch.current) return;
+      const status =
+        cause && typeof cause === "object" && "status" in cause ? Number(cause.status) : 503;
+      if (!saved && status >= 400 && status < 500 && status !== 409 && status !== 429)
+        setPendingDocumentIntake(null);
       setError(errorMessage(cause));
     } finally {
-      setBusy(false);
+      if (ticket === epoch.current) {
+        setBusy(false);
+        mutationLock.current = false;
+      }
     }
   }
 
   async function confirmPurchaseOrder() {
-    if (!view?.canEdit || !documentIntakeReceipt || !documentIntakeRevision || busy || pending)
+    if (
+      !view?.canEdit ||
+      !documentIntakeReceipt ||
+      !documentIntakeRevision ||
+      busy ||
+      pending ||
+      mutationLock.current
+    )
       return;
     if (documentIntakeRevision.state !== "DRAFT") return;
     if (!sourceReviewConfirmed) {
-      setError("請先逐行核對原始檔，再確認 ContractDocument。");
+      setError("請先逐行核對原始檔，再確認採購單。");
       return;
     }
     const lines = candidateLines(documentIntakeRevision.candidate);
@@ -812,6 +657,8 @@ export default function FilesPanel({
         };
       })();
     if (!command) return;
+    mutationLock.current = true;
+    const ticket = epoch.current;
     setPendingDocumentConfirmation(command);
     setBusy(true);
     setError("");
@@ -831,20 +678,49 @@ export default function FilesPanel({
           }),
         ).revision,
       );
+      if (ticket !== epoch.current) return;
+      if (
+        receipt.requestId !== command.requestId ||
+        receipt.documentId !== command.documentId ||
+        revision.documentId !== receipt.documentId ||
+        revision.revisionId !== receipt.revisionId
+      )
+        throw new Error("Contract 確認回執不符，請使用原命令重試。");
       setDocumentIntakeReceipt(receipt);
       setDocumentIntakeRevision(revision);
       setSourceReviewConfirmed(false);
       setPendingDocumentConfirmation(null);
     } catch (cause) {
-      if (cause instanceof StaleRequest) return;
+      if (cause instanceof StaleRequest || ticket !== epoch.current) return;
+      const status =
+        cause && typeof cause === "object" && "status" in cause ? Number(cause.status) : 503;
+      if (status >= 400 && status < 500 && status !== 409 && status !== 429)
+        setPendingDocumentConfirmation(null);
       setError(errorMessage(cause));
     } finally {
-      setBusy(false);
+      if (ticket === epoch.current) {
+        setBusy(false);
+        mutationLock.current = false;
+      }
     }
   }
 
   function startPurchaseOrderIntake(file = selected) {
-    if (!view?.canEdit || !file || pending || busy) return;
+    if (
+      !view?.canEdit ||
+      !file ||
+      pending ||
+      busy ||
+      pendingDocumentIntake ||
+      pendingDocumentConfirmation ||
+      mutationLock.current
+    )
+      return;
+    setDocumentIntakeReceipt(null);
+    setDocumentIntakeRevision(null);
+    setPendingDocumentConfirmation(null);
+    setSourceReviewConfirmed(false);
+    setAcknowledgementReason("");
     void intakePurchaseOrder({
       action: "save",
       repositoryId: view.repository.id,
@@ -857,86 +733,6 @@ export default function FilesPanel({
         fileSha256: file.sha256,
       },
     });
-  }
-
-  async function retryRun(historical: Processing) {
-    if (!view?.canEdit || !selected || pending || busy) return;
-    if (historical.fileId !== selected.fileId) {
-      setError("歷史 Run 與目前選定的 File 不相符。");
-      return;
-    }
-    const ticket = epoch.current;
-    setBusy(true);
-    setError("");
-    let next: Pending | null = null;
-    try {
-      const page = parseFilePage(
-        await request({
-          view: "file",
-          fileId: historical.fileId,
-          revisionId: historical.fileRevisionId,
-        }),
-      );
-      if (ticket !== epoch.current) return;
-      const method = page.processors.find(
-        (processor) =>
-          processor.id === historical.processorId &&
-          processor.kind === historical.processorKind &&
-          processor.version === historical.processorVersion,
-      );
-      if (!method || page.file.revisionId !== historical.fileRevisionId) {
-        setError(
-          "原始 Revision 的 Processor 或版本已不可用；可明確建立新 Run，但不能改寫歷史 Run。",
-        );
-        return;
-      }
-      next = {
-        kind: "run",
-        processor: method.id,
-        command: {
-          repositoryId: view.repository.id,
-          runId: historical.runId,
-          fileId: historical.fileId,
-          fileRevisionId: historical.fileRevisionId,
-          requestId: crypto.randomUUID(),
-          expectedVersion: historical.version,
-        },
-      };
-    } catch (cause) {
-      if (!(cause instanceof StaleRequest) && ticket === epoch.current)
-        setError(errorMessage(cause));
-    } finally {
-      if (ticket === epoch.current) setBusy(false);
-    }
-    if (next && ticket === epoch.current) {
-      setPending(next);
-      void send(next);
-    }
-  }
-
-  function finish(action: "save" | "discard") {
-    if (!view?.canEdit || !processing || processing.state !== "READY" || pending) return;
-    const changes: Edit[] =
-      action === "save"
-        ? Object.entries(edits).map(([observationId, edit]) =>
-            edit.action === "exclude"
-              ? { observationId, action: "exclude" }
-              : { observationId, action: "replace", value: edit.value },
-          )
-        : [];
-    const next: Pending = {
-      kind: "result",
-      command: {
-        repositoryId: view.repository.id,
-        runId: processing.runId,
-        requestId: crypto.randomUUID(),
-        expectedVersion: processing.version,
-        action,
-        ...(action === "save" ? { edits: changes } : {}),
-      },
-    };
-    setPending(next);
-    void send(next);
   }
 
   async function download() {
@@ -966,15 +762,14 @@ export default function FilesPanel({
     }
   }
 
-  const raw = processing?.rawResult ?? null;
-  const saved = processing?.savedResult ?? null;
-  const editable = view?.canEdit && processing?.state === "READY" && !!raw && !pending && !busy;
+  const blocked = busy || !!pending || !!pendingDocumentIntake || !!pendingDocumentConfirmation;
+
   return (
-    <div className="grid gap-4 p-4 md:grid-cols-[minmax(16rem,1fr)_2fr]">
+    <div className="grid min-w-0 gap-4 p-4 md:grid-cols-[minmax(16rem,1fr)_minmax(0,2fr)]">
       <MiniAppRuntime liffId={liffId} onReady={load} onWait={clear} />
       <Card>
         <CardHeader>
-          <CardTitle>Repository Files</CardTitle>
+          <CardTitle>原始檔案</CardTitle>
           <CardDescription>只列出目前 Repository 中已提交的原始檔案。</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3">
@@ -983,15 +778,15 @@ export default function FilesPanel({
             ref={fileInput}
             id="repository-file"
             type="file"
-            disabled={!view?.canEdit || busy || !!pending}
+            disabled={!view?.canEdit || blocked}
             onChange={(event) => setSourceFile(event.target.files?.[0] ?? null)}
           />
           <p className="text-xs text-muted-foreground">
             Web 單檔上限 {view ? (view.uploadMaxBytes / 1_000_000).toFixed(0) : "3"} MB。
-            上傳只保存來源，不執行 Parser、OCR、AI 或 Save。
+            上傳後請選擇「建立採購單草稿」，才會開始解析。
           </p>
-          <Button disabled={!view?.canEdit || !sourceFile || busy || !!pending} onClick={upload}>
-            Upload
+          <Button disabled={!view?.canEdit || !sourceFile || blocked} onClick={upload}>
+            上傳檔案
           </Button>
           {pendingUploads.length > 0 && (
             <div className="grid gap-2 rounded-lg border p-3" aria-label="Pending Uploads">
@@ -1008,7 +803,7 @@ export default function FilesPanel({
                   <Button
                     size="sm"
                     variant="outline"
-                    disabled={!view?.canEdit || !sourceFile || busy || !!pending}
+                    disabled={!view?.canEdit || !sourceFile || blocked}
                     onClick={() => resumeUpload(intent)}
                   >
                     使用原 RequestId 恢復上傳
@@ -1030,11 +825,15 @@ export default function FilesPanel({
           {view?.files.length ? (
             <div className="grid gap-2" aria-label="File List">
               {view.files.map((file) => (
-                <div key={file.fileId} className="flex items-center gap-2 rounded-md border p-2">
+                <div
+                  key={file.fileId}
+                  className="flex flex-wrap items-center gap-2 rounded-md border p-2"
+                >
                   <Button
                     variant="ghost"
-                    className="h-auto flex-1 justify-start whitespace-normal text-left"
-                    disabled={busy || !!pending}
+                    className="h-auto min-w-0 flex-1 justify-start whitespace-normal break-all text-left"
+                    disabled={blocked}
+                    aria-pressed={selected?.fileId === file.fileId}
                     onClick={() => void openFile(file)}
                   >
                     {file.name} · v{file.version} · {Math.ceil(file.byteLength / 1024)} KB
@@ -1044,10 +843,12 @@ export default function FilesPanel({
                   ) && (
                     <Button
                       size="sm"
-                      disabled={!view.canEdit || busy || !!pending}
+                      disabled={!view.canEdit || blocked}
                       onClick={() => startPurchaseOrderIntake(file)}
                     >
-                      建立採購單草稿
+                      {busy && pendingDocumentIntake?.source.fileId === file.fileId
+                        ? "解析並保存中…"
+                        : "建立採購單草稿"}
                     </Button>
                   )}
                 </div>
@@ -1099,13 +900,27 @@ export default function FilesPanel({
 
       <Card>
         <CardHeader>
-          {selected && <CardTitle>{selected.name}</CardTitle>}
+          {selected && <CardTitle className="break-all">{selected.name}</CardTitle>}
           <CardDescription>
-            原始檔保存；解析由 Intelligence 負責，確認後再交給 Contract。
+            原始檔保存；由「建立採購單草稿」解析並保存至 Contract，核對原始檔後再確認。
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3">
-          {busy && <p role="status">File 操作中…</p>}
+          {!selected && !busy && (
+            <p className="text-sm text-muted-foreground">
+              請選擇原始檔案查看內容，或使用「建立採購單草稿」開始解析。支援 PDF、JPEG、PNG 與
+              WebP。
+            </p>
+          )}
+          {busy && (
+            <p role="status">
+              {pendingDocumentIntake
+                ? "正在解析並保存採購單，請稍候…"
+                : pendingDocumentConfirmation
+                  ? "正在確認採購單…"
+                  : "正在處理檔案…"}
+            </p>
+          )}
           {error && (
             <p role="alert" className="text-sm text-destructive">
               {error}
@@ -1144,247 +959,107 @@ export default function FilesPanel({
                 disabled={busy || !!pending || selected.byteLength > (view?.uploadMaxBytes ?? 0)}
                 onClick={() => void download()}
               >
-                Download 原始檔
+                下載原始檔
               </Button>
               {selected.byteLength > (view?.uploadMaxBytes ?? 0) && (
                 <p className="text-xs text-muted-foreground">
                   大型原始檔案須經受保護的 File CLI 下載；Web 傳輸上限 3 MB。
                 </p>
               )}
+              {!["application/pdf", "image/png", "image/jpeg", "image/webp"].includes(
+                selected.mediaType,
+              ) && (
+                <p className="text-sm text-muted-foreground">
+                  此格式可保存與下載；採購單解析目前支援 PDF、JPEG、PNG 與 WebP。
+                </p>
+              )}
               {view?.canEdit && (
                 <>
-                  {processors.length === 0 && (
-                    <p className="text-sm text-muted-foreground">
-                      此格式目前只有原始檔保存功能，尚無可用的 Processor。
-                    </p>
-                  )}
-                  {processors.length > 0 && (
-                    <Button disabled={busy || !!pending} onClick={() => run()}>
-                      開始一般檔案預覽
-                    </Button>
-                  )}
                   {pendingDocumentIntake && (
                     <Button
                       variant="outline"
                       disabled={busy || !!pending}
                       onClick={() => void intakePurchaseOrder(pendingDocumentIntake)}
                     >
-                      重試建立採購單草稿
+                      以原請求重試／查詢結果
                     </Button>
                   )}
                   {documentIntakeReceipt && (
-                    <p className="text-xs text-muted-foreground">
-                      採購單草稿已保存：Revision v{documentIntakeReceipt.version}。
+                    <p role="status" className="break-all text-xs text-muted-foreground">
+                      採購單已保存：{documentIntakeReceipt.documentId} · Revision v
+                      {documentIntakeReceipt.version}。
                     </p>
                   )}
                   {documentIntakeRevision && (
-                    <div className="grid gap-3 rounded-md border p-3">
+                    <div
+                      ref={review}
+                      tabIndex={-1}
+                      role="region"
+                      aria-label="採購單審核"
+                      className="grid min-w-0 gap-3 rounded-md border p-3"
+                    >
                       <div>
-                        <p className="font-medium">ContractDocument Review</p>
+                        <p className="font-medium">採購單審核</p>
                         <p className="text-xs text-muted-foreground">
                           {documentIntakeRevision.state === "CONFIRMED"
-                            ? "此版本已由 Contract 明確確認。"
+                            ? "採購單已確認並保存。"
                             : `候選 v${documentIntakeRevision.version} · 系統辨識 ${candidateLines(documentIntakeRevision.candidate).length} 筆明細`}
                         </p>
                       </div>
                       {documentIntakeRevision.diagnostics.length > 0 && (
                         <p className="text-sm text-destructive">
-                          診斷：{documentIntakeRevision.diagnostics.join("、")}
+                          {documentIntakeRevision.diagnostics
+                            .map((code) => diagnosticLabels[code] ?? `需核對：${code}`)
+                            .join("；")}
                         </p>
                       )}
-                      <div className="grid gap-2">
-                        {candidateLines(documentIntakeRevision.candidate).map((line) => (
-                          <div key={line.sourceRowId} className="rounded border p-2 text-sm">
-                            <p>
-                              {line.sourceRowId} · {line.description ?? "未提供品項描述"}
-                            </p>
-                            <p className="text-muted-foreground">
-                              {line.quantity ?? "—"} {line.unit ?? ""} · 毛額{" "}
-                              {line.grossAmount ?? "—"} · 來源頁{" "}
-                              {line.sourcePages.join(", ") || "—"}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
+                      <PurchaseOrderReview candidate={documentIntakeRevision.candidate} />
                       {documentIntakeRevision.state === "DRAFT" && (
                         <>
                           <label className="flex items-start gap-2 text-sm">
                             <input
                               type="checkbox"
                               checked={sourceReviewConfirmed}
-                              disabled={busy || !!pending}
+                              disabled={busy || !!pending || !!pendingDocumentConfirmation}
                               onChange={(event) => setSourceReviewConfirmed(event.target.checked)}
                             />
                             <span>
-                              我已逐行對照原始檔、來源頁與金額，確認以上候選資料可送出 Contract
-                              確認。
+                              我已核對原始檔、全部明細、來源頁與金額，確認以上採購單資料正確。
                             </span>
                           </label>
                           {documentIntakeRevision.diagnostics.some((item) =>
                             item.includes("MISMATCH"),
                           ) && (
-                            <Input
-                              placeholder="金額差異確認理由"
-                              value={acknowledgementReason}
-                              disabled={busy || !!pending}
-                              onChange={(event) => setAcknowledgementReason(event.target.value)}
-                            />
+                            <div className="grid gap-2">
+                              <Label htmlFor="purchase-order-acknowledgement">
+                                金額差異確認理由
+                              </Label>
+                              <Input
+                                id="purchase-order-acknowledgement"
+                                placeholder="請說明接受此金額差異的原因"
+                                value={acknowledgementReason}
+                                disabled={busy || !!pending || !!pendingDocumentConfirmation}
+                                onChange={(event) => setAcknowledgementReason(event.target.value)}
+                              />
+                            </div>
                           )}
                           <Button
-                            disabled={busy || !!pending || !sourceReviewConfirmed}
+                            disabled={
+                              busy ||
+                              !!pending ||
+                              (!pendingDocumentConfirmation && !sourceReviewConfirmed)
+                            }
                             onClick={() => void confirmPurchaseOrder()}
                           >
-                            確認 ContractDocument
+                            {pendingDocumentConfirmation ? "以原請求重試確認" : "確認採購單"}
                           </Button>
-                          {pendingDocumentConfirmation && (
-                            <Button
-                              variant="outline"
-                              disabled={busy || !!pending}
-                              onClick={() => void confirmPurchaseOrder()}
-                            >
-                              重試原確認命令
-                            </Button>
-                          )}
                         </>
                       )}
                     </div>
                   )}
                 </>
               )}
-              <div className="grid gap-2">
-                <Label>Processing History</Label>
-                {runs.map((item) => (
-                  <Button
-                    key={item.runId}
-                    variant="outline"
-                    className="h-auto justify-start whitespace-normal text-left"
-                    disabled={busy || !!pending}
-                    onClick={() => void openRun(item.runId)}
-                  >
-                    {item.processorId} · {item.state} · v{item.version}
-                  </Button>
-                ))}
-                {runs.length === 0 && (
-                  <p className="text-sm text-muted-foreground">尚無處理紀錄。</p>
-                )}
-                {runsNext && (
-                  <Button
-                    variant="outline"
-                    disabled={busy || !!pending}
-                    onClick={() => void listRuns(selected.fileId, runsNext)}
-                  >
-                    載入更多 Runs
-                  </Button>
-                )}
-              </div>
             </>
-          )}
-
-          {processing && (
-            <div className="grid gap-3">
-              <p className="text-sm">
-                Run：{processing.processorId} · {processing.state}
-              </p>
-              {(processing.state === "RUNNING" || processing.state === "FAILED") && (
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="outline"
-                    disabled={busy || !!pending}
-                    onClick={() => void openRun(processing.runId)}
-                  >
-                    重新查詢狀態
-                  </Button>
-                  {view?.canEdit && (
-                    <Button
-                      disabled={busy || !!pending || !view?.canEdit}
-                      onClick={() => void retryRun(processing)}
-                    >
-                      明確重試相同 Processor
-                    </Button>
-                  )}
-                </div>
-              )}
-              {(processing.state === "READY" || processing.state === "SAVED") && (
-                <div className="grid gap-2">
-                  <p className="text-sm text-muted-foreground">
-                    RawResult 為處理器輸出的未驗證資料；Edit 只會在 Save 時提交。
-                  </p>
-                  <p className="font-medium">
-                    {saved ? "SavedResult" : "Preview"} · {raw?.documentKind ?? saved?.documentKind}
-                  </p>
-                  {(saved ?? raw)?.observations.map((observation) => {
-                    const edit = edits[observation.id];
-                    const excluded = edit?.action === "exclude";
-                    const value =
-                      edit?.action === "replace" ? edit.value : (observation.value ?? "");
-                    return (
-                      <div key={observation.id} className="grid gap-2 rounded-lg border p-3">
-                        <Label htmlFor={"observation-" + observation.id}>
-                          {observation.label}
-                          {observation.uncertain ? " · 未確認" : ""}
-                        </Label>
-                        <Textarea
-                          id={"observation-" + observation.id}
-                          value={value}
-                          disabled={!editable || excluded}
-                          onChange={(event) =>
-                            setEdits((current) => ({
-                              ...current,
-                              [observation.id]: { action: "replace", value: event.target.value },
-                            }))
-                          }
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          來源：{observation.source ? JSON.stringify(observation.source) : "未定位"}
-                        </p>
-                        {editable && (
-                          <label className="flex items-center gap-2 text-sm">
-                            <input
-                              type="checkbox"
-                              checked={excluded}
-                              onChange={(event) =>
-                                setEdits((current) => {
-                                  const next = { ...current };
-                                  if (event.target.checked)
-                                    next[observation.id] = { action: "exclude" };
-                                  else delete next[observation.id];
-                                  return next;
-                                })
-                              }
-                            />
-                            不納入 SavedResult
-                          </label>
-                        )}
-                      </div>
-                    );
-                  })}
-                  {editable && (
-                    <div className="flex gap-2">
-                      <Button disabled={busy} onClick={() => finish("save")}>
-                        Save
-                      </Button>
-                      <Button variant="outline" disabled={busy} onClick={() => finish("discard")}>
-                        Discard
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              )}
-              {processing.state === "SAVED" && (
-                <div className="grid gap-1 rounded-lg border p-3 text-sm" role="status">
-                  <p className="font-medium">File 解析結果已保存</p>
-                  <p className="text-muted-foreground">
-                    此結果是 Intelligence-owned 候選資料，不會自動建立 Contract 或 Content。請在
-                    Contract 確認完整結構化文件，再由 Content 擴展該確認版本，最後供 WBS 投影使用。
-                  </p>
-                </div>
-              )}
-              {processing.state === "DISCARDED" && (
-                <p className="text-sm text-muted-foreground">
-                  此 Run 已 Discard，沒有 SavedResult；原始 RawResult 仍保留於歷史。
-                </p>
-              )}
-            </div>
           )}
         </CardContent>
       </Card>

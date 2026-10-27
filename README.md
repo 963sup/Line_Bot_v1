@@ -14,6 +14,8 @@ pnpm dev
 
 常用驗證：
 
+所有 repository 驗證統一經過 `scripts/check.mjs`。`pnpm check` 依序執行契約、Codex 設定、hooks 自測、Biome、Dependency Cruiser、Knip、型別、測試、建置、schema 與 patch 檢查，任一階段失敗即停止。可用 `pnpm check lint typecheck` 選取階段；`pnpm check lint -- package.json` 將參數傳給單一工具。既有根目錄驗證 scripts 也轉入此入口，package 內部 scripts 維持由 Turbo 呼叫。格式修正須明確執行 `pnpm format`，不列入預設檢查。CI 依環境選取階段。
+
 | Command | Meaning |
 | --- | --- |
 | `pnpm check:repository` | architecture 分片、workspace manifest／exports 與文件邊界檢查 |
@@ -21,9 +23,10 @@ pnpm dev
 | `pnpm typecheck` | workspace TypeScript validation |
 | `pnpm test` | workspace tests |
 | `pnpm build` | workspace production builds |
-| `pnpm exec knip` | official Knip reachability check |
+| `pnpm check dependencies` | Dependency Cruiser dependency boundaries |
+| `pnpm check knip` | official Knip reachability check |
 
-依變更範圍執行上列 package scripts；typecheck 與測試的併發設定由 workspace scripts 擁有，避免 PGlite／WASM 測試互相競爭。
+依變更範圍選取階段；入口限制 typecheck 與測試最多同時執行兩個 Turbo tasks，避免 PGlite／WASM 測試互相競爭。
 
 ### Repository contracts
 
@@ -100,6 +103,16 @@ Source-of-truth 分工見 [sources of truth](docs/facts/sources-of-truth.md)；A
 
 本機 validation 不代表 Supabase remote convergence、Vercel deployment、LINE publication 或真機 acceptance。
 
+## Codex lifecycle hooks
+
+[`.codex/hooks.json`](.codex/hooks.json) 註冊三個薄事件處理器：SessionStart 回傳分支、revision、tracked changes 數量與安裝標記；PostToolUse 記錄 apply_patch 的新增／修改／刪除／搬移路徑；Stop 經 `scripts/check.mjs` 執行該範圍的 diff 與 Biome 檢查。同 turn、同內容使用既有結果，失敗最多要求續跑一次，不安裝工具、不格式化、不操作遠端。
+
+事件紀錄、內容指紋、結果與完整日誌位於 ignored `.artifacts/hooks/`，不保存原始 patch 或對話內容。只覆蓋 apply_patch；shell 或其他編輯方式、型別、業務測試、build、schema 與 provider 驗收需另外確認。執行 `pnpm check hooks` 可測試事件協定與去重行為。
+
+依 [官方 hooks 文件](https://learn.chatgpt.com/docs/hooks)，專案 hooks 需由支援該功能的 host 載入及信任；CLI 可用 `/hooks` 檢視與信任設定。設定變更後需重新檢視信任。Cloud orchestration 有模式限制；模擬事件測試成功不代表當前 Cloud／桌面 session 已觸發 hooks。請以新 session 的實際事件確認，無法載入時仍手動執行適用的 `pnpm check`。
+
+專用子代理由 [`.codex/config.toml`](.codex/config.toml) 註冊：[`test-engineer`](.codex/agents/test-engineer.toml) 分析測試缺口，僅在指定路徑修改測試；[`integration-validator`](.codex/agents/integration-validator.toml) 以唯讀方式核對整合契約與驗證證據。依任務呼叫，不在每次修改時自動執行；設定需由支援自訂 agent 的 Codex session 載入。
+
 ## Codex Cloud bootstrap
 
 環境準備由 [.codex/bootstrap/](.codex/bootstrap/) 擁有，MCP 連接設定在 [config.toml](.codex/config.toml)。
@@ -108,23 +121,45 @@ Source-of-truth 分工見 [sources of truth](docs/facts/sources-of-truth.md)；A
 | --- | --- |
 | 新環境／快取重建 | `bash .codex/bootstrap/install.sh` |
 | 恢復快取／更新 checkout 後 | `bash .codex/bootstrap/update.sh` |
-| 日常快速檢查 | `bash .codex/bootstrap/verify.sh` |
-| 明確需要本地 smoke 檢查 | `bash .codex/bootstrap/tests/smoke.sh` |
+| 日常快速檢查 | `pnpm check bootstrap` |
+| 明確需要本地 smoke 檢查 | `pnpm check bootstrap:smoke` |
 
 `install.sh` 會安裝選定的 runtime／CLI、執行一次 frozen workspace install、準備 MCP 的本地依賴，最後呼叫 `verify.sh`。`update.sh` 以設定與 lockfile 指紋判斷是否需要重新收斂，不追蹤 latest，也不修改版本檔或 lockfile。
+
+在 Codex Cloud 環境設定中，Setup script 使用 `bash .codex/bootstrap/install.sh`，Maintenance script 使用 `bash .codex/bootstrap/update.sh`。Repository 內有腳本不代表 Cloud 已設定或成功執行；以實際退出碼及 `.tools/codex/installed.sha256` 完成標記確認安裝結果。Bootstrap 與 smoke 是明確選取的環境檢查，不加入預設 `pnpm check`。
+
+安裝腳本的 PATH 不會傳回父層 shell。後續命令若要使用 bootstrap 安裝的固定版本，先執行 `source .codex/bootstrap/lib/common.sh`，再執行 `pnpm check bootstrap` 或需要的工具。完整安裝日誌位於 `.artifacts/codex-cloud/`；安裝失敗先讀取失敗 stage 與對應日誌，不使用降低 TLS 驗證或繞過 proxy 的方式重試。
+
+ShellCheck 是選用的 Bash 靜態分析工具，不阻擋預設初始化。需要時在 `BOOTSTRAP_TOOLS` 清單加入 `shellcheck`；installer 下載固定版本的官方 binary、驗證 SHA-256，再安裝至 `.tools/codex/bin/shellcheck`，不需要 root 或 sudo。明確選取卻無法安裝時仍會報錯。失敗前已完成的工具會保留，重新執行仍按固定版本檢查；沒有完成標記代表整體安裝尚未完成。
+
+Bootstrap 將 `SUPABASE_HOME` 指向 workspace 的 `.cache/supabase`，避免 Supabase CLI 在唯讀的使用者目錄建立快取；版本仍依 lockfile 固定。
 
 工具選擇在 [`config/tools.env`](.codex/bootstrap/config/tools.env)，MCP 準備範圍在 [`config/mcp.env`](.codex/bootstrap/config/mcp.env)，額外 exact pins 在 [`config/versions.env`](.codex/bootstrap/config/versions.env)。可用 `BOOTSTRAP_TOOLS` 或 `BOOTSTRAP_MCP_SERVERS` 暫時覆寫清單。Node、pnpm 與 workspace CLI 繼續以 `.node-version`、`package.json`、catalog 與 lockfile 為準。
 
 Docker／Postgres 依任務加入工具清單；Docker 需要 Cloud host 提供 daemon／socket，Postgres 模組只安裝 client。完整責任與 Cloud 接線見 [Cloud bootstrap](docs/reference/engineering/local-environment.md#codex-cloud-bootstrap)。本地工具可執行不代表 MCP 已被當前 session 載入或 OAuth 已完成。
 
-預設也準備 `rg`、`jq`、ShellCheck，方便定位程式、投影 JSON 與檢查 Bash。需要 native dependency 編譯時選用 `build`；需要 UI 驗收時選用 `browser`，提供固定版 Playwright 與 Chromium。啟用方式與平台權限見 [開發工具](docs/reference/engineering/local-environment.md#cloud-development-tools)。
+預設也準備 `rg`、`jq`，方便定位程式與投影 JSON。Bash 靜態分析選用 `shellcheck`；需要 native dependency 編譯時選用 `build`；需要 UI 驗收時選用 `browser`，提供固定版 Playwright 與 Chromium。啟用方式與平台權限見 [開發工具](docs/reference/engineering/local-environment.md#cloud-development-tools)。
+
+GitHub Actions、Bash 格式與 TOML 檢查可選用 `actionlint`、`shfmt`、`taplo`。每個模組的 install／verify 位於 `.codex/bootstrap/modules/<tool>/`，版本在 `config/versions.env`，執行檔安裝至 `.tools/codex/bin/`，下載檔保留於 `.tools/codex/downloads/`。啟用方式：
+
+```sh
+source .codex/bootstrap/config/tools.env
+export BOOTSTRAP_TOOLS="$BOOTSTRAP_TOOLS actionlint shfmt taplo"
+bash .codex/bootstrap/update.sh
+pnpm check actionlint shfmt taplo
+```
+
+這三個階段需明確選取，不加入預設 `pnpm check`。actionlint 檢查 workflows，shfmt 檢查 bootstrap Bash 格式，taplo 檢查 Codex 與 Supabase TOML 語法；它們不在檢查時安裝工具，也不自動改檔。ast-grep、TypeScript 與 Biome 繼續由 workspace lockfile 安裝，不新增全域副本。
 
 ### MCP 安裝與連接
 
 MCP 的唯一 host 設定是 [`.codex/config.toml`](.codex/config.toml)。Bootstrap 只準備本地 executable 與驗證設定；安裝完成後要重新連接或開啟新的 Codex session，再用 `/mcp` 檢查連線並實際呼叫一個唯讀工具。`verify.sh` 顯示 `pending` 代表仍需 host handshake、OAuth 或真實呼叫，不能視為 MCP 已完成。
 
+根層設定將工具輸出預算設為 3,000 tokens、project instructions 上限設為 32,768 bytes，並啟用 live web search；這些不是 MCP server 欄位。Hooks 明確啟用，agents 維持每 session 最多 4 個並行子代理、深度 2。CLI 0.163.0 的 multi_agent、shell_snapshot、unified_exec 與 goals 已預設啟用，未重複覆寫；升版時依適用 schema 與實際預設重驗。輸出預算不取代 artifact／欄位投影；指令上限也不保證所有 nested AGENTS 都能完整載入。`pnpm check codex:config` 驗證設定層級、agent 檔案引用與 hooks 接線，CI 使用同一入口。
+
 | MCP | 類型 | 準備／憑證 | 完成方式 |
 | --- | --- | --- | --- |
+| OpenAI Developer Docs | Hosted HTTP | `https://developers.openai.com/mcp`，不需本地安裝或憑證；Cloud 網路需允許 `developers.openai.com` | 在新 session 連線後執行文件唯讀查詢 |
 | Serena 2.1.0 | 本機 stdio | Bootstrap 以 `uv tool install` 和 Python 3.13 建立隔離環境；專案設定在 [`.serena/project.yml`](.serena/project.yml) | 重開 session，以 `/mcp` 確認後讀取 Serena initial instructions／啟用目前專案 |
 | Next DevTools | 本機 stdio | `pnpm install --frozen-lockfile` 提供 workspace 固定的 `next-devtools-mcp` | 啟動需要診斷的 Next.js app，再從 MCP 查詢該 runtime |
 | shadcn | 本機 stdio | workspace lockfile 提供 `apps/web` 的 shadcn CLI | 重開 session，呼叫 registry 的唯讀工具 |

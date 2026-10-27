@@ -67,6 +67,10 @@ Cloud 安裝腳本從該設定綁定的 repo root 執行 `bash .codex/bootstrap/
 
 技能沿用既有 [.agents/skills/](../../../.agents/skills/) 與受管理的 lockfile；這次 bootstrap 不複製或搬動第三方技能。
 
+### OpenAI Developer Docs MCP
+
+OpenAI Developer Docs 另以官方 hosted MCP 提供文件查詢，不需本地安裝或 credential；連接位置只由 `.codex/config.toml` 擁有，Cloud 網路需允許 `developers.openai.com`，實際工具註冊與唯讀查詢仍由 host 驗證。
+
 ### Serena v2 MCP
 
 Serena 依官方安裝模型由 `uv tool install` 建立隔離工具環境；目前固定 `serena-agent==2.1.0`，並使用 Serena 官方建議的 Python 3.13。這不改變專案一般 Python runtime 的 3.12.14。`uvx` 適合臨時執行，但 MCP 每次啟動不應重新解析或下載套件，因此 Codex launcher 使用已安裝的 `$UV_TOOL_BIN_DIR/serena`。
@@ -99,11 +103,14 @@ TypeScript LSP 直接重用 workspace 固定的 `typescript-language-server` 5.1
 | --- | --- | --- |
 | `ripgrep` | `rg`，有範圍的文字／檔案定位 | 啟用 |
 | `jq` | JSON 欄位投影、CLI 結果篩選 | 啟用 |
-| `shellcheck` | Bash 靜態分析；不在任務啟動時自動掃描全庫 | 啟用 |
+| `shellcheck` | Bash 靜態分析；修改 Bash 且需要靜態檢查時選用 | 選用 |
+| `actionlint` | 固定版本 GitHub Actions 檢查器；`pnpm check actionlint` | 選用 |
+| `shfmt` | 固定版本 Bash 格式檢查器；`pnpm check shfmt` | 選用 |
+| `taplo` | 固定版本 TOML 語法檢查器；`pnpm check taplo` | 選用 |
 | `build` | make、GCC／G++、pkg-config；Python 沿用 runtime 模組 | 選用 |
 | `browser` | 固定版本 Playwright、Chromium 與所需系統函式庫 | 選用 |
 
-前三者與 native build 工具使用具簽章驗證的 distro 套件來源，沿用 image 的套件版本，不複製進 workspace dependency。缺少套件時需要 root 或非互動 sudo，以及 apt repository 存取；已有工具時跳過安裝。同一次 bootstrap 只更新一次 apt index。
+ripgrep、jq 與 native build 工具使用具簽章驗證的 distro 套件來源，沿用 image 的套件版本，不複製進 workspace dependency。缺少套件時需要 root 或非互動 sudo，以及 apt repository 存取；已有工具時跳過安裝。同一次 bootstrap 只更新一次 apt index。ShellCheck、actionlint、shfmt、taplo 使用固定版本的 GitHub release，驗證 checksum 後安裝至 `.tools/codex/bin/`，不需 sudo；各自模組擁有 install／verify，版本由 `config/versions.env` 擁有。ShellCheck／shfmt 的 upstream digest 與 Taplo 的下載 archive hash 固定在各自 installer，升版時同步更新；Taplo release 未提供獨立 upstream checksum。
 
 在目前工具選擇上加入 Web／native 開發能力：
 

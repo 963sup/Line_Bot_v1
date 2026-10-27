@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
-[[ $# -eq 0 ]] || { echo 'Usage: bash .codex/bootstrap/update.sh' >&2; exit 2; }
+[[ $# -eq 0 ]] || {
+  echo 'Usage: bash .codex/bootstrap/update.sh' >&2
+  exit 2
+}
 source "$(dirname -- "${BASH_SOURCE[0]}")/lib/common.sh"
 require_command sha256sum
 # Reconcile pinned inputs/missing prerequisites; never upgrade latest or edit pins.

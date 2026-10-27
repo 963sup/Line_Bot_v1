@@ -58,5 +58,5 @@ test("Project WBS metrics HTTP uses verified identity and preserves missing/sour
   failure = "missing";
   assert.equal((await request("project-1")).status, 404);
   failure = "source";
-  assert.equal((await request("project-1")).status, 503);
+  assert.equal((await request("project-1")).status, 500);
 });

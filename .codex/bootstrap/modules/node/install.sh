@@ -3,7 +3,10 @@ source "$(dirname -- "${BASH_SOURCE[0]}")/../../lib/install.sh"
 install_node() {
   local expected arch archive
   expected="$(node_pin)"
-  [[ "$expected" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo 'Invalid .node-version' >&2; return 1; }
+  [[ "$expected" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+    echo 'Invalid .node-version' >&2
+    return 1
+  }
   if [[ "$(command_version node --version || true)" != "$expected" ]]; then
     arch="$(linux_arch x64 arm64)"
     archive="node-v$expected-linux-$arch.tar.gz"

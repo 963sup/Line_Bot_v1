@@ -156,8 +156,8 @@ export function createDocumentIntake<Receipt extends IntakeReceipt>(dependencies
             revisionId: receipt.revisionId,
           },
         );
-      } catch {
-        throw new IntakeError("UNKNOWN_RESULT", 503);
+      } catch (error) {
+        throw new IntakeError("UNKNOWN_RESULT", 503, { cause: error });
       }
       return receipt;
     } catch (error) {

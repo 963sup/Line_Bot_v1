@@ -162,19 +162,15 @@ async function loadRevision(sql: Sql, projectId: string, id: string): Promise<Wb
     action !== "delete-subtree"
   )
     throw new WbsError(503, "Revision 操作無法讀取。");
-  try {
-    return {
-      id: stringValue(row.id),
-      version: numberValue(row.version),
-      parentRevisionId: nullable(row.parent_revision_id),
-      actorUserId: stringValue(row.actor_user_id),
-      action,
-      at: Number(numericValue(row.at)),
-      document: parseWbsDocument(row.document),
-    };
-  } catch {
-    throw new WbsError(503, "WBS 已保存內容無法讀取。");
-  }
+  return {
+    id: stringValue(row.id),
+    version: numberValue(row.version),
+    parentRevisionId: nullable(row.parent_revision_id),
+    actorUserId: stringValue(row.actor_user_id),
+    action,
+    at: Number(numericValue(row.at)),
+    document: parseWbsDocument(row.document),
+  };
 }
 const baselineSelect =
   "SELECT b.*,p.minimum_approvals,p.allow_self_approval FROM project_wbs_baselines b JOIN project_wbs_policies p ON p.project_id=b.project_id AND p.version=b.policy_version";

@@ -27,5 +27,5 @@ export function fileErrorFromUnknown(error: unknown): FileError {
     if (status === 403) return new FileError(403, "File access denied.", "FORBIDDEN");
     if (status === 404) return new FileError(404, "File evidence not found.", "NOT_FOUND");
   }
-  return new FileError(503, "File operation unavailable.", "UNAVAILABLE");
+  throw error;
 }

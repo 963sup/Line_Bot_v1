@@ -19,12 +19,12 @@ let runtime: DocumentIntakeWebRuntime | undefined;
 
 export function documentIntake(): DocumentIntakeWebRuntime {
   if (runtime) return runtime;
+  const target = createPostgresContractDocuments();
   const gateway = gatewayConfiguration();
   if (!gateway) {
-    runtime = { scope: repositoryOwnerScope, intake: null, documents: null };
+    runtime = { scope: repositoryOwnerScope, intake: null, documents: target };
     return runtime;
   }
-  const target = createPostgresContractDocuments();
   const agent = createPurchaseOrderAgent({
     gateway: createVercelAiGateway(gateway).transport,
     model: gateway.model,

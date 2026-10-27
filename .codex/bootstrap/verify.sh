@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
-[[ $# -eq 0 ]] || { echo 'Usage: bash .codex/bootstrap/verify.sh' >&2; exit 2; }
+[[ $# -eq 0 ]] || {
+  echo 'Usage: bash .codex/bootstrap/verify.sh' >&2
+  exit 2
+}
 source "$(dirname -- "${BASH_SOURCE[0]}")/lib/verify.sh"
 validate_mcp_selection
 tools="$(selected_tools)"
