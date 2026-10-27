@@ -1,0 +1,203 @@
+{
+  "schemaVersion": 1,
+  "files": [
+    {
+      "path": "packages/integration-supabase/src/schemas/101_account_logins.sql",
+      "role": "derived-projection"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
+      "role": "derived-projection"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/910_cross_owner_constraints.sql",
+      "role": "invariant-enforcement"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/920_transaction_coordinators.sql",
+      "role": "transaction-coordinator"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/930_access_enforcement.sql",
+      "role": "access-enforcement"
+    }
+  ],
+  "relations": [
+    {
+      "name": "account_logins",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/101_account_logins.sql",
+      "authority": false,
+      "role": "constrained-projection",
+      "participants": ["account", "namespace"]
+    },
+    {
+      "name": "organization_membership_sources",
+      "kind": "view",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": ["enterprise", "organization"]
+    },
+    {
+      "name": "enterprise_user_affiliations",
+      "kind": "view",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": ["enterprise", "organization"]
+    },
+    {
+      "name": "team_effective_memberships",
+      "kind": "view",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": ["team"]
+    },
+    {
+      "name": "repository_team_effective_access_sources",
+      "kind": "view",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": ["account", "organization", "team", "repository"]
+    },
+    {
+      "name": "repository_effective_access",
+      "kind": "view",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": ["account", "issue", "organization", "team", "repository"]
+    },
+    {
+      "name": "repository_internal_scopes",
+      "kind": "view",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": ["enterprise", "organization", "repository"]
+    },
+    {
+      "name": "repository_visibility_access",
+      "kind": "view",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": ["account", "enterprise", "organization", "team", "issue", "repository"]
+    },
+    {
+      "name": "project_repository_visible_references",
+      "kind": "view",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": ["project", "repository"]
+    },
+    {
+      "name": "project_visibility_access",
+      "kind": "view",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": ["account", "organization", "team", "project"]
+    },
+    {
+      "name": "notification_repository_source_access",
+      "kind": "view",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": ["issue", "discussion", "repository", "notifications", "wbs", "account"]
+    },
+    {
+      "name": "notification_project_source_access",
+      "kind": "view",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": ["account", "organization", "team", "project", "wbs", "notifications"]
+    },
+    {
+      "name": "organization_repository_collaborators",
+      "kind": "view",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": ["account", "organization", "repository"]
+    },
+    {
+      "name": "enterprise_repository_outside_collaborators",
+      "kind": "view",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": ["account", "enterprise", "organization", "repository"]
+    },
+    {
+      "name": "attendance_identity_bindings",
+      "kind": "view",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": ["account", "attendance"]
+    },
+    {
+      "name": "user_management_activity",
+      "kind": "view",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": ["account", "attendance", "repository"]
+    },
+    {
+      "name": "identity_access_enterprise_scopes",
+      "kind": "view",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": ["enterprise", "identity-access"]
+    },
+    {
+      "name": "identity_access_enterprise_subjects",
+      "kind": "view",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": ["account", "enterprise", "identity-access"]
+    },
+    {
+      "name": "identity_access_organization_scopes",
+      "kind": "view",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": ["organization", "identity-access"]
+    },
+    {
+      "name": "identity_access_organization_subjects",
+      "kind": "view",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": ["account", "organization", "identity-access"]
+    },
+    {
+      "name": "identity_access_team_subjects",
+      "kind": "view",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": ["account", "organization", "team", "identity-access"]
+    },
+    {
+      "name": "user_namespace_projection",
+      "kind": "view",
+      "path": "packages/integration-supabase/src/schemas/900_cross_owner_projections.sql",
+      "authority": false,
+      "role": "derived-projection",
+      "participants": ["account", "namespace"]
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "version": 3,
+  "role": "implementation-topology",
+  "architecture": "context-first-modular-monolith",
+  "semanticModel": "architecture/registry.json#domain",
+  "invariants": {
+    "boundedContextIsNotModuleBoundary": true,
+    "moduleBoundaryIsNotDataBoundary": true,
+    "dependenciesUsePublicContracts": true
+  }
+}

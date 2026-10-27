@@ -13,7 +13,7 @@
       "*.json",
       "knip.jsonc",
       "architecture/**/*.json",
-      "!architecture/domain/fpt/**",
+      "!architecture/fpt/**",
       ".vscode/**",
       ".dependency-cruiser.mjs",
       "!**/next-env.d.ts"

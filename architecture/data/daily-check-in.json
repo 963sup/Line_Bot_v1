@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "owner": "daily-check-in",
+  "files": [
+    {
+      "path": "packages/integration-supabase/src/schemas/805_daily_check_in_claims.sql",
+      "role": "authoritative"
+    }
+  ],
+  "relations": [
+    {
+      "name": "daily_check_in_claims",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/805_daily_check_in_claims.sql",
+      "authority": true,
+      "semanticOwner": "daily-check-in",
+      "concept": "daily-check-in"
+    }
+  ]
+}

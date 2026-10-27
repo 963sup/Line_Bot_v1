@@ -1,0 +1,120 @@
+{
+  "schemaVersion": 1,
+  "owner": {
+    "id": "identity-access",
+    "kind": "policy-owner",
+    "lifecycle": "current",
+    "doc": "docs/owners/identity-access.md"
+  },
+  "boundedContexts": [],
+  "concepts": [
+    {
+      "id": "permission",
+      "canonicalName": "Permission",
+      "kind": "policy-decision",
+      "owner": "identity-access",
+      "lifecycle": "current",
+      "definition": "Explicit sensitive capability authorization decision; not provider role or membership.",
+      "authorityMode": "policy-decision",
+      "persistenceExpectation": "relation"
+    }
+  ],
+  "relationships": [
+    {
+      "id": "identity-access-enterprise-authorization",
+      "provider": "identity-access",
+      "consumer": "enterprise",
+      "meaning": "Enterprise governance rechecks IdentityAccess authorization decisions in the caller transaction from Enterprise-owned EnterpriseOwner facts and current qualification; IdentityAccess does not write the EnterpriseOwner lifecycle.",
+      "integrationMode": "query",
+      "authority": "identity-access",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "identity-access-account-administration",
+      "provider": "identity-access",
+      "consumer": "account",
+      "meaning": "Account User administration rechecks IdentityAccess decisions for users.read, users.suspend, and last-permission-administrator protection; Account retains User lifecycle, status, version, and replay authority.",
+      "integrationMode": "query",
+      "authority": "identity-access",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "identity-access-organization-authorization",
+      "provider": "identity-access",
+      "consumer": "organization",
+      "meaning": "Organization governance rechecks IdentityAccess authorization decisions in the caller transaction for Owner-controlled lifecycle, Owner appointment, and member creation policy; IdentityAccess does not write OrganizationOwner facts.",
+      "integrationMode": "query",
+      "authority": "identity-access",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "identity-access-repository-authorization",
+      "provider": "identity-access",
+      "consumer": "repository",
+      "meaning": "Repository consumes current IdentityAccess authorization decisions for Repository-owned access and protected operations; IdentityAccess does not own or mutate Repository grant truth.",
+      "integrationMode": "query",
+      "authority": "identity-access",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "identity-access-team-actor-resolution",
+      "provider": "identity-access",
+      "consumer": "team",
+      "meaning": "Team resolves the verified request actor through IdentityAccess; Account still owns User qualification, while Team and Organization own TeamMaintainer and OrganizationOwner authorization decisions.",
+      "integrationMode": "query",
+      "authority": "identity-access",
+      "consistency": "verified-request"
+    },
+    {
+      "id": "identity-access-audit-evidence",
+      "provider": "identity-access",
+      "consumer": "audit",
+      "meaning": "Audit reads a minimal governance event projection for an exact active Enterprise or Organization scope after current owner authorization; no private history access or source-object authority transfers.",
+      "integrationMode": "query",
+      "authority": "identity-access",
+      "consistency": "current-state"
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "authorize-feature",
+      "owner": "identity-access",
+      "kind": "leaf",
+      "intent": "Decide current scoped feature permission without treating identity or membership as authorization.",
+      "preserves": ["K2", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "current Identity Access permission application surface",
+        "sourcePaths": [
+          "packages/identity-access/src/application/permissions.ts",
+          "packages/identity-access/src/application/commands/permission.ts",
+          "packages/identity-access/src/application/use-cases/change-permission.ts",
+          "packages/identity-access/src/contracts/input/permissions.ts",
+          "packages/identity-access/src/contracts/output/permission-transactions.ts",
+          "packages/identity-access/src/adapters/outbound/persistence/permissions.ts",
+          "packages/identity-access/src/composition/bootstrap/permissions.ts",
+          "packages/identity-access/src/domain/permission.ts"
+        ],
+        "publicExports": ["./application/permissions", "./domain/permission"],
+        "entrypoints": ["apps/web/src/app/(mobile)/(secondary)/settings/permissions/page.tsx"],
+        "testPaths": [
+          "packages/identity-access/test/permission.test.ts",
+          "packages/identity-access/test/permission-change.test.ts",
+          "packages/identity-access/test/permission-persistence.test.ts",
+          "packages/identity-access/test/permission-postgres.test.ts",
+          "apps/web/test/permissions-api.test.ts"
+        ],
+        "note": "Permission source, exports and transaction/authorization tests are present. PostgreSQL multi-session execution requires the disposable CI service; provider/device acceptance remains separate."
+      }
+    }
+  ],
+  "locators": []
+}

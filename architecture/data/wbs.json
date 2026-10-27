@@ -1,0 +1,224 @@
+{
+  "schemaVersion": 1,
+  "owner": "wbs",
+  "files": [
+    {
+      "path": "packages/integration-supabase/src/schemas/609_repository_wbs.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/611_wbs_outbox.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/702_project_wbs.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/710_project_wbs_governance.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/711_project_wbs_outbox.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/713_wbs_scope_transfers.sql",
+      "role": "authoritative"
+    }
+  ],
+  "relations": [
+    {
+      "name": "project_wbs",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/702_project_wbs.sql",
+      "authority": true,
+      "semanticOwner": "wbs",
+      "concept": "wbs"
+    },
+    {
+      "name": "project_wbs_revisions",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/702_project_wbs.sql",
+      "authority": true,
+      "semanticOwner": "wbs",
+      "concept": "wbs-revision"
+    },
+    {
+      "name": "project_wbs_commands",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/702_project_wbs.sql",
+      "authority": true,
+      "semanticOwner": "wbs",
+      "concept": "wbs-command-receipt"
+    },
+    {
+      "name": "project_wbs_governance",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/710_project_wbs_governance.sql",
+      "authority": true,
+      "semanticOwner": "wbs",
+      "concept": "wbs-governance"
+    },
+    {
+      "name": "project_wbs_policies",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/710_project_wbs_governance.sql",
+      "authority": true,
+      "semanticOwner": "wbs",
+      "concept": "wbs-governance-policy"
+    },
+    {
+      "name": "project_wbs_proposals",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/710_project_wbs_governance.sql",
+      "authority": true,
+      "semanticOwner": "wbs",
+      "concept": "wbs-change-proposal"
+    },
+    {
+      "name": "project_wbs_reviews",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/710_project_wbs_governance.sql",
+      "authority": true,
+      "semanticOwner": "wbs",
+      "concept": "wbs-proposal-review"
+    },
+    {
+      "name": "project_wbs_baselines",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/710_project_wbs_governance.sql",
+      "authority": true,
+      "semanticOwner": "wbs",
+      "concept": "wbs-baseline"
+    },
+    {
+      "name": "project_wbs_governance_commands",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/710_project_wbs_governance.sql",
+      "authority": true,
+      "semanticOwner": "wbs",
+      "concept": "wbs-governance-receipt"
+    },
+    {
+      "name": "project_wbs_proposal_versions",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/710_project_wbs_governance.sql",
+      "authority": true,
+      "semanticOwner": "wbs",
+      "concept": "wbs-proposal-version"
+    },
+    {
+      "name": "project_wbs_outbox",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/711_project_wbs_outbox.sql",
+      "authority": true,
+      "semanticOwner": "wbs",
+      "concept": "wbs-baseline-event"
+    },
+    {
+      "name": "wbs_scope_transfers",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/713_wbs_scope_transfers.sql",
+      "authority": true,
+      "semanticOwner": "wbs",
+      "concept": "wbs-scope-transfer"
+    },
+    {
+      "name": "legacy_wbs_command_evidence",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/713_wbs_scope_transfers.sql",
+      "authority": true,
+      "semanticOwner": "wbs",
+      "concept": "legacy-wbs-command-evidence"
+    },
+    {
+      "name": "repository_wbs",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/609_repository_wbs.sql",
+      "authority": true,
+      "semanticOwner": "wbs",
+      "concept": "repository-wbs"
+    },
+    {
+      "name": "repository_wbs_revisions",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/609_repository_wbs.sql",
+      "authority": true,
+      "semanticOwner": "wbs",
+      "concept": "wbs-revision"
+    },
+    {
+      "name": "repository_wbs_commands",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/609_repository_wbs.sql",
+      "authority": true,
+      "semanticOwner": "wbs",
+      "concept": "wbs-command-receipt"
+    },
+    {
+      "name": "repository_wbs_governance",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/609_repository_wbs.sql",
+      "authority": true,
+      "semanticOwner": "wbs",
+      "concept": "wbs-governance"
+    },
+    {
+      "name": "repository_wbs_policies",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/609_repository_wbs.sql",
+      "authority": true,
+      "semanticOwner": "wbs",
+      "concept": "wbs-governance-policy"
+    },
+    {
+      "name": "repository_wbs_proposals",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/609_repository_wbs.sql",
+      "authority": true,
+      "semanticOwner": "wbs",
+      "concept": "wbs-change-proposal"
+    },
+    {
+      "name": "repository_wbs_reviews",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/609_repository_wbs.sql",
+      "authority": true,
+      "semanticOwner": "wbs",
+      "concept": "wbs-proposal-review"
+    },
+    {
+      "name": "repository_wbs_baselines",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/609_repository_wbs.sql",
+      "authority": true,
+      "semanticOwner": "wbs",
+      "concept": "wbs-baseline"
+    },
+    {
+      "name": "repository_wbs_governance_commands",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/609_repository_wbs.sql",
+      "authority": true,
+      "semanticOwner": "wbs",
+      "concept": "wbs-governance-receipt"
+    },
+    {
+      "name": "repository_wbs_proposal_versions",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/609_repository_wbs.sql",
+      "authority": true,
+      "semanticOwner": "wbs",
+      "concept": "wbs-proposal-version"
+    },
+    {
+      "name": "repository_wbs_outbox",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/611_wbs_outbox.sql",
+      "authority": true,
+      "semanticOwner": "wbs",
+      "concept": "wbs-baseline-event"
+    }
+  ]
+}

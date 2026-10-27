@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "owner": {
+    "id": "audit",
+    "kind": "business-owner",
+    "lifecycle": "current",
+    "doc": "docs/owners/audit.md"
+  },
+  "boundedContexts": [],
+  "concepts": [],
+  "relationships": [],
+  "capabilities": [
+    {
+      "id": "read-governance-audit",
+      "owner": "audit",
+      "kind": "leaf",
+      "intent": "Read bounded governance event history for an exact currently authorized Enterprise or Organization scope.",
+      "preserves": ["K1", "K2", "K5", "K6"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Readonly keyset-paginated governance evidence; current effective owner required on every page; no raw result or reason text",
+        "sourcePaths": ["packages/audit/src/application/use-cases/read-governance-audit.ts"],
+        "publicExports": ["./application/use-cases/read-governance-audit"],
+        "entrypoints": ["apps/web/src/app/api/audit/route.ts"],
+        "testPaths": [
+          "packages/audit/test/query.test.ts",
+          "packages/identity-access/test/audit.test.ts",
+          "apps/web/test/audit-api.test.ts"
+        ],
+        "note": "API only; admin page, Team history, bootstrap receipts and global search remain unavailable. Deployment is separate evidence."
+      }
+    }
+  ],
+  "locators": []
+}

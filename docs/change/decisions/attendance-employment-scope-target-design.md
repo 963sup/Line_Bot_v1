@@ -53,7 +53,7 @@ UI preference 不能成為 authority。
 - [Attendance owner](../../owners/attendance.md)
 - [Workforce owner](../../owners/workforce.md)
 - [Payroll owner](../../owners/payroll.md)
-- [Semantic model](../../../architecture/semantic-model.json)
+- [Semantic model](../../../architecture/registry.json#domain)
 - [Domain target](../proposals/domain-target.md)
 - [Security target](../proposals/security-target.md)
 - [Data target](../proposals/data-target.md)

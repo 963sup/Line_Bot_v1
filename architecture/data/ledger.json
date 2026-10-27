@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "owner": "ledger",
+  "files": [
+    {
+      "path": "packages/integration-supabase/src/schemas/810_ledger_entries.sql",
+      "role": "authoritative"
+    }
+  ],
+  "relations": [
+    {
+      "name": "asset_ledger_entries",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/810_ledger_entries.sql",
+      "authority": true,
+      "semanticOwner": "ledger",
+      "concept": "ledger-entry"
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "owner": {
+    "id": "wallet",
+    "kind": "business-owner",
+    "lifecycle": "current",
+    "doc": "docs/owners/wallet.md"
+  },
+  "boundedContexts": [
+    {
+      "id": "wallet",
+      "owner": "wallet",
+      "status": "selected"
+    }
+  ],
+  "concepts": [
+    {
+      "id": "wallet-holding",
+      "canonicalName": "Wallet Holding",
+      "kind": "authoritative",
+      "owner": "wallet",
+      "lifecycle": "current",
+      "definition": "Holder and Asset holding identity.",
+      "authorityMode": "authoritative"
+    },
+    {
+      "id": "wallet-balance",
+      "canonicalName": "Wallet Balance",
+      "kind": "derived-projection",
+      "owner": "wallet",
+      "lifecycle": "current",
+      "definition": "Derived balance projection over authoritative value facts.",
+      "derivedFrom": ["ledger-entry"],
+      "authorityMode": "derived",
+      "persistenceExpectation": "derived"
+    }
+  ],
+  "relationships": [],
+  "capabilities": [],
+  "locators": []
+}

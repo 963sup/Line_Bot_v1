@@ -1,10 +1,10 @@
 # Selected resource namespace topology
 
-這份路由樹是已選定的 URL 方向；尚無 runtime 的啟用條件留在本 decision，不建立空頁面或假資料。Current locator truth 仍在 `architecture/semantic-model.json#locators`，root reservation 在 `packages/namespace/src/domain/root.ts`。
+這份路由樹是已選定的 URL 方向；尚無 runtime 的啟用條件留在本 decision，不建立空頁面或假資料。Current locator truth 仍在 `architecture/registry.json#domain`，root reservation 在 `packages/namespace/src/domain/root.ts`。
 
 ## Activation decisions
 
-完整 selected path、scope、locator owner 與 active/planned 狀態以 [`architecture/semantic-model.json#locators`](../../../architecture/semantic-model.json)（及規劃中的 `packages/namespace/src/domain/routes.ts`）為 executable truth。本文件只保留尚未解決的業務啟用條件，不維護第二份 route registry。
+完整 selected path、scope、locator owner 與 active/planned 狀態以 [`architecture/registry.json#domain`](../../../architecture/registry.json#domain)（及規劃中的 `packages/namespace/src/domain/routes.ts`）為 executable truth。本文件只保留尚未解決的業務啟用條件，不維護第二份 route registry。
 
 | Capability | Required decision / implementation |
 | --- | --- |

@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "@line_bot_v1/issue",
+  "status": "current",
+  "path": "packages/issue",
+  "moduleKind": "domain-module",
+  "semanticOwner": "issue",
+  "allowedWorkspaceDependencies": [
+    "@line_bot_v1/namespace",
+    "@line_bot_v1/numbering",
+    "@line_bot_v1/organization",
+    "@line_bot_v1/platform",
+    "@line_bot_v1/repository"
+  ],
+  "primaryOwnerImplementation": true
+}

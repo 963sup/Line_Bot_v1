@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "owner": {
+    "id": "asset",
+    "kind": "business-owner",
+    "lifecycle": "current",
+    "doc": "docs/owners/asset.md"
+  },
+  "boundedContexts": [
+    {
+      "id": "asset",
+      "owner": "asset",
+      "status": "selected"
+    }
+  ],
+  "concepts": [
+    {
+      "id": "asset",
+      "canonicalName": "Asset",
+      "kind": "authoritative",
+      "owner": "asset",
+      "lifecycle": "current",
+      "definition": "System-recognized value definition and denomination.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    }
+  ],
+  "relationships": [
+    {
+      "id": "asset-wallet-denomination",
+      "provider": "asset",
+      "consumer": "wallet",
+      "meaning": "AssetCode and denomination.",
+      "integrationMode": "stable-identity+query",
+      "authority": "asset",
+      "consistency": "current-state"
+    },
+    {
+      "id": "asset-ledger-denomination",
+      "provider": "asset",
+      "consumer": "ledger",
+      "meaning": "AssetCode and denomination.",
+      "integrationMode": "stable-identity+query",
+      "authority": "asset",
+      "consistency": "current-state"
+    },
+    {
+      "id": "asset-attendance-reward-identity",
+      "provider": "asset",
+      "consumer": "attendance",
+      "meaning": "Attendance references the Asset-owned reward identity when posting attendance rewards.",
+      "integrationMode": "stable-identity",
+      "authority": "asset",
+      "consistency": "current-identity"
+    },
+    {
+      "id": "asset-daily-check-in-reward-denomination",
+      "provider": "asset",
+      "consumer": "daily-check-in",
+      "meaning": "DailyCheckIn consumes Asset-owned reward identity and denomination when deciding and reconstructing rewards.",
+      "integrationMode": "stable-identity+query",
+      "authority": "asset",
+      "consistency": "current-state"
+    }
+  ],
+  "capabilities": [],
+  "locators": []
+}

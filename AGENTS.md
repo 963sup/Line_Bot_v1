@@ -33,12 +33,12 @@
 
 以下是完整 governing authority，所有 repository 任務一律遵守。具體讀取依下方 Effective context contract 選取 target ref 的 current file／section／symbol；不要求每次將無關檔案全文預載進 context：
 
-- `architecture/README.md`
-- `architecture/data-topology.json`
-- `architecture/implementation-topology.json`
-- `architecture/domain/fpt/*.json`
-- `architecture/domain/fpt-source.json`
-- `architecture/semantic-model.json`
+- `architecture/registry.json`：ID、分片路徑與 schemaVersion；依任務選取下列分片，禁止預載整套模型。
+- `architecture/domain/vocabulary.json` 與 `architecture/domain/owners/*.json`：共通語彙與各 owner 的概念、能力、關係。
+- `architecture/modules/*.json`：模組路徑、owner 與允許依賴；target 不代表 current runtime。
+- `architecture/data/*.json`：資料關係、SQL 位置與共用機制。
+- `architecture/fpt/*.json`
+- `architecture/fpt-source.json`
 - `.dependency-cruiser.mjs`
 - `biome.json`
 - `knip.jsonc`
@@ -47,7 +47,7 @@
 
 - 一般 feature、refactor、bug fix、CI fix：修 source、ownership、dependency、public export、placement 或真正 root cause；不得透過弱化 governing file、加 ignore、exception、alias、wrapper 或 compatibility surface 消除 violation。
 - 若任務本身就是修改 governing file，先證明 authority / contract 為何真的需要改，再同步所有受影響 consumer、guard、tests、docs 與 validation evidence；不得從 symptom 反推規則應放寬。
-- `architecture/domain/fpt/*.json` 是從 pinned `github/docs/src/graphql/data/fpt` 原樣 vendoring 的 GitHub GraphQL domain truth；不得手改、轉寫或由 `semantic-model.json` 覆蓋。`semantic-model.json` 只補本產品 owner、invariant、relationship、capability 與 implementation expectation。
+- `architecture/fpt/*.json` 是從 pinned `github/docs/src/graphql/data/fpt` 原樣 vendoring 的 GitHub GraphQL domain truth；不得手改、轉寫或由產品 domain 分片覆蓋。`domain/vocabulary.json` 與 `domain/owners/*.json` 只補本產品 owner、invariant、relationship、capability 與 implementation expectation。
 - Nested `AGENTS.md` 只能增加 local constraint，不能削弱或覆寫本 governing set。
 - 所有 nested scope 完整繼承 [system invariants](docs/rules/system-invariants.md)，包括 bounded tool output；不得以 local validation、debug 或 verbose 慣例恢復無界 stdout／stderr。需要完整原始證據時寫入 ignored artifact，Agent context 只載入摘要與有界片段。
 
@@ -55,19 +55,28 @@
 
 1. 一律先讀 root 與沿目標路徑適用的 `AGENTS.md`、[system invariants](docs/rules/system-invariants.md)，再由 [task router](docs/README.md) 取任務入口。子 AGENTS 只補 local constraints，引用本契約，不複製完整 authority 清單。
 2. 先定義 task、Owner、consumer 與觸及的 contract。Owner 未知、語意歧義，或跨 Owner 的 capability／public contract／資料／授權影響尚未釐清時，用 `rg`、package exports、source/tests 與 architecture JSON 定位影響；不得把不確定的候選當成修改範圍。
-3. 依實際責任載入下表來源。JSON 可讀必要 entries，FPT 必須定位 exact file/symbol/field；記錄來源與 revision，working-tree 修改不能冒充 HEAD 內容。Generated projection／工具選取結果僅供定位，不取代 authority。
+3. 從 `architecture/registry.json` 的 `domain.owners[ownerId]`、`modules.entries[packageName]`、`data.owners[ownerId]` 選取分片；Owner ID 不一定等於 package 名稱，以 module 的 `semanticOwner` 對應。只讀相關分片／欄位；共通規則再讀 vocabulary 或 configuration，跨 owner 機制再讀 data/shared。FPT 必須定位 exact file/symbol/field；記錄來源與 revision，working-tree 修改不能冒充 HEAD 內容。Generated projection／工具選取結果僅供定位，不取代 authority。
 
 | 觸發條件 | 必須具體讀取的來源 |
 | --- | --- |
 | 純文件／連結修正，未改業務或治理語意 | 目標文件、引用的真實來源、root + nearest AGENTS；不預載無關 Domain／FPT。 |
-| 單一 Owner source／純業務規則 | Owner contract、public exports、相關 source/tests；semantic model 的 Owner/invariant/capability entries、implementation topology 的 module/dependency entries，以及 Dependency Cruiser、Biome、Knip。 |
+| 單一 Owner source／純業務規則 | Owner contract、public exports、相關 source/tests；domain owner 的 invariant/capability 引用、必要的 vocabulary 規則、module 的 dependency entries，以及 Dependency Cruiser、Biome、Knip。 |
 | Public contract、跨 Owner 或 authorization 變更 | 上項加實際 provider/consumer 契約、relationship/qualification/trust entries 與受影響 consumers；沿真實依賴擴展，不把 review candidate 當 mutation authority。 |
-| Persistence、schema、transaction／replay／recovery 變更 | 上項加 data topology 的 relations/participants、對應 executable SQL、database-write/authorization rules 與必要競爭／rollback tests。 |
+| Persistence、schema、transaction／replay／recovery 變更 | 上項加 data owner 分片的 relations/participants，涉及跨 owner 機制才加 shared 分片；對應 executable SQL、database-write/authorization rules 與必要競爭／rollback tests。 |
 | GitHub-derived meaning／FPT-backed contract | 對應 pinned FPT exact file/symbol/field 與 provenance；語意改動同步受影響 overlay/consumer，不能由本地摘要取代。 |
 | Governing input／guard 本身變更 | 完整讀取被修改的 authority/guard，以及實際 consumers/tests；先證明 authority/contract 需要改，保留全部 enforcement。 |
 
-4. Owner/語意不明、來源缺失、無法追溯 revision 或選取結果與 source 衝突時，明示 unresolved；先定位或保守展開完整 governing set，不能把空結果解讀為沒有約束。未解決會影響正確性的缺口前不修改該範圍。
+4. Owner/語意不明、來源缺失、無法追溯 revision 或選取結果與 source 衝突時，明示 unresolved；針對缺口沿 registry、public contracts 與真實依賴擴展讀取，不能把空結果解讀為沒有約束，也不能預設載入全部 owner／FPT 來代替定位。未解決會影響正確性的缺口前不修改該範圍。
 5. Context materialization 不改 validation scope：architecture/FPT/schema/security guards 繼續檢查完整 canonical inputs；依變更執行 `pnpm lint`、`pnpm typecheck`、`pnpm test`、`pnpm build` 或適用 provider/package tests。
+
+## Source-first documentation contract
+
+- 先確認 owner、契約與 consumers，決定 source 結構；完成必要的 source／architecture 變更，再同步文件。Architecture 宣告規範邊界，source／manifest／schema／tests 證明實際狀態；兩者衝突時查明原因，不以文件或實作單方面覆蓋契約。
+- 目錄與檔案責任以 [README 的結構導覽](README.md#source-與文件結構) 為入口。Registry 只登錄 ID、位置與 schemaVersion，不內嵌另一份 owner／module／data 定義；不建立整包聚合 JSON 或第二套人工依賴清單。
+- Root `AGENTS.md` 擁有共通修改規則；nested `AGENTS.md` 只補該 scope 特有約束，不複製父規則。`README.md` 提供使用與導航；package `SEMANTICS.md` 只保留理解公開契約所需術語及來源連結；`docs/owners/<owner>.md` 路由到實際 package／契約／資料來源，不重述實作細節。
+- 機械可推導的型別、exports、狀態、依賴與 SQL 定義留在真正來源；文件用精確連結。禁止為了對齊目錄範本新增空 package、空 layer、SQL placeholder 或無內容文件。
+- Source 移動／刪除時，同步 registry、真實 consumers、測試、CI、格式檢查範圍與受影響連結；重新搜尋舊路徑。FPT 移動必須保持 vendor 檔案內容不變，來源資訊維持在 `architecture/fpt-source.json`。
+- 變更 architecture、manifest／exports、文件邊界或其 consumers 時執行 `pnpm check:repository`；它是快速結構檢查，不取代受影響的行為測試、Dependency Cruiser、型別檢查或 provider 驗證。保留完整登錄檢查，只讀 JSON／manifest 與檔案清單，不把編譯、FPT 全文、外部服務或全庫 AST 掃描加入此快速入口。
 
 ## Invariants
 
@@ -112,5 +121,13 @@ Source-of-truth：[facts/sources-of-truth.md](docs/facts/sources-of-truth.md)。
 - JS/TS/JSON 由 Biome formatting；需要時用 `pnpm format`。
 - 一般修改依 scope 使用 `pnpm lint`、`pnpm typecheck`、`pnpm test`、`pnpm build` 或 `pnpm exec knip`。Evidence boundary：[validation rules](docs/rules/validation-evidence.md)。
 - Merge 前依 [development workflow](docs/reference/engineering/development-workflow.md) 收斂 WIP/fixup history。
+
+## Codex Cloud bootstrap
+
+- 環境入口在 `.codex/bootstrap/`；新建／重建使用 `install.sh`，恢復快取或更新 checkout 使用 `update.sh`，日常檢查使用 `verify.sh`。不要每次任務重裝工具、build 全部 packages 或重新索引全庫。
+- `config/` 擁有啟用項目與額外版本，`lib/` 擁有共用 primitive，`modules/<tool>/` 各自擁有 install／verify，`mcp/servers/<server>/` 只處理該 server 的本地需求。不要在 root scripts、devcontainer 或 Cloud 設定另抄一套安裝內容。
+- `verify.sh` 不安裝工具或啟動服務；`tests/smoke.sh` 是明確選用的本地驗證，不得以 smoke 或 executable 存在宣稱 hosted MCP、OAuth、provider 或當前 session 已就緒。使用者要求不實測時不執行它們，交付時明示未驗證。
+- `.codex/config.toml` 的 stdio launcher 選用同一套已準備的工具路徑，不能在 MCP 啟動時下載或安裝。Hosted MCP 與 OAuth 由實際 Codex host 管理；以該 session 的真實工具呼叫確認可用性，缺少工具時如實回報。
+- 工具與快取放在被忽略的 `.tools/`、`.cache/`，完整安裝日誌在 `.artifacts/codex-cloud/`；不改寫使用者的 HOME，不把 credential 值寫入 repo 或 bootstrap 設定。
 
 Scopes：[`packages/`](packages/AGENTS.md)。GitHub platform settings remain under `.github/`.

@@ -11,7 +11,7 @@ Guard 目前至少檢查：
 - Web `modules` 不可任意跨 feature 讀取 private implementation。
 - feature composition 不得彼此依賴。
 - package public surface 以各 package `package.json` 的 `exports` 為準；跨 workspace 只能走公開 package specifier，不得用 relative path 穿透另一個 workspace 的 private source。
-- Workspace-to-workspace source edge 必須符合 `architecture/implementation-topology.json#allowedWorkspaceDependencies`；Dependency Cruiser 從該 topology 派生規則，不能用手寫 duplicate allowlist 漂移。
+- Workspace-to-workspace source edge 必須符合 `architecture/registry.json#modules`；Dependency Cruiser 從該 topology 派生規則，不能用手寫 duplicate allowlist 漂移。
 - Context-local `domain` / `contracts` / `application` 不得反向依賴同 owner 的 adapters、agents、testing、database 或 migration implementation；domain / contracts 也不得反向依賴 application。
 - Browser client graph 不得可達 server-only、database、secret、Node-only private runtime 或 test fixture。
 - 舊 persistence／LINE 路徑不可重新出現，避免 legacy 位置復活。

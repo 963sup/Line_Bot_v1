@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "owner": "expense",
+  "files": [
+    {
+      "path": "packages/integration-supabase/src/schemas/820_expenses.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/821_expense_events.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/822_receipt_intents.sql",
+      "role": "authoritative"
+    }
+  ],
+  "relations": [
+    {
+      "name": "expenses",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/820_expenses.sql",
+      "authority": true,
+      "semanticOwner": "expense",
+      "concept": "expense"
+    },
+    {
+      "name": "expense_events",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/821_expense_events.sql",
+      "authority": true,
+      "semanticOwner": "expense"
+    },
+    {
+      "name": "receipt_intents",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/822_receipt_intents.sql",
+      "authority": true,
+      "semanticOwner": "expense"
+    }
+  ]
+}

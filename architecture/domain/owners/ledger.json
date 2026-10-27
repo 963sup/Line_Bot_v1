@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "owner": {
+    "id": "ledger",
+    "kind": "business-owner",
+    "lifecycle": "current",
+    "doc": "docs/owners/ledger.md"
+  },
+  "boundedContexts": [
+    {
+      "id": "ledger",
+      "owner": "ledger",
+      "status": "selected"
+    }
+  ],
+  "concepts": [
+    {
+      "id": "ledger-entry",
+      "canonicalName": "Ledger Entry",
+      "kind": "authoritative",
+      "owner": "ledger",
+      "lifecycle": "current",
+      "definition": "Append-only value fact with stable posting identity.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    }
+  ],
+  "relationships": [
+    {
+      "id": "ledger-daily-check-in-posting",
+      "provider": "ledger",
+      "consumer": "daily-check-in",
+      "meaning": "DailyCheckIn calls Ledger's idempotent durable credit writer in the caller transaction; DailyCheckIn owns reward eligibility and amount while Ledger owns the resulting immutable value fact.",
+      "integrationMode": "command",
+      "authority": "ledger",
+      "consistency": "same-transaction"
+    },
+    {
+      "id": "ledger-daily-check-in-readback",
+      "provider": "ledger",
+      "consumer": "daily-check-in",
+      "meaning": "DailyCheckIn reads the Ledger-owned immutable credit fact to reconstruct and verify replay outcomes without taking Ledger fact authority.",
+      "integrationMode": "query",
+      "authority": "ledger",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "ledger-attendance-posting",
+      "provider": "ledger",
+      "consumer": "attendance",
+      "meaning": "Attendance calls Ledger's idempotent durable credit writer in the caller transaction; Attendance owns reward eligibility and amount while Ledger owns the resulting immutable value fact.",
+      "integrationMode": "command",
+      "authority": "ledger",
+      "consistency": "same-transaction"
+    },
+    {
+      "id": "ledger-wallet-projection",
+      "provider": "ledger",
+      "consumer": "wallet",
+      "meaning": "Immutable value facts projected into wallet balance.",
+      "integrationMode": "projection",
+      "authority": "ledger",
+      "consistency": "derived"
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "post-value-fact",
+      "owner": "ledger",
+      "kind": "leaf",
+      "intent": "Append an immutable value fact with stable identity.",
+      "preserves": ["K1", "K3", "K4"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "consumes": ["attendance-ledger-posting", "daily-check-in-ledger-posting"],
+      "implementation": {
+        "status": "implemented",
+        "scope": "current Ledger domain and repository port",
+        "sourcePaths": [
+          "packages/ledger/src/adapters/postgres.ts",
+          "packages/ledger/src/domain/value-objects/ledger-credit.ts"
+        ],
+        "publicExports": ["./postgres", "./domain/value-objects/ledger-credit"],
+        "entrypoints": [
+          "packages/daily-check-in/src/adapters/outbound/persistence/postgres-daily-check-in-store.ts",
+          "packages/attendance/src/adapters/outbound/persistence/postgres-attendance-store.ts"
+        ],
+        "testPaths": [
+          "packages/daily-check-in/test/daily-check-in.test.ts",
+          "packages/attendance/test/attendance.test.ts"
+        ],
+        "note": "Ledger value facts are written through recordLedgerCredit in the Postgres adapter and consumed by DailyCheckIn and Attendance adapters; tests are evidence locations only until executed."
+      }
+    }
+  ],
+  "locators": []
+}

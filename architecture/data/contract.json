@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "owner": "contract",
+  "files": [
+    {
+      "path": "packages/integration-supabase/src/schemas/616_contracts.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/619_contract_documents.sql",
+      "role": "authoritative"
+    }
+  ],
+  "relations": [
+    {
+      "name": "engineering_contracts",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/616_contracts.sql",
+      "authority": true,
+      "semanticOwner": "contract",
+      "concept": "engineering-contract"
+    },
+    {
+      "name": "engineering_contract_revisions",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/616_contracts.sql",
+      "authority": true,
+      "semanticOwner": "contract",
+      "concept": "engineering-contract-revision"
+    },
+    {
+      "name": "engineering_contract_commands",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/616_contracts.sql",
+      "authority": true,
+      "semanticOwner": "contract",
+      "concept": "engineering-contract-command-receipt"
+    },
+    {
+      "name": "contract_documents",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/619_contract_documents.sql",
+      "authority": true,
+      "semanticOwner": "contract",
+      "concept": "contract-document"
+    },
+    {
+      "name": "contract_document_revisions",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/619_contract_documents.sql",
+      "authority": true,
+      "semanticOwner": "contract",
+      "concept": "contract-document-revision"
+    },
+    {
+      "name": "contract_document_commands",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/619_contract_documents.sql",
+      "authority": true,
+      "semanticOwner": "contract",
+      "concept": "contract-document-command-receipt"
+    }
+  ]
+}

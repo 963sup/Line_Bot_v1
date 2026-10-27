@@ -63,7 +63,7 @@ Organization participation、Team role、Enterprise role 都不自動等於 Payr
 - [Payroll owner](../../owners/payroll.md)
 - [Workforce owner](../../owners/workforce.md)
 - [Attendance owner](../../owners/attendance.md)
-- [Semantic model](../../../architecture/semantic-model.json)
+- [Semantic model](../../../architecture/registry.json#domain)
 - [Domain target](../proposals/domain-target.md)
 - [Security target](../proposals/security-target.md)
 - [Data target](../proposals/data-target.md)

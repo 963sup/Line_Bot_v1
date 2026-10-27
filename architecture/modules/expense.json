@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "@line_bot_v1/expense",
+  "status": "current",
+  "path": "packages/expense",
+  "moduleKind": "domain-module",
+  "semanticOwner": "expense",
+  "allowedWorkspaceDependencies": ["@line_bot_v1/account", "@line_bot_v1/platform"],
+  "primaryOwnerImplementation": true
+}

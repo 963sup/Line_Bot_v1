@@ -1,0 +1,217 @@
+{
+  "schemaVersion": 1,
+  "owner": {
+    "id": "contract",
+    "kind": "business-owner",
+    "lifecycle": "current",
+    "doc": "docs/owners/contract.md"
+  },
+  "boundedContexts": [
+    {
+      "id": "contract",
+      "owner": "contract",
+      "status": "selected"
+    }
+  ],
+  "concepts": [
+    {
+      "id": "engineering-contract",
+      "canonicalName": "EngineeringContract",
+      "kind": "authoritative",
+      "owner": "contract",
+      "lifecycle": "current",
+      "definition": "Repository-scoped commitment with editable DRAFT terms and agreed quantities against exact Content Work/Task plan items. ADMIN activation freezes commitments and closure ends new submissions. No monetary, signature or Payroll authority.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "engineering-contract-revision",
+      "canonicalName": "EngineeringContractRevision",
+      "kind": "authoritative",
+      "owner": "contract",
+      "lifecycle": "current",
+      "definition": "Immutable whole commitment snapshot including exact Content plan-item and measure bases, positive agreed quantities, terms, state, actor and timestamp; active/closed terms cannot be amended.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "engineering-contract-command-receipt",
+      "canonicalName": "EngineeringContractCommandReceipt",
+      "kind": "authoritative",
+      "owner": "contract",
+      "lifecycle": "current",
+      "definition": "Immutable actor/request fingerprint and exact committed Contract revision supporting current-authorized replay.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "contract-document",
+      "canonicalName": "ContractDocument",
+      "aliases": [
+        "purchase-order-document",
+        "structured-contract-document",
+        "contract-structured-data",
+        "structured contract data"
+      ],
+      "kind": "authoritative",
+      "owner": "contract",
+      "lifecycle": "current",
+      "definition": "Repository-scoped purchase-order document head selecting one complete structured candidate or confirmed document revision. It records a qualified immutable File source but does not own source bytes, Content structure, WBS or execution.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "contract-document-revision",
+      "canonicalName": "ContractDocumentRevision",
+      "kind": "authoritative",
+      "owner": "contract",
+      "lifecycle": "current",
+      "definition": "Immutable whole purchase-order extraction revision containing the target-owned schema version, source-qualified fields, complete line candidate, diagnostics, state, actor and timestamp. Confirmation never changes the source File revision or silently repairs a financial discrepancy.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "contract-document-command-receipt",
+      "canonicalName": "ContractDocumentCommandReceipt",
+      "kind": "authoritative",
+      "owner": "contract",
+      "lifecycle": "current",
+      "definition": "Immutable actor/request, intent and complete-payload fingerprints with the exact committed ContractDocument revision, supporting current-authorized readback and idempotent replay.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "contract-line",
+      "canonicalName": "ContractLine",
+      "kind": "authoritative",
+      "owner": "contract",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "definition": "One formal agreed quantity and frozen exact Content Work/Task plan basis embedded in an immutable Contract revision; distinct from both planned and actual quantity."
+    }
+  ],
+  "relationships": [
+    {
+      "id": "wbs-contract-commitment",
+      "from": "wbs",
+      "to": "contract",
+      "kind": "reference",
+      "owner": "wbs",
+      "meaning": "Legacy Project WBS revisions may retain exact Contract and Content source pins from the retired per-line import command. New WBS writes do not consume Contract directly; the target flow is a complete Content expansion consumed as a Project-scoped WBS draft, with Project authorization and governance retained by their current owners.",
+      "provider": "contract",
+      "consumer": "wbs",
+      "integrationMode": "stable-identity+query",
+      "authority": "contract",
+      "consistency": "transaction-recheck+immutable-pin"
+    },
+    {
+      "id": "intelligence-contract-document-intake",
+      "provider": "contract",
+      "consumer": "intelligence",
+      "meaning": "Contract supplies the versioned purchase-order target schema and public candidate command. Intelligence submits only an untrusted SAVE candidate; Contract owns validation, authorization, version/replay checks, durable revision and confirmation.",
+      "integrationMode": "command",
+      "authority": "contract",
+      "consistency": "idempotent-command"
+    },
+    {
+      "id": "execution-contract-line-basis",
+      "provider": "contract",
+      "consumer": "execution",
+      "meaning": "Submission requires a currently ACTIVE Contract and its exact activation revision line in the same transaction. Existing reports remain reviewable/voidable after closure using the immutable ACTIVE source revision; Contract retains agreement authority.",
+      "integrationMode": "stable-identity+query",
+      "authority": "contract",
+      "consistency": "transaction-recheck+immutable-pin"
+    },
+    {
+      "id": "contract-content-document-expansion",
+      "provider": "contract",
+      "consumer": "content",
+      "meaning": "Content reads one exact currently authorized CONFIRMED ContractDocument revision through an application-host-composed public Contract reader. Contract retains commercial fields, confirmation and source truth; Content applies the fixed whole-document purchase-order-content-v1 expansion and stores only its own immutable plan and provenance.",
+      "integrationMode": "stable-identity+query",
+      "authority": "contract",
+      "consistency": "transaction-recheck+immutable-pin"
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "manage-engineering-contracts",
+      "owner": "contract",
+      "kind": "leaf",
+      "intent": "Manage formal commitments against exact Content Work/Task plan items, freezing agreed quantities on activation.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6", "CONTRACT1"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Manage formal commitments against exact Content Work/Task plan items, freezing agreed quantities on activation.",
+        "sourcePaths": [
+          "packages/contract/src/domain/contract.ts",
+          "packages/contract/src/application/use-cases/contracts.ts",
+          "packages/contract/src/adapters/outbound/persistence/contracts.ts",
+          "packages/contract/src/domain/line-reference.ts"
+        ],
+        "publicExports": [
+          "./application/use-cases/contracts",
+          "./contracts/dto/contracts",
+          "./composition/bootstrap/contracts",
+          "./domain/error",
+          "./contracts/output/references",
+          "./composition/bootstrap/references",
+          "./domain/line-reference"
+        ],
+        "entrypoints": [
+          "scripts/operations/contract/run.mjs",
+          "apps/web/src/app/api/repository-contracts/route.ts"
+        ],
+        "testPaths": [
+          "packages/contract/test/contract-domain.test.ts",
+          "packages/contract/test/contracts.test.ts",
+          "packages/contract/test/contracts-postgres.test.ts"
+        ],
+        "note": "Web consumes public owner application/composition contracts. Source implementation, local verification and production publication are separate evidence."
+      }
+    },
+    {
+      "id": "manage-contract-documents",
+      "owner": "contract",
+      "kind": "leaf",
+      "intent": "Persist, read and explicitly confirm a complete Contract-owned purchase-order document candidate from one exact authorized File revision.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6", "CONTRACT2"],
+      "consumes": ["contract-repository-scope", "contract-file-source"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Persist, read and explicitly confirm complete purchase-order candidates against a Contract-owned schema and exact File source reference.",
+        "sourcePaths": [
+          "packages/contract/src/domain/document-intake.ts",
+          "packages/contract/src/domain/document-intake-decoder.ts",
+          "packages/contract/src/application/use-cases/documents.ts",
+          "packages/contract/src/adapters/outbound/persistence/documents.ts",
+          "packages/contract/src/contracts/input/document-intake.ts"
+        ],
+        "publicExports": ["./contracts/input/document-intake", "./composition/bootstrap/documents"],
+        "entrypoints": ["scripts/operations/contract/run.mjs"],
+        "testPaths": [
+          "packages/contract/test/document-intake-domain.test.ts",
+          "packages/contract/test/documents-postgres.test.ts",
+          "scripts/operations/contract/run.test.mjs"
+        ],
+        "note": "The candidate is Contract truth only after Contract validation and a transaction-bound File source qualification. Intelligence may submit SAVE; confirmation requires an explicit Contract command. A separate Content capability may read one exact confirmed revision through Contract's public reader and apply its own fixed whole-document expansion; Contract never creates Content or WBS records."
+      }
+    }
+  ],
+  "locators": []
+}

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "owner": {
+    "id": "workforce",
+    "kind": "business-owner",
+    "lifecycle": "current-foundation",
+    "doc": "docs/owners/workforce.md"
+  },
+  "boundedContexts": [],
+  "concepts": [
+    {
+      "id": "employment",
+      "canonicalName": "Employment",
+      "kind": "authoritative",
+      "owner": "workforce",
+      "lifecycle": "selected-target",
+      "definition": "Time-bounded working relationship between User and Organization.",
+      "authorityMode": "authoritative"
+    }
+  ],
+  "relationships": [],
+  "capabilities": [],
+  "locators": []
+}

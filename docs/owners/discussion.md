@@ -44,6 +44,6 @@ The old opaque DiscussionId route remains active only as compatibility for links
 
 Runtime owner: `packages/discussion`. Repository scope/resource-definition provider: `packages/repository`. Web delivery remains under Repository resource routes without acquiring Discussion authority.
 
-Persisted relation ownership is authoritative in [data topology](../../architecture/data-topology.json); executable SQL definitions remain under `packages/integration-supabase/src/schemas/`.
+Persisted relation ownership is authoritative in [data topology](../../architecture/registry.json#data); executable SQL definitions remain under `packages/integration-supabase/src/schemas/`.
 
 Adjacent owners: [Repository](repository.md) · [Issue](issue.md) · [Notifications](notifications.md)

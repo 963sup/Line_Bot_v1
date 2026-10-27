@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "owner": {
+    "id": "notifications",
+    "kind": "business-owner",
+    "lifecycle": "current",
+    "doc": "docs/owners/notifications.md"
+  },
+  "boundedContexts": [
+    {
+      "id": "notifications",
+      "owner": "notifications",
+      "status": "strong-candidate",
+      "evidence": {
+        "ownerContracts": ["docs/owners/notifications.md"],
+        "sourcePaths": ["packages/notifications/src/domain/aggregates/notification.ts"],
+        "testPaths": [
+          "packages/notifications/test/notifications.test.ts",
+          "packages/notifications/test/repository-source-access.test.ts"
+        ],
+        "rationale": "收件人通知與已讀狀態獨立於來源事實，存取須重驗 Repository authority；與 Team notification setting 及 Repository Watch 分開，保留現有 context status。"
+      }
+    }
+  ],
+  "concepts": [
+    {
+      "id": "notification",
+      "canonicalName": "Notification",
+      "kind": "authoritative",
+      "owner": "notifications",
+      "lifecycle": "current",
+      "definition": "Recipient-addressed notification fact that references source identity/version and carries recipient read state without taking source authority.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "notification-inbox",
+      "canonicalName": "Inbox",
+      "kind": "derived-projection",
+      "owner": "notifications",
+      "lifecycle": "current",
+      "definition": "Recipient-scoped read projection over Notifications for navigation and presentation. Inbox is not a second notification authority or package owner.",
+      "derivedFrom": ["notification"],
+      "authorityMode": "derived",
+      "persistenceExpectation": "derived"
+    },
+    {
+      "id": "notification-receipt",
+      "canonicalName": "NotificationReceipt",
+      "kind": "authoritative",
+      "owner": "notifications",
+      "lifecycle": "current",
+      "definition": "Exact notification intent receipt and cancellation barrier; no source authority.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    }
+  ],
+  "relationships": [
+    {
+      "id": "actions-notifications",
+      "from": "action-run",
+      "to": "notification",
+      "kind": "reference",
+      "owner": "actions",
+      "provider": "notifications",
+      "consumer": "actions",
+      "integrationMode": "command",
+      "authority": "notifications",
+      "consistency": "idempotent-command",
+      "meaning": "Stable per-run recipient intent creates Inbox and LINE effects through Notifications."
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "deliver-project-baseline-notifications",
+      "owner": "notifications",
+      "kind": "leaf",
+      "intent": "Create explicit-recipient Project WBS Inbox records and recover fixed LINE delivery intents under current Project source access.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Explicit Project WBS Baseline recipients with active User and current Project READ source checks, exact notification receipts and recoverable LINE intents without Watch.",
+        "sourcePaths": [
+          "packages/notifications/src/application/use-cases/project-baseline-delivery.ts",
+          "packages/notifications/src/adapters/outbound/persistence/project-baseline-delivery.ts"
+        ],
+        "publicExports": [
+          "./application/use-cases/project-baseline-delivery",
+          "./contracts/output/project-baseline-delivery",
+          "./contracts/repositories/project-baseline-delivery",
+          "./composition/bootstrap/project-baseline-delivery"
+        ],
+        "entrypoints": [],
+        "testPaths": ["packages/notifications/test/project-baseline-delivery.test.ts"],
+        "note": "WBS owns Baseline/Revision truth, Project owns current access, Account owns active User/provider binding and Notifications owns Inbox/delivery. Provider acceptance is not device delivery."
+      }
+    },
+    {
+      "id": "deliver-explicit-baseline-notifications",
+      "owner": "notifications",
+      "kind": "leaf",
+      "intent": "Create explicit-recipient WBS Inbox records and recover fixed LINE delivery intents.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Create explicit-recipient WBS Inbox records and recover fixed LINE delivery intents.",
+        "sourcePaths": [
+          "packages/notifications/src/application/use-cases/baseline-delivery.ts",
+          "packages/notifications/src/adapters/outbound/persistence/baseline-delivery.ts"
+        ],
+        "publicExports": [
+          "./application/use-cases/baseline-delivery",
+          "./contracts/output/baseline-delivery",
+          "./contracts/repositories/baseline-delivery",
+          "./composition/bootstrap/baseline-delivery"
+        ],
+        "entrypoints": [],
+        "testPaths": ["packages/notifications/test/baseline-delivery.test.ts"],
+        "note": "R1 transfer-only Repository notification path. Internal execution evidence does not prove Project transfer, production activation or real LINE device delivery."
+      }
+    }
+  ],
+  "locators": []
+}

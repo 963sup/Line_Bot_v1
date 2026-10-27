@@ -1,0 +1,147 @@
+{
+  "schemaVersion": 1,
+  "owner": {
+    "id": "actions",
+    "kind": "business-owner",
+    "lifecycle": "current",
+    "doc": "docs/owners/actions.md"
+  },
+  "boundedContexts": [],
+  "concepts": [
+    {
+      "id": "action-rule",
+      "canonicalName": "ActionRule",
+      "kind": "authoritative",
+      "owner": "actions",
+      "lifecycle": "current",
+      "definition": "Versioned fixed Project business automation definition with explicit recipients and revocable current delegation; the Repository form is retained only during R1 transfer.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "action-run",
+      "canonicalName": "ActionRun",
+      "kind": "authoritative",
+      "owner": "actions",
+      "lifecycle": "current",
+      "definition": "Project-WBS source-version-bound automation execution with immutable rule snapshot and durable progress; the Repository form is retained only during R1 transfer.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "action-attempt",
+      "canonicalName": "ActionAttempt",
+      "kind": "authoritative",
+      "owner": "actions",
+      "lifecycle": "current",
+      "definition": "Fenced execution lease and durable per-step recovery evidence.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "action-command-receipt",
+      "canonicalName": "ActionCommandReceipt",
+      "kind": "authoritative",
+      "owner": "actions",
+      "lifecycle": "current",
+      "definition": "Durable exact replay for authenticated automation commands.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "action-event-receipt",
+      "canonicalName": "ActionEventReceipt",
+      "kind": "authoritative",
+      "owner": "actions",
+      "lifecycle": "current",
+      "definition": "First accepted source event fixes the complete rule fan-out, including no matching rule.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    }
+  ],
+  "relationships": [],
+  "capabilities": [
+    {
+      "id": "manage-project-business-actions",
+      "owner": "actions",
+      "kind": "leaf",
+      "intent": "Manage and recover two fixed Project business automations under current Project ADMIN and WBS publication identity.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Project-scoped fixed WBS Revision checks and explicit-recipient Baseline notification Runs with immutable rules, event acceptance, durable attempts, fenced leases and exact replay.",
+        "sourcePaths": [
+          "packages/actions/src/domain/project-automation.ts",
+          "packages/actions/src/application/use-cases/project-automation.ts",
+          "packages/actions/src/application/use-cases/project-worker.ts",
+          "packages/actions/src/adapters/outbound/persistence/project-automation.ts"
+        ],
+        "publicExports": [
+          "./application/use-cases/project-automation",
+          "./application/use-cases/project-worker",
+          "./contracts/dto/project-automation",
+          "./contracts/repositories/project-automation",
+          "./contracts/output/project-fixed-steps",
+          "./composition/bootstrap/project-automation"
+        ],
+        "entrypoints": [],
+        "testPaths": [
+          "packages/actions/test/project-actions-domain.test.ts",
+          "packages/actions/test/project-actions-postgres.test.ts"
+        ],
+        "note": "Project supplies current ADMIN/open lifecycle; WBS supplies exact Revision/Baseline events; Notifications owns delivery. R1 Repository Actions remain only until durable transfer evidence is verified."
+      }
+    },
+    {
+      "id": "manage-business-actions",
+      "owner": "actions",
+      "kind": "leaf",
+      "intent": "Manage and recover two fixed, delegated Repository business automations.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Manage and recover two fixed, delegated Repository business automations.",
+        "sourcePaths": [
+          "packages/actions/src/domain/automation.ts",
+          "packages/actions/src/application/use-cases/automation.ts",
+          "packages/actions/src/application/use-cases/worker.ts",
+          "packages/actions/src/adapters/outbound/persistence/automation.ts"
+        ],
+        "publicExports": [
+          "./application/use-cases/automation",
+          "./application/use-cases/worker",
+          "./contracts/dto/automation",
+          "./contracts/repositories/automation",
+          "./contracts/output/fixed-steps",
+          "./composition/bootstrap/automation"
+        ],
+        "entrypoints": [
+          "scripts/operations/actions/run.mjs",
+          "scripts/operations/actions/worker.mjs"
+        ],
+        "testPaths": [
+          "packages/actions/test/actions.test.ts",
+          "packages/actions/test/actions-postgres.test.ts"
+        ],
+        "note": "R1 transfer-only Repository runtime. Internal execution evidence does not prove Project transfer, production activation or real LINE device delivery."
+      }
+    }
+  ],
+  "locators": []
+}

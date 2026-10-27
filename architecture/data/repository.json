@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "owner": "repository",
+  "files": [
+    {
+      "path": "packages/integration-supabase/src/schemas/600_repositories.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/601_repository_user_access.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/602_repository_team_access.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/603_repository_stars.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/604_repository_commands.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/605_repository_star_lists.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/606_repository_name_history.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/607_repository_subscriptions.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/608_repository_events.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/610_repository_labels.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/611_repository_milestones.sql",
+      "role": "authoritative"
+    }
+  ],
+  "relations": [
+    {
+      "name": "repositories",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/600_repositories.sql",
+      "authority": true,
+      "semanticOwner": "repository",
+      "concept": "repository"
+    },
+    {
+      "name": "repository_access",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/601_repository_user_access.sql",
+      "authority": true,
+      "semanticOwner": "repository",
+      "concept": "repository-user-access"
+    },
+    {
+      "name": "repository_team_access",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/602_repository_team_access.sql",
+      "authority": true,
+      "semanticOwner": "repository",
+      "concept": "repository-team-access"
+    },
+    {
+      "name": "repository_stars",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/603_repository_stars.sql",
+      "authority": true,
+      "semanticOwner": "repository",
+      "concept": "repository-star"
+    },
+    {
+      "name": "repository_commands",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/604_repository_commands.sql",
+      "authority": true,
+      "semanticOwner": "repository"
+    },
+    {
+      "name": "repository_star_lists",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/605_repository_star_lists.sql",
+      "authority": true,
+      "semanticOwner": "repository",
+      "concept": "repository-star-list"
+    },
+    {
+      "name": "repository_star_list_items",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/605_repository_star_lists.sql",
+      "authority": true,
+      "semanticOwner": "repository",
+      "concept": "repository-star-list-item"
+    },
+    {
+      "name": "repository_name_history",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/606_repository_name_history.sql",
+      "authority": true,
+      "semanticOwner": "repository"
+    },
+    {
+      "name": "repository_subscriptions",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/607_repository_subscriptions.sql",
+      "authority": true,
+      "semanticOwner": "repository",
+      "concept": "repository-subscription"
+    },
+    {
+      "name": "repository_events",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/608_repository_events.sql",
+      "authority": true,
+      "semanticOwner": "repository"
+    },
+    {
+      "name": "repository_labels",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/610_repository_labels.sql",
+      "authority": true,
+      "semanticOwner": "repository",
+      "concept": "repository-label"
+    },
+    {
+      "name": "repository_milestones",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/611_repository_milestones.sql",
+      "authority": true,
+      "semanticOwner": "repository",
+      "concept": "repository-milestone"
+    }
+  ]
+}

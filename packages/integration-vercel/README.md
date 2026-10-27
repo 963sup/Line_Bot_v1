@@ -3,7 +3,7 @@
 - Semantic owner: vercel-integration
 - Owner contract: [vercel-integration](../../docs/owners/vercel-integration.md)
 - Module kind: integration-adapter
-- Architecture: [implementation-topology.json](../../architecture/implementation-topology.json)
+- Architecture: [registry.json#modules](../../architecture/registry.json#modules)
 
 Vercel AI Gateway adapter for Assistant responses, receipt parsing, Intelligence observations, and Contract-schema-driven document candidates. No business confirmations or persistent data.
 

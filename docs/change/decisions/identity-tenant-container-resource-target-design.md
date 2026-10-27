@@ -51,7 +51,7 @@ Source ── lineage ──> Record ── evidence ──> Entity
 
 ## Promotion 條件
 
-任一部分成為 current capability 前，必須先確認其 durable fact 的唯一 Owner、授權與隔離規則、跨 Owner contract、資料 authority、交易／replay／recovery 行為，以及實際 consumer。再同步更新對應的 `architecture/semantic-model.json`、implementation/data topology、schema、source、tests 與 Owner contract。
+任一部分成為 current capability 前，必須先確認其 durable fact 的唯一 Owner、授權與隔離規則、跨 Owner contract、資料 authority、交易／replay／recovery 行為，以及實際 consumer。再同步更新對應的 `architecture/registry.json#domain`、implementation/data topology、schema、source、tests 與 Owner contract。
 
 ## Current-state routing
 
@@ -59,4 +59,4 @@ Source ── lineage ──> Record ── evidence ──> Entity
 - [Enterprise target design](enterprise-target-design.md)
 - [Organization target design](organization-target-design.md)
 - [System invariants](../../rules/system-invariants.md)
-- [Machine-readable architecture authority](../../../architecture/README.md)
+- [Machine-readable architecture sources](../../../architecture/)

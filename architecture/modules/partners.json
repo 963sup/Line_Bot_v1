@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "@line_bot_v1/partners",
+  "status": "current",
+  "path": "packages/partners",
+  "moduleKind": "domain-module",
+  "semanticOwner": "partner-directory",
+  "allowedWorkspaceDependencies": ["@line_bot_v1/account", "@line_bot_v1/platform"],
+  "primaryOwnerImplementation": true
+}
