@@ -6,7 +6,10 @@ import { repositoryOwnerScope } from "./repository-owner-scope.server";
 let dependencies: ReturnType<typeof createPostgresFileDependencies> | undefined;
 const fileDependencies = () => (dependencies ??= createPostgresFileDependencies());
 
+let owner: ReturnType<typeof createFiles> | undefined;
+const fileOwner = () => (owner ??= createFiles({ ...fileDependencies(), now: Date.now }));
+
 export const files: FilesWebRuntime = {
   scope: repositoryOwnerScope,
-  owner: () => createFiles({ ...fileDependencies(), now: Date.now }),
+  owner: fileOwner,
 };
