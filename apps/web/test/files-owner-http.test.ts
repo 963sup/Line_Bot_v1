@@ -141,6 +141,17 @@ test("File List is authenticated and always resolves Repository rather than a gl
   });
 });
 
+test("File keyset pagination uses list query without reloading pending uploads", async () => {
+  const { calls, runtime } = fixture();
+  const after = randomUUID();
+  const response = await filesRequest(new Request(baseUrl + "&after=" + after), runtime, identity);
+  assert.equal(response.status, 200);
+  const page = await response.json();
+  assert.deepEqual(page.uploads, []);
+  assert.equal(page.pendingNext, null);
+  assert.deepEqual(calls, [{ operation: "list", args: ["member", scope.repository.id, after] }]);
+});
+
 test("Pending Uploads are explicit, actor-scoped owner reads, never exposed by File List", async () => {
   const { calls, runtime } = fixture();
   const response = await filesRequest(new Request(baseUrl + "&view=uploads"), runtime, identity);
