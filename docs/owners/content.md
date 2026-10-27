@@ -1,48 +1,5 @@
-# Content
+# Content source
 
-Content owns Repository-scoped work definitions and plan versions: Subject → Object → SubObject →
-Work → Task. Nodes have stable identity, text, ordering and one valid parent. Subjects are roots;
-Tasks are leaves. Planned quantities and immutable measure definitions belong to Content.
-A measure carries a user-defined unit label (up to 32 UTF-16 code units), not a global Unit
-registry or conversion rate. Labels are immutable once saved and cannot imply physical Resource
-identity. Existing `pcs` quantities remain integers; other units accept exact decimals up to
-three places. Contract agreed and Execution actual quantities reuse the pinned Content measure
-without silently converting units.
-
-Content imports one complete accepted Contract revision into an existing Content plan. The fixed
-`purchase-order-content-v1` expansion reads that exact authorized revision inside the same Content
-transaction, preserves complete Contract line coverage and records the Contract revision/source-row
-evidence in its immutable Content revision. The user confirms the whole-document disclosure; they
-do not map rows individually or select a File processing observation. Content may add engineering
-planning facts but never rewrites Contract commercial facts. Historical `import-file` revisions
-remain readable as evidence only and cannot be newly written.
-
-When a WBS reader consumes a later Content revision, Content revalidates the immutable source-row
-evidence against that selected revision before returning the snapshot. Missing or contradictory
-source nodes are an explicit `SOURCE_INVALID` qualification failure; they are never reported as
-current coverage and no mutable coverage registry is created.
-
-One Repository plan head selects a complete immutable document revision. Replacing the document
-validates the entire hierarchy under its observed version and appends a revision. Historical plans
-remain unchanged. A plan version does not imply formal approval, completion or legal effectiveness;
-no additional Baseline workflow is inferred.
-
-Resources owns physical Location, Equipment and Material identity/lifecycle. Content validates new
-exact resource revision pins through its public transaction-bound reader. Resource archive does not
-rewrite history or invalidate unchanged historical pins. Contract owns formal commitments against
-exact Work/Task plan items; Execution owns Task execution, prerequisites, actuals and internal review.
-Planned, agreed and actual quantities are distinct facts. Task hierarchy is not an execution DAG.
-
-Repository owns current access and archive policy. Permission checks precede replay; new writes
-reject archived Repositories, while currently authorized exact replay may return its committed
-revision. Expected version, head, revision, pins and receipt commit or roll back together. Changed
-payloads under the same request identity conflict. Revisions and receipts are insert/read-only.
-
-Project WBS remains a distinct Project-scoped planning/governance owner. Content does not edit WBS
-documents or implicitly transfer their authority. Text validation uses the neutral
-`@line_bot_v1/platform/text` export. Physical Resource kind is explicit; names and units never infer
-physical resource identity.
-
-Current implementation, dependencies and persisted mappings are recorded by the canonical
-[semantic model](../../architecture/semantic-model.json), [module topology](../../architecture/implementation-topology.json)
-and [data topology](../../architecture/data-topology.json).
+- [Package manifest and public exports](../../packages/content/package.json)
+- [Source](../../packages/content/src/)
+- [Tests](../../packages/content/test/)
