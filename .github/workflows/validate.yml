@@ -26,8 +26,15 @@ jobs:
           cache_dependency_path: pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile --prefer-offline
       - name: Validate repository metadata
-        run: pnpm exec biome check package.json architecture knip.jsonc
+        run: pnpm check lint -- package.json architecture knip.jsonc
       - name: Validate repository contracts
-        run: pnpm check:repository
+        run: pnpm check check:repository
+      - name: Prepare optional configuration checkers
+        env:
+          BOOTSTRAP_TOOLS: actionlint shfmt taplo
+          BOOTSTRAP_MCP_SERVERS: ""
+        run: bash .codex/bootstrap/install.sh
+      - name: Validate workflows, bootstrap formatting and TOML
+        run: pnpm check actionlint shfmt taplo
       - name: Validate patch
-        run: git diff --check
+        run: pnpm check patch

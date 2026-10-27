@@ -99,11 +99,14 @@ TypeScript LSP 直接重用 workspace 固定的 `typescript-language-server` 5.1
 | --- | --- | --- |
 | `ripgrep` | `rg`，有範圍的文字／檔案定位 | 啟用 |
 | `jq` | JSON 欄位投影、CLI 結果篩選 | 啟用 |
-| `shellcheck` | Bash 靜態分析；不在任務啟動時自動掃描全庫 | 啟用 |
+| `shellcheck` | Bash 靜態分析；修改 Bash 且需要靜態檢查時選用 | 選用 |
+| `actionlint` | 固定版本 GitHub Actions 檢查器；`pnpm check actionlint` | 選用 |
+| `shfmt` | 固定版本 Bash 格式檢查器；`pnpm check shfmt` | 選用 |
+| `taplo` | 固定版本 TOML 語法檢查器；`pnpm check taplo` | 選用 |
 | `build` | make、GCC／G++、pkg-config；Python 沿用 runtime 模組 | 選用 |
 | `browser` | 固定版本 Playwright、Chromium 與所需系統函式庫 | 選用 |
 
-前三者與 native build 工具使用具簽章驗證的 distro 套件來源，沿用 image 的套件版本，不複製進 workspace dependency。缺少套件時需要 root 或非互動 sudo，以及 apt repository 存取；已有工具時跳過安裝。同一次 bootstrap 只更新一次 apt index。
+ripgrep、jq 與 native build 工具使用具簽章驗證的 distro 套件來源，沿用 image 的套件版本，不複製進 workspace dependency。缺少套件時需要 root 或非互動 sudo，以及 apt repository 存取；已有工具時跳過安裝。同一次 bootstrap 只更新一次 apt index。ShellCheck、actionlint、shfmt、taplo 使用固定版本的 GitHub release，驗證 checksum 後安裝至 `.tools/codex/bin/`，不需 sudo；各自模組擁有 install／verify，版本由 `config/versions.env` 擁有。ShellCheck／shfmt 的 upstream digest 與 Taplo 的下載 archive hash 固定在各自 installer，升版時同步更新；Taplo release 未提供獨立 upstream checksum。
 
 在目前工具選擇上加入 Web／native 開發能力：
 

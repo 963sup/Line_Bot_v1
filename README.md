@@ -14,6 +14,8 @@ pnpm dev
 
 常用驗證：
 
+所有 repository 驗證統一經過 `scripts/check.mjs`。`pnpm check` 依序執行契約、Biome、Dependency Cruiser、Knip、型別、測試、建置、schema 與 patch 檢查，任一階段失敗即停止。可用 `pnpm check lint typecheck` 選取階段；`pnpm check lint -- package.json` 將參數傳給單一工具。既有根目錄驗證 scripts 也轉入此入口，package 內部 scripts 維持由 Turbo 呼叫。格式修正須明確執行 `pnpm format`，不列入預設檢查。CI 依環境選取階段。
+
 | Command | Meaning |
 | --- | --- |
 | `pnpm check:repository` | architecture 分片、workspace manifest／exports 與文件邊界檢查 |
@@ -21,9 +23,10 @@ pnpm dev
 | `pnpm typecheck` | workspace TypeScript validation |
 | `pnpm test` | workspace tests |
 | `pnpm build` | workspace production builds |
-| `pnpm exec knip` | official Knip reachability check |
+| `pnpm check dependencies` | Dependency Cruiser dependency boundaries |
+| `pnpm check knip` | official Knip reachability check |
 
-依變更範圍執行上列 package scripts；typecheck 與測試的併發設定由 workspace scripts 擁有，避免 PGlite／WASM 測試互相競爭。
+依變更範圍選取階段；入口限制 typecheck 與測試最多同時執行兩個 Turbo tasks，避免 PGlite／WASM 測試互相競爭。
 
 ### Repository contracts
 
@@ -108,16 +111,35 @@ Source-of-truth 分工見 [sources of truth](docs/facts/sources-of-truth.md)；A
 | --- | --- |
 | 新環境／快取重建 | `bash .codex/bootstrap/install.sh` |
 | 恢復快取／更新 checkout 後 | `bash .codex/bootstrap/update.sh` |
-| 日常快速檢查 | `bash .codex/bootstrap/verify.sh` |
-| 明確需要本地 smoke 檢查 | `bash .codex/bootstrap/tests/smoke.sh` |
+| 日常快速檢查 | `pnpm check bootstrap` |
+| 明確需要本地 smoke 檢查 | `pnpm check bootstrap:smoke` |
 
 `install.sh` 會安裝選定的 runtime／CLI、執行一次 frozen workspace install、準備 MCP 的本地依賴，最後呼叫 `verify.sh`。`update.sh` 以設定與 lockfile 指紋判斷是否需要重新收斂，不追蹤 latest，也不修改版本檔或 lockfile。
+
+在 Codex Cloud 環境設定中，Setup script 使用 `bash .codex/bootstrap/install.sh`，Maintenance script 使用 `bash .codex/bootstrap/update.sh`。Repository 內有腳本不代表 Cloud 已設定或成功執行；以實際退出碼及 `.tools/codex/installed.sha256` 完成標記確認安裝結果。Bootstrap 與 smoke 是明確選取的環境檢查，不加入預設 `pnpm check`。
+
+安裝腳本的 PATH 不會傳回父層 shell。後續命令若要使用 bootstrap 安裝的固定版本，先執行 `source .codex/bootstrap/lib/common.sh`，再執行 `pnpm check bootstrap` 或需要的工具。完整安裝日誌位於 `.artifacts/codex-cloud/`；安裝失敗先讀取失敗 stage 與對應日誌，不使用降低 TLS 驗證或繞過 proxy 的方式重試。
+
+ShellCheck 是選用的 Bash 靜態分析工具，不阻擋預設初始化。需要時在 `BOOTSTRAP_TOOLS` 清單加入 `shellcheck`；installer 下載固定版本的官方 binary、驗證 SHA-256，再安裝至 `.tools/codex/bin/shellcheck`，不需要 root 或 sudo。明確選取卻無法安裝時仍會報錯。失敗前已完成的工具會保留，重新執行仍按固定版本檢查；沒有完成標記代表整體安裝尚未完成。
+
+Bootstrap 將 `SUPABASE_HOME` 指向 workspace 的 `.cache/supabase`，避免 Supabase CLI 在唯讀的使用者目錄建立快取；版本仍依 lockfile 固定。
 
 工具選擇在 [`config/tools.env`](.codex/bootstrap/config/tools.env)，MCP 準備範圍在 [`config/mcp.env`](.codex/bootstrap/config/mcp.env)，額外 exact pins 在 [`config/versions.env`](.codex/bootstrap/config/versions.env)。可用 `BOOTSTRAP_TOOLS` 或 `BOOTSTRAP_MCP_SERVERS` 暫時覆寫清單。Node、pnpm 與 workspace CLI 繼續以 `.node-version`、`package.json`、catalog 與 lockfile 為準。
 
 Docker／Postgres 依任務加入工具清單；Docker 需要 Cloud host 提供 daemon／socket，Postgres 模組只安裝 client。完整責任與 Cloud 接線見 [Cloud bootstrap](docs/reference/engineering/local-environment.md#codex-cloud-bootstrap)。本地工具可執行不代表 MCP 已被當前 session 載入或 OAuth 已完成。
 
-預設也準備 `rg`、`jq`、ShellCheck，方便定位程式、投影 JSON 與檢查 Bash。需要 native dependency 編譯時選用 `build`；需要 UI 驗收時選用 `browser`，提供固定版 Playwright 與 Chromium。啟用方式與平台權限見 [開發工具](docs/reference/engineering/local-environment.md#cloud-development-tools)。
+預設也準備 `rg`、`jq`，方便定位程式與投影 JSON。Bash 靜態分析選用 `shellcheck`；需要 native dependency 編譯時選用 `build`；需要 UI 驗收時選用 `browser`，提供固定版 Playwright 與 Chromium。啟用方式與平台權限見 [開發工具](docs/reference/engineering/local-environment.md#cloud-development-tools)。
+
+GitHub Actions、Bash 格式與 TOML 檢查可選用 `actionlint`、`shfmt`、`taplo`。每個模組的 install／verify 位於 `.codex/bootstrap/modules/<tool>/`，版本在 `config/versions.env`，執行檔安裝至 `.tools/codex/bin/`，下載檔保留於 `.tools/codex/downloads/`。啟用方式：
+
+```sh
+source .codex/bootstrap/config/tools.env
+export BOOTSTRAP_TOOLS="$BOOTSTRAP_TOOLS actionlint shfmt taplo"
+bash .codex/bootstrap/update.sh
+pnpm check actionlint shfmt taplo
+```
+
+這三個階段需明確選取，不加入預設 `pnpm check`。actionlint 檢查 workflows，shfmt 檢查 bootstrap Bash 格式，taplo 檢查 Codex 與 Supabase TOML 語法；它們不在檢查時安裝工具，也不自動改檔。ast-grep、TypeScript 與 Biome 繼續由 workspace lockfile 安裝，不新增全域副本。
 
 ### MCP 安裝與連接
 

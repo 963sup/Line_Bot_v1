@@ -424,6 +424,10 @@ export default function FilesPanel({
 
   async function openFile(file: FileInfo) {
     if (pendingDocumentIntake || pendingDocumentConfirmation || mutationLock.current) return;
+    await loadFileDetails(file);
+  }
+
+  async function loadFileDetails(file: FileInfo) {
     const ticket = epoch.current;
     setBusy(true);
     setError("");
@@ -459,7 +463,8 @@ export default function FilesPanel({
       setSourceFile(null);
       if (fileInput.current) fileInput.current.value = "";
       await load();
-      await openFile(response.file);
+      if (ticket !== epoch.current) return;
+      await loadFileDetails(response.file);
     } catch (cause) {
       if (cause instanceof StaleRequest || ticket !== epoch.current) return;
       const status =

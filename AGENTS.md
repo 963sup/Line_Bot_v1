@@ -15,8 +15,8 @@
 - 失敗時先讀第一個可行動錯誤，再讀相關 stack trace 或尾端；資訊不足時才局部擴大讀取。
 - 不為了證明命令已執行而貼出完整輸出；回報命令、結果與影響範圍即可。
 - 輸出上限是保護措施，不取代相關性判斷；相關且必要的片段優先於固定行數。
-- 可能產生無界輸出的 test、build、lint、typecheck、provider、CI 或輪詢命令，必須透過 `pnpm tool:bounded -- --label <scope> -- <command>` 執行；完整 log 寫入 `.artifacts/bounded-command/`，上下文只使用其 JSON 摘要。輪詢必須指定穩定的 `--dedupe-key`，相同結果不得重複帶入上下文。
-- HTTPS JSON 回應使用 `--summary json`，並只用 `--select` 投影當前決策所需欄位；未選欄位、物件內容及大型陣列不可帶入上下文。
+- 可能產生高量輸出的 test、build、lint、typecheck、provider、CI 或輪詢命令，將完整 log 寫入 ignored artifact；上下文只讀取結構化摘要或有界錯誤片段。輪詢只回報有意義的狀態變化。輸出控制不綁定特定 repository wrapper。
+- HTTPS JSON 回應在工具端只投影當前決策所需欄位；未選欄位、物件內容及大型陣列不可帶入上下文。
 - `rg`、`sed -n`、Git pathspec 等已明確限制輸出的定位命令可直接執行；不可為了省略篩選而將無界命令包裝成 bounded command。
 
 ## Serena MCP usage
@@ -112,6 +112,8 @@ Source-of-truth：[facts/sources-of-truth.md](docs/facts/sources-of-truth.md)。
 
 ## Change / validation
 
+- Repository 驗證統一透過 `pnpm check [stage...]`，包含 `check:repository`、`lint`（Biome）、`dependencies`（Dependency Cruiser）、`knip`、`typecheck`、`test`、`build`、`schema:check` 與 `patch`。單一 stage 可用 `--` 傳遞工具參數；根目錄既有驗證 scripts 亦轉入同一入口。
+
 - 主動依 [development workflow](docs/reference/engineering/development-workflow.md) 選擇能直接回答問題的工具；簡單任務直接完成，每個寫入面與 validation 保持單一負責者。
 - Repository 修改固定依 [development change loop](docs/reference/engineering/development-workflow.md#default-repository-change-loop) 執行：先定目標與不變條件、定位 Owner/契約與 consumers，再依任務查詢、預覽、修改、檢查漏改、驗證及交付。已知 Owner 直接讀契約；純文件修正保留原本文件路徑，不強制執行無關工具。
 - 批次查改使用 bounded `rg` 與原生 patch；跨 project／公開契約的部分結果不能宣稱全庫完整；展開實際 consumers 後再修改。
@@ -119,12 +121,17 @@ Source-of-truth：[facts/sources-of-truth.md](docs/facts/sources-of-truth.md)。
 - 工具呼叫先設定足以回答當前問題的輸出上限；列表、diff、log、JSON/API 與 test output 先在工具端投影／計數／摘要。成功不展開原始 log；失敗先讀第一個可行動錯誤與固定 tail，只有該片段不足以改變下一步時才局部擴展。禁止把完整高量輸出直接注入 Agent context。
 - 可逆且 contract 已決定的實作直接完成；只有缺少會改變產品語意、資料處置或外部寫入授權的資訊才阻塞。
 - JS/TS/JSON 由 Biome formatting；需要時用 `pnpm format`。
-- 一般修改依 scope 使用 `pnpm lint`、`pnpm typecheck`、`pnpm test`、`pnpm build` 或 `pnpm exec knip`。Evidence boundary：[validation rules](docs/rules/validation-evidence.md)。
+- 一般修改依 scope 使用 `pnpm check lint typecheck test build`、`pnpm check dependencies` 或 `pnpm check knip`。Evidence boundary：[validation rules](docs/rules/validation-evidence.md)。
 - Merge 前依 [development workflow](docs/reference/engineering/development-workflow.md) 收斂 WIP/fixup history。
 
 ## Codex Cloud bootstrap
 
 - 環境入口在 `.codex/bootstrap/`；新建／重建使用 `install.sh`，恢復快取或更新 checkout 使用 `update.sh`，日常檢查使用 `verify.sh`。不要每次任務重裝工具、build 全部 packages 或重新索引全庫。
+- Cloud setup 執行 `bash .codex/bootstrap/install.sh`，maintenance 執行 `bash .codex/bootstrap/update.sh`；這些腳本準備環境。環境驗證統一透過 `pnpm check bootstrap`，明確要求 smoke 時使用 `pnpm check bootstrap:smoke`，兩者不納入預設 repository checks。
+- 安裝後依 bootstrap 選定路徑使用工具：後續 shell 命令先 `source .codex/bootstrap/lib/common.sh`。不能假設安裝 subprocess 修改的 PATH 會回傳目前 session。
+- 只有 install exit 0 且 `.tools/codex/installed.sha256` 已寫入才回報安裝完成；verify exit 0 只證明本地檢查通過。失敗讀取 stage 與完整日誌的有界片段，不以 node_modules 存在推論完整初始化，也不繞過 proxy／TLS 或自動升級版本。
+- ShellCheck 為選用工具，只在 `BOOTSTRAP_TOOLS` 明確選取時安裝與驗證。使用固定版本的官方 binary、驗證 SHA-256，安裝至 `.tools/codex/bin/shellcheck`，不依賴 apt／sudo。其他已選取的系統套件若需要 root 或非互動 sudo，回報 image／權限阻塞與已完成階段，不以部分安裝宣稱初始化成功。
+- `actionlint`、`shfmt`、`taplo` 為選用工具，使用各自 `modules/<tool>/install.sh`／`verify.sh` 與固定版本，下載須驗證 checksum；不另建全域 npm 副本。程式檢查透過 `pnpm check actionlint shfmt taplo`，檢查階段不得下載、安裝或自動改檔。workspace 已擁有的 ast-grep、TypeScript、Biome 沿用 lockfile。
 - `config/` 擁有啟用項目與額外版本，`lib/` 擁有共用 primitive，`modules/<tool>/` 各自擁有 install／verify，`mcp/servers/<server>/` 只處理該 server 的本地需求。不要在 root scripts、devcontainer 或 Cloud 設定另抄一套安裝內容。
 - `verify.sh` 不安裝工具或啟動服務；`tests/smoke.sh` 是明確選用的本地驗證，不得以 smoke 或 executable 存在宣稱 hosted MCP、OAuth、provider 或當前 session 已就緒。使用者要求不實測時不執行它們，交付時明示未驗證。
 - `.codex/config.toml` 的 stdio launcher 選用同一套已準備的工具路徑，不能在 MCP 啟動時下載或安裝。Hosted MCP 與 OAuth 由實際 Codex host 管理；以該 session 的真實工具呼叫確認可用性，缺少工具時如實回報。
