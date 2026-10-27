@@ -27,5 +27,7 @@ jobs:
       - run: pnpm install --frozen-lockfile --prefer-offline
       - name: Validate repository metadata
         run: pnpm exec biome check package.json architecture/semantic-model.json knip.jsonc
+      - name: Prevent retired document design from returning
+        run: node --test scripts/tooling/documentation-boundary.test.mjs
       - name: Validate patch
         run: git diff --check
