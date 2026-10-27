@@ -54,7 +54,7 @@ const evidence = z
   .strict();
 
 /** Runtime authority for every purchase-order candidate accepted by Contract. */
-export const purchaseOrderCandidateSchema = z
+export const storedPurchaseOrderCandidateSchema = z
   .object({
     header: z
       .object({
@@ -112,7 +112,9 @@ export const purchaseOrderCandidateSchema = z
         .strict(),
     ),
   })
-  .strict()
+  .strict();
+
+export const purchaseOrderCandidateSchema = storedPurchaseOrderCandidateSchema
   .superRefine((candidate, context) => {
     const rowIds = candidate.lines.map((line) => line.sourceRowId);
     if (new Set(rowIds).size !== rowIds.length)
@@ -171,5 +173,12 @@ export function decodeSourceReviewAttestation(value: unknown): SourceReviewAttes
 export function decodePurchaseOrderCandidate(value: unknown): PurchaseOrderCandidate {
   const parsed = purchaseOrderCandidateSchema.safeParse(value);
   if (!parsed.success) return fail("Invalid purchase-order candidate.");
+  return parsed.data;
+}
+
+/** Historical schema-version-1 revisions stay readable; diagnostics govern their confirmation. */
+export function decodeStoredPurchaseOrderCandidate(value: unknown): PurchaseOrderCandidate {
+  const parsed = storedPurchaseOrderCandidateSchema.safeParse(value);
+  if (!parsed.success) return fail("Invalid stored purchase-order candidate.");
   return parsed.data;
 }

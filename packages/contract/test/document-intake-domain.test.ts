@@ -11,7 +11,10 @@ import {
   createDocumentRevision,
   type PurchaseOrderCandidate,
 } from "../src/domain/document-intake.js";
-import { decodePurchaseOrderCandidate } from "../src/domain/document-intake-decoder.js";
+import {
+  decodePurchaseOrderCandidate,
+  decodeStoredPurchaseOrderCandidate,
+} from "../src/domain/document-intake-decoder.js";
 import { ContractError } from "../src/domain/error.js";
 
 function candidate(lineCount: number): PurchaseOrderCandidate {
@@ -166,6 +169,7 @@ test("purchase-order Zod decoder rejects duplicate rows and unexpected fields", 
     })),
   };
   assert.throws(() => decodePurchaseOrderCandidate(duplicateRows), ContractError);
+  assert.doesNotThrow(() => decodeStoredPurchaseOrderCandidate(duplicateRows));
 
   const unexpectedField = { ...candidate(1), untrustedProviderField: true };
   assert.throws(() => decodePurchaseOrderCandidate(unexpectedField), ContractError);
