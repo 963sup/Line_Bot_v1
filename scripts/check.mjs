@@ -3,6 +3,8 @@ import { fileURLToPath } from "node:url";
 
 const commands = {
   "check:repository": ["node", "scripts/check-repository-contracts.mjs"],
+  "codex:config": ["node", "--test", "scripts/tooling/codex-config.test.mjs"],
+  hooks: ["node", "--test", "scripts/tooling/hooks.test.mjs"],
   lint: ["pnpm", "exec", "biome", "check"],
   dependencies: [
     "pnpm",

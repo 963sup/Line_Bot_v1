@@ -1,6 +1,19 @@
 # Official Codex project configuration.
 # Secrets stay in the environment or Codex-managed authentication.
 
+# Root settings must precede named TOML tables.
+tool_output_token_limit = 3000
+project_doc_max_bytes = 32768
+web_search = "live"
+
+[features]
+hooks = true
+
+# Public official documentation; no local executable or credential required.
+[mcp_servers.openaiDeveloperDocs]
+url = "https://developers.openai.com/mcp"
+startup_timeout_sec = 30
+
 # Bootstrap installs pinned Serena v2 with `uv tool install`; the launcher only
 # selects that prepared executable and never resolves/downloads at MCP startup.
 [mcp_servers.serena]
@@ -51,6 +64,14 @@ config_file = "./agents/debugger.toml"
 [agents.architect]
 description = "Review architecture, module boundaries, dependency direction, and data flow."
 config_file = "./agents/architect.toml"
+
+[agents.test-engineer]
+description = "Analyze test coverage, design regression cases, and identify untested behavior."
+config_file = "./agents/test-engineer.toml"
+
+[agents.integration-validator]
+description = "Validate cross-service contracts, runtime behavior, and external integration evidence."
+config_file = "./agents/integration-validator.toml"
 
 [mcp_servers.next-devtools.tools.nextjs_index]
 approval_mode = "approve"

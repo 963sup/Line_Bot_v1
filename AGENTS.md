@@ -112,7 +112,9 @@ Source-of-truth：[facts/sources-of-truth.md](docs/facts/sources-of-truth.md)。
 
 ## Change / validation
 
-- Repository 驗證統一透過 `pnpm check [stage...]`，包含 `check:repository`、`lint`（Biome）、`dependencies`（Dependency Cruiser）、`knip`、`typecheck`、`test`、`build`、`schema:check` 與 `patch`。單一 stage 可用 `--` 傳遞工具參數；根目錄既有驗證 scripts 亦轉入同一入口。
+- Lifecycle hooks 由 `.codex/hooks.json` 接線、`.codex/hooks/` 擁有事件處理，驗證仍經 `scripts/check.mjs`。只追蹤本 session／turn 的 apply_patch 路徑；shell 修改需人工選取驗證。Stop hook 僅執行 scoped diff／Biome 快速檢查，不代替 typecheck、業務測試、build 或 provider evidence。不得因 hooks 未觸發、未信任或只通過快速檢查而宣稱完整驗證。
+
+- Repository 驗證統一透過 `pnpm check [stage...]`，包含 `check:repository`、`codex:config`（設定與 agent／hook 引用）、`hooks`（事件處理回歸測試）、`lint`（Biome）、`dependencies`（Dependency Cruiser）、`knip`、`typecheck`、`test`、`build`、`schema:check` 與 `patch`。單一 stage 可用 `--` 傳遞工具參數；根目錄既有驗證 scripts 亦轉入同一入口。
 
 - 主動依 [development workflow](docs/reference/engineering/development-workflow.md) 選擇能直接回答問題的工具；簡單任務直接完成，每個寫入面與 validation 保持單一負責者。
 - Repository 修改固定依 [development change loop](docs/reference/engineering/development-workflow.md#default-repository-change-loop) 執行：先定目標與不變條件、定位 Owner/契約與 consumers，再依任務查詢、預覽、修改、檢查漏改、驗證及交付。已知 Owner 直接讀契約；純文件修正保留原本文件路徑，不強制執行無關工具。

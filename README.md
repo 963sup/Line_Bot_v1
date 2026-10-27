@@ -14,7 +14,7 @@ pnpm dev
 
 常用驗證：
 
-所有 repository 驗證統一經過 `scripts/check.mjs`。`pnpm check` 依序執行契約、Biome、Dependency Cruiser、Knip、型別、測試、建置、schema 與 patch 檢查，任一階段失敗即停止。可用 `pnpm check lint typecheck` 選取階段；`pnpm check lint -- package.json` 將參數傳給單一工具。既有根目錄驗證 scripts 也轉入此入口，package 內部 scripts 維持由 Turbo 呼叫。格式修正須明確執行 `pnpm format`，不列入預設檢查。CI 依環境選取階段。
+所有 repository 驗證統一經過 `scripts/check.mjs`。`pnpm check` 依序執行契約、Codex 設定、hooks 自測、Biome、Dependency Cruiser、Knip、型別、測試、建置、schema 與 patch 檢查，任一階段失敗即停止。可用 `pnpm check lint typecheck` 選取階段；`pnpm check lint -- package.json` 將參數傳給單一工具。既有根目錄驗證 scripts 也轉入此入口，package 內部 scripts 維持由 Turbo 呼叫。格式修正須明確執行 `pnpm format`，不列入預設檢查。CI 依環境選取階段。
 
 | Command | Meaning |
 | --- | --- |
@@ -103,6 +103,16 @@ Source-of-truth 分工見 [sources of truth](docs/facts/sources-of-truth.md)；A
 
 本機 validation 不代表 Supabase remote convergence、Vercel deployment、LINE publication 或真機 acceptance。
 
+## Codex lifecycle hooks
+
+[`.codex/hooks.json`](.codex/hooks.json) 註冊三個薄事件處理器：SessionStart 回傳分支、revision、tracked changes 數量與安裝標記；PostToolUse 記錄 apply_patch 的新增／修改／刪除／搬移路徑；Stop 經 `scripts/check.mjs` 執行該範圍的 diff 與 Biome 檢查。同 turn、同內容使用既有結果，失敗最多要求續跑一次，不安裝工具、不格式化、不操作遠端。
+
+事件紀錄、內容指紋、結果與完整日誌位於 ignored `.artifacts/hooks/`，不保存原始 patch 或對話內容。只覆蓋 apply_patch；shell 或其他編輯方式、型別、業務測試、build、schema 與 provider 驗收需另外確認。執行 `pnpm check hooks` 可測試事件協定與去重行為。
+
+依 [官方 hooks 文件](https://learn.chatgpt.com/docs/hooks)，專案 hooks 需由支援該功能的 host 載入及信任；CLI 可用 `/hooks` 檢視與信任設定。設定變更後需重新檢視信任。Cloud orchestration 有模式限制；模擬事件測試成功不代表當前 Cloud／桌面 session 已觸發 hooks。請以新 session 的實際事件確認，無法載入時仍手動執行適用的 `pnpm check`。
+
+專用子代理由 [`.codex/config.toml`](.codex/config.toml) 註冊：[`test-engineer`](.codex/agents/test-engineer.toml) 分析測試缺口，僅在指定路徑修改測試；[`integration-validator`](.codex/agents/integration-validator.toml) 以唯讀方式核對整合契約與驗證證據。依任務呼叫，不在每次修改時自動執行；設定需由支援自訂 agent 的 Codex session 載入。
+
 ## Codex Cloud bootstrap
 
 環境準備由 [.codex/bootstrap/](.codex/bootstrap/) 擁有，MCP 連接設定在 [config.toml](.codex/config.toml)。
@@ -145,8 +155,11 @@ pnpm check actionlint shfmt taplo
 
 MCP 的唯一 host 設定是 [`.codex/config.toml`](.codex/config.toml)。Bootstrap 只準備本地 executable 與驗證設定；安裝完成後要重新連接或開啟新的 Codex session，再用 `/mcp` 檢查連線並實際呼叫一個唯讀工具。`verify.sh` 顯示 `pending` 代表仍需 host handshake、OAuth 或真實呼叫，不能視為 MCP 已完成。
 
+根層設定將工具輸出預算設為 3,000 tokens、project instructions 上限設為 32,768 bytes，並啟用 live web search；這些不是 MCP server 欄位。Hooks 明確啟用，agents 維持每 session 最多 4 個並行子代理、深度 2。CLI 0.163.0 的 multi_agent、shell_snapshot、unified_exec 與 goals 已預設啟用，未重複覆寫；升版時依適用 schema 與實際預設重驗。輸出預算不取代 artifact／欄位投影；指令上限也不保證所有 nested AGENTS 都能完整載入。`pnpm check codex:config` 驗證設定層級、agent 檔案引用與 hooks 接線，CI 使用同一入口。
+
 | MCP | 類型 | 準備／憑證 | 完成方式 |
 | --- | --- | --- | --- |
+| OpenAI Developer Docs | Hosted HTTP | `https://developers.openai.com/mcp`，不需本地安裝或憑證；Cloud 網路需允許 `developers.openai.com` | 在新 session 連線後執行文件唯讀查詢 |
 | Serena 2.1.0 | 本機 stdio | Bootstrap 以 `uv tool install` 和 Python 3.13 建立隔離環境；專案設定在 [`.serena/project.yml`](.serena/project.yml) | 重開 session，以 `/mcp` 確認後讀取 Serena initial instructions／啟用目前專案 |
 | Next DevTools | 本機 stdio | `pnpm install --frozen-lockfile` 提供 workspace 固定的 `next-devtools-mcp` | 啟動需要診斷的 Next.js app，再從 MCP 查詢該 runtime |
 | shadcn | 本機 stdio | workspace lockfile 提供 `apps/web` 的 shadcn CLI | 重開 session，呼叫 registry 的唯讀工具 |

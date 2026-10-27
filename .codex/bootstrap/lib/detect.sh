@@ -39,7 +39,7 @@ selected_tools() {
 validate_mcp_selection() {
   local name
   for name in $BOOTSTRAP_MCP_SERVERS; do
-    case "$name" in github | context7 | shadcn | next-devtools | sentry | serena) ;; *)
+    case "$name" in github | context7 | shadcn | next-devtools | sentry | serena | openaiDeveloperDocs) ;; *)
       printf 'Unknown MCP server: %s\n' "$name" >&2
       return 1
       ;;

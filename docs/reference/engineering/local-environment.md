@@ -67,6 +67,10 @@ Cloud 安裝腳本從該設定綁定的 repo root 執行 `bash .codex/bootstrap/
 
 技能沿用既有 [.agents/skills/](../../../.agents/skills/) 與受管理的 lockfile；這次 bootstrap 不複製或搬動第三方技能。
 
+### OpenAI Developer Docs MCP
+
+OpenAI Developer Docs 另以官方 hosted MCP 提供文件查詢，不需本地安裝或 credential；連接位置只由 `.codex/config.toml` 擁有，Cloud 網路需允許 `developers.openai.com`，實際工具註冊與唯讀查詢仍由 host 驗證。
+
 ### Serena v2 MCP
 
 Serena 依官方安裝模型由 `uv tool install` 建立隔離工具環境；目前固定 `serena-agent==2.1.0`，並使用 Serena 官方建議的 Python 3.13。這不改變專案一般 Python runtime 的 3.12.14。`uvx` 適合臨時執行，但 MCP 每次啟動不應重新解析或下載套件，因此 Codex launcher 使用已安裝的 `$UV_TOOL_BIN_DIR/serena`。
