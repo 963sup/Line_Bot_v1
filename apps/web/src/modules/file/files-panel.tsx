@@ -36,6 +36,8 @@ type View = {
   canManage: boolean;
   files: FileInfo[];
   next: string | null;
+  uploads: PendingUpload[];
+  pendingNext: string | null;
   uploadMaxBytes: number;
 };
 type UploadCommand = {
@@ -130,6 +132,7 @@ function parseFile(value: unknown): FileInfo {
 }
 function parseView(value: unknown): View {
   const r = record(value);
+  const pending = parsePendingPage({ uploads: r.uploads, next: r.pendingNext });
   const repository = record(r.repository);
   return {
     actorUserId: stringValue(r.actorUserId),
@@ -138,6 +141,8 @@ function parseView(value: unknown): View {
     canManage: boolValue(r.canManage),
     files: listOf(r.files, parseFile),
     next: optionalString(r.next),
+    uploads: pending.uploads,
+    pendingNext: pending.next,
     uploadMaxBytes: intValue(r.uploadMaxBytes),
   };
 }
@@ -386,13 +391,11 @@ export default function FilesPanel({
     setBusy(true);
     setError("");
     try {
-      const [filePage, uploadsPage] = await Promise.all([request(), request({ view: "uploads" })]);
-      const page = parseView(filePage);
-      const uploads = parsePendingPage(uploadsPage);
+      const page = parseView(await request());
       if (ticket !== epoch.current) return;
       setView(page);
-      setPendingUploads(uploads.uploads);
-      setPendingUploadsNext(uploads.next);
+      setPendingUploads(page.uploads);
+      setPendingUploadsNext(page.pendingNext);
       onCanManageChange(page.canManage);
     } catch (cause) {
       if (cause instanceof StaleRequest || ticket !== epoch.current) return;
