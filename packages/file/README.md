@@ -11,6 +11,24 @@ File 是檔案原始內容、版本、來源資格、儲存與回收流程的唯
 - 原始檔識別與解析結果必須分開；來源讀取與資格檢查依 [references contract](./src/contracts/output/references.ts) 執行。
 - 不重複讀取 bytes、不在記憶體複製整個 payload、不以同步 loop 取代可恢復的串流或批次流程。
 
+## Web 快路徑
+
+- Web 只透過受身分及 Repository 範圍保護的 JSON `prepare-upload`／`complete-upload` 指令寫 File。
+- 檔案 Binary 直接 PUT 到私有 Storage 的不可覆寫 Signed Upload URL；它是短效寫入能力，**不是** File Revision 提交授權。
+- File 使用現有持久 Upload Intent、Request ID 與期望版本，完成後必須讀回 Storage 驗證長度與 SHA-256，再於資料庫原子提交 Revision、Head、Receipt。
+- 未完成或不確定的 PUT 保留原 Intent，重試以相同 Request ID 與來源指紋恢復；長期未完成交由受信任 Reclaimer 清理。
+- Web 單次上傳／下載限定 3 MB；CLI 與下游 File source 保留原本 45 MiB 能力。Web 下載保留讀取前後的授權檢查，不簽發撤權後仍可使用的下載 URL。
+- HTTP Adapter 位於 `src/adapters/inbound/http.ts`，由 `composition/bootstrap/files` 的 `createPostgresFileHttpHandler` 工廠接上 File application、PostgreSQL 與 Storage；Web `_composition` 只注入身分、Repository scope、設定與觀測依賴。API route 直接使用組裝後的 handler，`modules/file` 只管 UI、Hook 與互動狀態。
+- Source reader 只讀一次不可變 revision metadata，Storage I/O 後以窄授權 port 重查權限；回傳的 detached bytes 可直接交給 HTTP transport。讀取 composition 不取得上傳或回收能力。
+- 本地 Storage 僅允許明確設定的 loopback origin；瀏覽器只在 loopback 頁面接受本地上傳票據。
+
+本地 Docker Storage 的真實簽名上傳／不可覆寫／讀回／重播驗證（僅操作隔離測試資料庫與新建測試物件）：
+
+```sh
+source packages/integration-supabase/.temp/local.env
+FILE_STORAGE_INTEGRATION=1 pnpm --filter @line_bot_v1/file exec node --no-wasm-code-gc --import tsx --test test/storage-local.test.ts
+```
+
 ## If / Then 決策規則
 
 | If | Then |
@@ -50,7 +68,7 @@ flowchart LR
 | --- | --- | --- |
 | 建立/取得 File | `application/use-cases/files` | `pnpm --filter @line_bot_v1/file test` |
 | 回收或清理 | `application/use-cases/reclaim` | 同上，另驗證 isolation/replay |
-| 來源讀取與資格 | `contracts/output/references`、`application/use-cases/sources` | source 與 references consumers 測試 |
+| 來源讀取與資格 | `contracts/output/references`、`composition/bootstrap/files` | source 與 references consumers 測試 |
 | 組裝 runtime | `composition/bootstrap/files` | package typecheck + integration tests |
 
 ```sh

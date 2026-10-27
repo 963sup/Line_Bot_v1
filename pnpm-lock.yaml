@@ -709,6 +709,9 @@ importers:
       '@line_bot_v1/integration-supabase':
         specifier: workspace:*
         version: link:../integration-supabase
+      '@line_bot_v1/namespace':
+        specifier: workspace:*
+        version: link:../namespace
       '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:../platform

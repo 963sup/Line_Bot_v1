@@ -24,6 +24,18 @@ export interface FileTransactions {
   ): Promise<T>;
 }
 export interface FileReads {
+  /** Recheck current actor/Repository access without reloading immutable revision metadata. */
+  authorize(actor: string, scope: string): Promise<void>;
+  /** One authorization + transaction for initial File and pending-upload metadata. */
+  overview(
+    actor: string,
+    scope: string,
+  ): Promise<{
+    files: readonly FileRevision[];
+    next: string | null;
+    intents: readonly FileUploadIntent[];
+    pendingNext: string | null;
+  }>;
   /** Pending Upload Intents belong only to the original actor and are never File List entries. */
   pendingUploads(
     actor: string,

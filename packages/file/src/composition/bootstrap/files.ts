@@ -1,10 +1,13 @@
 import type { Database, Sql } from "@line_bot_v1/platform/postgres";
+import { createFileHttpAdapter, type FileHttpContext } from "../../adapters/inbound/http.js";
 import { filePayloadInspector } from "../../adapters/outbound/binary/payloads.js";
 import {
   PostgresFiles,
   createPostgresFileRevisionQualifier as postgresRevisionQualifier,
 } from "../../adapters/outbound/persistence/files.js";
+import { PostgresFileReclamation } from "../../adapters/outbound/persistence/reclamation.js";
 import { supabaseFileObjects } from "../../adapters/outbound/storage/supabase.js";
+import { createFiles } from "../../application/use-cases/files.js";
 import { createFileSourceReader } from "../../application/use-cases/sources.js";
 import type {
   FilePayloadInspector,
@@ -55,17 +58,28 @@ export function createPostgresFileReclamationDependencies(
 } {
   const provider = lazyPrivateObjects();
   return {
-    maintenance: new PostgresFiles(db),
+    maintenance: new PostgresFileReclamation(db),
     objects: objects ? () => objects : provider,
   };
 }
 
 export function createPostgresFileSourceReader(
   db?: Database,
-  objects?: FileObjectStore,
+  objects?: Pick<FileObjectStore, "readVerified">,
 ): FileSourceReader {
-  const dependencies = createPostgresFileDependencies(db, objects);
-  return createFileSourceReader({ reads: dependencies.reads, objects: dependencies.objects });
+  return createFileSourceReader({
+    reads: new PostgresFiles(db),
+    objects: objects ? () => objects : lazyPrivateObjects(),
+  });
+}
+
+/** Lazily compose the File application and private providers behind one HTTP handler. */
+export function createPostgresFileHttpHandler(context: FileHttpContext) {
+  let owner: ReturnType<typeof createFiles> | undefined;
+  return createFileHttpAdapter({
+    ...context,
+    owner: () => (owner ??= createFiles({ ...createPostgresFileDependencies(), now: Date.now })),
+  });
 }
 
 export function createPostgresFileRevisionQualifier(sql: Sql): FileRevisionQualifier {

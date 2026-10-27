@@ -1,12 +1,32 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { test } from "node:test";
-import { FileError } from "@line_bot_v1/file/domain/error";
-import { type FilesWebRuntime, filesRequest } from "../src/modules/file/files-http.server";
-import { RequestIdentityError } from "../src/shared/server/request-identity-error";
+import { createFileHttpAdapter, type FileHttpRuntime } from "../src/adapters/inbound/http.js";
+import { FileError } from "../src/domain/error.js";
+
+class RequestIdentityError extends Error {
+  constructor(
+    readonly status: number,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+function filesRequest(
+  request: Request,
+  runtime: FileHttpRuntime,
+  identity: (request: Request) => Promise<string>,
+) {
+  return createFileHttpAdapter({
+    ...runtime,
+    identity,
+    origin: () => process.env.APP_ORIGIN,
+    knownErrors: [RequestIdentityError],
+  })(request);
+}
 
 const baseUrl = "https://app.example/api/repository-files?owner=acme&name=Operations";
-type Owner = ReturnType<FilesWebRuntime["owner"]>;
+type Owner = ReturnType<FileHttpRuntime["owner"]>;
 
 const file: Awaited<ReturnType<Owner["file"]>> = {
   repositoryId: "repository-A",
@@ -44,6 +64,10 @@ function fixture() {
     calls.push({ operation, args });
   };
   const owner: Owner = {
+    async overview(actor, scope) {
+      called("overview", [actor, scope]);
+      return { files: [file], next: null, uploads: [], pendingNext: null };
+    },
     async list(actor, scope, after) {
       called("list", [actor, scope, after]);
       return { files: [file], next: null };
@@ -74,12 +98,21 @@ function fixture() {
       called("source", [actor, scope, fileId, revisionId]);
       return { file, bytes: Uint8Array.from([1, 2, 3]) };
     },
-    async upload(actor, input, bytes) {
-      called("upload", [actor, input, bytes]);
+    async prepareUpload(actor, input) {
+      called("prepare", [actor, input]);
+      return {
+        requestId: requestIdOf(input),
+        revisionId: file.revisionId,
+        signedUrl:
+          "https://test.supabase.co/storage/v1/object/upload/sign/repository-files/key?token=secret",
+      };
+    },
+    async completeUpload(actor, input) {
+      called("complete", [actor, input]);
       return { requestId: requestIdOf(input), file };
     },
   };
-  const runtime: FilesWebRuntime = {
+  const runtime: FileHttpRuntime = {
     scope: async (subject, selector) => {
       assert.equal(subject, "line-subject");
       assert.deepEqual(selector, { ownerLogin: "acme", repositoryName: "Operations" });
@@ -107,29 +140,6 @@ function post(body: object, origin = "https://app.example") {
     body: JSON.stringify(body),
   });
 }
-function uploadRequest(options: { repositoryId?: string; size?: number; name?: string } = {}) {
-  const form = new FormData();
-  const name = options.name ?? file.name;
-  const bytes = new Uint8Array(options.size ?? 3);
-  const input = new File([bytes], name, { type: "text/plain" });
-  form.set(
-    "command",
-    JSON.stringify({
-      repositoryId: options.repositoryId ?? scope.repository.id,
-      fileId: file.fileId,
-      requestId: randomUUID(),
-      expectedVersion: 0,
-      name,
-      mediaType: "text/plain",
-    }),
-  );
-  form.set("file", input, name);
-  return new Request(baseUrl, {
-    method: "POST",
-    headers: { origin: "https://app.example" },
-    body: form,
-  });
-}
 
 test("File List is authenticated and always resolves Repository rather than a global collection", async () => {
   const { calls, runtime } = fixture();
@@ -144,10 +154,22 @@ test("File List is authenticated and always resolves Repository rather than a gl
   assert.equal(result.repository.id, scope.repository.id);
   assert.equal(result.files[0].fileId, file.fileId);
   assert.equal(result.uploadMaxBytes, 3_000_000);
+  assert.deepEqual(result.uploads, []);
   assert.deepEqual(calls[0], {
-    operation: "list",
-    args: ["member", scope.repository.id, undefined],
+    operation: "overview",
+    args: ["member", scope.repository.id],
   });
+});
+
+test("File keyset pagination uses list query without reloading pending uploads", async () => {
+  const { calls, runtime } = fixture();
+  const after = randomUUID();
+  const response = await filesRequest(new Request(baseUrl + "&after=" + after), runtime, identity);
+  assert.equal(response.status, 200);
+  const page = await response.json();
+  assert.deepEqual(page.uploads, []);
+  assert.equal(page.pendingNext, null);
+  assert.deepEqual(calls, [{ operation: "list", args: ["member", scope.repository.id, after] }]);
 });
 
 test("Pending Uploads are explicit, actor-scoped owner reads, never exposed by File List", async () => {
@@ -192,11 +214,14 @@ test("File detail and Download consume only File-owned authorized reads", async 
 
 test("Browser download refuses large response bodies before fetching private source bytes", async () => {
   const { calls, runtime } = fixture();
-  const oversized: FilesWebRuntime = {
+  const oversized: FileHttpRuntime = {
     ...runtime,
     owner: () => ({
       ...runtime.owner(),
-      file: async () => ({ ...file, byteLength: 3_000_001 }),
+      source: async (...args) => {
+        calls.push({ operation: "bounded-source", args });
+        throw new FileError(413, "File is too large for this transport.", "INVALID_INPUT");
+      },
     }),
   };
   const response = await filesRequest(
@@ -207,17 +232,14 @@ test("Browser download refuses large response bodies before fetching private sou
     identity,
   );
   assert.equal(response.status, 413);
-  assert.equal(
-    calls.some((item) => item.operation === "source"),
-    false,
-  );
+  assert.equal(calls.find((item) => item.operation === "bounded-source")?.args[4], 3_000_000);
 });
 
 test("File mutation refuses foreign Repository, forged Origin and processing commands", async () => {
   await withOrigin(async () => {
     const { calls, runtime } = fixture();
     let scopes = 0;
-    const checked: FilesWebRuntime = {
+    const checked: FileHttpRuntime = {
       ...runtime,
       scope: async (...args) => {
         scopes++;
@@ -270,38 +292,91 @@ test("File rejects Intelligence processing commands at the File boundary", async
   });
 });
 
-test("Browser Upload accepts only bounded file bytes, matching metadata and current Repository", async () => {
+test("legacy multipart route is disabled; only bounded JSON signed commands are accepted", async () => {
   await withOrigin(async () => {
     const { calls, runtime } = fixture();
-    const uploaded = await filesRequest(uploadRequest(), runtime, identity);
-    assert.equal(uploaded.status, 200);
-    const write = calls.find((call) => call.operation === "upload");
-    assert.ok(write);
-    assert.equal(write.args[0], "member");
-    const command = write.args[1];
-    assert.ok(command && typeof command === "object" && "repositoryId" in command);
-    assert.equal(command.repositoryId, scope.repository.id);
-    assert.deepEqual(write.args[2], new Uint8Array(3));
+    const response = await filesRequest(
+      new Request(baseUrl, {
+        method: "POST",
+        headers: { origin: "https://app.example" },
+        body: new FormData(),
+      }),
+      runtime,
+      identity,
+    );
+    assert.equal(response.status, 415);
+    assert.deepEqual(calls, []);
+  });
+});
 
+test("Signed upload uses authenticated JSON commands and never transfers Binary through API", async () => {
+  await withOrigin(async () => {
+    const { calls, runtime } = fixture();
+    const command = {
+      repositoryId: scope.repository.id,
+      fileId: file.fileId,
+      requestId: randomUUID(),
+      expectedVersion: 0,
+      name: file.name,
+      mediaType: file.mediaType,
+      byteLength: 3,
+      sha256: "a".repeat(64),
+    };
+    const prepared = await filesRequest(
+      post({ operation: "prepare-upload", command }),
+      runtime,
+      identity,
+    );
+    assert.equal(prepared.status, 200);
+    const ticket = await prepared.json();
+    assert.equal(ticket.requestId, command.requestId);
+    assert.ok(ticket.signedUrl.includes("/storage/v1/object/upload/sign/"));
+    const completed = await filesRequest(
+      post({ operation: "complete-upload", command }),
+      runtime,
+      identity,
+    );
+    assert.equal(completed.status, 200);
+    assert.equal((await completed.json()).file.revisionId, file.revisionId);
+    assert.deepEqual(
+      calls.map((item) => item.operation),
+      ["prepare", "complete"],
+    );
+    const tooLarge = await filesRequest(
+      post({
+        operation: "prepare-upload",
+        command: {
+          ...command,
+          byteLength: 3_000_001,
+        },
+      }),
+      runtime,
+      identity,
+    );
+    assert.equal(tooLarge.status, 413);
     const foreign = await filesRequest(
-      uploadRequest({ repositoryId: "repository-B" }),
+      post({
+        operation: "prepare-upload",
+        command: {
+          ...command,
+          repositoryId: "another",
+        },
+      }),
       runtime,
       identity,
     );
     assert.equal(foreign.status, 400);
-    const oversized = await filesRequest(uploadRequest({ size: 3_000_001 }), runtime, identity);
-    assert.equal(oversized.status, 413);
-    assert.equal(calls.filter((call) => call.operation === "upload").length, 1);
+    assert.equal(calls.length, 2);
   });
 });
 
 test("File owner errors and infrastructure failure never become empty authorized File Lists", async () => {
   const { runtime } = fixture();
-  const forbidden: FilesWebRuntime = {
+  const forbidden: FileHttpRuntime = {
     ...runtime,
     owner: () => ({
       ...runtime.owner(),
-      list: async () => {
+      overview: async () => {
         throw new FileError(403, "File access denied.", "FORBIDDEN");
       },
     }),
@@ -309,16 +384,16 @@ test("File owner errors and infrastructure failure never become empty authorized
   const denied = await filesRequest(new Request(baseUrl), forbidden, identity);
   assert.equal(denied.status, 403);
   assert.equal((await denied.json()).code, "FORBIDDEN");
-  const unavailable: FilesWebRuntime = {
+  const unavailable: FileHttpRuntime = {
     ...runtime,
     owner: () => ({
       ...runtime.owner(),
-      list: async () => {
+      overview: async () => {
         throw new Error("sensitive database message");
       },
     }),
   };
   const response = await filesRequest(new Request(baseUrl), unavailable, identity);
   assert.equal(response.status, 500);
-  assert.deepEqual(await response.json(), { error: "sensitive database message" });
+  assert.deepEqual(await response.json(), { error: "File operation failed." });
 });

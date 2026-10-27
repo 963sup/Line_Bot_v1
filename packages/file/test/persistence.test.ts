@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import test from "node:test";
 import { createSql, type Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
@@ -115,6 +115,7 @@ test("PostgreSQL File storage preserves protected objects, exact replay and hist
     bytes,
   );
   assert.equal((await files.list("owner", "repo")).files.length, 1);
+  assert.equal((await files.overview("owner", "repo")).files.length, 1);
   // Reading File metadata never requires creating a private Storage client.
   const metadataOnly = createFiles({
     ...createPostgresFileDependencies(db),
@@ -636,4 +637,192 @@ test("native sessions keep a late object write reconcilable after an earlier abs
     writeAllowed.resolve();
     await upload.catch(() => {});
   }
+});
+
+test("native File keyset pages bound revision work before joining metadata", {
+  skip: !url && !process.env.CI,
+}, async (t) => {
+  assert.ok(url, "CI requires its disposable PostgreSQL service");
+  const { pool, db, close } = await postgresSessions(url);
+  t.after(close);
+  await seed(db);
+  await pool.query(
+    "SELECT * FROM app_private.provision_repository('repo','owner','owner','USER','Files','private')",
+  );
+  await pool.query(
+    "SELECT * FROM app_private.provision_repository('noise','owner','owner','USER','Noise','private')",
+  );
+  await pool.query(`BEGIN;
+    CREATE TEMP TABLE page_fixture AS SELECT md5('file-'||n)::uuid file_id, md5('revision-'||n)::uuid revision_id,
+      CASE WHEN n%10=0 THEN 'repo' ELSE 'noise' END repository_id FROM generate_series(1,10000) n;
+    INSERT INTO app_private.repository_files SELECT file_id,repository_id,1,revision_id FROM page_fixture;
+    INSERT INTO app_private.file_revisions SELECT revision_id,file_id,repository_id,1,NULL,'owner',1,'source.txt','text/plain',1,repeat('a',64) FROM page_fixture;
+    COMMIT;
+    ANALYZE app_private.repository_files; ANALYZE app_private.file_revisions;`);
+  const expected = (
+    await pool.query(
+      "SELECT id FROM app_private.repository_files WHERE repository_id='repo' ORDER BY id LIMIT 40",
+    )
+  ).rows;
+  const queries: { text: string; values: unknown[] | undefined }[] = [];
+  const measured: Database = {
+    transaction: (work) =>
+      db.transaction((sql) =>
+        work(
+          createSql(async (text, values) => {
+            if (text.includes("JOIN file_revisions revision")) queries.push({ text, values });
+            return sql.query(text, values);
+          }),
+        ),
+      ),
+  };
+  const files = intake(measured, memoryStore());
+  const first = await files.list("owner", "repo");
+  assert.ok(first.next);
+  const second = await files.list("owner", "repo", first.next);
+  assert.deepEqual(
+    [...first.files, ...second.files].map((file) => file.fileId),
+    expected.map((row) => row.id),
+  );
+  assert.equal(first.next, first.files.at(-1)?.fileId);
+  assert.equal(queries.length, 2);
+  function revisionRows(value: unknown): number {
+    if (Array.isArray(value)) return value.reduce((total, item) => total + revisionRows(item), 0);
+    if (!value || typeof value !== "object") return 0;
+    const rows = Reflect.get(value, "Actual Rows");
+    const loops = Reflect.get(value, "Actual Loops");
+    const own =
+      Reflect.get(value, "Relation Name") === "file_revisions" &&
+      typeof rows === "number" &&
+      typeof loops === "number"
+        ? rows * loops
+        : 0;
+    return (
+      own + Object.values(value).reduce<number>((total, item) => total + revisionRows(item), 0)
+    );
+  }
+  for (const query of queries) {
+    const plan = await db.transaction((sql) =>
+      sql.query(`EXPLAIN (ANALYZE, FORMAT JSON) ${query.text}`, query.values),
+    );
+    const visited = revisionRows(plan.rows);
+    assert.ok(visited > 0 && visited <= 21, `One File page read ${visited} revision rows`);
+  }
+});
+
+test("source read loads immutable metadata once and separately rechecks current access", async (t) => {
+  const { pg, db } = await postgresFixture();
+  t.after(() => pg.close());
+  await seed(db);
+  await pg.query(
+    "SELECT * FROM app_private.provision_repository('repo','owner','owner','USER','Files','private')",
+  );
+  const objects = memoryStore();
+  const commandInput = command();
+  const receipt = await intake(db, objects).upload("owner", commandInput, bytes);
+  const queries: string[] = [];
+  const measured: Database = {
+    transaction: (work) =>
+      db.transaction((sql) =>
+        work(
+          createSql(async (text, values) => {
+            queries.push(text);
+            return sql.query(text, values);
+          }),
+        ),
+      ),
+  };
+  const result = await intake(measured, objects).source(
+    "owner",
+    "repo",
+    commandInput.fileId,
+    receipt.file.revisionId,
+  );
+  assert.deepEqual(result.bytes, bytes);
+  assert.equal(queries.filter((sql) => sql.includes("FROM file_revisions revision")).length, 1);
+});
+
+test("revocation during Storage signing prevents disclosure of a new upload capability", async (t) => {
+  const { pg, db } = await postgresFixture();
+  t.after(() => pg.close());
+  await seed(db);
+  await pg.query(
+    "SELECT * FROM app_private.provision_repository('repo','owner','owner','USER','Files','private')",
+  );
+  await pg.query(
+    "INSERT INTO app_private.repository_access(repository_id,principal_id,capability,version) VALUES('repo','member','write',1)",
+  );
+  const files = intake(db, {
+    ...memoryStore(),
+    async signUpload() {
+      await pg.query(
+        "DELETE FROM app_private.repository_access WHERE repository_id='repo' AND principal_id='member'",
+      );
+      return "https://test.supabase.co/storage/v1/object/upload/sign/repository-files/key?token=opaque";
+    },
+  });
+  await assert.rejects(
+    files.prepareUpload("member", {
+      ...command(),
+      byteLength: bytes.length,
+      sha256: createHash("sha256").update(bytes).digest("hex"),
+    }),
+    code("FORBIDDEN"),
+  );
+  assert.deepEqual((await files.list("owner", "repo")).files, []);
+});
+
+test("signed upload commits only verified exact bytes and replays across transports", async (t) => {
+  const { pg, db } = await postgresFixture();
+  t.after(() => pg.close());
+  await seed(db);
+  await pg.query(
+    "SELECT * FROM app_private.provision_repository('repo','owner','owner','USER','Files','private')",
+  );
+  const original = memoryStore();
+  let signedRevision: Parameters<FileObjectStore["putVerified"]>[0] | undefined;
+  const objects: FileObjectStore = {
+    ...original,
+    async signUpload(revision) {
+      signedRevision = revision;
+      return "https://test.supabase.co/storage/v1/object/upload/sign/repository-files/key?token=opaque";
+    },
+  };
+  const files = intake(db, objects);
+  const c = command();
+  const direct = {
+    ...c,
+    byteLength: bytes.byteLength,
+    sha256: createHash("sha256").update(bytes).digest("hex"),
+  };
+  await assert.rejects(files.prepareUpload("outsider", direct), code("FORBIDDEN"));
+  const prepared = await files.prepareUpload("owner", direct);
+  assert.equal(prepared.requestId, c.requestId);
+  assert.ok("signedUrl" in prepared);
+  assert.ok(signedRevision);
+  assert.equal((await files.pendingUploads("owner", "repo")).uploads.length, 1);
+  assert.equal((await files.overview("owner", "repo")).uploads.length, 1);
+  assert.deepEqual((await files.list("owner", "repo")).files, []);
+  await assert.rejects(files.completeUpload("owner", direct), code("UNAVAILABLE"));
+  await assert.rejects(
+    files.prepareUpload("owner", { ...direct, sha256: "0".repeat(64) }),
+    code("REQUEST_ID_REUSED"),
+  );
+  await original.putVerified(signedRevision, bytes);
+  const receipt = await files.completeUpload("owner", direct);
+  assert.equal(receipt.file.sha256, direct.sha256);
+  assert.equal(receipt.file.version, 1);
+  assert.deepEqual(await files.completeUpload("owner", direct), receipt);
+  assert.deepEqual(await files.prepareUpload("owner", direct), receipt);
+  assert.deepEqual(await files.upload("owner", c, bytes), receipt);
+  assert.equal((await files.list("owner", "repo")).files.length, 1);
+  await assert.rejects(files.completeUpload("outsider", direct), code("FORBIDDEN"));
+  const blocked = command();
+  const competing = {
+    ...blocked,
+    fileId: c.fileId,
+    byteLength: direct.byteLength,
+    sha256: direct.sha256,
+  };
+  await assert.rejects(files.prepareUpload("owner", competing), code("VERSION_CONFLICT"));
 });
