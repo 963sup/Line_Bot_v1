@@ -8,13 +8,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../..
 import { Input } from "../../shared/ui/input";
 import { Label } from "../../shared/ui/label";
 import PurchaseOrderIntakeReview from "./purchase-order-intake-review";
+import { uploadSelectedFile } from "./signed-file-upload";
 
 import {
   type FileInfo,
   type PendingUpload,
   type View,
   type Pending,
-  type SignedCommand,
   type FileMutation,
   StaleRequest,
   record,
@@ -256,49 +256,11 @@ export default function FilesPanel({
     setBusy(true);
     setError("");
     try {
-      // Browser computes the descriptor without routing the Binary through Next.js.
-      // The server still verifies SHA-256 against trusted Storage bytes before commit.
-      const digest = new Uint8Array(
-        await crypto.subtle.digest("SHA-256", await next.file.arrayBuffer()),
+      const response = await uploadSelectedFile(
+        next,
+        (mutation) => request({}, mutation),
+        () => { if (ticket !== epoch.current) throw new StaleRequest(); },
       );
-      if (ticket !== epoch.current) throw new StaleRequest();
-      const sha256 = Array.from(digest, (byte) => byte.toString(16).padStart(2, "0")).join("");
-      const command: SignedCommand = { ...next.command, byteLength: next.file.size, sha256 };
-      const prepared = record(await request({}, { operation: "prepare-upload", command }));
-      let response: { requestId: string; file: FileInfo };
-      if ("file" in prepared) {
-        response = parseMutation(prepared);
-      } else {
-        if (stringValue(prepared.requestId) !== command.requestId)
-          throw new Error("Upload Intent identity mismatch.");
-        const signedUrl = stringValue(prepared.signedUrl);
-        // Signed tickets are capabilities: never send original bytes to an arbitrary URL.
-        const destination = new URL(signedUrl);
-        if (
-          destination.protocol !== "https:" ||
-          !/^[a-z0-9-]+\.supabase\.co$/.test(destination.hostname) ||
-          !destination.pathname.startsWith("/storage/v1/object/upload/sign/repository-files/") ||
-          !destination.searchParams.has("token")
-        )
-          throw new Error("Storage ticket is invalid.");
-        const payload = new FormData();
-        payload.set("cacheControl", "0");
-        payload.append("", next.file);
-        // An unknown upload outcome is reconciled by File's exact server-side readback.
-        // A duplicate PUT is harmless: upsert is forbidden and Finalize verifies the original.
-        try {
-          await fetch(signedUrl, {
-            method: "PUT",
-            headers: { "x-upsert": "false" },
-            body: payload,
-            cache: "no-store",
-          });
-        } catch {
-          // Retry Finalize even if the provider response was lost.
-        }
-        if (ticket !== epoch.current) throw new StaleRequest();
-        response = parseMutation(await request({}, { operation: "complete-upload", command }));
-      }
       if (ticket !== epoch.current) return;
       if (response.requestId !== next.command.requestId)
         throw new Error("File receipt 尚未確認，請使用原命令重試。");
