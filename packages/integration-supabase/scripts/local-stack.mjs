@@ -166,6 +166,8 @@ function prepareLocalImages() {
 }
 
 function cli(args) {
+  const cliHome = resolve(state, "cli-home");
+  mkdirSync(cliHome, { recursive: true, mode: 0o700 });
   const log = resolve(state, "cli.log");
   const descriptor = args[0] === "start" ? openSync(log, "w", 0o600) : undefined;
   const result = spawnSync(
@@ -178,6 +180,7 @@ function cli(args) {
       ...(descriptor === undefined ? {} : { stdio: ["ignore", descriptor, descriptor] }),
       env: {
         ...dockerEnv,
+        SUPABASE_HOME: cliHome,
         SUPABASE_INTERNAL_IMAGE_REGISTRY: process.env.SUPABASE_INTERNAL_IMAGE_REGISTRY || "ghcr.io",
       },
     },
