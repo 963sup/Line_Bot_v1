@@ -3,8 +3,7 @@ import { randomUUID } from "node:crypto";
 import test from "node:test";
 import { createContentPlans } from "@line_bot_v1/content/application/use-cases/plans";
 import { createPostgresContentPlanDependencies } from "@line_bot_v1/content/composition/bootstrap/plans";
-import { createContracts } from "@line_bot_v1/contract/application/use-cases/contracts";
-import { createPostgresContractDependencies } from "@line_bot_v1/contract/composition/bootstrap/contracts";
+import { createPostgresContracts } from "@line_bot_v1/contract/composition/bootstrap/contracts";
 import { postgresSessions } from "@line_bot_v1/platform/testing/postgres-sessions";
 import { createExecutions } from "../src/application/use-cases/executions.js";
 import { createPostgresExecutionDependencies } from "../src/composition/bootstrap/executions.js";
@@ -96,8 +95,8 @@ test("independent PostgreSQL sessions serialize replay, competing reviews and Co
       resourcePins: [],
     },
   });
-  const contracts = createContracts({
-    ...createPostgresContractDependencies(db),
+  const contracts = createPostgresContracts({
+    db,
     now: () => 2,
   });
   const contractId = randomUUID();

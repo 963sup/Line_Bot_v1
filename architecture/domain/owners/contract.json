@@ -158,17 +158,13 @@
         ],
         "publicExports": [
           "./application/use-cases/contracts",
-          "./contracts/dto/contracts",
           "./composition/bootstrap/contracts",
           "./domain/error",
           "./contracts/output/references",
           "./composition/bootstrap/references",
           "./domain/line-reference"
         ],
-        "entrypoints": [
-          "scripts/operations/contract/run.mjs",
-          "apps/web/src/app/api/repository-contracts/route.ts"
-        ],
+        "entrypoints": ["apps/web/src/app/api/repository-contracts/route.ts"],
         "testPaths": [
           "packages/contract/test/contract-domain.test.ts",
           "packages/contract/test/contracts.test.ts",
@@ -203,11 +199,11 @@
           "packages/contract/src/contracts/input/document-intake.ts"
         ],
         "publicExports": ["./contracts/input/document-intake", "./composition/bootstrap/documents"],
-        "entrypoints": ["scripts/operations/contract/run.mjs"],
+        "entrypoints": ["apps/web/src/app/api/repository-document-intake/route.ts"],
         "testPaths": [
           "packages/contract/test/document-intake-domain.test.ts",
           "packages/contract/test/documents-postgres.test.ts",
-          "scripts/operations/contract/run.test.mjs"
+          "apps/web/test/document-intake-http.test.ts"
         ],
         "note": "The candidate is Contract truth only after Contract validation and a transaction-bound File source qualification. Intelligence may submit SAVE; confirmation requires an explicit Contract command. A separate Content capability may read one exact confirmed revision through Contract's public reader and apply its own fixed whole-document expansion; Contract never creates Content or WBS records."
       }

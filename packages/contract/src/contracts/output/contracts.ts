@@ -1,7 +1,11 @@
 import type { ContentPlanReferenceReader } from "@line_bot_v1/content/contracts/output/plan-references";
 import type { ContractRevision } from "../../domain/contract.js";
 import type { ContractSummary } from "../dto/contracts.js";
-import type { Contracts } from "../repositories/contracts.js";
+
+interface Contracts {
+  load(): Promise<ContractRevision | null>;
+  save(next: ContractRevision, expectedVersion: number): Promise<void>;
+}
 
 export interface ContractReads {
   list(

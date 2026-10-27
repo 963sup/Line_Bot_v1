@@ -54,7 +54,7 @@ const evidence = z
   .strict();
 
 /** Runtime authority for every purchase-order candidate accepted by Contract. */
-export const storedPurchaseOrderCandidateSchema = z
+const storedPurchaseOrderCandidateSchema = z
   .object({
     header: z
       .object({
@@ -117,7 +117,7 @@ export const storedPurchaseOrderCandidateSchema = z
   })
   .strict();
 
-export const purchaseOrderCandidateSchema = storedPurchaseOrderCandidateSchema.superRefine(
+const purchaseOrderCandidateSchema = storedPurchaseOrderCandidateSchema.superRefine(
   (candidate, context) => {
     const rowIds = candidate.lines.map((line) => line.sourceRowId);
     if (new Set(rowIds).size !== rowIds.length)

@@ -27,6 +27,12 @@ import type {
 } from "../../../domain/contract.js";
 import { ContractError } from "../../../domain/error.js";
 
+function contractPersistenceError(error: unknown): never {
+  if (error instanceof ContractError || (error && typeof error === "object" && "status" in error))
+    throw error;
+  throw new ContractError(503, "Contract persistence is unavailable.", "UNAVAILABLE");
+}
+
 type ContentReaderFactory = (sql: Sql) => ContentPlanReferenceReader;
 
 function parsedJson(value: unknown): unknown {
@@ -182,7 +188,7 @@ export class PostgresContracts implements ContractReads, ContractTransactions {
     userId: string,
     query: Readonly<{ repositoryId: string; contractId: string; revisionId?: string }>,
   ) {
-    return this.db.transaction(async (sql) => {
+    const transaction = this.db.transaction(async (sql) => {
       await repositoryContentScope(sql, userId, { repositoryId: query.repositoryId });
       const found = await readContractRevision(
         sql,
@@ -193,6 +199,7 @@ export class PostgresContracts implements ContractReads, ContractTransactions {
       if (!found) throw new ContractError(404, "Contract revision not found.", "NOT_FOUND");
       return found;
     });
+    return transaction.catch(contractPersistenceError);
   }
 
   history(
