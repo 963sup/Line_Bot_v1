@@ -12,6 +12,10 @@ type StorageFailure = {
 type PrivateBucket = {
   download(key: string): Promise<{ data: Blob | null; error: StorageFailure | null }>;
   remove(keys: string[]): Promise<{ error: StorageFailure | null }>;
+  createSignedUploadUrl?(
+    key: string,
+    options: { upsert: false },
+  ): Promise<{ data: { signedUrl: string } | null; error: StorageFailure | null }>;
   upload(
     key: string,
     bytes: Uint8Array,
@@ -51,6 +55,20 @@ export function fileObjects(bucket: PrivateBucket): FileObjectStore & FileObject
     return bytes;
   }
   return {
+    async signUpload(revision) {
+      if (!bucket.createSignedUploadUrl)
+        throw new FileError(503, "Signed File uploads are unavailable.", "UNAVAILABLE");
+      const result = await bucket.createSignedUploadUrl(key(revision), { upsert: false });
+      if (result.error) throw result.error;
+      if (!result.data?.signedUrl)
+        throw new FileError(503, "Signed File upload is unavailable.", "UNAVAILABLE");
+      const url = new URL(result.data.signedUrl);
+      if (url.protocol !== "https:" || !/^[a-z0-9-]+\.supabase\.co$/.test(url.hostname) ||
+          !url.pathname.startsWith("/storage/v1/object/upload/sign/repository-files/") ||
+          !url.searchParams.has("token"))
+        throw new FileError(503, "Invalid Storage upload ticket.", "UNAVAILABLE");
+      return url.toString();
+    },
     async readVerified(revision) {
       const bytes = await read(revision, false);
       if (!bytes) throw new FileError(503, "File object unavailable.", "UNAVAILABLE");
