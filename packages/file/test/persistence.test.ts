@@ -115,6 +115,7 @@ test("PostgreSQL File storage preserves protected objects, exact replay and hist
     bytes,
   );
   assert.equal((await files.list("owner", "repo")).files.length, 1);
+  assert.equal((await files.overview("owner", "repo")).files.length, 1);
   // Reading File metadata never requires creating a private Storage client.
   const metadataOnly = createFiles({
     ...createPostgresFileDependencies(db),
@@ -651,6 +652,7 @@ test("signed upload commits only verified exact bytes and replays across transpo
   assert.ok("signedUrl" in prepared);
   assert.ok(signedRevision);
   assert.equal((await files.pendingUploads("owner", "repo")).uploads.length, 1);
+  assert.equal((await files.overview("owner", "repo")).uploads.length, 1);
   assert.deepEqual((await files.list("owner", "repo")).files, []);
   await assert.rejects(files.completeUpload("owner", direct), code("UNAVAILABLE"));
   await assert.rejects(
