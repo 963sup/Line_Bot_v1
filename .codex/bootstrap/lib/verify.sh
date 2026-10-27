@@ -35,7 +35,12 @@ check_workspace_cli() {
     record_check "$name-manifest" ''
     return
   fi
-  check_version "$name" "$expected" "$BOOTSTRAP_ROOT/node_modules/.bin/$name" --version
+  if [[ "$name" == supabase ]]; then
+    mkdir -p "$BOOTSTRAP_ROOT/.cache/home"
+    check_version "$name" "$expected" env HOME="$BOOTSTRAP_ROOT/.cache/home" "$BOOTSTRAP_ROOT/node_modules/.bin/$name" --version
+  else
+    check_version "$name" "$expected" "$BOOTSTRAP_ROOT/node_modules/.bin/$name" --version
+  fi
 }
 mcp_configured() {
   python -c 'import sys,tomllib; c=tomllib.load(open(sys.argv[1],"rb")); s=c.get("mcp_servers",{}).get(sys.argv[2],{}); sys.exit(0 if s.get(sys.argv[3]) else 1)' "$BOOTSTRAP_ROOT/.codex/config.toml" "$1" "$2" >/dev/null 2>&1
