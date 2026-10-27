@@ -1,5 +1,18 @@
 import type { FileSourceReference } from "@line_bot_v1/file/contracts/output/references";
-import type { ProcessingRevision } from "../../domain/processing.js";
+import type { ProcessingOutput, ProcessingRevision } from "../../domain/processing.js";
+
+export type IntelligenceProcessor = Readonly<{
+  id: string;
+  version: string;
+  kind: "parser" | "ocr" | "ai";
+  supports(mediaType: string): boolean;
+  run(
+    source: Readonly<{
+      revision: import("@line_bot_v1/file/domain/file").FileRevision;
+      bytes: Uint8Array;
+    }>,
+  ): Promise<ProcessingOutput>;
+}>;
 
 export type ProcessingCommand = Readonly<{
   repositoryId: string;

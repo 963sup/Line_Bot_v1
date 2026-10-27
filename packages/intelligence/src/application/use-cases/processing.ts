@@ -1,6 +1,9 @@
 import { createHash } from "node:crypto";
 import type { FileSourceReader } from "@line_bot_v1/file/contracts/output/references";
-import type { IntelligenceProcessingStore } from "../../contracts/output/processing.js";
+import type {
+  IntelligenceProcessingStore,
+  IntelligenceProcessor,
+} from "../../contracts/output/processing.js";
 import {
   beginProcessing,
   finalizeProcessing,
@@ -8,18 +11,6 @@ import {
   type ProcessingOutput,
 } from "../../domain/processing.js";
 
-export type IntelligenceProcessor = Readonly<{
-  id: string;
-  version: string;
-  kind: "parser" | "ocr" | "ai";
-  supports(mediaType: string): boolean;
-  run(
-    source: Readonly<{
-      revision: import("@line_bot_v1/file/domain/file").FileRevision;
-      bytes: Uint8Array;
-    }>,
-  ): Promise<ProcessingOutput>;
-}>;
 function completionRequestId(requestId: string) {
   const bytes = createHash("sha256")
     .update(`intelligence-processing-complete:${requestId}`)

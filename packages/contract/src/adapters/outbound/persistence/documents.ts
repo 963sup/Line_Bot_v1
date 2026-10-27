@@ -15,8 +15,8 @@ import type {
 } from "../../../domain/document-intake.js";
 import {
   decodeDocumentSource,
-  decodeStoredPurchaseOrderCandidate,
   decodeSourceReviewAttestation,
+  decodeStoredPurchaseOrderCandidate,
 } from "../../../domain/document-intake-decoder.js";
 import { ContractError } from "../../../domain/error.js";
 

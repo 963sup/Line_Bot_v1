@@ -60,7 +60,10 @@ export const storedPurchaseOrderCandidateSchema = z
       .object({
         documentNumber: nullableText,
         revision: nullableText,
-        issueDate: nullableText.refine((value) => value === null || isIsoDate(value), "Invalid date."),
+        issueDate: nullableText.refine(
+          (value) => value === null || isIsoDate(value),
+          "Invalid date.",
+        ),
         title: nullableText,
         currency: nullableText,
       })
@@ -114,12 +117,17 @@ export const storedPurchaseOrderCandidateSchema = z
   })
   .strict();
 
-export const purchaseOrderCandidateSchema = storedPurchaseOrderCandidateSchema
-  .superRefine((candidate, context) => {
+export const purchaseOrderCandidateSchema = storedPurchaseOrderCandidateSchema.superRefine(
+  (candidate, context) => {
     const rowIds = candidate.lines.map((line) => line.sourceRowId);
     if (new Set(rowIds).size !== rowIds.length)
-      context.addIssue({ code: "custom", message: "Source row IDs must be unique.", path: ["lines"] });
-  });
+      context.addIssue({
+        code: "custom",
+        message: "Source row IDs must be unique.",
+        path: ["lines"],
+      });
+  },
+);
 
 export function decodeDocumentSource(value: unknown): DocumentSource {
   const keys = ["fileId", "fileRevisionId", "fileSha256"];

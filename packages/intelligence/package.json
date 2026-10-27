@@ -4,41 +4,21 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./application/use-cases/intake-document": {
-      "types": "./dist/application/use-cases/intake-document.d.ts",
-      "default": "./dist/application/use-cases/intake-document.js"
-    },
     "./contracts/output/document-intake": {
       "types": "./dist/contracts/output/document-intake.d.ts",
       "default": "./dist/contracts/output/document-intake.js"
-    },
-    "./contracts/output/document-attempts": {
-      "types": "./dist/contracts/output/document-attempts.d.ts",
-      "default": "./dist/contracts/output/document-attempts.js"
     },
     "./contracts/output/processing": {
       "types": "./dist/contracts/output/processing.d.ts",
       "default": "./dist/contracts/output/processing.js"
     },
-    "./application/use-cases/processing": {
-      "types": "./dist/application/use-cases/processing.d.ts",
-      "default": "./dist/application/use-cases/processing.js"
-    },
     "./domain/error": {
       "types": "./dist/domain/error.d.ts",
       "default": "./dist/domain/error.js"
     },
-    "./composition/bootstrap/processing": {
-      "types": "./dist/composition/bootstrap/processing.d.ts",
-      "default": "./dist/composition/bootstrap/processing.js"
-    },
     "./composition/bootstrap/document-intake": {
       "types": "./dist/composition/bootstrap/document-intake.d.ts",
       "default": "./dist/composition/bootstrap/document-intake.js"
-    },
-    "./composition/bootstrap/processors": {
-      "types": "./dist/composition/bootstrap/processors.d.ts",
-      "default": "./dist/composition/bootstrap/processors.js"
     }
   },
   "files": [
