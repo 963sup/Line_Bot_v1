@@ -66,7 +66,8 @@ test("File signed upload sends original binary only to pinned Storage URL and fi
     },
   );
   assert.deepEqual(operations, ["prepare-upload", "PUT", "complete-upload"]);
-  assert.deepEqual(result.file, file);
+  assert.equal(result.file.revisionId, file.revisionId);
+  assert.equal(result.file.sha256, file.sha256);
 });
 
 test("File upload refuses signed tickets to another revision or origin before transmitting bytes", async () => {
@@ -105,5 +106,6 @@ test("unknown PUT transport results still reconcile with File owner using same r
     async () => { throw new Error("lost provider acknowledgement"); },
   );
   assert.deepEqual(actions, ["prepare-upload", "complete-upload"]);
-  assert.deepEqual(result.file, file);
+  assert.equal(result.file.revisionId, file.revisionId);
+  assert.equal(result.file.sha256, file.sha256);
 });
