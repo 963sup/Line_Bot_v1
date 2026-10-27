@@ -5,6 +5,7 @@ import {
   createPostgresFileRevisionQualifier as postgresRevisionQualifier,
 } from "../../adapters/outbound/persistence/files.js";
 import { supabaseFileObjects } from "../../adapters/outbound/storage/supabase.js";
+import { PostgresFileReclamation } from "../../adapters/outbound/persistence/reclamation.js";
 import { createFileSourceReader } from "../../application/use-cases/sources.js";
 import type {
   FilePayloadInspector,
@@ -55,7 +56,7 @@ export function createPostgresFileReclamationDependencies(
 } {
   const provider = lazyPrivateObjects();
   return {
-    maintenance: new PostgresFiles(db),
+    maintenance: new PostgresFileReclamation(db),
     objects: objects ? () => objects : provider,
   };
 }

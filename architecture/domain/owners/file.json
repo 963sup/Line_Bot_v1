@@ -147,7 +147,10 @@
           "packages/file/src/adapters/outbound/storage/supabase.ts",
           "packages/file/src/contracts/output/object-store.ts",
           "packages/file/src/contracts/output/references.ts",
-          "packages/file/src/adapters/inbound/http.ts"
+          "packages/file/src/adapters/inbound/http.ts",
+          "packages/file/src/adapters/outbound/persistence/reclamation.ts",
+          "packages/file/src/application/use-cases/queries.ts",
+          "packages/file/src/application/use-cases/uploads.ts"
         ],
         "publicExports": [
           "./application/use-cases/files",
