@@ -209,7 +209,9 @@ test("File download transmits only a bounded source byte view, not adjacent byte
     }),
   };
   const result = await filesRequest(
-    new Request(baseUrl + "&view=download&fileId=" + file.fileId + "&revisionId=" + file.revisionId),
+    new Request(
+      baseUrl + "&view=download&fileId=" + file.fileId + "&revisionId=" + file.revisionId,
+    ),
     selected,
     identity,
   );
