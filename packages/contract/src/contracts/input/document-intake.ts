@@ -76,7 +76,9 @@ export const purchaseOrderExtractionSchema = {
     },
     fieldEvidence: {
       type: "object",
-      additionalProperties: { type: "array", items: { $ref: "#/$defs/evidence" } },
+      additionalProperties: false,
+      required: [],
+      properties: {},
     },
     corrections: {
       type: "array",

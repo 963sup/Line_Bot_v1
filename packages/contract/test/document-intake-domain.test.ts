@@ -145,6 +145,16 @@ test("purchase-order schema publishes a nullable string enum and stable version"
   assert.equal(schema.$defs.line.properties.category.anyOf.length, 2);
 });
 
+test("purchase-order response schema has no dynamic evidence object keys", () => {
+  const evidence = purchaseOrderExtractionSchema.properties.fieldEvidence;
+  assert.deepEqual(evidence, {
+    type: "object",
+    additionalProperties: false,
+    required: [],
+    properties: {},
+  });
+});
+
 test("confirmation preserves reported tax and requires an auditable reason for total discrepancies", () => {
   const reported = candidate(54);
   const withPrintedTax = {
