@@ -39,3 +39,36 @@ Public configuration（例如 publishable key / public URL）仍不等於 busine
 CLI / probe / deployment tools 可能讀 environment 或進行外部寫入。Supabase remote schema tooling 只使用 provider-owned `POSTGRES_URL_NON_POOLING`，並以 `SUPABASE_URL` 驗證 exact project；Web runtime 的 `POSTGRES_URL` 不作 schema/operator fallback。執行前確認 exact project/channel/environment 與既有授權；名稱叫 `check` / `probe` 不代表一定唯讀。
 
 Validation scope 見 [Validation and tooling entry points](validation-pipeline.md)。
+
+## Codex Cloud bootstrap
+
+[Bootstrap](../../../.codex/bootstrap/) 是環境準備的程式來源，Cloud 設定只呼叫入口；devcontainer 本身不是 Cloud 已執行 setup 的證據。
+
+| 路徑 | 唯一責任 |
+| --- | --- |
+| `install.sh` | 順序安裝已選模組、一次 frozen workspace install、準備 MCP 本地需求與檢查 |
+| `verify.sh` | 檢查本地前置條件，分別回報失敗與仍待 host 驗證的項目 |
+| `update.sh` | 比對忽略目錄中的安裝指紋；輸入未變且檢查通過就重用，否則重新對齊固定版本 |
+| `config/tools.env` | 工具選擇；可由 Cloud 非秘密環境變數 `BOOTSTRAP_TOOLS` 覆寫 |
+| `config/mcp.env` | MCP 本地準備／檢查範圍；可由 `BOOTSTRAP_MCP_SERVERS` 覆寫，不改變 host 啟用狀態，不保存 endpoint 或 credential 副本 |
+| `config/versions.env` | Python、uv、GitHub CLI、Wrangler、Serena 的 exact pin，以及 Postgres client major |
+| `lib/` | 共用環境、偵測、下載／完整性驗證、鎖與結果輸出；不擁有工具專屬決策 |
+| `modules/<tool>/{install,verify}.sh` | 各工具自己的行為，供入口載入；Supabase／Vercel 重用 workspace 安裝，不建立 global 副本 |
+| `mcp/{install,verify}.sh`、`mcp/servers/` | 調度與各 MCP server 本地前置條件；連接定義仍由 `.codex/config.toml` 擁有 |
+| `tests/smoke.sh` | 明確選用的 shell 語法、本地前置條件及 launcher 路徑檢查；不驗收 MCP handshake |
+
+Bootstrap 支援 Linux x86_64／arm64。基礎 image 需有 Bash、curl、tar、sha256sum、awk、install 與 flock。下載保留 TLS 與 checksum 驗證，workspace 安裝使用 frozen lockfile；安裝鎖防止同 checkout 並行寫入。Node／pnpm 版本沿用 `.node-version`／manifest，workspace CLI 版本沿用 manifests／catalog／lockfile，不在 env 檔重複固定。
+
+Docker 不由 task 內另起 daemon；選用時必須有 host 提供的 executable、daemon 與 socket 權限。Postgres 模組只透過具簽章的 distro repository 安裝指定 major 的 client，需要 apt 權限及對應套件來源，不會建立資料庫。兩者預設不啟用；Cloudflare 只準備固定版本 Wrangler，不登入或修改遠端資源。
+
+Cloud 安裝腳本從該設定綁定的 repo root 執行 `bash .codex/bootstrap/install.sh`。恢復快取／更新 checkout 的階段使用 `bash .codex/bootstrap/update.sh`；平台若沒有獨立 maintenance hook，就在任務 startup instructions 呼叫 update。安裝指紋是可丟棄的快取，不是第二份設定來源。必須先讓該 checkout 包含 bootstrap 檔案；草稿保存不代表 main 已更新或環境已發布。
+
+`.codex/config.toml` 只有在實際 host 支援並載入 project MCP 設定時才生效。Context7／Sentry 的連線、OAuth、網路允許清單及 session 的工具登錄要在 host 驗證；container shell 無法替另一個 session 完成連接。`verify.sh` 的 exit 0 只代表本地檢查通過，摘要中的 pending 與 `mcpSession: unverified` 不能被解讀為 MCP 全部完成。
+
+技能沿用既有 [.agents/skills/](../../../.agents/skills/) 與受管理的 lockfile；這次 bootstrap 不複製或搬動第三方技能。
+
+### GitHub MCP credential
+
+官方 GitHub MCP 使用 `https://api.githubcopilot.com/mcp/`，由 `.codex/config.toml` 的 `bearer_token_env_var` 引用 `GITHUB_MCP_TOKEN`。在 Cloud 網路機密資料建立同名 secret，目的地只允許 `api.githubcopilot.com`；真正值由使用者在環境設定輸入 GitHub PAT，不放進 repo、env 範本或日誌。GitHub CLI 的 `GH_TOKEN` 維持既有用途，不另複製值。
+
+目前僅載入 repos／issues／pull_requests toolsets；需要擴大能力時修改真正的 MCP header。網路機密的代理替換需要請求經過受支援的 proxy 路徑；若實際 Codex host 不承接 container 的環境或網路機密，必須在該 host 的安全認證設定接入同一憑證。欄位存在、佔位值或 token 環境變數存在都不代表驗證成功。

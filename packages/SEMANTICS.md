@@ -8,7 +8,7 @@
 
 ## Authority / retrieval
 
-[Semantic model](../architecture/registry.json#domain) owns product semantics; [implementation topology](../architecture/registry.json#modules) owns module/dependency truth; [data topology](../architecture/registry.json#data) owns persisted relation authority. GitHub meanings resolve directly from [pinned FPT JSON](../architecture/domain/fpt/).
+[Semantic model](../architecture/registry.json#domain) owns product semantics; [implementation topology](../architecture/registry.json#modules) owns module/dependency truth; [data topology](../architecture/registry.json#data) owns persisted relation authority. GitHub meanings resolve directly from [pinned FPT JSON](../architecture/fpt/).
 
 Use the package links below for owner-local language, capabilities and relationships. Read [AGENTS](./AGENTS.md) for development constraints and [README](./README.md) for task routing. Full target/dependency details: `pnpm semantic view modules`; focused impact: `pnpm semantic plan "<intent>"` / `pnpm semantic context "<intent>"`.
 

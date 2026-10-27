@@ -1,7 +1,7 @@
 {
   "version": 1,
   "role": "github-fpt-domain-truth-provenance",
-  "domainTruth": "architecture/domain/fpt/*.json",
+  "domainTruth": "architecture/fpt/*.json",
   "upstream": {
     "repository": "github/docs",
     "revision": "f4e8afc6979acd8de6b5da035066281b9a5f4025",
