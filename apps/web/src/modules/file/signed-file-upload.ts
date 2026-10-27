@@ -14,6 +14,7 @@ export async function uploadSelectedFile(
   next: Pending,
   request: (mutation: FileMutation) => Promise<unknown>,
   assertCurrent: () => void,
+  put: typeof fetch = fetch,
 ): Promise<{ requestId: string; file: FileInfo }> {
   const digest = new Uint8Array(
     await crypto.subtle.digest("SHA-256", await next.file.arrayBuffer()),
@@ -42,7 +43,7 @@ export async function uploadSelectedFile(
   payload.set("cacheControl", "0");
   payload.append("", next.file);
   try {
-    await fetch(signedUrl, {
+    await put(signedUrl, {
       method: "PUT",
       headers: { "x-upsert": "false" },
       body: payload,
