@@ -67,7 +67,7 @@ export default function PurchaseOrderIntakeReview({
             <input
               type="checkbox"
               checked={sourceReviewConfirmed}
-              disabled={busy || pending || pendingDocumentConfirmation}
+              disabled={busy || pending || !!pendingDocumentConfirmation}
               onChange={(event) => setSourceReviewConfirmed(event.target.checked)}
             />
             <span>我已核對原始檔、全部明細、來源頁與金額，確認以上採購單資料正確。</span>
@@ -79,7 +79,7 @@ export default function PurchaseOrderIntakeReview({
                 id="purchase-order-acknowledgement"
                 placeholder="請說明接受此金額差異的原因"
                 value={acknowledgementReason}
-                disabled={busy || pending || pendingDocumentConfirmation}
+                disabled={busy || pending || !!pendingDocumentConfirmation}
                 onChange={(event) => setAcknowledgementReason(event.target.value)}
               />
             </div>
