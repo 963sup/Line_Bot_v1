@@ -2,7 +2,7 @@
 
 Inherits [Web modules](../AGENTS.md). This feature consumes the [File owner](../../../../../docs/owners/file.md); it never owns File facts or direct Storage credentials.
 
-- This module owns UI, hooks and browser interaction state. File HTTP transport belongs to `packages/file/src/adapters/inbound/http.ts`; the API composition injects host dependencies through the File composition factory.
+- This module owns UI, hooks and browser interaction state. File HTTP transport belongs to `packages/file/src/adapters/inbound/http.ts`; the thin API route supplies shared Repository host capabilities to the File composition factory.
 
 - Resolve owner/name only as a locator, then use verified LINE session plus Repository current authorization. File owner independently rechecks every File read, transition and replay.
 - Web signed private Storage Upload and authorized Web Download are capped to 3 MB; File owner and protected CLI may support larger objects. The Web API accepts only small JSON upload commands, never original upload bytes. Finalize is refused until trusted Storage readback validates size and SHA-256, and the actor is reauthorized. Never assume the host transport supports 45 MiB.

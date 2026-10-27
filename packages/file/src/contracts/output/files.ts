@@ -1,7 +1,11 @@
 import type { FileDescriptor, FileRevision, FileUploadIntent } from "../../domain/file.js";
-import type { FileRevisions } from "../repositories/files.js";
 
 export type FileReceipt = Readonly<{ kind: "file"; requestId: string; revision: FileRevision }>;
+interface FileRevisions {
+  load(fileId: string): Promise<FileRevision | null>;
+  save(next: FileRevision, expectedVersion: number): Promise<void>;
+}
+
 export interface FileTransaction {
   readonly scope: { repositoryId: string; permissions: readonly string[]; archived: boolean };
   readonly files: FileRevisions;

@@ -45,14 +45,16 @@ FILE_STORAGE_INTEGRATION=1 pnpm --filter @line_bot_v1/file exec node --no-wasm-c
 packages/file/
 ├── src/domain/                 # File entity、value、invariant、domain error
 ├── src/application/            # commands、queries、use cases、協調流程
-├── src/contracts/              # inbound/outbound port 與 DTO contract
+├── src/contracts/output/       # Application 使用的 output port 與跨 owner reference contract
+├── src/adapters/inbound/       # HTTP transport translation
 ├── src/adapters/outbound/      # persistence、object storage、binary payload adapter
 └── src/composition/bootstrap/  # 唯一組裝 concrete adapter 的位置
 ```
 
 ```mermaid
 flowchart LR
-  P[API / Page / Webhook] --> C[File public use case]
+  P[Thin API route] --> H[HTTP adapter]
+  H --> C[File public use case]
   C --> D[Domain decision]
   C --> R[Repository port]
   C --> O[Object-store port]
