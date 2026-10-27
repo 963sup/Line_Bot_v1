@@ -1,7 +1,7 @@
 import type { FileDescriptor, FileRevision, FileUploadIntent } from "../../domain/file.js";
 
 /** File revision persistence is scoped to the File transaction, not a separate Repository API. */
-export interface FileRevisions {
+interface FileRevisions {
   load(fileId: string, revisionId?: string): Promise<FileRevision | null>;
   save(next: FileRevision, expectedVersion: number): Promise<void>;
 }
