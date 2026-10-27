@@ -9,7 +9,7 @@ private Bucket 的 object key 是儲存識別，不是存取授權。Client 必�
 ## Upload / recovery 流程
 
 1. File transaction 建立 durable Upload Intent 與 request identity。
-2. Adapter 使用 intent 對應的 immutable object key 上傳。
+2. CLI／受信任用戶端由 Adapter 使用 immutable key 上傳；Web 由 File 簽發 2 小時有效、禁止 upsert 的私有 Storage 上傳票據，由瀏覽器直接傳輸，不能透過票據提交 File Revision。
 3. 讀回 bytes/digest，確認與 intent 一致。
 4. File transaction 重驗 current permission／version，再原子 Finalize。
 5. 不明上傳結果以相同 intent readback；未 Finalize 的物件交由 File 的明確 reclamation 流程處理。
