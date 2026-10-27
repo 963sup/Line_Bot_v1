@@ -3,8 +3,7 @@ import { randomUUID } from "node:crypto";
 import test from "node:test";
 import { createContentPlans } from "@line_bot_v1/content/application/use-cases/plans";
 import { createPostgresContentPlanDependencies } from "@line_bot_v1/content/composition/bootstrap/plans";
-import { createContracts } from "@line_bot_v1/contract/application/use-cases/contracts";
-import { createPostgresContractDependencies } from "@line_bot_v1/contract/composition/bootstrap/contracts";
+import { createPostgresContracts } from "@line_bot_v1/contract/composition/bootstrap/contracts";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { createResources } from "@line_bot_v1/resources/application/use-cases/resources";
 import { createPostgresResourceDependencies } from "@line_bot_v1/resources/composition/bootstrap/resources";
@@ -139,8 +138,8 @@ test("public Content, Resource, Contract, dependency and Execution compositions 
     document,
   });
 
-  const contracts = createContracts({
-    ...createPostgresContractDependencies(db),
+  const contracts = createPostgresContracts({
+    db,
     now: () => 30,
   });
   const contractId = randomUUID();

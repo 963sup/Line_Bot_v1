@@ -1,0 +1,105 @@
+export class OpenAIOutputError extends Error {
+  constructor(readonly code: "UNAVAILABLE" | "REFUSAL" | "INCOMPLETE" | "INVALID_OUTPUT") {
+    super(`OpenAI structured output: ${code}`);
+  }
+}
+
+/** Direct Responses API transport. No implicit retries of billable extraction attempts. */
+export function createOpenAIStructuredOutput(config: {
+  model: string;
+  apiKey?: () => string | undefined;
+  fetch?: typeof fetch;
+}) {
+  return {
+    async generate(input: {
+      schema: Readonly<Record<string, unknown>>;
+      system: string;
+      text: string;
+      bytes: Uint8Array;
+      mediaType: string;
+      maxOutputTokens: number;
+      timeoutMs: number;
+    }): Promise<unknown> {
+      if (
+        !Number.isSafeInteger(input.maxOutputTokens) ||
+        input.maxOutputTokens < 1 ||
+        input.maxOutputTokens > 24000 ||
+        !Number.isSafeInteger(input.timeoutMs) ||
+        input.timeoutMs < 1
+      )
+        throw new RangeError("Invalid OpenAI extraction budget.");
+      const apiKey = (config.apiKey ?? (() => process.env.OPENAI_API_KEY))();
+      if (!apiKey || !config.model.trim()) throw new OpenAIOutputError("UNAVAILABLE");
+      if (!["application/pdf", "image/png", "image/jpeg", "image/webp"].includes(input.mediaType))
+        throw new RangeError("Unsupported OpenAI document media type.");
+      const data = `data:${input.mediaType};base64,${Buffer.from(input.bytes).toString("base64")}`;
+      const attachment =
+        input.mediaType === "application/pdf"
+          ? { type: "input_file", filename: "document.pdf", file_data: data }
+          : { type: "input_image", image_url: data, detail: "auto" };
+      let response: Response;
+      try {
+        response = await (config.fetch ?? fetch)("https://api.openai.com/v1/responses", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+            ...(process.env.OPENAI_ORG_ID
+              ? { "OpenAI-Organization": process.env.OPENAI_ORG_ID }
+              : {}),
+            ...(process.env.OPENAI_PROJECT_ID
+              ? { "OpenAI-Project": process.env.OPENAI_PROJECT_ID }
+              : {}),
+          },
+          body: JSON.stringify({
+            model: config.model,
+            store: false,
+            instructions: input.system,
+            input: [
+              { role: "user", content: [{ type: "input_text", text: input.text }, attachment] },
+            ],
+            text: {
+              format: {
+                type: "json_schema",
+                name: "document_extraction",
+                strict: true,
+                schema: input.schema,
+              },
+            },
+            max_output_tokens: input.maxOutputTokens,
+          }),
+          signal: AbortSignal.timeout(input.timeoutMs),
+        });
+      } catch {
+        throw new OpenAIOutputError("UNAVAILABLE");
+      }
+      if (!response.ok) throw new OpenAIOutputError("UNAVAILABLE");
+      let result: {
+        status?: string;
+        output?: Array<{ type?: string; content?: Array<{ type?: string; text?: string }> }>;
+      };
+      try {
+        result = await response.json();
+      } catch {
+        throw new OpenAIOutputError("INVALID_OUTPUT");
+      }
+      if (!result || typeof result !== "object") throw new OpenAIOutputError("INVALID_OUTPUT");
+      if (result.status !== "completed") throw new OpenAIOutputError("INCOMPLETE");
+      if (!Array.isArray(result.output)) throw new OpenAIOutputError("INVALID_OUTPUT");
+      const content = result.output
+        .filter((item) => item?.type === "message")
+        .flatMap((item) => (Array.isArray(item.content) ? item.content : []));
+      if (content.some((item) => item?.type === "refusal")) throw new OpenAIOutputError("REFUSAL");
+      const text = content
+        .filter((item) => item?.type === "output_text")
+        .map((item) => item.text)
+        .join("");
+      if (!text) throw new OpenAIOutputError("INVALID_OUTPUT");
+      try {
+        return JSON.parse(text);
+      } catch {
+        throw new OpenAIOutputError("INVALID_OUTPUT");
+      }
+    },
+  };
+}

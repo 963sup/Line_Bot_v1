@@ -8,17 +8,9 @@
       "types": "./dist/domain/error.d.ts",
       "default": "./dist/domain/error.js"
     },
-    "./application/commands": {
-      "types": "./dist/application/commands.d.ts",
-      "default": "./dist/application/commands.js"
-    },
     "./application/use-cases/contracts": {
       "types": "./dist/application/use-cases/contracts.d.ts",
       "default": "./dist/application/use-cases/contracts.js"
-    },
-    "./contracts/dto/contracts": {
-      "types": "./dist/contracts/dto/contracts.d.ts",
-      "default": "./dist/contracts/dto/contracts.js"
     },
     "./contracts/output/references": {
       "types": "./dist/contracts/output/references.d.ts",

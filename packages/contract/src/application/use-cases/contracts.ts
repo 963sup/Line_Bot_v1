@@ -10,6 +10,7 @@ import {
   type ContractEdit,
   type ContractLineInput,
   type ContractRevision,
+  copyContractLines,
   freezeContractLines,
   reviseContract,
 } from "../../domain/contract.js";
@@ -24,7 +25,23 @@ import {
   historyCursor,
   repositoryId,
 } from "../queries.js";
-import { contractRevisionDto } from "./revision-dto.js";
+
+function contractRevisionDto(revision: ContractRevision): ContractRevisionDto {
+  return {
+    revisionId: revision.id,
+    contractId: revision.contractId,
+    repositoryId: revision.repositoryId,
+    version: revision.version,
+    parentRevisionId: revision.parentRevisionId,
+    actorUserId: revision.actorUserId,
+    at: revision.at,
+    action: revision.action,
+    state: revision.state,
+    title: revision.title,
+    body: revision.body,
+    lines: copyContractLines(revision.lines),
+  };
+}
 
 function contentInputs(current: ContractRevision): ContractLineInput[] {
   return current.lines.map((line) => {

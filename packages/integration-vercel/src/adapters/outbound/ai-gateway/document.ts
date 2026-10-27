@@ -1,4 +1,4 @@
-import type { IntelligenceProcessor } from "@line_bot_v1/intelligence/application/use-cases/processing";
+import type { IntelligenceProcessor } from "@line_bot_v1/intelligence/contracts/output/processing";
 import { IntelligenceError } from "@line_bot_v1/intelligence/domain/error";
 import { generateText, jsonSchema, Output } from "ai";
 

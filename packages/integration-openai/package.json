@@ -1,0 +1,22 @@
+{
+  "name": "@line_bot_v1/integration-openai",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./structured-output": {
+      "types": "./dist/structured-output.d.ts",
+      "default": "./dist/structured-output.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test test/*.test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}

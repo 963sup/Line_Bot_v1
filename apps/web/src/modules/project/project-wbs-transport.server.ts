@@ -51,8 +51,5 @@ export function projectWbsFailure(error: unknown) {
     error instanceof RequestIdentityError;
   const status = known ? error.status : 500;
   captureHandledServerError(error, { service: "project-wbs-api", operation: "request", status });
-  return jsonResponse(
-    { error: error instanceof Error ? error.message : String(error) },
-    status,
-  );
+  return jsonResponse({ error: error instanceof Error ? error.message : String(error) }, status);
 }

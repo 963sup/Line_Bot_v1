@@ -1,6 +1,6 @@
 import { ContractError } from "./error.js";
 
-export type PurchaseOrderFieldEvidence = Readonly<{
+type PurchaseOrderFieldEvidence = Readonly<{
   sourcePages: readonly number[];
   rawText: string | null;
   confidence: string | null;

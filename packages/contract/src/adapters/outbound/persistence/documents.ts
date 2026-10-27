@@ -15,10 +15,16 @@ import type {
 } from "../../../domain/document-intake.js";
 import {
   decodeDocumentSource,
-  decodeStoredPurchaseOrderCandidate,
   decodeSourceReviewAttestation,
+  decodeStoredPurchaseOrderCandidate,
 } from "../../../domain/document-intake-decoder.js";
 import { ContractError } from "../../../domain/error.js";
+
+function contractPersistenceError(error: unknown): never {
+  if (error instanceof ContractError || (error && typeof error === "object" && "status" in error))
+    throw error;
+  throw new ContractError(503, "Contract persistence is unavailable.", "UNAVAILABLE");
+}
 
 function json(value: unknown): unknown {
   if (typeof value !== "string") return value;
@@ -162,7 +168,7 @@ export class PostgresContractDocuments implements ContractDocumentIntakeTransact
     }>,
     operation: (tx: ContractDocumentIntakeTransaction) => Promise<T>,
   ) {
-    return this.db.transaction(async (sql) => {
+    const transaction = this.db.transaction(async (sql) => {
       const { repository, archived } = await repositoryContentScope(sql, actor, {
         repositoryId: input.repositoryId,
       });
@@ -301,6 +307,7 @@ export class PostgresContractDocuments implements ContractDocumentIntakeTransact
       };
       return operation(transaction);
     });
+    return transaction.catch(contractPersistenceError);
   }
 }
 

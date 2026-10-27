@@ -105,7 +105,7 @@
         "tests",
         "fast-repository"
       ],
-      "runtimeExpectation": "required",
+      "runtimeExpectation": "not-asserted",
       "implementation": {
         "status": "implemented",
         "scope": "Execute and persist an explicitly requested Intelligence processing lifecycle against a pinned File revision, retaining untrusted candidate and explicit save evidence.",
@@ -113,28 +113,15 @@
           "packages/intelligence/src/domain/processing.ts",
           "packages/intelligence/src/domain/error.ts",
           "packages/intelligence/src/application/use-cases/processing.ts",
-          "packages/intelligence/src/adapters/outbound/persistence/processing.ts",
-          "packages/intelligence/src/adapters/outbound/processing/plain-text.ts"
+          "packages/intelligence/src/adapters/outbound/persistence/processing.ts"
         ],
-        "publicExports": [
-          "./application/use-cases/processing",
-          "./domain/error",
-          "./composition/bootstrap/processing",
-          "./composition/bootstrap/processors",
-          "./contracts/output/processing"
-        ],
-        "entrypoints": [
-          "scripts/operations/file/run.mjs",
-          "apps/web/src/app/api/repository-files/route.ts",
-          "apps/web/src/app/(resource)/[login]/[repository]/files/page.tsx"
-        ],
+        "publicExports": ["./domain/error", "./contracts/output/processing"],
+        "entrypoints": [],
         "testPaths": [
           "packages/intelligence/test/processing.test.ts",
-          "packages/intelligence/test/intake-document.test.ts",
-          "packages/intelligence/test/document-attempts-postgres.test.ts",
-          "apps/web/test/files-owner-http.test.ts"
+          "packages/intelligence/test/processing-replay.test.ts"
         ],
-        "note": "Intelligence owns explicit processor selection, exact source authorization, output validation and its ProcessingRun lifecycle. Its native UTF-8 text Parser is local to Intelligence; configured provider adapters return untrusted candidate output. No OCR or Excel/Word Parser, asynchronous worker, automatic fallback, live provider or LINE device acceptance is asserted."
+        "note": "The package owns the tested processing lifecycle, but no current delivery entrypoint activates it. Runtime availability is not asserted."
       }
     },
     {
@@ -151,7 +138,7 @@
         "tests",
         "fast-repository"
       ],
-      "runtimeExpectation": "required",
+      "runtimeExpectation": "not-asserted",
       "implementation": {
         "status": "implemented",
         "scope": "A user may locally edit Preview, then explicitly Save a version-bound result or Discard it; neither operation mutates downstream business owners.",
@@ -160,31 +147,20 @@
           "packages/intelligence/src/application/use-cases/processing.ts",
           "packages/intelligence/src/adapters/outbound/persistence/processing.ts"
         ],
-        "publicExports": [
-          "./application/use-cases/processing",
-          "./composition/bootstrap/processing",
-          "./composition/bootstrap/processors",
-          "./contracts/output/processing"
-        ],
-        "entrypoints": [
-          "scripts/operations/file/run.mjs",
-          "apps/web/src/app/api/repository-files/route.ts",
-          "apps/web/src/app/(resource)/[login]/[repository]/files/page.tsx"
-        ],
+        "publicExports": ["./contracts/output/processing"],
+        "entrypoints": [],
         "testPaths": [
           "packages/intelligence/test/processing.test.ts",
-          "packages/intelligence/test/intake-document.test.ts",
-          "packages/intelligence/test/document-attempts-postgres.test.ts",
-          "apps/web/test/files-owner-http.test.ts"
+          "packages/intelligence/test/processing-replay.test.ts"
         ],
-        "note": "Intelligence provides explicit Edit, Discard or version-bound Save of a Ready ProcessingRun. RawResult remains unchanged; no downstream business import, live LINE device or production acceptance is asserted."
+        "note": "The package preserves Edit, Discard and version-bound Save semantics, but no current delivery entrypoint activates them. Runtime availability is not asserted."
       }
     },
     {
       "id": "understand-file-document",
       "owner": "intelligence",
       "kind": "leaf",
-      "intent": "Map explicitly supplied PDF or image evidence through the configured Vercel AI Gateway model into bounded, source-located candidate observations without approving, persisting or importing business facts.",
+      "intent": "Map explicitly supplied evidence through an injected processor into bounded candidate observations without approving, persisting or importing business facts.",
       "preserves": ["K1", "K2", "K5", "FILE2", "INTELLIGENCE1"],
       "consumes": ["intelligence-file-source"],
       "validationProfiles": [
@@ -193,24 +169,18 @@
         "tests",
         "fast-repository"
       ],
-      "runtimeExpectation": "required",
+      "runtimeExpectation": "not-asserted",
       "implementation": {
         "status": "implemented",
-        "scope": "Vercel AI Gateway-backed PDF/image document understanding consuming File's public authorized source reader; Intelligence owns processor selection while hosts inject the provider port.",
+        "scope": "Provider-neutral document processing consuming File's public authorized source reader; Intelligence owns processor selection while composition injects the provider port.",
         "sourcePaths": [
           "packages/intelligence/src/application/use-cases/processing.ts",
-          "packages/intelligence/src/composition/bootstrap/processors.ts"
+          "packages/intelligence/src/contracts/output/processing.ts"
         ],
-        "publicExports": ["./composition/bootstrap/processors"],
-        "entrypoints": [
-          "scripts/operations/file/run.mjs",
-          "apps/web/src/app/api/_composition/files.server.ts"
-        ],
-        "testPaths": [
-          "packages/intelligence/test/processing.test.ts",
-          "scripts/operations/file/run.test.mjs"
-        ],
-        "note": "The processor preserves observations-v1:<model> identity, performs one provider attempt without fallback and supports configured PDF/JPEG/PNG/WebP inputs. Output remains candidate evidence; simulated tests do not prove live provider accuracy or acceptance."
+        "publicExports": ["./contracts/output/processing"],
+        "entrypoints": [],
+        "testPaths": ["packages/intelligence/test/processing.test.ts"],
+        "note": "The provider port and processing semantics remain implemented and tested, but no current delivery entrypoint activates this generic processing capability."
       }
     },
     {
@@ -243,24 +213,24 @@
       "runtimeExpectation": "required",
       "implementation": {
         "status": "implemented",
-        "scope": "Vercel AI Gateway-backed orchestration of exact File source read, target-owned schema extraction and Contract SAVE candidate submission.",
+        "scope": "OpenAI Responses Structured Outputs orchestration of exact File source read, target-owned schema extraction and Contract SAVE candidate submission.",
         "sourcePaths": [
           "packages/intelligence/src/application/use-cases/intake-document.ts",
           "packages/intelligence/src/adapters/outbound/persistence/document-attempts.ts",
           "packages/intelligence/src/contracts/output/document-attempts.ts",
           "packages/intelligence/src/contracts/output/document-intake.ts",
+          "packages/intelligence/src/adapters/outbound/openai-document-extractor.ts",
           "packages/intelligence/src/composition/bootstrap/document-intake.ts"
         ],
         "publicExports": [
           "./composition/bootstrap/document-intake",
-          "./contracts/output/document-intake",
-          "./contracts/output/document-attempts"
+          "./contracts/output/document-intake"
         ],
-        "entrypoints": ["scripts/operations/intelligence/run.mjs"],
+        "entrypoints": ["apps/web/src/app/api/repository-document-intake/route.ts"],
         "testPaths": [
           "packages/intelligence/test/intake-document.test.ts",
           "packages/intelligence/test/document-attempts-postgres.test.ts",
-          "scripts/operations/intelligence/run.test.mjs"
+          "apps/web/test/document-intake-http.test.ts"
         ],
         "note": "A single durable provider attempt may produce only an untrusted SAVE candidate. Its technical state preserves source/intent identity and target receipt reference, never the candidate. Provider failure, response loss and live extraction accuracy remain distinct evidence boundaries."
       }

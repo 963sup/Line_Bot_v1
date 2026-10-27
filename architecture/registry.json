@@ -3,6 +3,7 @@
   "domain": {
     "vocabulary": "architecture/domain/vocabulary.json",
     "owners": {
+      "openai-integration": "architecture/domain/owners/openai-integration.json",
       "vercel-integration": "architecture/domain/owners/vercel-integration.json",
       "supabase-integration": "architecture/domain/owners/supabase-integration.json",
       "account": "architecture/domain/owners/account.json",
@@ -51,6 +52,7 @@
   "modules": {
     "configuration": "architecture/modules/configuration.json",
     "entries": {
+      "@line_bot_v1/integration-openai": "architecture/modules/integration-openai.json",
       "@line_bot_v1/integration-vercel": "architecture/modules/integration-vercel.json",
       "@line_bot_v1/integration-supabase": "architecture/modules/integration-supabase.json",
       "@line_bot_v1/explore": "architecture/modules/explore.json",

@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "owner": {
+    "id": "openai-integration",
+    "kind": "integration-owner",
+    "lifecycle": "current",
+    "doc": "docs/owners/openai-integration.md"
+  },
+  "boundedContexts": [],
+  "concepts": [],
+  "relationships": [],
+  "capabilities": [],
+  "locators": []
+}

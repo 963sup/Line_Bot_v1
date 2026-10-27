@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {
-  createIntelligenceProcessing,
-  type IntelligenceProcessor,
-} from "../src/application/use-cases/processing.js";
-import type { IntelligenceProcessingStore } from "../src/contracts/output/processing.js";
+import { createIntelligenceProcessing } from "../src/application/use-cases/processing.js";
+import type {
+  IntelligenceProcessingStore,
+  IntelligenceProcessor,
+} from "../src/contracts/output/processing.js";
 import type { ProcessingOutput, ProcessingRevision } from "../src/domain/processing.js";
 
 const command = {

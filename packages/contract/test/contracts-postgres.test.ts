@@ -2,12 +2,13 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
 import { createContentPlans } from "@line_bot_v1/content/application/use-cases/plans";
+import { createPostgresContentPlanReferenceReader } from "@line_bot_v1/content/composition/bootstrap/plan-references";
 import { createPostgresContentPlanDependencies } from "@line_bot_v1/content/composition/bootstrap/plans";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { postgresSessions } from "@line_bot_v1/platform/testing/postgres-sessions";
-import { createContracts } from "../src/application/use-cases/contracts.js";
-import { createPostgresContractDependencies } from "../src/composition/bootstrap/contracts.js";
+import { PostgresContracts } from "../src/adapters/outbound/persistence/contracts.js";
+import { createPostgresContracts } from "../src/composition/bootstrap/contracts.js";
 import { createPostgresContractReferenceReader } from "../src/composition/bootstrap/references.js";
 import { reviseContract } from "../src/domain/contract.js";
 import { ContractError } from "../src/domain/error.js";
@@ -111,8 +112,8 @@ test("Contract persists Content-based revisions, replay and established active l
   );
   const source = await seedContentPlan(db);
   let clock = 100;
-  const store = createPostgresContractDependencies(db);
-  const contracts = createContracts({ ...store, now: () => clock++ });
+  const contracts = createPostgresContracts({ db, now: () => clock++ });
+  const persistence = new PostgresContracts(createPostgresContentPlanReferenceReader, db);
   const contractId = randomUUID();
   const lineId = randomUUID();
   const create = {
@@ -193,7 +194,7 @@ test("Contract persists Content-based revisions, replay and established active l
   assert.equal(reference.content.node.plannedQuantity?.measure.unit, "SET");
 
   await assert.rejects(
-    store.transactions.transact(
+    persistence.transact(
       "owner",
       { repositoryId: "repo", contractId },
       { requestId: create.requestId, payload: "forced receipt conflict" },
@@ -338,7 +339,7 @@ test("independent PostgreSQL sessions serialize Contract replay and competing ac
     "SELECT * FROM app_private.provision_repository('repo','owner','owner','USER','Contract','private')",
   );
   const source = await seedContentPlan(db);
-  const contracts = createContracts({ ...createPostgresContractDependencies(db), now: () => 1 });
+  const contracts = createPostgresContracts({ db, now: () => 1 });
   const command = {
     action: "create",
     repositoryId: "repo",
