@@ -124,9 +124,9 @@ export function createFiles(deps: {
     });
   }
   return {
-    async source(actor: string, scope: string, id: string, revision: string) {
+    async source(actor: string, scope: string, id: string, revision: string, maxBytes?: number) {
       try {
-        const result = await sources.read(actor, scope, { fileId: id, fileRevisionId: revision });
+        const result = await sources.read(actor, scope, { fileId: id, fileRevisionId: revision }, maxBytes);
         return { file: fileDto(result.revision), bytes: result.bytes };
       } catch (error) {
         throw fileErrorFromUnknown(error);
