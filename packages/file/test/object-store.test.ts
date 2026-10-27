@@ -130,7 +130,8 @@ test("provider unknown result is accepted only after independent readback", asyn
   });
   await assert.rejects(
     failed.removeVerified(revision),
-    (error: unknown) => error instanceof FileError && error.code === "UNAVAILABLE",
+    (error: unknown) =>
+      error instanceof Error && error.message === "sensitive provider removal failure",
   );
   await assert.rejects(failed.putVerified(revision, bytes), (error: unknown) => {
     assert.deepEqual(error, { status: 503 });
