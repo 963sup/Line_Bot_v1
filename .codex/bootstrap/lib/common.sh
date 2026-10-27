@@ -15,6 +15,7 @@ export UV_TOOL_DIR="$BOOTSTRAP_PREFIX/uv-tools"
 export UV_TOOL_BIN_DIR="$BOOTSTRAP_PREFIX/bin"
 export NPM_CONFIG_CACHE="$BOOTSTRAP_ROOT/.cache/npm"
 export SERENA_HOME="$BOOTSTRAP_ROOT/.cache/serena"
+export PLAYWRIGHT_BROWSERS_PATH="$BOOTSTRAP_ROOT/.cache/ms-playwright"
 cd "$BOOTSTRAP_ROOT"
 
 require_command() {

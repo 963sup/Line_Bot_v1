@@ -28,14 +28,17 @@ verify_download() {
 }
 
 install_system_packages() {
-  # Optional client only; use signed distro repositories and never disable verification.
+  # Use signed distro repositories; update their index once per bootstrap invocation.
   require_command apt-get
   if [[ "$(id -u)" -eq 0 ]]; then
-    run_stage apt-update apt-get update
+    if [[ -z "${BOOTSTRAP_APT_UPDATED:-}" ]]; then run_stage apt-update apt-get update; BOOTSTRAP_APT_UPDATED=1; fi
     run_stage apt-install env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends "$@"
   else
     require_command sudo
-    run_stage apt-update sudo -n apt-get update
-    run_stage apt-install sudo -n env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends "$@"
+    if [[ -z "${BOOTSTRAP_APT_UPDATED:-}" ]]; then
+      run_stage apt-update sudo -n --preserve-env=HTTP_PROXY,HTTPS_PROXY,NO_PROXY,http_proxy,https_proxy,no_proxy apt-get update
+      BOOTSTRAP_APT_UPDATED=1
+    fi
+    run_stage apt-install sudo -n --preserve-env=HTTP_PROXY,HTTPS_PROXY,NO_PROXY,http_proxy,https_proxy,no_proxy env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends "$@"
   fi
 }

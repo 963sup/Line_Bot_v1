@@ -20,7 +20,7 @@ selected_tools() {
   for name in $BOOTSTRAP_TOOLS; do
     case "$name" in
       node|uv|python) ;;
-      github|supabase|vercel|cloudflare|docker|postgres)
+      github|ripgrep|jq|shellcheck|build|browser|supabase|vercel|cloudflare|docker|postgres)
         if [[ "$seen" != *" $name "* ]]; then printf '%s\n' "$name"; seen+="$name "; fi
         ;;
       *) printf 'Unknown bootstrap tool: %s\n' "$name" >&2; return 1 ;;
