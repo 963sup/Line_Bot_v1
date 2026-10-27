@@ -298,7 +298,7 @@ test("Signed upload uses authenticated JSON commands and never transfers Binary 
     assert.equal(prepared.status, 200);
     const ticket = await prepared.json();
     assert.equal(ticket.requestId, command.requestId);
-    assert.match(ticket.signedUrl, /storage\\/v1\\/object\\/upload\\/sign/);
+    assert.ok(ticket.signedUrl.includes("/storage/v1/object/upload/sign/"));
     const completed = await filesRequest(post({ operation: "complete-upload", command }), runtime, identity);
     assert.equal(completed.status, 200);
     assert.equal((await completed.json()).file.revisionId, file.revisionId);
