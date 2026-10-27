@@ -96,7 +96,7 @@ export const purchaseOrderExtractionSchema = {
   $defs: {
     nullableText: { type: ["string", "null"] },
     decimal: { type: ["string", "null"], pattern: "^-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?$" },
-    pages: { type: "array", items: { type: "integer", minimum: 1 }, uniqueItems: true },
+    pages: { type: "array", items: { type: "integer", minimum: 1 } },
     header: {
       type: "object",
       additionalProperties: false,
