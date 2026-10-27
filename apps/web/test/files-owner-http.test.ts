@@ -80,8 +80,12 @@ function fixture() {
     },
     async prepareUpload(actor, input) {
       called("prepare", [actor, input]);
-      return { requestId: requestIdOf(input), revisionId: file.revisionId,
-        signedUrl: "https://test.supabase.co/storage/v1/object/upload/sign/repository-files/key?token=secret" };
+      return {
+        requestId: requestIdOf(input),
+        revisionId: file.revisionId,
+        signedUrl:
+          "https://test.supabase.co/storage/v1/object/upload/sign/repository-files/key?token=secret",
+      };
     },
     async completeUpload(actor, input) {
       called("complete", [actor, input]);
@@ -275,41 +279,76 @@ test("File rejects Intelligence processing commands at the File boundary", async
 test("legacy multipart route is disabled; only bounded JSON signed commands are accepted", async () => {
   await withOrigin(async () => {
     const { calls, runtime } = fixture();
-    const response = await filesRequest(new Request(baseUrl, {
-      method: "POST", headers: { origin: "https://app.example" },
-      body: new FormData(),
-    }), runtime, identity);
+    const response = await filesRequest(
+      new Request(baseUrl, {
+        method: "POST",
+        headers: { origin: "https://app.example" },
+        body: new FormData(),
+      }),
+      runtime,
+      identity,
+    );
     assert.equal(response.status, 415);
     assert.deepEqual(calls, []);
   });
 });
 
-
 test("Signed upload uses authenticated JSON commands and never transfers Binary through API", async () => {
   await withOrigin(async () => {
     const { calls, runtime } = fixture();
     const command = {
-      repositoryId: scope.repository.id, fileId: file.fileId,
-      requestId: randomUUID(), expectedVersion: 0,
-      name: file.name, mediaType: file.mediaType, byteLength: 3,
+      repositoryId: scope.repository.id,
+      fileId: file.fileId,
+      requestId: randomUUID(),
+      expectedVersion: 0,
+      name: file.name,
+      mediaType: file.mediaType,
+      byteLength: 3,
       sha256: "a".repeat(64),
     };
-    const prepared = await filesRequest(post({ operation: "prepare-upload", command }), runtime, identity);
+    const prepared = await filesRequest(
+      post({ operation: "prepare-upload", command }),
+      runtime,
+      identity,
+    );
     assert.equal(prepared.status, 200);
     const ticket = await prepared.json();
     assert.equal(ticket.requestId, command.requestId);
     assert.ok(ticket.signedUrl.includes("/storage/v1/object/upload/sign/"));
-    const completed = await filesRequest(post({ operation: "complete-upload", command }), runtime, identity);
+    const completed = await filesRequest(
+      post({ operation: "complete-upload", command }),
+      runtime,
+      identity,
+    );
     assert.equal(completed.status, 200);
     assert.equal((await completed.json()).file.revisionId, file.revisionId);
-    assert.deepEqual(calls.map((item) => item.operation), ["prepare", "complete"]);
-    const tooLarge = await filesRequest(post({ operation: "prepare-upload", command: {
-      ...command, byteLength: 3_000_001,
-    } }), runtime, identity);
+    assert.deepEqual(
+      calls.map((item) => item.operation),
+      ["prepare", "complete"],
+    );
+    const tooLarge = await filesRequest(
+      post({
+        operation: "prepare-upload",
+        command: {
+          ...command,
+          byteLength: 3_000_001,
+        },
+      }),
+      runtime,
+      identity,
+    );
     assert.equal(tooLarge.status, 413);
-    const foreign = await filesRequest(post({ operation: "prepare-upload", command: {
-      ...command, repositoryId: "another",
-    } }), runtime, identity);
+    const foreign = await filesRequest(
+      post({
+        operation: "prepare-upload",
+        command: {
+          ...command,
+          repositoryId: "another",
+        },
+      }),
+      runtime,
+      identity,
+    );
     assert.equal(foreign.status, 400);
     assert.equal(calls.length, 2);
   });

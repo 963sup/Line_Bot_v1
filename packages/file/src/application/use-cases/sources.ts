@@ -15,7 +15,10 @@ export function createFileSourceReader(deps: {
         const fileId = identifier(source.fileId);
         const revisionId = identifier(source.fileRevisionId);
         const revision = await deps.reads.file(actor, scope, fileId, revisionId);
-        if (maxBytes !== undefined && ( !Number.isSafeInteger(maxBytes) || maxBytes < 1 || revision.byteLength > maxBytes ))
+        if (
+          maxBytes !== undefined &&
+          (!Number.isSafeInteger(maxBytes) || maxBytes < 1 || revision.byteLength > maxBytes)
+        )
           throw new FileError(413, "File is too large for this transport.", "INVALID_INPUT");
         // Original bytes are read outside database transactions and locks.
         const bytes = await deps.objects().readVerified(revision);

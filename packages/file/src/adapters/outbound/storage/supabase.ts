@@ -41,7 +41,10 @@ function verify(revision: FileRevision, bytes: Uint8Array): void {
 }
 
 /** Exact readback resolves uncertain writes; failed recovery preserves the provider failure. */
-export function fileObjects(bucket: PrivateBucket, expectedOrigin?: string): FileObjectStore & FileObjectRemoval {
+export function fileObjects(
+  bucket: PrivateBucket,
+  expectedOrigin?: string,
+): FileObjectStore & FileObjectRemoval {
   async function read(revision: FileRevision, missing: boolean): Promise<Uint8Array | null> {
     const response = await bucket.download(key(revision));
     if (response.error) {
@@ -63,10 +66,13 @@ export function fileObjects(bucket: PrivateBucket, expectedOrigin?: string): Fil
       if (!result.data?.signedUrl)
         throw new FileError(503, "Signed File upload is unavailable.", "UNAVAILABLE");
       const url = new URL(result.data.signedUrl);
-      if (url.protocol !== "https:" || !/^[a-z0-9-]+\.supabase\.co$/.test(url.hostname) ||
-          (expectedOrigin !== undefined && url.origin !== expectedOrigin) ||
-          url.pathname !== `/storage/v1/object/upload/sign/repository-files/${key(revision)}` ||
-          !url.searchParams.has("token"))
+      if (
+        url.protocol !== "https:" ||
+        !/^[a-z0-9-]+\.supabase\.co$/.test(url.hostname) ||
+        (expectedOrigin !== undefined && url.origin !== expectedOrigin) ||
+        url.pathname !== `/storage/v1/object/upload/sign/repository-files/${key(revision)}` ||
+        !url.searchParams.has("token")
+      )
         throw new FileError(503, "Invalid Storage upload ticket.", "UNAVAILABLE");
       return url.toString();
     },

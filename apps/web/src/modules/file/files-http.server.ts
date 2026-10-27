@@ -5,11 +5,7 @@ import { normalizeAccountLogin } from "@line_bot_v1/namespace";
 import { RepositoryError } from "@line_bot_v1/repository/contracts/errors/repository-error";
 import { normalizeRepositoryName } from "@line_bot_v1/repository/domain/repository/value-objects/repository-name";
 import { captureHandledServerError } from "../../shared/observability/server-error";
-import {
-  BodyTooLargeError,
-  jsonResponse,
-  readBodyText,
-} from "../../shared/server/http";
+import { BodyTooLargeError, jsonResponse, readBodyText } from "../../shared/server/http";
 import { RequestIdentityError } from "../../shared/server/request-identity-error";
 
 type FileOwner = ReturnType<typeof createFiles>;
@@ -117,8 +113,15 @@ export async function filesRequest(
         return jsonResponse({
           ...scope,
           ...(query.has("after")
-            ? { ...(await owner.list(scope.actorUserId, scope.repository.id,
-                query.get("after") ?? undefined)), uploads: [], pendingNext: null }
+            ? {
+                ...(await owner.list(
+                  scope.actorUserId,
+                  scope.repository.id,
+                  query.get("after") ?? undefined,
+                )),
+                uploads: [],
+                pendingNext: null,
+              }
             : await owner.overview(scope.actorUserId, scope.repository.id)),
           uploadMaxBytes: uploadLimit,
         });
@@ -150,7 +153,11 @@ export async function filesRequest(
         const revisionId = query.get("revisionId") ?? "";
         // File owner bounds the payload before Storage I/O, while retaining post-I/O authorization.
         const original = await owner.source(
-          scope.actorUserId, scope.repository.id, fileId, revisionId, uploadLimit,
+          scope.actorUserId,
+          scope.repository.id,
+          fileId,
+          revisionId,
+          uploadLimit,
         );
         return new Response(Uint8Array.from(original.bytes).buffer, {
           headers: {
@@ -172,13 +179,18 @@ export async function filesRequest(
     checkScope(body.command, scope);
     if (body.operation === "prepare-upload" || body.operation === "complete-upload") {
       const command = commandRecord(body.command);
-      if (typeof command.byteLength !== "number" ||
-          !Number.isSafeInteger(command.byteLength) ||
-          command.byteLength < 1 || command.byteLength > uploadLimit)
+      if (
+        typeof command.byteLength !== "number" ||
+        !Number.isSafeInteger(command.byteLength) ||
+        command.byteLength < 1 ||
+        command.byteLength > uploadLimit
+      )
         throw new FileError(413, "Browser upload is limited to 3 MB.", "INVALID_INPUT");
-      return jsonResponse(body.operation === "prepare-upload"
-        ? await owner.prepareUpload(scope.actorUserId, command)
-        : await owner.completeUpload(scope.actorUserId, command));
+      return jsonResponse(
+        body.operation === "prepare-upload"
+          ? await owner.prepareUpload(scope.actorUserId, command)
+          : await owner.completeUpload(scope.actorUserId, command),
+      );
     }
     if (body.operation === "run" || body.operation === "result")
       return invalid("File processing is owned by Intelligence.");

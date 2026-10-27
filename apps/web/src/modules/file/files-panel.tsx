@@ -460,7 +460,9 @@ export default function FilesPanel({
     try {
       // Browser computes the descriptor without routing the Binary through Next.js.
       // The server still verifies SHA-256 against trusted Storage bytes before commit.
-      const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", await next.file.arrayBuffer()));
+      const digest = new Uint8Array(
+        await crypto.subtle.digest("SHA-256", await next.file.arrayBuffer()),
+      );
       if (ticket !== epoch.current) throw new StaleRequest();
       const sha256 = Array.from(digest, (byte) => byte.toString(16).padStart(2, "0")).join("");
       const command: SignedCommand = { ...next.command, byteLength: next.file.size, sha256 };
@@ -474,10 +476,12 @@ export default function FilesPanel({
         const signedUrl = stringValue(prepared.signedUrl);
         // Signed tickets are capabilities: never send original bytes to an arbitrary URL.
         const destination = new URL(signedUrl);
-        if (destination.protocol !== "https:" ||
-            !/^[a-z0-9-]+\.supabase\.co$/.test(destination.hostname) ||
-            !destination.pathname.startsWith("/storage/v1/object/upload/sign/repository-files/") ||
-            !destination.searchParams.has("token"))
+        if (
+          destination.protocol !== "https:" ||
+          !/^[a-z0-9-]+\.supabase\.co$/.test(destination.hostname) ||
+          !destination.pathname.startsWith("/storage/v1/object/upload/sign/repository-files/") ||
+          !destination.searchParams.has("token")
+        )
           throw new Error("Storage ticket is invalid.");
         const payload = new FormData();
         payload.set("cacheControl", "0");
@@ -486,7 +490,10 @@ export default function FilesPanel({
         // A duplicate PUT is harmless: upsert is forbidden and Finalize verifies the original.
         try {
           await fetch(signedUrl, {
-            method: "PUT", headers: { "x-upsert": "false" }, body: payload, cache: "no-store",
+            method: "PUT",
+            headers: { "x-upsert": "false" },
+            body: payload,
+            cache: "no-store",
           });
         } catch {
           // Retry Finalize even if the provider response was lost.

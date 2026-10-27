@@ -99,18 +99,22 @@ function persistError(error: unknown): never {
 }
 
 async function filePage(sql: Sql, scope: string, after?: string) {
-  const rows = (await sql.query(
-    `SELECT ${fileColumns} FROM repository_files file
+  const rows = (
+    await sql.query(
+      `SELECT ${fileColumns} FROM repository_files file
     JOIN file_revisions revision ON revision.id=file.head_revision_id AND revision.file_id=file.id
     WHERE file.repository_id=$1 AND ($2::uuid IS NULL OR file.id>$2) ORDER BY file.id LIMIT 21`,
-    [scope, after ?? null], fileRevision,
-  )).rows;
+      [scope, after ?? null],
+      fileRevision,
+    )
+  ).rows;
   const files = rows.slice(0, 20);
   return { files, next: rows.length > 20 ? (files.at(-1)?.fileId ?? null) : null };
 }
 async function pendingPage(sql: Sql, actor: string, scope: string, after?: string) {
-  const rows = (await sql.query(
-    `SELECT intent.* FROM file_upload_intents intent
+  const rows = (
+    await sql.query(
+      `SELECT intent.* FROM file_upload_intents intent
       WHERE intent.repository_id=$1 AND intent.actor_user_id=$2
         AND intent.abandoned_at IS NULL
         AND ($3::uuid IS NULL OR intent.request_id>$3)
@@ -120,8 +124,10 @@ async function pendingPage(sql: Sql, actor: string, scope: string, after?: strin
             AND receipt.request_id=intent.request_id
         )
       ORDER BY intent.request_id LIMIT 21`,
-    [scope, actor, after ?? null], uploadIntent,
-  )).rows;
+      [scope, actor, after ?? null],
+      uploadIntent,
+    )
+  ).rows;
   const intents = rows.slice(0, 20);
   return { intents, next: rows.length > 20 ? (intents.at(-1)?.requestId ?? null) : null };
 }

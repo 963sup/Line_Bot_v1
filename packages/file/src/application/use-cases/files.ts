@@ -66,79 +66,147 @@ export function createFiles(deps: {
   function uploadIdentity(c: UploadDetails) {
     return { repositoryId: c.repositoryId, kind: "file" as const, id: c.fileId };
   }
-  function uploadEvidence(c: UploadDetails, descriptor: FileRevision | {
-    name: string; mediaType: string; byteLength: number; sha256: string
-  }) {
+  function uploadEvidence(
+    c: UploadDetails,
+    descriptor:
+      | FileRevision
+      | {
+          name: string;
+          mediaType: string;
+          byteLength: number;
+          sha256: string;
+        },
+  ) {
     // The same payload fingerprint is used by legacy CLI and signed Web upload.
-    return { requestId: c.requestId, payload: JSON.stringify({ ...c, descriptor: {
-      name: descriptor.name, mediaType: descriptor.mediaType,
-      byteLength: descriptor.byteLength, sha256: descriptor.sha256,
-    } }) };
+    return {
+      requestId: c.requestId,
+      payload: JSON.stringify({
+        ...c,
+        descriptor: {
+          name: descriptor.name,
+          mediaType: descriptor.mediaType,
+          byteLength: descriptor.byteLength,
+          sha256: descriptor.sha256,
+        },
+      }),
+    };
   }
-  async function prepare(actor: string, c: UploadDetails, descriptor: {
-    name: string; mediaType: string; byteLength: number; sha256: string
-  }) {
-    return deps.transactions.transact(actor, uploadIdentity(c), uploadEvidence(c, descriptor), async (tx) => {
-      writable(tx);
-      const replay = await tx.replay();
-      if (replay) return { committed: true as const, revision: replay.revision };
-      newWrite(tx);
-      const pending = await tx.uploads.load();
-      const current = await tx.files.load(c.fileId);
-      checkVersion(current, c.expectedVersion);
-      if (pending) {
+  async function prepare(
+    actor: string,
+    c: UploadDetails,
+    descriptor: {
+      name: string;
+      mediaType: string;
+      byteLength: number;
+      sha256: string;
+    },
+  ) {
+    return deps.transactions.transact(
+      actor,
+      uploadIdentity(c),
+      uploadEvidence(c, descriptor),
+      async (tx) => {
+        writable(tx);
+        const replay = await tx.replay();
+        if (replay) return { committed: true as const, revision: replay.revision };
+        newWrite(tx);
+        const pending = await tx.uploads.load();
+        const current = await tx.files.load(c.fileId);
+        checkVersion(current, c.expectedVersion);
+        if (pending) {
+          await tx.uploads.touch();
+          return { committed: false as const, intent: pending };
+        }
+        const revision = nextFileRevision(
+          current,
+          c.expectedVersion,
+          c.fileId,
+          descriptor,
+          context(tx, actor),
+        );
+        const intent: FileUploadIntent = {
+          requestId: c.requestId,
+          expectedVersion: c.expectedVersion,
+          revision,
+        };
+        await tx.uploads.prepare(intent);
+        return { committed: false as const, intent };
+      },
+    );
+  }
+  async function pending(
+    actor: string,
+    c: UploadDetails,
+    descriptor: {
+      name: string;
+      mediaType: string;
+      byteLength: number;
+      sha256: string;
+    },
+  ) {
+    return deps.transactions.transact(
+      actor,
+      uploadIdentity(c),
+      uploadEvidence(c, descriptor),
+      async (tx) => {
+        writable(tx);
+        const replay = await tx.replay();
+        if (replay) return { committed: true as const, revision: replay.revision };
+        newWrite(tx);
+        const intent = await tx.uploads.load();
+        if (!intent)
+          throw new FileError(409, "Upload intent was not prepared.", "LIFECYCLE_CONFLICT");
+        const current = await tx.files.load(c.fileId);
+        checkVersion(current, intent.expectedVersion);
         await tx.uploads.touch();
-        return { committed: false as const, intent: pending };
-      }
-      const revision = nextFileRevision(
-        current, c.expectedVersion, c.fileId, descriptor, context(tx, actor)
-      );
-      const intent: FileUploadIntent = {
-        requestId: c.requestId, expectedVersion: c.expectedVersion, revision,
-      };
-      await tx.uploads.prepare(intent);
-      return { committed: false as const, intent };
-    });
+        return { committed: false as const, intent };
+      },
+    );
   }
-  async function pending(actor: string, c: UploadDetails, descriptor: {
-    name: string; mediaType: string; byteLength: number; sha256: string
-  }) {
-    return deps.transactions.transact(actor, uploadIdentity(c), uploadEvidence(c, descriptor), async (tx) => {
-      writable(tx);
-      const replay = await tx.replay();
-      if (replay) return { committed: true as const, revision: replay.revision };
-      newWrite(tx);
-      const intent = await tx.uploads.load();
-      if (!intent) throw new FileError(409, "Upload intent was not prepared.", "LIFECYCLE_CONFLICT");
-      const current = await tx.files.load(c.fileId);
-      checkVersion(current, intent.expectedVersion);
-      await tx.uploads.touch();
-      return { committed: false as const, intent };
-    });
-  }
-  async function finalize(actor: string, c: UploadDetails, descriptor: {
-    name: string; mediaType: string; byteLength: number; sha256: string
-  }) {
-    return deps.transactions.transact(actor, uploadIdentity(c), uploadEvidence(c, descriptor), async (tx) => {
-      writable(tx);
-      const replay = await tx.replay();
-      if (replay) return { requestId: c.requestId, file: fileDto(replay.revision) };
-      newWrite(tx);
-      const intent = await tx.uploads.load();
-      if (!intent) throw new FileError(503, "Upload intent unavailable.", "UNAVAILABLE");
-      const current = await tx.files.load(c.fileId);
-      const next = nextFileRevision(
-        current, intent.expectedVersion, c.fileId, intent.revision, intent.revision,
-      );
-      await tx.files.save(next, intent.expectedVersion);
-      await tx.record({ kind: "file", requestId: c.requestId, revision: next });
-      return { requestId: c.requestId, file: fileDto(next) };
-    });
+  async function finalize(
+    actor: string,
+    c: UploadDetails,
+    descriptor: {
+      name: string;
+      mediaType: string;
+      byteLength: number;
+      sha256: string;
+    },
+  ) {
+    return deps.transactions.transact(
+      actor,
+      uploadIdentity(c),
+      uploadEvidence(c, descriptor),
+      async (tx) => {
+        writable(tx);
+        const replay = await tx.replay();
+        if (replay) return { requestId: c.requestId, file: fileDto(replay.revision) };
+        newWrite(tx);
+        const intent = await tx.uploads.load();
+        if (!intent) throw new FileError(503, "Upload intent unavailable.", "UNAVAILABLE");
+        const current = await tx.files.load(c.fileId);
+        const next = nextFileRevision(
+          current,
+          intent.expectedVersion,
+          c.fileId,
+          intent.revision,
+          intent.revision,
+        );
+        await tx.files.save(next, intent.expectedVersion);
+        await tx.record({ kind: "file", requestId: c.requestId, revision: next });
+        return { requestId: c.requestId, file: fileDto(next) };
+      },
+    );
   }
   return {
     async source(actor: string, scope: string, id: string, revision: string, maxBytes?: number) {
       try {
-        const result = await sources.read(actor, scope, { fileId: id, fileRevisionId: revision }, maxBytes);
+        const result = await sources.read(
+          actor,
+          scope,
+          { fileId: id, fileRevisionId: revision },
+          maxBytes,
+        );
         return { file: fileDto(result.revision), bytes: result.bytes };
       } catch (error) {
         throw fileErrorFromUnknown(error);
@@ -160,8 +228,10 @@ export function createFiles(deps: {
       try {
         const page = await deps.reads.overview(actor, scopeId(scope));
         return {
-          files: page.files.map(fileDto), next: page.next,
-          uploads: page.intents.map(pendingDto), pendingNext: page.pendingNext,
+          files: page.files.map(fileDto),
+          next: page.next,
+          uploads: page.intents.map(pendingDto),
+          pendingNext: page.pendingNext,
         };
       } catch (error) {
         throw fileErrorFromUnknown(error);
@@ -170,7 +240,8 @@ export function createFiles(deps: {
     async pendingUploads(actor: string, scope: string, after?: string) {
       try {
         const page = await deps.reads.pendingUploads(
-          actor, scopeId(scope),
+          actor,
+          scopeId(scope),
           after === undefined ? undefined : identifier(after),
         );
         return { uploads: page.intents.map(pendingDto), next: page.next };
@@ -198,8 +269,7 @@ export function createFiles(deps: {
       try {
         const { descriptor, ...c } = directUploadCommand(input);
         const prepared = await prepare(actor, c, descriptor);
-        if (prepared.committed)
-          return { requestId: c.requestId, file: fileDto(prepared.revision) };
+        if (prepared.committed) return { requestId: c.requestId, file: fileDto(prepared.revision) };
         const sign = deps.objects().signUpload;
         if (!sign) throw new FileError(503, "Signed uploads are unavailable.", "UNAVAILABLE");
         const signedUrl = await sign.call(deps.objects(), prepared.intent.revision);
@@ -213,8 +283,7 @@ export function createFiles(deps: {
       try {
         const { descriptor, ...c } = directUploadCommand(input);
         const prepared = await pending(actor, c, descriptor);
-        if (prepared.committed)
-          return { requestId: c.requestId, file: fileDto(prepared.revision) };
+        if (prepared.committed) return { requestId: c.requestId, file: fileDto(prepared.revision) };
         // No database lock is held while downloading and verifying untrusted bytes.
         await deps.objects().readVerified(prepared.intent.revision);
         return await finalize(actor, c, descriptor);
@@ -228,8 +297,7 @@ export function createFiles(deps: {
         const c = uploadCommand(input);
         const payload = deps.payloads.inspect(bytes, c.name, c.mediaType);
         const prepared = await prepare(actor, c, payload.descriptor);
-        if (prepared.committed)
-          return { requestId: c.requestId, file: fileDto(prepared.revision) };
+        if (prepared.committed) return { requestId: c.requestId, file: fileDto(prepared.revision) };
         await deps.objects().putVerified(prepared.intent.revision, payload.bytes);
         return await finalize(actor, c, payload.descriptor);
       } catch (error) {

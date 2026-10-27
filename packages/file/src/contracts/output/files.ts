@@ -25,9 +25,14 @@ export interface FileTransactions {
 }
 export interface FileReads {
   /** One authorization + transaction for initial File and pending-upload metadata. */
-  overview(actor: string, scope: string): Promise<{
-    files: readonly FileRevision[]; next: string | null;
-    intents: readonly FileUploadIntent[]; pendingNext: string | null;
+  overview(
+    actor: string,
+    scope: string,
+  ): Promise<{
+    files: readonly FileRevision[];
+    next: string | null;
+    intents: readonly FileUploadIntent[];
+    pendingNext: string | null;
   }>;
   /** Pending Upload Intents belong only to the original actor and are never File List entries. */
   pendingUploads(

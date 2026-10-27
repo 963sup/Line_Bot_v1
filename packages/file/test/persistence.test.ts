@@ -623,7 +623,6 @@ test("native sessions keep a late object write reconcilable after an earlier abs
   }
 });
 
-
 test("signed upload commits only verified exact bytes and replays across transports", async (t) => {
   const { pg, db } = await postgresFixture();
   t.after(() => pg.close());
@@ -643,7 +642,8 @@ test("signed upload commits only verified exact bytes and replays across transpo
   const files = intake(db, objects);
   const c = command();
   const direct = {
-    ...c, byteLength: bytes.byteLength,
+    ...c,
+    byteLength: bytes.byteLength,
     sha256: createHash("sha256").update(bytes).digest("hex"),
   };
   await assert.rejects(files.prepareUpload("outsider", direct), code("FORBIDDEN"));
@@ -669,6 +669,11 @@ test("signed upload commits only verified exact bytes and replays across transpo
   assert.equal((await files.list("owner", "repo")).files.length, 1);
   await assert.rejects(files.completeUpload("outsider", direct), code("FORBIDDEN"));
   const blocked = command();
-  const competing = { ...blocked, fileId: c.fileId, byteLength: direct.byteLength, sha256: direct.sha256 };
+  const competing = {
+    ...blocked,
+    fileId: c.fileId,
+    byteLength: direct.byteLength,
+    sha256: direct.sha256,
+  };
   await assert.rejects(files.prepareUpload("owner", competing), code("VERSION_CONFLICT"));
 });
