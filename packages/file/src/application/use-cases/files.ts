@@ -26,6 +26,18 @@ function fileDto(r: FileRevision) {
     sha256: r.sha256,
   };
 }
+function pendingDto(intent: FileUploadIntent) {
+  return {
+    requestId: intent.requestId,
+    fileId: intent.revision.fileId,
+    revisionId: intent.revision.id,
+    expectedVersion: intent.expectedVersion,
+    name: intent.revision.name,
+    mediaType: intent.revision.mediaType,
+    byteLength: intent.revision.byteLength,
+    sha256: intent.revision.sha256,
+  };
+}
 function writable(tx: FileTransaction): void {
   assertWritable(tx.scope.permissions);
 }
@@ -144,26 +156,24 @@ export function createFiles(deps: {
         throw fileErrorFromUnknown(error);
       }
     },
+    async overview(actor: string, scope: string) {
+      try {
+        const page = await deps.reads.overview(actor, scopeId(scope));
+        return {
+          files: page.files.map(fileDto), next: page.next,
+          uploads: page.intents.map(pendingDto), pendingNext: page.pendingNext,
+        };
+      } catch (error) {
+        throw fileErrorFromUnknown(error);
+      }
+    },
     async pendingUploads(actor: string, scope: string, after?: string) {
       try {
         const page = await deps.reads.pendingUploads(
-          actor,
-          scopeId(scope),
+          actor, scopeId(scope),
           after === undefined ? undefined : identifier(after),
         );
-        return {
-          uploads: page.intents.map((intent) => ({
-            requestId: intent.requestId,
-            fileId: intent.revision.fileId,
-            revisionId: intent.revision.id,
-            expectedVersion: intent.expectedVersion,
-            name: intent.revision.name,
-            mediaType: intent.revision.mediaType,
-            byteLength: intent.revision.byteLength,
-            sha256: intent.revision.sha256,
-          })),
-          next: page.next,
-        };
+        return { uploads: page.intents.map(pendingDto), next: page.next };
       } catch (error) {
         throw fileErrorFromUnknown(error);
       }
