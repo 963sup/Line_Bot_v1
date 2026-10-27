@@ -73,7 +73,7 @@ type DocumentIntakeCommand = {
 };
 type Pending = { command: UploadCommand; file: File };
 type SignedCommand = UploadCommand & { byteLength: number; sha256: string };
-type FileMutation = Pending | { operation: "prepare-upload" | "complete-upload"; command: SignedCommand };
+type FileMutation = { operation: "prepare-upload" | "complete-upload"; command: SignedCommand };
 const diagnosticLabels: Readonly<Record<string, string>> = {
   UNCERTAIN_LINE: "部分明細尚待釐清",
   MISSING_REQUIRED_FACT: "缺少必要的採購單資料",
@@ -299,12 +299,7 @@ export default function FilesPanel({
       const search = new URLSearchParams({ owner: ownerLogin, name: repositoryName, ...query });
       const headers: Record<string, string> = { "X-App-Session-Generation": session };
       let body: BodyInit | undefined;
-      if (mutation && "file" in mutation) {
-        const form = new FormData();
-        form.set("command", JSON.stringify(mutation.command));
-        form.set("file", mutation.file, mutation.file.name);
-        body = form;
-      } else if (mutation) {
+      if (mutation) {
         headers["Content-Type"] = "application/json";
         body = JSON.stringify({ operation: mutation.operation, command: mutation.command });
       }
