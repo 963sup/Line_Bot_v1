@@ -67,8 +67,60 @@ Cloud 安裝腳本從該設定綁定的 repo root 執行 `bash .codex/bootstrap/
 
 技能沿用既有 [.agents/skills/](../../../.agents/skills/) 與受管理的 lockfile；這次 bootstrap 不複製或搬動第三方技能。
 
+### Serena v2 MCP
+
+Serena 依官方安裝模型由 `uv tool install` 建立隔離工具環境；目前固定 `serena-agent==2.1.0`，並使用 Serena 官方建議的 Python 3.13。這不改變專案一般 Python runtime 的 3.12.14。`uvx` 適合臨時執行，但 MCP 每次啟動不應重新解析或下載套件，因此 Codex launcher 使用已安裝的 `$UV_TOOL_BIN_DIR/serena`。
+
+`.codex/config.toml` 最終啟動語意與官方 Codex 範例一致：
+
+```text
+serena start-mcp-server --project-from-cwd --context=codex --agent-interface=REPL
+```
+
+Repository wrapper 只補固定工具路徑及 workspace cache，不安裝任何內容。CLI 明確固定 REPL，避免 Codex App 未從 project cwd 啟動時先鎖定成另一種 interface。安裝後仍需重新連接或開新 Codex session，以 `/mcp` 確認 Serena 已連線，再實際讀取 initial instructions／啟用目前專案；executable 或 config 存在不等於 MCP handshake 完成。
+
+官方依據：[Serena Quick Start](https://oraios.github.io/serena/#quick-start) · [Codex client setup](https://oraios.github.io/serena/02-usage/030_clients.html#codex-cli-and-app)。
+
+Serena v2 使用 REPL interface，因此 API 開關由 `.serena/project.yml` 的 `included_apis`／`excluded_apis` 管理；傳統 `included_optional_tools`／`excluded_tools` 不控制 REPL 內的 facade。專案開放標準 `fs`、`edit`、`lsp`、`mem`、安全 config 查詢，以及 line edits、diagnostics、language-server restart、safe delete 等 optional API。只關閉 shell、跨 Serena project 查詢與 dashboard；Git、測試與 provider 操作仍由 Codex 原生工具負責。
+
+Serena 遵守 `.gitignore`，並額外排除 architecture／docs／assets／public 靜態資產、SQL schemas、第三方 skills、Codex／GitHub／Serena metadata、依賴、build、coverage、cache 與暫存目錄。這些資料仍可由 Codex 原生工具按任務讀取；排除只避免 TypeScript LSP／Serena index 為非程式或大量 vendor 內容消耗啟動時間與 token。Tests 沒有整體排除，保留 definition／reference／rename 的回歸範圍。
+
+TypeScript LSP 直接重用 workspace 固定的 `typescript-language-server` 5.1.3 與 TypeScript 5.9.3，避免 Serena 建立第二套 npm tool cache。Monorepo 的 server-ready、indexing-start 與 indexing budget 分別設為 30／10／60 秒；timeout 後 Serena 可能回傳部分結果，因此跨 package references 仍需沿 public imports／exports 補查，不能把空結果當成沒有 consumer。
+
 ### GitHub MCP credential
 
 官方 GitHub MCP 使用 `https://api.githubcopilot.com/mcp/`，由 `.codex/config.toml` 的 `bearer_token_env_var` 引用 `GITHUB_MCP_TOKEN`。在 Cloud 網路機密資料建立同名 secret，目的地只允許 `api.githubcopilot.com`；真正值由使用者在環境設定輸入 GitHub PAT，不放進 repo、env 範本或日誌。GitHub CLI 的 `GH_TOKEN` 維持既有用途，不另複製值。
 
 目前僅載入 repos／issues／pull_requests toolsets；需要擴大能力時修改真正的 MCP header。網路機密的代理替換需要請求經過受支援的 proxy 路徑；若實際 Codex host 不承接 container 的環境或網路機密，必須在該 host 的安全認證設定接入同一憑證。欄位存在、佔位值或 token 環境變數存在都不代表驗證成功。
+
+### Cloud development tools
+
+| 模組 | 準備內容 | 預設 |
+| --- | --- | --- |
+| `ripgrep` | `rg`，有範圍的文字／檔案定位 | 啟用 |
+| `jq` | JSON 欄位投影、CLI 結果篩選 | 啟用 |
+| `shellcheck` | Bash 靜態分析；不在任務啟動時自動掃描全庫 | 啟用 |
+| `build` | make、GCC／G++、pkg-config；Python 沿用 runtime 模組 | 選用 |
+| `browser` | 固定版本 Playwright、Chromium 與所需系統函式庫 | 選用 |
+
+前三者與 native build 工具使用具簽章驗證的 distro 套件來源，沿用 image 的套件版本，不複製進 workspace dependency。缺少套件時需要 root 或非互動 sudo，以及 apt repository 存取；已有工具時跳過安裝。同一次 bootstrap 只更新一次 apt index。
+
+在目前工具選擇上加入 Web／native 開發能力：
+
+```sh
+source .codex/bootstrap/config/tools.env
+export BOOTSTRAP_TOOLS="$BOOTSTRAP_TOOLS build browser"
+bash .codex/bootstrap/update.sh
+```
+
+要讓此選擇跨 Cloud 任務保留，在 Cloud 的一般環境變數設定完整的 `BOOTSTRAP_TOOLS` 清單，或修改 repo 的 `config/tools.env`；它不是機密。Playwright exact pin 在 `config/versions.env`，對應 Chromium revision 由 Playwright 管理，獨立工具安裝在 `.tools/codex/`，瀏覽器快取在 `.cache/ms-playwright/`，不新增第二份 application Playwright dependency。只有缺少 binary 或系統函式庫時才補齊。
+
+瀏覽器下載需要 `cdn.playwright.dev`、`playwright.download.prss.microsoft.com`、`cdn.playwright.download.prss.microsoft.com`。系統函式庫安裝需要 root 或非互動 sudo；bootstrap 不關閉 TLS 驗證，也不繞過平台 proxy／權限。`verify.sh` 只檢查版本、binary 與共享函式庫；選用 browser 後明確執行 `tests/smoke.sh` 才會啟動 Chromium，載入本地測試頁，且不代表 application UI 已驗收。
+
+有 Web 任務時再啟動 dev server，使用相同工具路徑擷取對應頁面，例如：
+
+```sh
+bash .codex/bootstrap/install.sh --exec playwright screenshot --browser chromium http://127.0.0.1:3000/ .artifacts/ui/page.png
+```
+
+Port 以 dev server 的實際輸出為準；登入狀態與受影響互動仍需按任務驗收。Bootstrap 不預設啟動 Web、資料庫、Redis 或 Docker daemon。

@@ -44,7 +44,7 @@ jobs:
       - name: Provision Serena MCP launcher
         env:
           UV_TOOL_DIR: ${{ runner.temp }}/uv-tools
-        run: uv tool install --force serena-agent==2.1.0
+        run: uv tool install --force --python 3.13 serena-agent==2.1.0
       - name: Restore workspace build cache
         uses: actions/cache@v6
         with:

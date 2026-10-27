@@ -1,10 +1,11 @@
 # Official Codex project configuration.
 # Secrets stay in the environment or Codex-managed authentication.
 
-# Cloud setup prepares pinned tools. Launchers select the same paths on each task.
+# Bootstrap installs pinned Serena v2 with `uv tool install`; the launcher only
+# selects that prepared executable and never resolves/downloads at MCP startup.
 [mcp_servers.serena]
 command = "bash"
-args = [".codex/bootstrap/install.sh", "--serena", "start-mcp-server", "--project-from-cwd", "--context=codex", "--open-web-dashboard=false"]
+args = [".codex/bootstrap/install.sh", "--serena", "start-mcp-server", "--project-from-cwd", "--context=codex", "--agent-interface=REPL", "--open-web-dashboard=false"]
 startup_timeout_sec = 60
 default_tools_approval_mode = "approve"
 
