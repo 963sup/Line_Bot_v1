@@ -1,0 +1,40 @@
+name: File change verification
+
+on:
+  pull_request:
+    paths:
+      - "packages/file/**"
+      - "apps/web/src/modules/file/**"
+      - "apps/web/src/app/api/_composition/files.server.ts"
+      - "apps/web/src/app/api/repository-files/route.ts"
+      - "apps/web/test/files-owner-http.test.ts"
+      - "architecture/domain/owners/file.json"
+      - ".github/workflows/file-change-verification.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  file-boundary:
+    name: file-boundary
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+      - uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+          cache: true
+          cache_dependency_path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile --prefer-offline
+      - name: Lint affected File sources
+        run: pnpm check lint -- packages/file/src packages/file/test apps/web/src/modules/file apps/web/src/app/api/_composition/files.server.ts apps/web/test/files-owner-http.test.ts
+      - name: Typecheck File and Web with dependency builds
+        run: pnpm exec turbo run typecheck --filter=@line_bot_v1/file --filter=@line_bot_v1/web --concurrency=2
+      - name: File owner unit and persistence tests
+        run: pnpm exec turbo run test --filter=@line_bot_v1/file --concurrency=2
+      - name: Web transport regression tests
+        run: pnpm --filter @line_bot_v1/web exec node --no-wasm-code-gc --import tsx --test test/files-owner-http.test.ts
