@@ -145,7 +145,7 @@ test("AI extraction failures return the original error message", async () => {
     async () => "user-1",
   );
 
-  assert.equal(response.status, 503);
+  assert.equal(response.status, 500);
   assert.deepEqual(await response.json(), {
     error: "Gateway rejected model openai/gpt-5.2: unsupported file input",
   });

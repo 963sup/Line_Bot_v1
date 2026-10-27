@@ -57,7 +57,7 @@ function failure(error: unknown) {
     error instanceof RepositoryError ||
     error instanceof UserError ||
     error instanceof RequestIdentityError;
-  const status = known ? error.status : 503;
+  const status = known ? error.status : 500;
   captureHandledServerError(error, {
     service: "repository-contracts-api",
     operation: "request",

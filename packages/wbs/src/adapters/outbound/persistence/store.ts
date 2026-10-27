@@ -31,11 +31,7 @@ function revisionMetadata(row: SqlRow): Omit<WbsRevision, "document"> {
 }
 function revision(row: SqlRow): WbsRevision {
   const metadata = revisionMetadata(row);
-  try {
-    return { ...metadata, document: parseWbsDocument(row.document) };
-  } catch {
-    throw new WbsError(503, "WBS 已保存內容格式不正確。");
-  }
+  return { ...metadata, document: parseWbsDocument(row.document) };
 }
 function canonical(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(canonical);

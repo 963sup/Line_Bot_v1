@@ -40,14 +40,10 @@ function verify(revision: FileRevision, bytes: Uint8Array): void {
 export function fileObjects(bucket: PrivateBucket): FileObjectStore & FileObjectRemoval {
   async function read(revision: FileRevision, missing: boolean): Promise<Uint8Array | null> {
     let response: Awaited<ReturnType<PrivateBucket["download"]>>;
-    try {
-      response = await bucket.download(key(revision));
-    } catch {
-      throw new FileError(503, "File object read unavailable.", "UNAVAILABLE");
-    }
+    response = await bucket.download(key(revision));
     if (response.error) {
       if (missing && notFound(response.error)) return null;
-      throw new FileError(503, "File object read unavailable.", "UNAVAILABLE");
+      throw response.error;
     }
     if (!response.data || response.data.size !== revision.byteLength)
       throw new FileError(503, "File object integrity is unavailable.", "UNAVAILABLE");
@@ -68,11 +64,7 @@ export function fileObjects(bucket: PrivateBucket): FileObjectStore & FileObject
         // Provider response is not proof; the separate readback decides the outcome.
       }
       let response: Awaited<ReturnType<PrivateBucket["download"]>>;
-      try {
-        response = await bucket.download(key(revision));
-      } catch {
-        throw new FileError(503, "File object removal unverified.", "UNAVAILABLE");
-      }
+      response = await bucket.download(key(revision));
       if (!notFound(response.error))
         throw new FileError(503, "File object removal unverified.", "UNAVAILABLE");
     },

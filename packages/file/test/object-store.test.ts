@@ -132,11 +132,8 @@ test("provider unknown result is accepted only after independent readback", asyn
     failed.removeVerified(revision),
     (error: unknown) => error instanceof FileError && error.code === "UNAVAILABLE",
   );
-  await assert.rejects(
-    failed.putVerified(revision, bytes),
-    (error: unknown) =>
-      error instanceof FileError &&
-      error.code === "UNAVAILABLE" &&
-      !error.message.includes("sensitive"),
-  );
+  await assert.rejects(failed.putVerified(revision, bytes), (error: unknown) => {
+    assert.deepEqual(error, { status: 503 });
+    return true;
+  });
 });

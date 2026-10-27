@@ -118,7 +118,7 @@ test("Content maps only an uninitialized current head to null", async () => {
     },
     async () => "subject",
   );
-  assert.equal(unavailable.status, 503);
+  assert.equal(unavailable.status, 500);
   assert.notEqual((await unavailable.json()).revision, null);
 });
 

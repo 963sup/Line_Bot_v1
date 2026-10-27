@@ -9,8 +9,9 @@ export class IntakeError extends Error {
   constructor(
     readonly code: "SOURCE_MISMATCH" | "REPLAY_CONFLICT" | "INVALID_INPUT" | "UNKNOWN_RESULT",
     readonly status: 409 | 422 | 503,
+    options?: ErrorOptions,
   ) {
-    super(code);
+    super(code, options);
   }
 }
 
