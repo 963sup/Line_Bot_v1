@@ -52,7 +52,7 @@ export function projectWbsFailure(error: unknown) {
   const status = known ? error.status : 503;
   captureHandledServerError(error, { service: "project-wbs-api", operation: "request", status });
   return jsonResponse(
-    { error: known ? error.message : "Project WBS 服務暫時不可用，請稍後重試。" },
+    { error: error instanceof Error ? error.message : String(error) },
     status,
   );
 }

@@ -51,7 +51,7 @@ export function projectFailure(error: unknown) {
   });
   return jsonResponse(
     {
-      error: known ? error.message : "Project 服務暫不可用，請稍後重試。",
+      error: error instanceof Error ? error.message : String(error),
       retryable: status >= 500 || status === 429,
     },
     status,
