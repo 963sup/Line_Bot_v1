@@ -1,4 +1,4 @@
-import { filesRequest } from "../../../modules/file/files-http.server";
+import { filesRequest } from "../_composition/files-request.server";
 import { files } from "../_composition/files.server";
 import { requestLineIdentity } from "../_composition/request-identity.server";
 
