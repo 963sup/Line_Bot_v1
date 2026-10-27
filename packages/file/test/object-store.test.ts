@@ -180,10 +180,14 @@ test("signed upload refuses untrusted or unsigned provider destinations", async 
     async upload() { assert.fail("Unexpected upload"); },
     async remove() { assert.fail("Unexpected remove"); },
   });
-  await assert.rejects(bucket("https://evil.example/steal?token=abc").signUpload!(revision), {
+  const unsafe = bucket("https://evil.example/steal?token=abc");
+  assert.ok(unsafe.signUpload);
+  await assert.rejects(unsafe.signUpload(revision), {
     code: "UNAVAILABLE",
   });
-  await assert.rejects(bucket("https://test.supabase.co/storage/v1/object/upload/sign/repository-files/key").signUpload!(revision), {
+  const unsigned = bucket("https://test.supabase.co/storage/v1/object/upload/sign/repository-files/key");
+  assert.ok(unsigned.signUpload);
+  await assert.rejects(unsigned.signUpload(revision), {
     code: "UNAVAILABLE",
   });
 });
