@@ -19,11 +19,9 @@ import {
   type FileMutation,
   StaleRequest,
   record,
-  stringValue,
   parseFile,
   parseView,
   parsePendingPage,
-  parseMutation,
   errorMessage,
 } from "./files-projection";
 
@@ -56,7 +54,7 @@ export default function FilesPanel({
     sourceReviewConfirmed, setSourceReviewConfirmed,
     acknowledgementReason, setAcknowledgementReason,
     pendingDocumentConfirmation, setPendingDocumentConfirmation,
-    pendingDocumentIntake, setPendingDocumentIntake,
+    pendingDocumentIntake,
     clearPurchaseOrder,
     intakePurchaseOrder, confirmPurchaseOrder, startPurchaseOrderIntake,
   } = usePurchaseOrderIntake({
