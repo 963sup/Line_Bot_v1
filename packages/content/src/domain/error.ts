@@ -28,5 +28,5 @@ export function contentErrorFromUnknown(error: unknown): ContentError {
     if (status === 400 || status === 409)
       return new ContentError(409, "Content source is not eligible.", "SOURCE_INVALID");
   }
-  return new ContentError(503, "Content operation is unavailable.", "UNAVAILABLE");
+  throw error;
 }

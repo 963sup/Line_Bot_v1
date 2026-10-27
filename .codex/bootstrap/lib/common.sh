@@ -15,13 +15,17 @@ export UV_TOOL_DIR="$BOOTSTRAP_PREFIX/uv-tools"
 export UV_TOOL_BIN_DIR="$BOOTSTRAP_PREFIX/bin"
 export NPM_CONFIG_CACHE="$BOOTSTRAP_ROOT/.cache/npm"
 export SERENA_HOME="$BOOTSTRAP_ROOT/.cache/serena"
+export SUPABASE_HOME="$BOOTSTRAP_ROOT/.cache/supabase"
 export PLAYWRIGHT_BROWSERS_PATH="$BOOTSTRAP_ROOT/.cache/ms-playwright"
 cd "$BOOTSTRAP_ROOT"
 
 require_command() {
-  command -v "$1" >/dev/null || { printf 'Missing prerequisite: %s\n' "$1" >&2; return 1; }
+  command -v "$1" >/dev/null || {
+    printf 'Missing prerequisite: %s\n' "$1" >&2
+    return 1
+  }
 }
-node_pin() { tr -d '\r\n' < "$BOOTSTRAP_ROOT/.node-version"; }
+node_pin() { tr -d '\r\n' <"$BOOTSTRAP_ROOT/.node-version"; }
 pnpm_pin() {
   node -e 'const fs=require("node:fs"); const p=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); if(!/^pnpm@[0-9]+\.[0-9]+\.[0-9]+$/.test(p.packageManager)) throw Error("Expected an exact pnpm pin"); console.log(p.packageManager.slice(5))' "$BOOTSTRAP_ROOT/package.json"
 }

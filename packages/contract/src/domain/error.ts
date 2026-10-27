@@ -29,5 +29,5 @@ export function contractErrorFromUnknown(error: unknown): ContractError {
     if (status === 400 || status === 409)
       return new ContractError(409, "Contract source is not eligible.", "SOURCE_INVALID");
   }
-  return new ContractError(503, "Contract operation is unavailable.", "UNAVAILABLE");
+  throw error;
 }

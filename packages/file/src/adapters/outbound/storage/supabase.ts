@@ -36,18 +36,13 @@ function verify(revision: FileRevision, bytes: Uint8Array): void {
     throw new FileError(503, "File object integrity is unavailable.", "UNAVAILABLE");
 }
 
-/** No path, signed URL, credential, or provider error is exposed to the File consumer. */
+/** Exact readback resolves uncertain writes; failed recovery preserves the provider failure. */
 export function fileObjects(bucket: PrivateBucket): FileObjectStore & FileObjectRemoval {
   async function read(revision: FileRevision, missing: boolean): Promise<Uint8Array | null> {
-    let response: Awaited<ReturnType<PrivateBucket["download"]>>;
-    try {
-      response = await bucket.download(key(revision));
-    } catch {
-      throw new FileError(503, "File object read unavailable.", "UNAVAILABLE");
-    }
+    const response = await bucket.download(key(revision));
     if (response.error) {
       if (missing && notFound(response.error)) return null;
-      throw new FileError(503, "File object read unavailable.", "UNAVAILABLE");
+      throw response.error;
     }
     if (!response.data || response.data.size !== revision.byteLength)
       throw new FileError(503, "File object integrity is unavailable.", "UNAVAILABLE");
@@ -62,35 +57,43 @@ export function fileObjects(bucket: PrivateBucket): FileObjectStore & FileObject
       return bytes;
     },
     async removeVerified(revision) {
+      let failure: { error: unknown } | undefined;
       try {
-        await bucket.remove([key(revision)]);
-      } catch {
-        // Provider response is not proof; the separate readback decides the outcome.
+        const response = await bucket.remove([key(revision)]);
+        if (response.error) failure = { error: response.error };
+      } catch (error) {
+        failure = { error };
       }
-      let response: Awaited<ReturnType<PrivateBucket["download"]>>;
-      try {
-        response = await bucket.download(key(revision));
-      } catch {
+      const response = await bucket.download(key(revision)).catch((error: unknown) => {
+        throw failure ? failure.error : error;
+      });
+      if (!notFound(response.error)) {
+        if (failure) throw failure.error;
+        if (response.error) throw response.error;
         throw new FileError(503, "File object removal unverified.", "UNAVAILABLE");
       }
-      if (!notFound(response.error))
-        throw new FileError(503, "File object removal unverified.", "UNAVAILABLE");
     },
     async putVerified(revision, bytes) {
       verify(revision, bytes);
       // Readback first resolves a previous unknown upload without overwriting anything.
       if (await read(revision, true)) return;
+      let failure: { error: unknown } | undefined;
       try {
-        await bucket.upload(key(revision), Buffer.from(bytes), {
+        const response = await bucket.upload(key(revision), Buffer.from(bytes), {
           upsert: false,
           contentType: revision.mediaType,
           cacheControl: "0",
         });
-      } catch {
-        // Timeout/transport failure is not proof that the object was not written.
+        if (response.error) failure = { error: response.error };
+      } catch (error) {
+        failure = { error };
       }
       // A conflict or unknown outcome is accepted only when readback proves exact bytes.
-      await read(revision, false);
+      try {
+        await read(revision, false);
+      } catch (error) {
+        throw failure ? failure.error : error;
+      }
     },
   };
 }

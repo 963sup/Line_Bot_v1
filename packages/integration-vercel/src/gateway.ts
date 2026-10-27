@@ -20,6 +20,13 @@ export function createVercelAiGateway(config: { model: string }) {
     throw new IntelligenceError(503, "AI Gateway model is invalid.", "EXTRACTION_UNAVAILABLE");
   const transport: StructuredGateway = {
     async generateStructured(input) {
+      // Enforce the server-side extraction budget before any billable provider request.
+      if (
+        !Number.isSafeInteger(input.maxOutputTokens) ||
+        input.maxOutputTokens < 1 ||
+        input.maxOutputTokens > 24_000
+      )
+        throw new RangeError("Output token limit must be an integer between 1 and 24000.");
       const result = await generateText({
         model,
         output: Output.object({ schema: jsonSchema(input.schema) }),

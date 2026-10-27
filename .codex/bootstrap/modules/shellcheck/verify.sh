@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-verify_shellcheck() { check_version shellcheck '' "$BOOTSTRAP_PREFIX/bin/shellcheck" --version; }
+verify_shellcheck() { check_version shellcheck "$SHELLCHECK_VERSION" "$BOOTSTRAP_PREFIX/bin/shellcheck" --version; }
