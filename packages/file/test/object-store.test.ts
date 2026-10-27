@@ -162,6 +162,7 @@ test("signed uploads issue write-once private-object tickets without a readback 
     async upload() { assert.fail("Signing must not upload server bytes"); },
     async remove() { assert.fail("Signing must not delete objects"); },
   });
+  assert.ok(objects.signUpload);
   const ticket = await objects.signUpload(revision);
   assert.match(ticket, /^https:\/\/test\.supabase\.co\/storage\/v1\/object\/upload\/sign\//);
   assert.equal(calls, 1);
@@ -179,10 +180,10 @@ test("signed upload refuses untrusted or unsigned provider destinations", async 
     async upload() { assert.fail("Unexpected upload"); },
     async remove() { assert.fail("Unexpected remove"); },
   });
-  await assert.rejects(bucket("https://evil.example/steal?token=abc").signUpload(revision), {
+  await assert.rejects(bucket("https://evil.example/steal?token=abc").signUpload!(revision), {
     code: "UNAVAILABLE",
   });
-  await assert.rejects(bucket("https://test.supabase.co/storage/v1/object/upload/sign/repository-files/key").signUpload(revision), {
+  await assert.rejects(bucket("https://test.supabase.co/storage/v1/object/upload/sign/repository-files/key").signUpload!(revision), {
     code: "UNAVAILABLE",
   });
 });
