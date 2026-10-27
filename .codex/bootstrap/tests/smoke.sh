@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 source "$(dirname -- "${BASH_SOURCE[0]}")/../lib/common.sh"
+source "$BOOTSTRAP_DIR/lib/detect.sh"
 # Explicit opt-in; no installs, downloads, provider mutation or application service startup.
 # Selecting browser also runs a short local Chromium launch/page check below.
 while IFS= read -r file; do bash -n "$file"; done < <(find "$BOOTSTRAP_DIR" -type f -name '*.sh' | sort)
