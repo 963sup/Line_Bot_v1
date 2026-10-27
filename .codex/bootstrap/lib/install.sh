@@ -3,7 +3,7 @@ source "$(dirname -- "${BASH_SOURCE[0]}")/detect.sh"
 prepare_install() {
   local command
   for command in curl tar sha256sum awk install flock; do require_command "$command"; done
-  mkdir -p "$BOOTSTRAP_PREFIX/bin" "$BOOTSTRAP_PREFIX/downloads" "$BOOTSTRAP_ROOT/.artifacts/codex-cloud"
+  mkdir -p "$BOOTSTRAP_PREFIX/bin" "$BOOTSTRAP_PREFIX/downloads" "$BOOTSTRAP_ROOT/.artifacts/codex-cloud" "$PNPM_HOME" "$XDG_DATA_HOME"
   exec 9>"$BOOTSTRAP_PREFIX/install.lock"
   flock -n 9 || {
     echo 'Another bootstrap installation is running in this checkout.' >&2

@@ -18,7 +18,7 @@ major_version = 17
 # Development is schema-first. db push/reset must not replay historical migrations.
 enabled = false
 # Numeric prefixes define the canonical declarative schema order.
-schema_paths = ["./schemas/*.sql"]
+schema_paths = ["../src/schemas/*.sql"]
 
 [db.seed]
 enabled = false

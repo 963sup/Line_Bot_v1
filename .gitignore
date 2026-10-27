@@ -1,6 +1,9 @@
 node_modules/
 .vercel/
 packages/integration-supabase/src/.temp/
+packages/integration-supabase/.temp/
+packages/integration-supabase/supabase/.temp/
+packages/integration-supabase/supabase/.branches/
 .next/
 .turbo/
 dist/

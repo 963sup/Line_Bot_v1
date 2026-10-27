@@ -127,7 +127,7 @@ The current Supabase Organization for `Line_Bot_v1` is on the Free plan; account
 | Postgres / application SQL / RLS | `app_private` declarative schema; each `packages/<owner>` owns its facts | Current; keep browser roles outside private schema |
 | PostgREST and pg_graphql | Hosted PostgREST exists; no authorized private-business GraphQL consumer | Do not create a second direct browser business API |
 | Auth providers | Account's Google PKCE proof; LINE identity remains independent | Current subset; provider user metadata never grants Repository permission |
-| File Storage | File's originals; `packages/integration-supabase/src/config.toml` owns the private `repository-files` bucket settings | Target; Bucket publication does not imply File Upload adapter delivered |
+| File Storage | File's originals; `packages/integration-supabase/supabase/config.toml` owns the private `repository-files` bucket settings | Target; Bucket publication does not imply File Upload adapter delivered |
 | Realtime Broadcast / Presence / Postgres Changes | No verified realtime consumer for File or other owners | Leave inactive until actual private change feed and access revocation rules exist |
 | Edge Functions | No deployed function consumer currently evidenced | No empty `functions/` or duplicate Next.js use case |
 | pg_cron / pg_net / Vault | Attendance's existing authenticated scheduler | Current; do not create a generic second scheduler |
@@ -140,7 +140,7 @@ Supabase Free currently documents approximately 500 MB per project for Database,
 
 ### File Storage publication boundary
 
-- Bucket configuration Source of Truth: native `packages/integration-supabase/src/config.toml#storage.buckets.repository-files`. Do not add another `supabase/storage/file.json` manifest.
+- Bucket configuration Source of Truth: native `packages/integration-supabase/supabase/config.toml#storage.buckets.repository-files`. Do not add another `supabase/storage/file.json` manifest.
 - Bucket is **private**, format-neutral, and shared across Repositories. RepositoryId isolation comes from current Repository authorization in File; object keys or bucket visibility alone do not grant access.
 - `packages/integration-supabase/src/schemas/*.sql` remains the sole application PostgreSQL schema authority; it must never `INSERT/UPDATE/ALTER` provider-owned `storage.buckets` or `storage.objects` to publish File Storage.
 - Storage provider checks use the pinned Supabase CLI and the corresponding GitHub workflow. They require exact current-main authorization, the pinned project, a matching preflight and a post-write readback. Unknown outcomes must be read back rather than blindly retried; existing divergent Bucket settings must fail closed rather than overwrite.
