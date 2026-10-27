@@ -1,0 +1,160 @@
+{
+  "schemaVersion": 1,
+  "owner": {
+    "id": "file",
+    "kind": "business-owner",
+    "lifecycle": "current",
+    "doc": "docs/owners/file.md"
+  },
+  "boundedContexts": [
+    {
+      "id": "file",
+      "owner": "file",
+      "status": "selected",
+      "evidence": {
+        "ownerContracts": ["docs/owners/file.md"],
+        "sourcePaths": ["packages/file/src/domain/file.ts"],
+        "testPaths": ["packages/file/test/persistence.test.ts"],
+        "rationale": "File owns original source evidence and immutable bytes; Intelligence owns the separate processing lifecycle and retained interpretation evidence."
+      }
+    }
+  ],
+  "concepts": [
+    {
+      "id": "file",
+      "canonicalName": "File",
+      "kind": "authoritative",
+      "owner": "file",
+      "lifecycle": "current",
+      "definition": "Repository-scoped protected original file identity; head selects an immutable revision. Format-neutral, not a Contract, Content plan or public attachment.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "file-revision",
+      "canonicalName": "FileRevision",
+      "kind": "authoritative",
+      "owner": "file",
+      "lifecycle": "current",
+      "definition": "Immutable authorized File source revision: exact external private-object bytes identified by Repository/File/Revision, declared media type, size, SHA-256, actor and timestamp. A revision is committed only after content readback; edits and processing never replace its object.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "file-upload-intent",
+      "canonicalName": "FileUploadIntent",
+      "kind": "authoritative",
+      "owner": "file",
+      "lifecycle": "current",
+      "definition": "Durable immutable source/attempt metadata and digest committed before private object I/O. A database-clock retry window and operator-only quarantine fence deletion of never-committed Storage objects; every independently verified absence refreshes a durable reconciliation cursor because an unknown write may complete later. FileCommandReceipt alone proves finalization.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "file-processing-run",
+      "canonicalName": "FileProcessingRun",
+      "kind": "historical-evidence",
+      "owner": "file",
+      "lifecycle": "current",
+      "definition": "Legacy processing run storage retained only for historical read during controlled cutover; Intelligence owns all new runs.",
+      "authorityMode": "reference-only",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "file-processing-revision",
+      "canonicalName": "FileProcessingRevision",
+      "kind": "historical-evidence",
+      "owner": "file",
+      "lifecycle": "current",
+      "definition": "Immutable legacy processing revisions retained for historical reads during controlled cutover.",
+      "authorityMode": "reference-only",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "file-command-receipt",
+      "canonicalName": "FileCommandReceipt",
+      "kind": "historical-evidence",
+      "owner": "file",
+      "lifecycle": "current-data-only",
+      "definition": "Legacy File request receipt retained only for historical File storage evidence. Current processing receipts belong to Intelligence.",
+      "authorityMode": "reference-only",
+      "persistenceExpectation": "relation"
+    }
+  ],
+  "relationships": [
+    {
+      "id": "contract-file-source",
+      "provider": "file",
+      "consumer": "contract",
+      "meaning": "Contract transactionally requalifies one exact authorized File revision and SHA-256 before persisting a ContractDocument revision. File retains original-byte, storage and access authority; Contract stores only the immutable source reference in its own revision.",
+      "integrationMode": "stable-identity+query",
+      "authority": "file",
+      "consistency": "transaction-recheck+immutable-pin"
+    },
+    {
+      "id": "intelligence-file-source",
+      "provider": "file",
+      "consumer": "intelligence",
+      "meaning": "Intelligence reads an exact File revision only through File's public source reader, which authorizes before and after private object I/O. Intelligence receives detached bytes and no File persistence or storage authority.",
+      "integrationMode": "query",
+      "authority": "file",
+      "consistency": "current-source-access"
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "manage-files",
+      "owner": "file",
+      "kind": "leaf",
+      "intent": "Preserve protected Repository-scoped files via explicit durable Upload Intent, private immutable Storage Object readback, atomic File revision/head/receipt Finalize and exact replay; list/read/download require current access.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6", "FILE1", "FILE2"],
+      "consumes": ["file-repository-scope", "file-platform-persistence"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Preserve protected Repository-scoped files via explicit durable Upload Intent, private immutable Storage Object readback, atomic File revision/head/receipt Finalize and exact replay; list/read/download require current access.",
+        "sourcePaths": [
+          "packages/file/src/domain/file.ts",
+          "packages/file/src/application/use-cases/files.ts",
+          "packages/file/src/application/use-cases/sources.ts",
+          "packages/file/src/application/use-cases/reclaim.ts",
+          "packages/file/src/adapters/outbound/persistence/files.ts",
+          "packages/file/src/adapters/outbound/storage/supabase.ts",
+          "packages/file/src/contracts/output/object-store.ts",
+          "packages/file/src/contracts/output/references.ts"
+        ],
+        "publicExports": [
+          "./application/use-cases/files",
+          "./application/use-cases/reclaim",
+          "./composition/bootstrap/files",
+          "./contracts/output/references",
+          "./domain/error",
+          "./domain/file"
+        ],
+        "entrypoints": [
+          "scripts/operations/file/run.mjs",
+          "scripts/operations/file/reclaim.mjs",
+          "apps/web/src/app/api/repository-files/route.ts",
+          "apps/web/src/app/(resource)/[login]/[repository]/files/page.tsx"
+        ],
+        "testPaths": [
+          "packages/intelligence/test/processing.test.ts",
+          "packages/intelligence/test/intake-document.test.ts",
+          "packages/intelligence/test/document-attempts-postgres.test.ts",
+          "packages/file/test/object-store.test.ts",
+          "packages/file/test/sources.test.ts",
+          "apps/web/test/files-owner-http.test.ts"
+        ],
+        "note": "Authenticated CLI preserves originals up to 45 MiB. Web/LINE Repository Files transport supports explicit bounded 3 MB multipart Upload/Download and current-authorized File List; private Supabase Storage remains the only bytes store. Processing lifecycle and result history are Intelligence-owned. No large-file Web transport, live device/production acceptance or business import is asserted."
+      }
+    }
+  ],
+  "locators": []
+}

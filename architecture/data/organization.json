@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "owner": "organization",
+  "files": [
+    {
+      "path": "packages/integration-supabase/src/schemas/300_organizations.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/301_organization_memberships.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/302_organization_invitations.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/501_organization_role_assignments.sql",
+      "role": "authoritative"
+    }
+  ],
+  "relations": [
+    {
+      "name": "organizations",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/300_organizations.sql",
+      "authority": true,
+      "semanticOwner": "organization",
+      "concept": "organization"
+    },
+    {
+      "name": "organization_memberships",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/301_organization_memberships.sql",
+      "authority": true,
+      "semanticOwner": "organization",
+      "concept": "organization-membership"
+    },
+    {
+      "name": "organization_direct_memberships",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/301_organization_memberships.sql",
+      "authority": true,
+      "semanticOwner": "organization"
+    },
+    {
+      "name": "organization_invitations",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/302_organization_invitations.sql",
+      "authority": true,
+      "semanticOwner": "organization",
+      "concept": "organization-invitation"
+    },
+    {
+      "name": "organization_role_assignments",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/501_organization_role_assignments.sql",
+      "authority": true,
+      "semanticOwner": "organization",
+      "concept": "organization-owner-assignment"
+    }
+  ]
+}

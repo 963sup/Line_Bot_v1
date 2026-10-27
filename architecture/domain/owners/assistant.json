@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "owner": {
+    "id": "assistant",
+    "kind": "application-capability-owner",
+    "lifecycle": "current",
+    "doc": "docs/owners/assistant.md"
+  },
+  "boundedContexts": [],
+  "concepts": [],
+  "relationships": [],
+  "capabilities": [],
+  "locators": []
+}

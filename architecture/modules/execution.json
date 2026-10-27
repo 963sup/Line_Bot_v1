@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "@line_bot_v1/execution",
+  "status": "current",
+  "path": "packages/execution",
+  "moduleKind": "domain-module",
+  "semanticOwner": "execution",
+  "allowedWorkspaceDependencies": [
+    "@line_bot_v1/platform",
+    "@line_bot_v1/repository",
+    "@line_bot_v1/contract",
+    "@line_bot_v1/resources",
+    "@line_bot_v1/content"
+  ],
+  "primaryOwnerImplementation": true
+}

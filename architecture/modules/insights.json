@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "@line_bot_v1/insights",
+  "status": "current",
+  "path": "packages/insights",
+  "moduleKind": "application-module",
+  "semanticOwner": "insights",
+  "allowedWorkspaceDependencies": ["@line_bot_v1/issue"],
+  "primaryOwnerImplementation": true
+}

@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "@line_bot_v1/integration-supabase",
+  "status": "current",
+  "path": "packages/integration-supabase",
+  "moduleKind": "integration-adapter",
+  "semanticOwner": "supabase-integration",
+  "allowedWorkspaceDependencies": [],
+  "primaryOwnerImplementation": true
+}

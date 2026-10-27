@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "owner": "team",
+  "files": [
+    {
+      "path": "packages/integration-supabase/src/schemas/400_teams.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/401_team_memberships.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/402_team_commands.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/502_team_role_assignments.sql",
+      "role": "authoritative"
+    }
+  ],
+  "relations": [
+    {
+      "name": "teams",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/400_teams.sql",
+      "authority": true,
+      "semanticOwner": "team",
+      "concept": "team"
+    },
+    {
+      "name": "team_memberships",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/401_team_memberships.sql",
+      "authority": true,
+      "semanticOwner": "team",
+      "concept": "team-membership"
+    },
+    {
+      "name": "team_commands",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/402_team_commands.sql",
+      "authority": true,
+      "semanticOwner": "team"
+    },
+    {
+      "name": "team_role_assignments",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/502_team_role_assignments.sql",
+      "authority": true,
+      "semanticOwner": "team",
+      "concept": "team-role-assignment"
+    }
+  ]
+}

@@ -48,7 +48,7 @@ Repository outside collaborator 已由 Repository-owned direct grant 與 active 
 - [Enterprise owner](../../owners/enterprise.md)
 - [Organization owner](../../owners/organization.md)
 - [Team owner](../../owners/team.md)
-- [Semantic model](../../../architecture/semantic-model.json)
+- [Semantic model](../../../architecture/registry.json#domain)
 - [Security target](../proposals/security-target.md)
 - [Data target](../proposals/data-target.md)
 - [Migration plan](../migrations/enterprise-organization-workforce-payroll.md)

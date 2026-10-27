@@ -1,0 +1,245 @@
+{
+  "schemaVersion": 1,
+  "owner": {
+    "id": "discussion",
+    "kind": "business-owner",
+    "lifecycle": "current",
+    "doc": "docs/owners/discussion.md"
+  },
+  "boundedContexts": [],
+  "concepts": [
+    {
+      "id": "discussion",
+      "kind": "authoritative",
+      "owner": "discussion",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-discussions.json",
+        "symbol": "Discussion"
+      }
+    },
+    {
+      "id": "discussion-comment",
+      "kind": "authoritative",
+      "owner": "discussion",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-discussions.json",
+        "symbol": "DiscussionComment"
+      }
+    },
+    {
+      "id": "discussion-category",
+      "kind": "authoritative",
+      "owner": "discussion",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-discussions.json",
+        "symbol": "DiscussionCategory"
+      }
+    },
+    {
+      "id": "discussion-answer",
+      "kind": "authoritative",
+      "owner": "discussion",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-discussions.json",
+        "symbol": "Discussion",
+        "field": "answer"
+      }
+    },
+    {
+      "id": "discussion-label-link",
+      "kind": "authoritative",
+      "owner": "discussion",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-discussions.json",
+        "symbol": "Discussion",
+        "field": "labels"
+      }
+    },
+    {
+      "id": "discussion-upvote",
+      "kind": "authoritative",
+      "owner": "discussion",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-discussions.json",
+        "symbol": "Discussion",
+        "field": "upvoteCount"
+      }
+    },
+    {
+      "id": "discussion-comment-upvote",
+      "kind": "authoritative",
+      "owner": "discussion",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-discussions.json",
+        "symbol": "DiscussionComment",
+        "field": "upvoteCount"
+      }
+    },
+    {
+      "id": "discussion-poll",
+      "kind": "authoritative",
+      "owner": "discussion",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-discussions.json",
+        "symbol": "DiscussionPoll"
+      }
+    },
+    {
+      "id": "discussion-poll-option",
+      "kind": "authoritative",
+      "owner": "discussion",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-discussions.json",
+        "symbol": "DiscussionPollOption"
+      }
+    },
+    {
+      "id": "discussion-poll-vote",
+      "kind": "authoritative",
+      "owner": "discussion",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-discussions.json",
+        "symbol": "DiscussionPollOption",
+        "field": "viewerHasVoted"
+      }
+    }
+  ],
+  "relationships": [],
+  "capabilities": [
+    {
+      "id": "read-discussions",
+      "owner": "discussion",
+      "kind": "leaf",
+      "intent": "Read authorized Repository-scoped Discussion lists, a Discussion body, and its comments without asserting Discussion write management.",
+      "preserves": ["K1", "K2", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Discussion-owned authorized read model consuming Repository current access",
+        "sourcePaths": [
+          "packages/discussion/src/application/discussions.ts",
+          "packages/discussion/src/contracts/output/discussion-read.ts",
+          "packages/discussion/src/adapters/postgres.ts"
+        ],
+        "publicExports": ["./application/discussions", "./contracts/discussions", "./postgres"],
+        "entrypoints": [
+          "apps/web/src/app/api/discussions/route.ts",
+          "apps/web/src/app/api/discussions/[discussionId]/route.ts",
+          "apps/web/src/app/(resource)/[login]/[repository]/discussions/page.tsx",
+          "apps/web/src/app/(resource)/[login]/[repository]/discussions/[discussionId]/page.tsx"
+        ],
+        "testPaths": [
+          "packages/discussion/test/discussions.test.ts",
+          "apps/web/test/repository-resources-http.test.ts"
+        ],
+        "note": "Discussion owns its read model and current opaque identifier validation while Repository provides identity/current access through a public contract. The opaque id remains implementation drift and does not redefine canonical FPT Discussion.number."
+      }
+    },
+    {
+      "id": "manage-discussions",
+      "owner": "discussion",
+      "kind": "leaf",
+      "intent": "Manage Repository-scoped Discussion lifecycle, stable number/category, comments/replies, chosen answer, labels, upvotes, poll and conversation lock without transferring Repository authority.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Discussion-owned write lifecycle and collaboration relations with current Repository access, archive fail-closed behavior, expected-version concurrency, exact replay and immutable owner events.",
+        "sourcePaths": [
+          "packages/discussion/src/application/management.ts",
+          "packages/discussion/src/contracts/management.ts",
+          "packages/discussion/src/adapters/postgres-management.ts"
+        ],
+        "publicExports": [
+          "./application/management",
+          "./contracts/management",
+          "./postgres/management"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/discussion-management/route.ts",
+          "apps/web/src/app/api/discussions/by-number/[discussionNumber]/route.ts"
+        ],
+        "testPaths": [
+          "packages/discussion/test/management.test.ts",
+          "packages/discussion/test/discussions.test.ts"
+        ],
+        "note": "Legacy category text and opaque DiscussionId remain readable compatibility evidence. Canonical adoption is explicit: a selected Repository-scoped category is bound and any missing Discussion.number is allocated without guessing historical facts. Lock, closed, answered, upvote and poll facts remain independent."
+      }
+    }
+  ],
+  "locators": [
+    {
+      "id": "discussion-number",
+      "concept": "discussion",
+      "status": "active",
+      "fields": ["ownerLogin", "repositoryName", "number"],
+      "scope": "repository-scoped-discussion-number",
+      "scopeAuthority": "numbering",
+      "routeFiles": [
+        "apps/web/src/app/(resource)/[login]/[repository]/discussions/number/[discussionNumber]/page.tsx"
+      ],
+      "note": "Canonical Discussion number is stable within one Repository and grants no access by itself.",
+      "fpt": {
+        "file": "schema-discussions.json",
+        "symbol": "Discussion",
+        "field": "number"
+      }
+    },
+    {
+      "id": "discussion-opaque-id",
+      "concept": "discussion",
+      "status": "active",
+      "fields": ["ownerLogin", "repositoryName", "discussionId"],
+      "scope": "repository-scoped-local-discussion-id",
+      "scopeAuthority": "repository",
+      "routeFiles": [
+        "apps/web/src/app/(resource)/[login]/[repository]/discussions/[discussionId]/page.tsx"
+      ],
+      "note": "Opaque DiscussionId remains a rollout-compatibility locator for pre-number links. It is stable identity evidence, not canonical Repository-scoped numbering or authorization."
+    }
+  ]
+}

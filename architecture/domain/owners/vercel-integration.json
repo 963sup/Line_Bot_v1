@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "owner": {
+    "id": "vercel-integration",
+    "kind": "integration-owner",
+    "lifecycle": "current",
+    "doc": "docs/owners/vercel-integration.md"
+  },
+  "boundedContexts": [],
+  "concepts": [],
+  "relationships": [],
+  "capabilities": [],
+  "locators": []
+}

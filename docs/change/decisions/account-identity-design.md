@@ -53,7 +53,7 @@ Nested Team／permission inheritance、team-derived grant、EnterpriseTeam auto-
 
 - [Account owner](../../owners/account.md)
 - [System invariants](../../rules/system-invariants.md)
-- [Semantic model](../../../architecture/semantic-model.json)
+- [Semantic model](../../../architecture/registry.json#domain)
 - [Domain target](../proposals/domain-target.md)
 - [Security target](../proposals/security-target.md)
 - [Data target](../proposals/data-target.md)

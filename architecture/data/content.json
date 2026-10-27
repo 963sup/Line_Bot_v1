@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "owner": "content",
+  "files": [
+    {
+      "path": "packages/integration-supabase/src/schemas/618_content_plans.sql",
+      "role": "authoritative"
+    }
+  ],
+  "relations": [
+    {
+      "name": "content_plans",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/618_content_plans.sql",
+      "authority": true,
+      "semanticOwner": "content",
+      "concept": "content-plan"
+    },
+    {
+      "name": "content_plan_revisions",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/618_content_plans.sql",
+      "authority": true,
+      "semanticOwner": "content",
+      "concept": "content-plan-revision"
+    },
+    {
+      "name": "content_plan_resource_pins",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/618_content_plans.sql",
+      "authority": true,
+      "semanticOwner": "content",
+      "concept": "content-plan-resource-pin"
+    },
+    {
+      "name": "content_plan_commands",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/618_content_plans.sql",
+      "authority": true,
+      "semanticOwner": "content",
+      "concept": "content-plan-command-receipt"
+    }
+  ]
+}

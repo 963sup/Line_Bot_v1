@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "@line_bot_v1/wbs",
+  "status": "current",
+  "path": "packages/wbs",
+  "moduleKind": "domain-module",
+  "semanticOwner": "wbs",
+  "allowedWorkspaceDependencies": [
+    "@line_bot_v1/content",
+    "@line_bot_v1/platform",
+    "@line_bot_v1/project",
+    "@line_bot_v1/repository"
+  ],
+  "primaryOwnerImplementation": true
+}

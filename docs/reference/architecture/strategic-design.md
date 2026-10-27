@@ -1,6 +1,6 @@
 # GitHub 非程式碼業務模型與子域策略
 
-本文件只解釋產品取捨與閱讀路徑；current 子域分類、Owner、context status 與證據以 [semantic model](../../../architecture/semantic-model.json) 為準。GitHub 名稱及定義直接取自 [pinned FPT](../../../architecture/domain/fpt/)，不在本文件建立另一套語意或 package 清冊。
+本文件只解釋產品取捨與閱讀路徑；current 子域分類、Owner、context status 與證據以 [semantic model](../../../architecture/registry.json#domain) 為準。GitHub 名稱及定義直接取自 [pinned FPT](../../../architecture/fpt/)，不在本文件建立另一套語意或 package 清冊。
 
 ## 產品策略與範圍
 
@@ -14,12 +14,12 @@
 
 | GitHub 概念／關係 | 本產品責任入口 | 直接 FPT 來源 |
 | --- | --- | --- |
-| Enterprise | [Enterprise](../../owners/enterprise.md)：企業治理與 Enterprise Team | [schema-enterprise-admin.json](../../../architecture/domain/fpt/schema-enterprise-admin.json)，`Enterprise` |
-| Organization | [Organization](../../owners/organization.md)：組織生命週期、邀請與成員資格 | [schema-orgs.json](../../../architecture/domain/fpt/schema-orgs.json)，`Organization` |
-| Team | [Team](../../owners/team.md)：Organization 內的成員分組、Maintainer 與階層 | [schema-teams.json](../../../architecture/domain/fpt/schema-teams.json)，`Team`、`TeamMemberRole` |
-| Member 關係 | Organization／Team 擁有各自 membership；個人 User 由 [Account](../../owners/account.md) 擁有 | [schema-users.json](../../../architecture/domain/fpt/schema-users.json)，`OrganizationMemberEdge`、`TeamMemberEdge`；[schema-orgs.json](../../../architecture/domain/fpt/schema-orgs.json)，`OrganizationMemberRole` |
-| Collaborator 關係 | [Repository](../../owners/repository.md) 擁有直接 User／Team 存取 grant；不建立第二種個人身分 | [schema-users.json](../../../architecture/domain/fpt/schema-users.json)，`RepositoryCollaboratorEdge`；[schema-repos.json](../../../architecture/domain/fpt/schema-repos.json)，`TeamRepositoryEdge` |
-| Repository | [Repository](../../owners/repository.md)：協作內容與工作資源容器；Issue／Discussion 生命週期仍歸各自 Owner | [schema-repos.json](../../../architecture/domain/fpt/schema-repos.json)，`Repository` |
+| Enterprise | [Enterprise](../../owners/enterprise.md)：企業治理與 Enterprise Team | [schema-enterprise-admin.json](../../../architecture/fpt/schema-enterprise-admin.json)，`Enterprise` |
+| Organization | [Organization](../../owners/organization.md)：組織生命週期、邀請與成員資格 | [schema-orgs.json](../../../architecture/fpt/schema-orgs.json)，`Organization` |
+| Team | [Team](../../owners/team.md)：Organization 內的成員分組、Maintainer 與階層 | [schema-teams.json](../../../architecture/fpt/schema-teams.json)，`Team`、`TeamMemberRole` |
+| Member 關係 | Organization／Team 擁有各自 membership；個人 User 由 [Account](../../owners/account.md) 擁有 | [schema-users.json](../../../architecture/fpt/schema-users.json)，`OrganizationMemberEdge`、`TeamMemberEdge`；[schema-orgs.json](../../../architecture/fpt/schema-orgs.json)，`OrganizationMemberRole` |
+| Collaborator 關係 | [Repository](../../owners/repository.md) 擁有直接 User／Team 存取 grant；不建立第二種個人身分 | [schema-users.json](../../../architecture/fpt/schema-users.json)，`RepositoryCollaboratorEdge`；[schema-repos.json](../../../architecture/fpt/schema-repos.json)，`TeamRepositoryEdge` |
+| Repository | [Repository](../../owners/repository.md)：協作內容與工作資源容器；Issue／Discussion 生命週期仍歸各自 Owner | [schema-repos.json](../../../architecture/fpt/schema-repos.json)，`Repository` |
 | Role／Permission | 各業務 Owner 擁有角色／grant facts；[Identity & Access](../../owners/identity-access.md) 提供共用權限能力 | exact `OrganizationMemberRole`、`TeamMemberRole`、`RepositoryPermission`，不合成單一數值等級 |
 
 Member、Collaborator 是既有模型中的關係與資格，不建立同名 package。Organization membership 不等於 Repository access；Team membership 只在 Repository 明確授予該 Team 存取時參與 effective access 計算。權限值域與各操作 policy 分開，未定義的能力 fail closed。

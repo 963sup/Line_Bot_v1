@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "owner": {
+    "id": "google-workspace",
+    "kind": "integration-owner",
+    "lifecycle": "current",
+    "doc": "docs/owners/google-workspace.md"
+  },
+  "boundedContexts": [],
+  "concepts": [],
+  "relationships": [],
+  "capabilities": [],
+  "locators": []
+}

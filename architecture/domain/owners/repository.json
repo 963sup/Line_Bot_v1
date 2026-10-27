@@ -1,0 +1,949 @@
+{
+  "schemaVersion": 1,
+  "owner": {
+    "id": "repository",
+    "kind": "business-owner",
+    "lifecycle": "current",
+    "doc": "docs/owners/repository.md"
+  },
+  "boundedContexts": [],
+  "concepts": [
+    {
+      "id": "repository",
+      "kind": "authoritative",
+      "owner": "repository",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-repos.json",
+        "symbol": "Repository"
+      }
+    },
+    {
+      "id": "repository-user-access",
+      "kind": "authoritative",
+      "owner": "repository",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-users.json",
+        "symbol": "RepositoryCollaboratorEdge"
+      }
+    },
+    {
+      "id": "repository-permission",
+      "kind": "authoritative",
+      "owner": "repository",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "fpt": {
+        "file": "schema-repos.json",
+        "symbol": "RepositoryPermission"
+      }
+    },
+    {
+      "id": "repository-team-access",
+      "kind": "authoritative",
+      "owner": "repository",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-repos.json",
+        "symbol": "TeamRepositoryEdge"
+      }
+    },
+    {
+      "id": "repository-subscription",
+      "kind": "authoritative",
+      "owner": "repository",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-activity.json",
+        "symbol": "SubscriptionState"
+      }
+    },
+    {
+      "id": "repository-star",
+      "kind": "authoritative",
+      "owner": "repository",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-users.json",
+        "symbol": "StargazerEdge"
+      }
+    },
+    {
+      "id": "repository-star-list",
+      "kind": "authoritative",
+      "owner": "repository",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-users.json",
+        "symbol": "UserList"
+      }
+    },
+    {
+      "id": "repository-star-list-item",
+      "kind": "authoritative",
+      "owner": "repository",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-users.json",
+        "symbol": "UserList",
+        "field": "items"
+      }
+    },
+    {
+      "id": "repository-label",
+      "kind": "authoritative",
+      "owner": "repository",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-issues.json",
+        "symbol": "Label"
+      }
+    },
+    {
+      "id": "repository-milestone",
+      "kind": "authoritative",
+      "owner": "repository",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-issues.json",
+        "symbol": "Milestone"
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "id": "project-repository-reference",
+      "provider": "repository",
+      "consumer": "project",
+      "meaning": "Project references Repository without acquiring Repository authority; viewer-facing reference projections recheck the referenced Repository's current visibility/access.",
+      "integrationMode": "reference",
+      "authority": "repository",
+      "consistency": "current-access-and-identity"
+    },
+    {
+      "id": "repository-issue-scope",
+      "provider": "repository",
+      "consumer": "issue",
+      "meaning": "Issue consumes Repository-owned identity, current effective access, participant scope and repository-scoped Issue number allocation without acquiring Repository authority.",
+      "integrationMode": "stable-identity+query",
+      "authority": "repository",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "repository-issue-resource-definitions",
+      "provider": "repository",
+      "consumer": "issue",
+      "meaning": "Issue classification and milestone assignment reference Repository-owned Label and Milestone definitions in the same Repository; Issue owns only the association fact.",
+      "integrationMode": "query",
+      "authority": "repository",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "repository-discussion-scope",
+      "provider": "repository",
+      "consumer": "discussion",
+      "meaning": "Discussion consumes Repository-owned identity and current effective access for Repository-scoped reads and mutations without acquiring Repository authority.",
+      "integrationMode": "stable-identity+query",
+      "authority": "repository",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "repository-discussion-resource-definitions",
+      "provider": "repository",
+      "consumer": "discussion",
+      "meaning": "Discussion label associations reference Repository-owned Label definitions in the same Repository; Discussion owns only the association fact.",
+      "integrationMode": "query",
+      "authority": "repository",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "repository-notification-source-access",
+      "provider": "repository",
+      "consumer": "notifications",
+      "meaning": "Notifications may create or expose Issue/Discussion-backed recipient facts only while the recipient can currently read the source Repository; subscription state never grants that access.",
+      "integrationMode": "query",
+      "authority": "repository",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "repository-enterprise-outside-collaborators",
+      "provider": "repository",
+      "consumer": "enterprise",
+      "meaning": "Enterprise governance consumes a read-only outside-collaborator projection derived from Repository-owned direct grants and current attached Organization scope; Enterprise receives no Repository grant writer or Collaborator identity authority.",
+      "integrationMode": "query",
+      "authority": "repository",
+      "consistency": "current-state"
+    },
+    {
+      "id": "repository-attendance-address-eligibility",
+      "provider": "repository",
+      "consumer": "attendance",
+      "meaning": "Attendance consumes a Repository point (coordinates and radius with an optional address description) plus current effective member access for clock-in. Clock-out uses the original Attendance snapshot after access removal.",
+      "integrationMode": "query",
+      "authority": "repository",
+      "consistency": "current-state"
+    },
+    {
+      "id": "wbs-repository-scope",
+      "from": "repository-wbs",
+      "to": "repository",
+      "kind": "reference",
+      "owner": "wbs",
+      "meaning": "During R1 transfer, Repository-WBS consumes current Repository read visibility, explicit write/maintain/admin permissions, archive state and transactional governance locks; source authority stays Repository-owned and this path is not a permanent parallel WBS model.",
+      "provider": "repository",
+      "consumer": "wbs",
+      "integrationMode": "stable-identity+query",
+      "authority": "repository",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "wiki-repository-scope",
+      "from": "wiki-page",
+      "to": "repository",
+      "kind": "reference",
+      "owner": "wiki",
+      "meaning": "Wiki consumes current Repository scope, qualification, archive state and explicit write authority without owning Repository facts.",
+      "provider": "repository",
+      "consumer": "wiki",
+      "integrationMode": "stable-identity+query",
+      "authority": "repository",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "insights-repository-metrics",
+      "from": "repository-pulse",
+      "to": "repository",
+      "kind": "reference",
+      "owner": "insights",
+      "meaning": "Insights consumes repository-owned authorized current queries; source facts and authorization remain with the provider.",
+      "provider": "repository",
+      "consumer": "insights",
+      "integrationMode": "query",
+      "authority": "repository",
+      "consistency": "current-state"
+    },
+    {
+      "id": "actions-repository-scope",
+      "from": "action-rule",
+      "to": "repository",
+      "kind": "reference",
+      "owner": "actions",
+      "provider": "repository",
+      "consumer": "actions",
+      "integrationMode": "stable-identity+query",
+      "authority": "repository",
+      "consistency": "transaction-recheck",
+      "meaning": "During R1 transfer, current Repository access, archive and maintain/admin authority gate legacy automation commands and each fixed step; this is not the final Project Actions scope contract."
+    },
+    {
+      "id": "notifications-explicit-recipients",
+      "from": "notification",
+      "to": "repository",
+      "kind": "reference",
+      "owner": "notifications",
+      "provider": "repository",
+      "consumer": "notifications",
+      "integrationMode": "query",
+      "authority": "repository",
+      "consistency": "transaction-recheck",
+      "meaning": "Current source access and explicit-recipient Watch eligibility are Repository-owned."
+    },
+    {
+      "id": "resources-repository-scope",
+      "from": "physical-resource",
+      "to": "repository",
+      "kind": "reference",
+      "owner": "resources",
+      "provider": "repository",
+      "consumer": "resources",
+      "meaning": "Physical Resource consumes current Repository scope, qualification, permissions and archive state without acquiring Repository authority.",
+      "integrationMode": "stable-identity+query",
+      "authority": "repository",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "contract-repository-scope",
+      "provider": "repository",
+      "consumer": "contract",
+      "meaning": "Current active User, Repository access, explicit permission and archive state are rechecked in the actual transaction before replay; Repository retains scope authority.",
+      "integrationMode": "stable-identity+query",
+      "authority": "repository",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "execution-repository-scope",
+      "provider": "repository",
+      "consumer": "execution",
+      "meaning": "Current active User, Repository access, explicit permission and archive state are rechecked in the actual transaction before replay; Repository retains scope authority.",
+      "integrationMode": "stable-identity+query",
+      "authority": "repository",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "repository-intelligence-processing-scope",
+      "provider": "repository",
+      "consumer": "intelligence",
+      "meaning": "Intelligence processing mutations recheck active User, current Repository write permission and archive state inside their transaction; Repository retains authorization authority.",
+      "integrationMode": "query",
+      "authority": "repository",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "content-repository-scope",
+      "provider": "repository",
+      "consumer": "content",
+      "meaning": "Current Repository qualification, permissions and archive policy are rechecked in the actual Content transaction.",
+      "integrationMode": "stable-identity+query",
+      "authority": "repository",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "file-repository-scope",
+      "provider": "repository",
+      "consumer": "file",
+      "meaning": "File consumes current User qualification, effective Repository permissions and archive state within each transition transaction. Visibility-only access does not disclose protected file evidence; Repository retains access authority.",
+      "integrationMode": "stable-identity+query",
+      "authority": "repository",
+      "consistency": "transaction-recheck"
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "manage-repository",
+      "owner": "repository",
+      "kind": "aggregate",
+      "intent": "Coordinate Repository identity, reads, access, lifecycle, interactions and local extensions without transferring authority to consumers.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "not-asserted",
+      "members": [
+        "read-repository",
+        "create-repository",
+        "manage-repository-access",
+        "manage-repository-stars",
+        "manage-repository-star-lists",
+        "read-repository-discovery",
+        "manage-repository-labels",
+        "manage-repository-milestones",
+        "read-repository-labels",
+        "read-repository-milestones",
+        "manage-repository-address",
+        "manage-repository-lifecycle",
+        "manage-repository-subscription"
+      ]
+    },
+    {
+      "id": "create-repository",
+      "owner": "repository",
+      "kind": "leaf",
+      "intent": "Create a User- or Organization-owned Repository with explicit PRIVATE, INTERNAL or PUBLIC visibility, replay-safe owner authorization and immediate creator administration.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Repository creation for self User owners or current Organization creators authorized by the visibility-specific creation capability; INTERNAL requires the Organization's current active Enterprise scope.",
+        "sourcePaths": [
+          "packages/repository/src/domain/repository/entities/repository.ts",
+          "packages/repository/src/application/commands/repository-creation.ts",
+          "packages/repository/src/application/use-cases/repository-creation.ts",
+          "packages/repository/src/application/use-cases/create-repository.ts",
+          "packages/repository/src/contracts/input/repository-creation.ts",
+          "packages/repository/src/contracts/output/repository-creation.ts",
+          "packages/repository/src/adapters/outbound/persistence/repository-creation.ts",
+          "packages/repository/src/adapters/outbound/persistence/repository-creation-owners.ts",
+          "packages/repository/src/composition/bootstrap/repository-creation.ts"
+        ],
+        "publicExports": [
+          "./application/creation",
+          "./contracts/input/repository-creation",
+          "./postgres/creation"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/repositories/route.ts",
+          "apps/web/src/app/api/repositories/owners/route.ts",
+          "apps/web/src/app/(mobile)/(tabs)/repositories/new/page.tsx"
+        ],
+        "testPaths": [
+          "packages/repository/test/creation.test.ts",
+          "packages/repository/test/creation-characterization.test.ts",
+          "packages/repository/test/visibility.test.ts",
+          "apps/web/test/repository-creation-http.test.ts"
+        ],
+        "note": "Create persists the selected visibility atomically. Organization creation uses the Organization-owned visibility-specific member creation capability; current OrganizationOwner bypasses member restrictions. INTERNAL is Organization-only and resolves the current active Enterprise attachment; PRIVATE requires explicit access and PUBLIC grants read visibility without creating RepositoryPermission. Exact replay rechecks current capability and accepts pre-visibility private-create fingerprints for rollout-safe retry."
+      }
+    },
+    {
+      "id": "read-repository",
+      "owner": "repository",
+      "kind": "leaf",
+      "intent": "Read Repository stable identity through current visibility/access and owner-scoped current or historical locators.",
+      "preserves": ["K1", "K2", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Current Repository reads over explicit access, PUBLIC visibility or same-active-Enterprise INTERNAL visibility, plus public anonymous lookup.",
+        "sourcePaths": [
+          "packages/repository/src/application/public.ts",
+          "packages/repository/src/contracts/errors/repository-error.ts",
+          "packages/repository/src/contracts/output/public.ts",
+          "packages/repository/src/domain/repository/entities/repository.ts",
+          "packages/repository/src/domain/repository/value-objects/repository-name.ts",
+          "packages/repository/src/postgres/access.ts",
+          "packages/repository/src/postgres/public.ts"
+        ],
+        "publicExports": [
+          "./application/public",
+          "./contracts/errors/repository-error",
+          "./contracts/output/public",
+          "./domain/repository/entities/repository",
+          "./domain/repository/value-objects/repository-name"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/(resource)/[login]/[repository]/page.tsx",
+          "apps/web/src/app/(mobile)/(tabs)/repositories/page.tsx",
+          "apps/web/src/app/api/repository-overview/route.ts"
+        ],
+        "testPaths": [
+          "packages/repository/test/management.test.ts",
+          "packages/repository/test/visibility.test.ts",
+          "packages/repository/test/stars.test.ts",
+          "apps/web/test/repository-overview.test.ts"
+        ],
+        "note": "RepositoryId is stable. Current owner/name wins. With followRenames=true, an old owner-scoped name resolves the same Repository; false rejects the old name. Historical names stay reserved against other Repositories under that owner, while the same Repository may reclaim its own alias. Visibility grants read authority only and never synthesizes RepositoryPermission."
+      }
+    },
+    {
+      "id": "manage-repository-lifecycle",
+      "owner": "repository",
+      "kind": "leaf",
+      "intent": "Rename a Repository, change visibility, and archive or unarchive it while preserving stable identity, current authority, expected-version concurrency, replay and history.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Repository admin lifecycle management for rename, PRIVATE/INTERNAL/PUBLIC visibility, archive and unarchive.",
+        "sourcePaths": [
+          "packages/repository/src/domain/repository/entities/repository.ts",
+          "packages/repository/src/application/commands/repository-management.ts",
+          "packages/repository/src/application/use-cases/repository-management.ts",
+          "packages/repository/src/application/use-cases/repository-lifecycle.ts",
+          "packages/repository/src/contracts/input/repository-management.ts",
+          "packages/repository/src/contracts/output/repository-management.ts",
+          "packages/repository/src/adapters/outbound/persistence/repository-management.ts",
+          "packages/repository/src/adapters/outbound/persistence/repository-management-query.ts",
+          "packages/repository/src/composition/bootstrap/repository-management.ts"
+        ],
+        "publicExports": [
+          "./application/management",
+          "./contracts/input/repository-management",
+          "./postgres/management"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/repository-management/route.ts",
+          "apps/web/src/app/(resource)/[login]/[repository]/settings/page.tsx"
+        ],
+        "testPaths": [
+          "packages/repository/test/management.test.ts",
+          "packages/repository/test/management-lifecycle.test.ts",
+          "packages/repository/test/management-concurrency-postgres.test.ts",
+          "packages/repository/test/visibility.test.ts",
+          "packages/issue/test/issues.test.ts",
+          "apps/web/test/repository-management-http.test.ts"
+        ],
+        "note": "Rename preserves RepositoryId and durable lifecycle events. Archive preserves reads under current visibility but blocks new Issue and Discussion writes and new Repository Label/Milestone definition mutations. INTERNAL is Organization-only and consumes current active Enterprise scope."
+      }
+    },
+    {
+      "id": "manage-repository-subscription",
+      "owner": "repository",
+      "kind": "leaf",
+      "intent": "Manage replay-safe User-to-Repository Watch state over the exact FPT SubscriptionState values without granting Repository access.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Repository is the supported non-code Subscribable subject; User state is SUBSCRIBED, UNSUBSCRIBED or IGNORED with current-access recheck and independent versioning.",
+        "sourcePaths": [
+          "packages/repository/src/domain/repository/entities/repository.ts",
+          "packages/repository/src/contracts/input/repository-subscription.ts",
+          "packages/repository/src/contracts/output/repository-subscription.ts",
+          "packages/repository/src/application/commands/repository-subscription.ts",
+          "packages/repository/src/application/use-cases/repository-subscription.ts",
+          "packages/repository/src/application/use-cases/repository-subscription-mutation.ts",
+          "packages/repository/src/adapters/outbound/persistence/repository-subscription.ts",
+          "packages/repository/src/adapters/outbound/persistence/repository-subscription-query.ts",
+          "packages/repository/src/composition/bootstrap/repository-subscription.ts"
+        ],
+        "publicExports": [
+          "./application/subscription",
+          "./contracts/input/repository-subscription",
+          "./postgres/subscription"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/repository-subscription/route.ts",
+          "apps/web/src/app/(resource)/[login]/[repository]/page.tsx"
+        ],
+        "testPaths": [
+          "packages/repository/test/subscription.test.ts",
+          "packages/repository/test/subscription-characterization.test.ts",
+          "packages/repository/test/subscription-governance-postgres.test.ts",
+          "packages/notifications/test/repository-source-access.test.ts",
+          "apps/web/test/repository-subscription-http.test.ts"
+        ],
+        "note": "Watch state is distinct from Star, Follow, TeamNotificationSetting, Notification and delivery. Subscription grants no read/write access. Repository conversation fan-out is not enabled; when Notifications reference Issue/Discussion sources, creation and Inbox reads recheck current Repository visibility/access."
+      }
+    },
+    {
+      "id": "manage-repository-access",
+      "owner": "repository",
+      "kind": "leaf",
+      "intent": "Manage Repository-owned direct User and Organization Team grants over the exact six-value FPT RepositoryPermission domain, preserving permission identity without a synthetic total order while retaining replay safety and recoverable admin authority.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Repository-owned direct User and Organization Team access management with outside-collaborator classification, current effective admin authorization including implicit OrganizationOwner admin, expected-version mutation and exact replay.",
+        "sourcePaths": [
+          "packages/repository/src/domain/repository/entities/repository.ts",
+          "packages/repository/src/contracts/input/repository-access.ts",
+          "packages/repository/src/contracts/output/repository-access.ts",
+          "packages/repository/src/application/commands/repository-access.ts",
+          "packages/repository/src/application/use-cases/repository-access.ts",
+          "packages/repository/src/application/use-cases/repository-access-mutation.ts",
+          "packages/repository/src/adapters/outbound/persistence/repository-access.ts",
+          "packages/repository/src/adapters/outbound/persistence/repository-access-query.ts",
+          "packages/repository/src/composition/bootstrap/repository-access.ts",
+          "packages/repository/src/domain/repository/value-objects/repository-capability.ts"
+        ],
+        "publicExports": [
+          "./application/access",
+          "./contracts/input/repository-access",
+          "./domain/repository/value-objects/repository-capability",
+          "./postgres/access-management"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/repository-access/route.ts",
+          "apps/web/src/app/(resource)/[login]/[repository]/access/page.tsx",
+          "apps/web/src/app/(mobile)/(tabs)/repositories/page.tsx"
+        ],
+        "testPaths": [
+          "packages/repository/test/access.test.ts",
+          "packages/repository/test/access-characterization.test.ts",
+          "packages/repository/test/access-postgres.test.ts",
+          "apps/web/test/repository-access-http.test.ts"
+        ],
+        "note": "Direct User and Team grant facts retain their exact RepositoryPermission value: READ, TRIAGE, TRIAGE_PLUS, WRITE, MAINTAIN, or ADMIN. Effective access adds current OrganizationOwner implicit ADMIN without persisting a Repository grant; operation policy tests explicit permissions and does not infer undocumented TRIAGE_PLUS/MAINTAIN abilities. Direct User grants require current User qualification but not OrganizationMembership; Team grants require current Team/Organization qualification. Mutations require expectedVersion plus exact replay."
+      }
+    },
+    {
+      "id": "manage-repository-stars",
+      "owner": "repository",
+      "kind": "leaf",
+      "intent": "Manage User star/unstar interaction over Repository resources.",
+      "preserves": ["K1", "K2", "K3", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "current Repository star application surface",
+        "sourcePaths": [
+          "packages/repository/src/application/stars.ts",
+          "packages/repository/src/contracts/repositories/stars.ts"
+        ],
+        "publicExports": ["./application/stars", "./contracts/repositories/stars"],
+        "entrypoints": [
+          "apps/web/src/app/api/repositories/explore/route.ts",
+          "apps/web/src/app/api/repositories/starred/route.ts",
+          "apps/web/src/app/(mobile)/(tabs)/stars/page.tsx",
+          "apps/web/src/app/(mobile)/(tabs)/explore/page.tsx",
+          "apps/web/src/app/(mobile)/(tabs)/home/page.tsx"
+        ],
+        "testPaths": [
+          "packages/repository/test/stars.test.ts",
+          "apps/web/test/profile-discovery-api.test.ts"
+        ],
+        "note": "Star is an interaction signal and never grants Repository authority. Star/unstar and starred reads recheck current Repository visibility/access."
+      }
+    },
+    {
+      "id": "manage-repository-star-lists",
+      "owner": "repository",
+      "kind": "leaf",
+      "intent": "Manage replay-safe User curated Lists over the User's current Repository stars.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "current User-owned private/public Repository Star List lifecycle and Star-backed membership",
+        "sourcePaths": [
+          "packages/repository/src/application/star-lists.ts",
+          "packages/repository/src/contracts/repositories/star-lists.ts",
+          "packages/repository/src/postgres/star-lists.ts"
+        ],
+        "publicExports": [
+          "./application/star-lists",
+          "./contracts/repositories/star-lists",
+          "./postgres/star-lists"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/repositories/lists/route.ts",
+          "apps/web/src/app/api/repositories/lists/[listId]/route.ts",
+          "apps/web/src/app/(mobile)/(tabs)/repositories/lists/page.tsx",
+          "apps/web/src/app/(mobile)/(tabs)/repositories/lists/new/page.tsx",
+          "apps/web/src/app/(mobile)/(tabs)/repositories/lists/[listId]/page.tsx"
+        ],
+        "testPaths": [
+          "packages/repository/test/star-lists.test.ts",
+          "apps/web/test/repository-star-lists-api.test.ts"
+        ],
+        "note": "Create is private by default; publish is explicit. Items require the owner Star and current Repository visibility/access when added. Viewer counts/previews recheck current visibility, so hidden Repository items do not leak. Unstar removes matching memberships through the declared Star foreign-key invariant. List visibility never grants Repository access."
+      }
+    },
+    {
+      "id": "read-repository-discovery",
+      "owner": "repository",
+      "kind": "leaf",
+      "intent": "Read authorized Repository Trending and published Repository Star List projections without creating a new Explore authority.",
+      "preserves": ["K1", "K2", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Explore application query over Repository-owned discovery projections and current access",
+        "sourcePaths": [
+          "packages/repository/src/postgres/discovery.ts",
+          "packages/repository/src/contracts/discovery.ts"
+        ],
+        "publicExports": ["./contracts/discovery", "./postgres/discovery"],
+        "entrypoints": [
+          "apps/web/src/app/api/repositories/explore/route.ts",
+          "apps/web/src/app/(mobile)/(tabs)/explore/page.tsx",
+          "apps/web/src/app/api/repositories/lists/discover/route.ts",
+          "apps/web/src/app/(mobile)/(tabs)/repositories/lists/discover/page.tsx",
+          "packages/explore/src/application/queries/repository-discovery.ts"
+        ],
+        "testPaths": [
+          "packages/repository/test/discovery.test.ts",
+          "apps/web/test/profile-discovery-api.test.ts",
+          "apps/web/test/repository-star-lists-api.test.ts",
+          "packages/explore/test/discovery.test.ts"
+        ],
+        "note": "Trending and published Star List projections recheck current Repository visibility/access. INTERNAL means the same current active Enterprise; PUBLIC is anonymous-readable; PRIVATE needs explicit access. Hidden items and counts are excluded. Explore delivery composes Issue-owned activity separately under the same current visibility rule."
+      }
+    },
+    {
+      "id": "read-repository-labels",
+      "owner": "repository",
+      "kind": "leaf",
+      "intent": "Read authorized Repository Label collections through current Repository visibility/access.",
+      "preserves": ["K1", "K2", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "authorized Repository Label read model and API transport",
+        "sourcePaths": [
+          "packages/repository/src/application/resources.ts",
+          "packages/repository/src/contracts/output/resources.ts",
+          "packages/repository/src/postgres/resources.ts",
+          "packages/repository/src/postgres/access.ts"
+        ],
+        "publicExports": [
+          "./application/resources",
+          "./contracts/output/resources",
+          "./postgres/resources"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/repository-labels/route.ts",
+          "apps/web/src/app/(resource)/[login]/[repository]/labels/page.tsx"
+        ],
+        "testPaths": [
+          "packages/repository/test/resources.test.ts",
+          "apps/web/test/repository-resources-http.test.ts"
+        ],
+        "note": "Labels are read as Repository-owned classification metadata after current repository access resolution; collection URLs do not create an independent label locator identity."
+      }
+    },
+    {
+      "id": "read-repository-milestones",
+      "owner": "repository",
+      "kind": "leaf",
+      "intent": "Read authorized Repository Milestone lists and detail by repository-local number through current Repository visibility/access.",
+      "preserves": ["K1", "K2", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "authorized Repository Milestone read model and API transport",
+        "sourcePaths": [
+          "packages/repository/src/application/resources.ts",
+          "packages/repository/src/contracts/output/resources.ts",
+          "packages/repository/src/domain/milestone/value-objects/milestone-number.ts",
+          "packages/repository/src/postgres/resources.ts",
+          "packages/repository/src/postgres/access.ts"
+        ],
+        "publicExports": [
+          "./application/resources",
+          "./contracts/output/resources",
+          "./domain/milestone/value-objects/milestone-number",
+          "./postgres/resources"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/repository-milestones/route.ts",
+          "apps/web/src/app/api/repository-milestones/[milestoneNumber]/route.ts",
+          "apps/web/src/app/(resource)/[login]/[repository]/milestones/page.tsx",
+          "apps/web/src/app/(resource)/[login]/[repository]/milestones/[milestoneNumber]/page.tsx"
+        ],
+        "testPaths": [
+          "packages/repository/test/resources.test.ts",
+          "apps/web/test/repository-resources-http.test.ts"
+        ],
+        "note": "Milestone number is repository-local and verified in schema/application input; definition management is an independent Repository-owned capability."
+      }
+    },
+    {
+      "id": "manage-repository-labels",
+      "owner": "repository",
+      "kind": "leaf",
+      "intent": "Manage Repository-owned Label definitions with stable identity, explicit write/maintain/admin authorization, version concurrency, exact replay and reference-safe deletion.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Repository-owned Label create/update/delete; stable LabelId across rename; current write/maintain/admin authorization; archived Repository fail-closed; Issue-owned references are never mutated by this owner.",
+        "sourcePaths": [
+          "packages/repository/src/application/resource-management.ts",
+          "packages/repository/src/contracts/output/resource-management.ts",
+          "packages/repository/src/postgres/resource-management.ts"
+        ],
+        "publicExports": [
+          "./application/resource-management",
+          "./contracts/output/resource-management",
+          "./postgres/resource-management"
+        ],
+        "entrypoints": ["apps/web/src/app/api/repository-labels/route.ts"],
+        "testPaths": [
+          "packages/repository/test/resource-management.test.ts",
+          "packages/platform/test/schema-contract.schema.ts",
+          "apps/web/test/repository-resource-management-http.test.ts"
+        ],
+        "note": "Definition mutation uses resource-local expectedVersion plus durable repository_commands replay. Label deletion relies on the Issue-owned reference foreign key: an in-use Label conflicts instead of deleting IssueLabel truth across owner boundaries."
+      }
+    },
+    {
+      "id": "manage-repository-milestones",
+      "owner": "repository",
+      "kind": "leaf",
+      "intent": "Manage Repository-owned Milestone definitions and OPEN/CLOSED lifecycle with repository-local numbers, explicit write/maintain/admin authorization, version concurrency and exact replay.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Repository-owned Milestone create/update/open/close; repository-local number allocation; current write/maintain/admin authorization; archived Repository fail-closed; Issue milestone assignment remains Issue-owned.",
+        "sourcePaths": [
+          "packages/repository/src/application/resource-management.ts",
+          "packages/repository/src/contracts/output/resource-management.ts",
+          "packages/repository/src/postgres/resource-management.ts"
+        ],
+        "publicExports": [
+          "./application/resource-management",
+          "./contracts/output/resource-management",
+          "./postgres/resource-management"
+        ],
+        "entrypoints": ["apps/web/src/app/api/repository-milestones/route.ts"],
+        "testPaths": [
+          "packages/repository/test/resource-management.test.ts",
+          "packages/platform/test/schema-contract.schema.ts",
+          "apps/web/test/repository-resource-management-http.test.ts"
+        ],
+        "note": "Milestone definition/lifecycle mutation is distinct from Issue milestone assignment and Project checkpoints. The Repository row lock serializes creation so max(number)+1 remains repository-local and collision-free without creating a second counter authority."
+      }
+    },
+    {
+      "id": "manage-repository-address",
+      "owner": "repository",
+      "kind": "leaf",
+      "intent": "Maintain the Repository attendance point, consisting of coordinates and radius with an optional address description.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Optional single Repository point with required coordinates and radius and a nullable address description; effective admin writes, effective member reads; version and exact replay; Attendance owns immutable session snapshots.",
+        "sourcePaths": [
+          "packages/repository/src/application/address.ts",
+          "packages/repository/src/contracts/repositories/address.ts",
+          "packages/repository/src/postgres/address.ts"
+        ],
+        "publicExports": [
+          "./application/address",
+          "./contracts/repositories/address",
+          "./postgres/address"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/repository-address/route.ts",
+          "apps/web/src/app/(resource)/[login]/[repository]/settings/page.tsx"
+        ],
+        "testPaths": [
+          "packages/repository/test/address.test.ts",
+          "packages/attendance/test/repository-attendance.test.ts"
+        ],
+        "note": "Address remains Repository-owned and readable/manageable by current effective members/admins even while archived. Attendance excludes archived Repositories from new clock-in sites; existing Attendance sessions keep their immutable snapshot. Source and local tests do not prove remote deployment."
+      }
+    }
+  ],
+  "locators": [
+    {
+      "id": "repository-owner-name",
+      "concept": "repository",
+      "status": "active",
+      "fields": ["ownerLogin", "name"],
+      "scope": "repository-owner-login-and-name",
+      "scopeAuthority": "namespace",
+      "routeFiles": ["apps/web/src/app/(resource)/[login]/[repository]/page.tsx"],
+      "note": "Repository URL derives from owner login plus Repository name; access still comes from authorization checks.",
+      "fpt": {
+        "file": "schema-repos.json",
+        "symbol": "Repository",
+        "field": "resourcePath"
+      }
+    },
+    {
+      "id": "repository-star-list-id",
+      "concept": "repository-star-list",
+      "status": "active",
+      "fields": ["listId"],
+      "scope": "repository-star-list-global-id",
+      "scopeAuthority": "repository",
+      "routeFiles": ["apps/web/src/app/(mobile)/(tabs)/repositories/lists/[listId]/page.tsx"],
+      "note": "Repository Star List uses its opaque stable ListId as the detail locator under the already-reserved /repositories root; the locator never grants Repository or List authority."
+    },
+    {
+      "id": "repository-milestone-number",
+      "concept": "repository-milestone",
+      "status": "active",
+      "fields": ["ownerLogin", "repositoryName", "milestoneNumber"],
+      "scope": "repository-scoped-milestone-number",
+      "scopeAuthority": "numbering",
+      "routeFiles": [
+        "apps/web/src/app/(resource)/[login]/[repository]/milestones/[milestoneNumber]/page.tsx"
+      ],
+      "note": "Repository Milestone number is scoped to Repository and remains separate from Project Milestone identity.",
+      "fpt": {
+        "file": "schema-issues.json",
+        "symbol": "Milestone",
+        "field": "number"
+      }
+    }
+  ]
+}

@@ -1,0 +1,206 @@
+{
+  "schemaVersion": 1,
+  "owner": {
+    "id": "content",
+    "kind": "business-owner",
+    "lifecycle": "current",
+    "doc": "docs/owners/content.md"
+  },
+  "boundedContexts": [
+    {
+      "id": "content",
+      "owner": "content",
+      "status": "selected"
+    }
+  ],
+  "concepts": [
+    {
+      "id": "content-plan",
+      "canonicalName": "ContentPlan",
+      "aliases": ["contract-content-expansion", "content expansion"],
+      "kind": "authoritative",
+      "owner": "content",
+      "lifecycle": "current",
+      "definition": "Repository-scoped work definition head selecting one complete immutable plan document.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "content-plan-revision",
+      "canonicalName": "ContentPlanRevision",
+      "aliases": ["content-expansion-revision"],
+      "kind": "authoritative",
+      "owner": "content",
+      "lifecycle": "current",
+      "definition": "Immutable complete Subject/Object/SubObject/Work/Task hierarchy, planned measures, quantities and exact physical resource pins.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "content-plan-resource-pin",
+      "canonicalName": "ContentPlanResourcePin",
+      "kind": "authoritative",
+      "owner": "content",
+      "lifecycle": "current",
+      "definition": "Exact physical Resource revision assignment belonging to one node in a fixed Content plan revision.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "content-plan-command-receipt",
+      "canonicalName": "ContentPlanCommandReceipt",
+      "kind": "authoritative",
+      "owner": "content",
+      "lifecycle": "current",
+      "definition": "Durable actor/request fingerprint and Content plan revision for current-authorized exact replay.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "content-subject",
+      "canonicalName": "Subject",
+      "kind": "authoritative",
+      "owner": "content",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "definition": "Root subject of a Repository work plan."
+    },
+    {
+      "id": "content-object",
+      "canonicalName": "Object",
+      "kind": "authoritative",
+      "owner": "content",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "definition": "Work-content Object under a Subject; distinct from GitObject and physical Resource identity."
+    },
+    {
+      "id": "content-subobject",
+      "canonicalName": "SubObject",
+      "kind": "authoritative",
+      "owner": "content",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "definition": "Work-content subdivision under one Object."
+    },
+    {
+      "id": "content-work",
+      "canonicalName": "Work",
+      "kind": "authoritative",
+      "owner": "content",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "definition": "Defined work under one SubObject, containing Tasks and optionally an explicit planned quantity."
+    },
+    {
+      "id": "content-task",
+      "canonicalName": "Task",
+      "kind": "authoritative",
+      "owner": "content",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "definition": "Leaf work definition under one Work. Content owns identity and plan definition; Execution owns actual execution and prerequisites."
+    },
+    {
+      "id": "content-measure",
+      "canonicalName": "ContentMeasure",
+      "kind": "authoritative",
+      "owner": "content",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "definition": "Immutable plan-local measure identity, subject/method and unit embedded in coherent Content plan revisions."
+    }
+  ],
+  "relationships": [
+    {
+      "id": "wbs-content-expansion",
+      "provider": "content",
+      "consumer": "wbs",
+      "meaning": "Project WBS consumes one immutable Content revision through Content's public expansion reader; Content retains plan and source-mapping authority while WBS creates its own draft and governance history.",
+      "integrationMode": "stable-identity+query",
+      "authority": "content",
+      "consistency": "transaction-recheck+immutable-pin"
+    },
+    {
+      "id": "execution-content-quantity-value",
+      "provider": "content",
+      "consumer": "execution",
+      "meaning": "Execution applies the Content-published exact planned-measure quantity policy while owning actual quantities and internal review.",
+      "integrationMode": "query",
+      "authority": "content",
+      "consistency": "pure-value"
+    },
+    {
+      "id": "contract-content-plan-basis",
+      "provider": "content",
+      "consumer": "contract",
+      "meaning": "Formal commitments pin exact Work/Task plan items and freeze their content/measure basis; later plan edits never rewrite commitments.",
+      "integrationMode": "stable-identity+query",
+      "authority": "content",
+      "consistency": "transaction-recheck+immutable-pin"
+    },
+    {
+      "id": "execution-content-task-basis",
+      "provider": "content",
+      "consumer": "execution",
+      "meaning": "Actual reports pin exact Tasks and validate membership in the committed Work/Task; Task prerequisites belong to Execution.",
+      "integrationMode": "stable-identity+query",
+      "authority": "content",
+      "consistency": "transaction-recheck+immutable-pin"
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "manage-content-plans",
+      "owner": "content",
+      "kind": "leaf",
+      "intent": "Manage Repository work definitions in a strict five-level hierarchy with coherent immutable plan revisions and physical resource pins, including a fixed whole-document expansion of one confirmed ContractDocument revision.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
+      "consumes": [
+        "content-repository-scope",
+        "content-physical-resource-pins",
+        "contract-content-document-expansion"
+      ],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Manage Repository work definitions and one fixed purchase-order-content-v1 expansion of an exact confirmed ContractDocument into a complete immutable Content revision, including source-row coverage and provenance.",
+        "sourcePaths": [
+          "packages/content/src/domain/plan.ts",
+          "packages/content/src/application/use-cases/plans.ts",
+          "packages/content/src/adapters/outbound/persistence/plans.ts",
+          "packages/content/src/domain/plan-reference.ts"
+        ],
+        "publicExports": [
+          "./application/use-cases/plans",
+          "./contracts/output/plans",
+          "./contracts/output/plan-references",
+          "./contracts/output/wbs-expansion",
+          "./composition/bootstrap/plans",
+          "./composition/bootstrap/plan-references",
+          "./composition/bootstrap/wbs-expansion",
+          "./domain/plan-reference"
+        ],
+        "testPaths": [
+          "packages/content/test/plan-domain.test.ts",
+          "packages/content/test/plans.test.ts",
+          "packages/content/test/plans-postgres.test.ts"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/repository-content/route.ts",
+          "apps/web/src/app/api/_composition/content-plans.server.ts",
+          "apps/web/src/app/api/_composition/contract-content-expansion.server.ts"
+        ],
+        "note": "The application host composes Contract's public confirmed-document reader with Content's injected port; Content owns only the deterministic whole-document purchase-order-content-v1 expansion and its immutable plan/provenance. It also provides the public immutable Content expansion reader used by WBS. Source implementation, local verification and production publication are separate evidence."
+      }
+    }
+  ],
+  "locators": []
+}

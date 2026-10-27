@@ -9,7 +9,7 @@
 | Current PostgreSQL structure | [`schemas/`](schemas/) |
 | Private File Bucket desired state | [`config.toml`](config.toml) (`[storage.buckets.repository-files]`) |
 | Schema semantics / DDL vs data transform | [Schema model](../../../docs/reference/data/schema.md) |
-| Persisted relation ownership | [Data topology](../../../architecture/data-topology.json) |
+| Persisted relation ownership | [Data topology](../../../architecture/registry.json#data) |
 | Supabase provider / remote reconciliation | [Supabase platform](../../../docs/reference/platform/supabase.md) |
 | Publication ordering | [Release](../../../docs/reference/operations/release.md) |
 | Backup / restore / recovery | [Recovery](../../../docs/reference/operations/recovery.md) |

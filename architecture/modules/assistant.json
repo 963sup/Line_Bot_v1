@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "@line_bot_v1/assistant",
+  "status": "current",
+  "path": "packages/assistant",
+  "moduleKind": "application-module",
+  "semanticOwner": "assistant",
+  "allowedWorkspaceDependencies": [],
+  "primaryOwnerImplementation": true
+}

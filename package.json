@@ -13,6 +13,7 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "lint": "biome check .",
+    "check:repository": "node scripts/check-repository-contracts.mjs",
     "format": "biome check --write .",
     "schema:check": "turbo run schema:check",
     "provider:supabase": "tsx scripts/providers/supabase.ts",

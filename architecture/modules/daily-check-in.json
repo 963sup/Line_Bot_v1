@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "@line_bot_v1/daily-check-in",
+  "status": "current",
+  "path": "packages/daily-check-in",
+  "moduleKind": "domain-module",
+  "semanticOwner": "daily-check-in",
+  "allowedWorkspaceDependencies": [
+    "@line_bot_v1/account",
+    "@line_bot_v1/asset",
+    "@line_bot_v1/ledger",
+    "@line_bot_v1/platform"
+  ],
+  "primaryOwnerImplementation": true
+}

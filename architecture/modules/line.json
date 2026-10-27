@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "@line_bot_v1/line",
+  "status": "current",
+  "path": "packages/line",
+  "moduleKind": "integration-adapter",
+  "semanticOwner": "line-integration",
+  "allowedWorkspaceDependencies": [],
+  "primaryOwnerImplementation": true
+}

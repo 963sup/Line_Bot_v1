@@ -48,4 +48,4 @@ Organization membership 是參與資格與 member/outside classification，不�
 - OrganizationOwner / membership authority：`docs/owners/organization.md`、`packages/organization`
 - Permission evaluation：`docs/owners/identity-access.md`、`packages/identity-access`
 - Attendance review：`docs/owners/attendance.md`、`packages/attendance`
-- Persisted relation ownership：`architecture/data-topology.json`
+- Persisted relation ownership：`architecture/registry.json#data`

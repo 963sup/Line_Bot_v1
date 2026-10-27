@@ -1,0 +1,263 @@
+{
+  "schemaVersion": 1,
+  "owner": {
+    "id": "enterprise",
+    "kind": "business-owner",
+    "lifecycle": "current",
+    "doc": "docs/owners/enterprise.md"
+  },
+  "boundedContexts": [],
+  "concepts": [
+    {
+      "id": "enterprise",
+      "kind": "authoritative",
+      "owner": "enterprise",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-enterprise-admin.json",
+        "symbol": "Enterprise"
+      }
+    },
+    {
+      "id": "enterprise-invitation",
+      "kind": "authoritative",
+      "owner": "enterprise",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-enterprise-admin.json",
+        "symbol": "EnterpriseMemberInvitation"
+      }
+    },
+    {
+      "id": "enterprise-organization-link",
+      "kind": "authoritative",
+      "owner": "enterprise",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-enterprise-admin.json",
+        "symbol": "Enterprise",
+        "field": "organizations"
+      }
+    },
+    {
+      "id": "enterprise-role-assignment",
+      "kind": "authoritative",
+      "owner": "enterprise",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-users.json",
+        "symbol": "EnterpriseAdministratorEdge",
+        "field": "role"
+      }
+    },
+    {
+      "id": "enterprise-team",
+      "kind": "authoritative",
+      "owner": "enterprise",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-enterprise-admin.json",
+        "symbol": "EnterpriseTeam"
+      }
+    },
+    {
+      "id": "enterprise-team-membership",
+      "kind": "authoritative",
+      "owner": "enterprise",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-users.json",
+        "symbol": "EnterpriseTeamMemberEdge"
+      }
+    },
+    {
+      "id": "enterprise-team-organization-assignment",
+      "kind": "authoritative",
+      "owner": "enterprise",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-enterprise-admin.json",
+        "symbol": "EnterpriseTeam",
+        "field": "assignedOrganizations"
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "id": "enterprise-organization-membership-source",
+      "provider": "enterprise",
+      "consumer": "organization",
+      "meaning": "Active Enterprise Team membership and Team-to-Organization assignment provide a membership source consumed by Organization without transferring Enterprise source authority.",
+      "integrationMode": "projection",
+      "authority": "enterprise",
+      "consistency": "atomic-where-required"
+    },
+    {
+      "id": "enterprise-identity-access-owner-facts",
+      "provider": "enterprise",
+      "consumer": "identity-access",
+      "meaning": "IdentityAccess consumes current Enterprise-owned EnterpriseOwner relationship facts and qualification when evaluating scoped authorization; it does not own or mutate the role lifecycle.",
+      "integrationMode": "query",
+      "authority": "enterprise",
+      "consistency": "current-state"
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "manage-enterprise-governance",
+      "owner": "enterprise",
+      "kind": "leaf",
+      "intent": "Manage Enterprise governance scope without treating Enterprise slug as Repository owner login.",
+      "preserves": ["K1", "K2", "K3", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "consumes": [
+        "account-enterprise-identity",
+        "account-enterprise-root-provisioning",
+        "identity-access-enterprise-authorization",
+        "namespace-enterprise-naming",
+        "organization-enterprise-qualification"
+      ],
+      "implementation": {
+        "status": "implemented",
+        "scope": "current Enterprise governance application surface",
+        "sourcePaths": [
+          "packages/enterprise/src/application/enterprise-governance.ts",
+          "packages/enterprise/src/application/commands/enterprise-governance.ts",
+          "packages/enterprise/src/contracts/input/enterprise-governance.ts",
+          "packages/enterprise/src/application/use-cases/enterprise-owner.ts",
+          "packages/enterprise/src/contracts/output/enterprise-owner.ts",
+          "packages/enterprise/src/adapters/outbound/persistence/enterprise-owner.ts",
+          "packages/enterprise/src/application/use-cases/enterprise-affiliation.ts",
+          "packages/enterprise/src/contracts/output/enterprise-affiliation.ts",
+          "packages/enterprise/src/adapters/outbound/persistence/enterprise-affiliation.ts",
+          "packages/enterprise/src/application/use-cases/enterprise-identity.ts",
+          "packages/enterprise/src/contracts/output/enterprise-identity.ts",
+          "packages/enterprise/src/adapters/outbound/persistence/enterprise-identity.ts",
+          "packages/enterprise/src/application/use-cases/enterprise-organization.ts",
+          "packages/enterprise/src/contracts/output/enterprise-organization.ts",
+          "packages/enterprise/src/adapters/outbound/persistence/enterprise-organization.ts",
+          "packages/enterprise/src/adapters/outbound/persistence/enterprise-governance-transaction.ts",
+          "packages/enterprise/src/domain.ts",
+          "packages/enterprise/src/contracts/enterprise-governance.ts"
+        ],
+        "publicExports": [
+          "./application/enterprise-governance",
+          "./contracts/input/enterprise-governance",
+          "./contracts/enterprise-governance",
+          "./domain"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/(mobile)/(tabs)/enterprises/page.tsx",
+          "apps/web/src/app/(mobile)/(tabs)/enterprises/[slug]/page.tsx"
+        ],
+        "testPaths": [
+          "packages/enterprise/test/enterprise-organization-foundation.test.ts",
+          "packages/enterprise/test/enterprise-owner.test.ts",
+          "packages/enterprise/test/enterprise-organization-relation.test.ts"
+        ],
+        "note": "Enterprise source/export evidence exists; slug locator stability is distinct from authorization."
+      }
+    },
+    {
+      "id": "manage-enterprise-teams",
+      "owner": "enterprise",
+      "kind": "leaf",
+      "intent": "Manage Enterprise-owned teams, memberships, and Organization assignments.",
+      "preserves": ["K1", "K2", "K3", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "consumes": [
+        "account-enterprise-identity",
+        "identity-access-enterprise-authorization",
+        "namespace-enterprise-naming",
+        "organization-enterprise-membership-coordination",
+        "organization-enterprise-qualification"
+      ],
+      "implementation": {
+        "status": "implemented",
+        "scope": "current Enterprise Team domain and governance surface",
+        "sourcePaths": [
+          "packages/enterprise/src/application/enterprise-governance.ts",
+          "packages/enterprise/src/application/use-cases/enterprise-team.ts",
+          "packages/enterprise/src/application/commands/enterprise-governance.ts",
+          "packages/enterprise/src/contracts/output/enterprise-team.ts",
+          "packages/enterprise/src/adapters/outbound/persistence/enterprise-team.ts",
+          "packages/enterprise/src/composition/bootstrap/enterprise-governance.ts",
+          "packages/enterprise/src/domain.ts"
+        ],
+        "publicExports": ["./application/enterprise-governance", "./domain"],
+        "entrypoints": [
+          "apps/web/src/app/(mobile)/(tabs)/enterprises/[slug]/teams/[teamSlug]/page.tsx"
+        ],
+        "testPaths": [
+          "packages/enterprise/test/enterprise-organization-foundation.test.ts",
+          "packages/enterprise/test/enterprise-team-governance.test.ts",
+          "packages/enterprise/test/enterprise-team-membership.test.ts",
+          "packages/enterprise/test/enterprise-postgres-execute-characterization.test.ts"
+        ],
+        "note": "Enterprise Team is current domain behavior; route locator does not grant access by itself."
+      }
+    }
+  ],
+  "locators": [
+    {
+      "id": "enterprise-slug",
+      "concept": "enterprise",
+      "status": "active",
+      "fields": ["slug"],
+      "scope": "enterprise-slug-namespace",
+      "scopeAuthority": "namespace",
+      "routeFiles": ["apps/web/src/app/(mobile)/(tabs)/enterprises/[slug]/page.tsx"],
+      "note": "Enterprise slug is independent from shared User/Organization login and Repository owner login.",
+      "fpt": {
+        "file": "schema-enterprise-admin.json",
+        "symbol": "Enterprise",
+        "field": "slug"
+      }
+    },
+    {
+      "id": "enterprise-team-slug",
+      "concept": "enterprise-team",
+      "status": "active",
+      "fields": ["enterpriseSlug", "teamSlug"],
+      "scope": "enterprise-scoped-team-slug",
+      "scopeAuthority": "namespace",
+      "routeFiles": [
+        "apps/web/src/app/(mobile)/(tabs)/enterprises/[slug]/teams/[teamSlug]/page.tsx"
+      ],
+      "note": "Enterprise Team slug is scoped to Enterprise and is independent from Organization Team slug.",
+      "fpt": {
+        "file": "schema-enterprise-admin.json",
+        "symbol": "EnterpriseTeam",
+        "field": "slug"
+      }
+    }
+  ]
+}

@@ -1,5 +1,8 @@
 # File
 
-Protected original File versions. File's workflow is **Upload → immutable source revision → authorized source read**. Intelligence may use that exact source to create an explicit ProcessingRun; File neither selects processors nor persists processing results. No automatic downstream business import occurs.
-
-See the [owner contract](../../docs/owners/file.md), [local constraints](AGENTS.md), [generated semantics](SEMANTICS.md) and [authenticated CLI](../../scripts/README.md).
+- [Manifest、公開 exports 與 scripts](./package.json)
+- [Source](./src/)
+- [Tests](./test/)
+- [基本術語](./SEMANTICS.md)
+- [修改約束](./AGENTS.md)
+- [Owner 入口](../../docs/owners/file.md)

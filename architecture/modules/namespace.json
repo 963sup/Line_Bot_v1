@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "@line_bot_v1/namespace",
+  "status": "current",
+  "path": "packages/namespace",
+  "moduleKind": "domain-module",
+  "semanticOwner": "namespace",
+  "allowedWorkspaceDependencies": ["@line_bot_v1/platform"],
+  "primaryOwnerImplementation": true,
+  "implementationNote": "Namespace owns typed global and scoped business-name binding, occupancy, alias, release and structured path contracts; resource Owners retain lifecycle and authorization."
+}

@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "owner": {
+    "id": "migration",
+    "kind": "business-owner",
+    "lifecycle": "selected-target"
+  },
+  "boundedContexts": [],
+  "concepts": [],
+  "relationships": [],
+  "capabilities": [],
+  "locators": []
+}

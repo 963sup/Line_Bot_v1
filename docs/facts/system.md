@@ -14,4 +14,4 @@ External capability
 
 UI、provider proof、cache、projection、telemetry 都不能取代 business authority。
 
-Current owner / capability / locator / lifecycle 不在本文件列舉；查 `architecture/semantic-model.json`。不可從 module存在推定 capability已啟用。
+Current owner / capability / locator / lifecycle 不在本文件列舉；查 `architecture/registry.json#domain`。不可從 module存在推定 capability已啟用。

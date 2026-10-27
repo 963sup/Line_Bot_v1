@@ -24,6 +24,6 @@ stable ID / primitive fact
 → ACL / translation（上游模型會污染 local language）
 ```
 
-Cycle出現時先找錯誤 owner/dependency，不新增 `common`/facade藏 cycle。Machine allowlist：`architecture/implementation-topology.json`。
+Cycle出現時先找錯誤 owner/dependency，不新增 `common`/facade藏 cycle。Machine allowlist：`architecture/registry.json#modules`。
 
 `.dependency-cruiser.mjs` 與 Biome 以 dependency graph／AST 檢查內外層方向、Domain 的 Node／外部套件 import，以及 Domain 的直接 environment 存取。這些靜態檢查不取代業務 invariant、授權與 runtime 測試。

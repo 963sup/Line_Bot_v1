@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "@line_bot_v1/migration",
+  "status": "target",
+  "path": "packages/migration",
+  "moduleKind": "domain-module",
+  "semanticOwner": "migration",
+  "fptFiles": ["schema-migrations.json"],
+  "fptRoots": [
+    {
+      "file": "schema-migrations.json",
+      "symbol": "Migration"
+    },
+    {
+      "file": "schema-migrations.json",
+      "symbol": "MigrationSource"
+    },
+    {
+      "file": "schema-migrations.json",
+      "symbol": "OrganizationMigration"
+    },
+    {
+      "file": "schema-migrations.json",
+      "symbol": "RepositoryMigration"
+    }
+  ],
+  "dependsOn": ["@line_bot_v1/account", "@line_bot_v1/organization", "@line_bot_v1/repository"],
+  "primaryOwnerImplementation": true,
+  "implementationNote": "Selected FPT target boundary only; current runtime/data ownership remains unchanged until an explicit promotion change."
+}

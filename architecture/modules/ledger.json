@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "@line_bot_v1/ledger",
+  "status": "current",
+  "path": "packages/ledger",
+  "moduleKind": "domain-module",
+  "semanticOwner": "ledger",
+  "allowedWorkspaceDependencies": [
+    "@line_bot_v1/account",
+    "@line_bot_v1/asset",
+    "@line_bot_v1/platform"
+  ],
+  "primaryOwnerImplementation": true
+}

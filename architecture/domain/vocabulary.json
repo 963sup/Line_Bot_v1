@@ -1,0 +1,747 @@
+{
+  "schemaVersion": 1,
+  "version": 2,
+  "role": "product-domain-overlay",
+  "system": {
+    "id": "line_bot_v1",
+    "domain": "enterprise-workforce-operations-management",
+    "objective": "Minimize understanding, decision, change, verification, coordination, and drift-recovery cost while preserving correctness, security, authorization, data integrity, business invariants, consistency, recoverability, and traceability.",
+    "changeFlow": "architecture/fpt/*.json -> product overlay -> implementation topology -> source/schema -> runtime evidence"
+  },
+  "sources": {
+    "implementationTopology": "architecture/registry.json#modules",
+    "businessOwnerDocs": "docs/owners/",
+    "runtimeBehavior": "source-code-and-tests",
+    "persistenceCurrentState": "packages/integration-supabase/src/schemas/",
+    "historicalChange": "docs/change/",
+    "dataTopology": "architecture/registry.json#data",
+    "githubFptDomainTruth": "architecture/fpt/*.json",
+    "githubFptProvenance": "architecture/fpt-source.json"
+  },
+  "subdomains": [
+    {
+      "id": "collaboration",
+      "classification": "core",
+      "owners": [
+        "repository",
+        "issue",
+        "discussion",
+        "project",
+        "wbs",
+        "wiki",
+        "actions",
+        "resources",
+        "contract",
+        "execution",
+        "content"
+      ],
+      "rationale": "Repository work definitions and plan revisions, physical shared resources, formal contract commitments and actual Task execution have distinct authority, lifecycle and immutable evidence. Project WBS remains Project-scoped.",
+      "sources": [
+        "docs/reference/architecture/strategic-design.md",
+        "docs/owners/repository.md",
+        "docs/owners/issue.md",
+        "docs/owners/discussion.md",
+        "docs/owners/project.md",
+        "docs/owners/contract.md",
+        "docs/owners/execution.md",
+        "docs/owners/content.md"
+      ]
+    },
+    {
+      "id": "organization-governance",
+      "classification": "supporting",
+      "owners": ["enterprise", "organization", "team"],
+      "rationale": "企業、組織與團隊的治理及參與資格支援協作；直接沿用 GitHub 模型，不因共同上層 scope 合併 owner。",
+      "sources": [
+        "docs/reference/architecture/strategic-design.md",
+        "docs/owners/enterprise.md",
+        "docs/owners/organization.md",
+        "docs/owners/team.md"
+      ]
+    },
+    {
+      "id": "participation-incentives",
+      "classification": "supporting",
+      "owners": ["daily-check-in", "asset", "wallet", "ledger"],
+      "rationale": "簽到與獎勵支援協作參與；獎勵政策、資產定義、持有量與不可變價值紀錄保留既有責任與一致性邊界，不再宣稱獎勵是核心競爭定位。",
+      "sources": [
+        "docs/reference/architecture/strategic-design.md",
+        "docs/owners/daily-check-in.md",
+        "docs/owners/asset.md",
+        "docs/owners/wallet.md",
+        "docs/owners/ledger.md"
+      ]
+    },
+    {
+      "id": "workforce-operations",
+      "classification": "supporting",
+      "owners": ["workforce", "attendance", "payroll", "expense"],
+      "rationale": "出勤、人力與支出資料支援企業協作營運；分類不啟用尚未實作的排班、薪資、審批或付款能力。",
+      "sources": [
+        "docs/reference/architecture/strategic-design.md",
+        "docs/owners/workforce.md",
+        "docs/owners/attendance.md",
+        "docs/owners/payroll.md",
+        "docs/owners/expense.md"
+      ]
+    },
+    {
+      "id": "partner-network",
+      "classification": "supporting",
+      "owners": ["partner-directory"],
+      "rationale": "合作夥伴名錄與推薦流程支援企業協作，不取得 Team participation 或 Repository access authority。",
+      "sources": ["docs/reference/architecture/strategic-design.md", "docs/owners/partners.md"]
+    },
+    {
+      "id": "identity-and-access",
+      "classification": "generic",
+      "owners": ["account", "namespace", "numbering", "identity-access"],
+      "rationale": "主體身分、名稱解析、範圍序列與存取控制是普遍存在的業務能力，採成熟模型而非作為產品差異化；分類不合併 User lifecycle、qualification、resource lifecycle、membership 與 permission。",
+      "sources": [
+        "docs/reference/architecture/strategic-design.md",
+        "docs/owners/account.md",
+        "docs/owners/namespace.md",
+        "docs/owners/numbering.md",
+        "docs/owners/identity-access.md"
+      ]
+    },
+    {
+      "id": "notification-and-audit",
+      "classification": "generic",
+      "owners": ["notifications", "audit"],
+      "rationale": "通知、投遞與治理證據查閱是共通業務需求；來源事實與授權仍由原 owner 決定，不因通用分類轉移資料 authority。",
+      "sources": [
+        "docs/reference/architecture/strategic-design.md",
+        "docs/owners/notifications.md",
+        "docs/owners/audit.md"
+      ]
+    },
+    {
+      "id": "file-management",
+      "classification": "supporting",
+      "owners": ["file"],
+      "rationale": "Upload/List and authorized immutable source reads are supporting capabilities. Intelligence processing never follows Upload automatically and does not import itself.",
+      "sources": ["docs/owners/file.md"]
+    }
+  ],
+  "invariants": [
+    {
+      "id": "K1",
+      "scope": "system",
+      "statement": "Each durable business fact has exactly one authoritative owner; cache/projection loss cannot change correctness.",
+      "severity": "error",
+      "enforcement": ["semantic-policy", "source-code", "schema", "tests"],
+      "tags": ["ownership", "data-authority"]
+    },
+    {
+      "id": "K2",
+      "scope": "system",
+      "statement": "Identity proof is not business authorization; protected transitions re-evaluate actor, scope, and owning policy.",
+      "severity": "error",
+      "enforcement": ["application", "authorization-tests", "schema-policy"],
+      "tags": ["security", "authorization", "trust"]
+    },
+    {
+      "id": "K3",
+      "scope": "system",
+      "statement": "Mutable conditional state does not silently use last-write-wins; replay-sensitive effects use stable request identity.",
+      "severity": "error",
+      "enforcement": ["application", "database", "tests"],
+      "tags": ["concurrency", "replay"]
+    },
+    {
+      "id": "K4",
+      "scope": "system",
+      "statement": "Effects that jointly maintain an invariant commit atomically or use durable idempotent recovery.",
+      "severity": "error",
+      "enforcement": ["transaction", "outbox-or-recovery", "tests"],
+      "tags": ["transaction", "recovery"]
+    },
+    {
+      "id": "K5",
+      "scope": "system",
+      "statement": "Each responsibility has one owner and consumers use explicit public contracts with directional dependencies.",
+      "severity": "error",
+      "enforcement": ["semantic-policy", "manifest", "package-exports", "architecture-check"],
+      "tags": ["architecture", "dependency", "contract"]
+    },
+    {
+      "id": "K6",
+      "scope": "system",
+      "statement": "Static, test, build, schema, deployment, API, and device evidence only prove their actual scopes.",
+      "severity": "error",
+      "enforcement": ["validation-pipeline", "acceptance-evidence"],
+      "tags": ["evidence", "validation"]
+    },
+    {
+      "id": "SA1",
+      "scope": "semantic-architecture",
+      "statement": "Bounded Context, Module Boundary, Data Boundary, Consistency Boundary, Trust Boundary, and Runtime Boundary are distinct dimensions.",
+      "severity": "error",
+      "enforcement": ["semantic-policy", "manifest"],
+      "tags": ["architecture", "boundary"]
+    },
+    {
+      "id": "SA2",
+      "scope": "semantic-architecture",
+      "statement": "Vendored GitHub FPT JSON is canonical local domain truth for GitHub GraphQL semantics; the product overlay may add Line_Bot_v1 ownership, invariants, lifecycle, capability, persistence, and implementation mappings but must not redefine FPT semantics.",
+      "severity": "error",
+      "enforcement": ["semantic-policy", "fpt-domain-truth"],
+      "tags": ["fpt", "domain-truth", "authority"]
+    },
+    {
+      "id": "SA3",
+      "scope": "semantic-architecture",
+      "statement": "Derived projections and references cannot become writable authoritative truth.",
+      "severity": "error",
+      "enforcement": ["semantic-policy"],
+      "tags": ["projection", "authority"]
+    },
+    {
+      "id": "SA4",
+      "scope": "semantic-architecture",
+      "statement": "Selected-target semantics cannot be reported as current runtime capability solely because they exist in the semantic model.",
+      "severity": "error",
+      "enforcement": ["semantic-policy", "governance"],
+      "tags": ["lifecycle", "evidence"]
+    },
+    {
+      "id": "SA5",
+      "scope": "semantic-architecture",
+      "statement": "Runtime, provider, deployment, device, and human observations are evidence only; they may produce a revision proposal but never auto-modify canonical semantic authority.",
+      "severity": "error",
+      "enforcement": ["semantic-policy", "runtime-feedback"]
+    },
+    {
+      "id": "SA6",
+      "scope": "semantic-architecture",
+      "statement": "Every persisted app_private relation has exactly one relation-level data authority; relation ownership must agree with semantic concept ownership, and every concept that requires relation persistence must resolve to at least one authoritative relation.",
+      "severity": "error",
+      "enforcement": ["data-topology", "architecture-check"],
+      "tags": ["data", "ownership", "boundary"]
+    },
+    {
+      "id": "CONTRACT1",
+      "scope": "contract",
+      "statement": "Commitments bind exact Content Work/Task plan items and frozen agreed quantities. Draft edits and ADMIN activation/closure preserve current qualification, permission-before-replay, expected-version concurrency and atomic revisions/receipts.",
+      "severity": "error",
+      "enforcement": ["semantic-policy", "source-code", "schema", "tests"],
+      "tags": ["ownership", "authorization", "immutable-history", "transaction", "replay"]
+    },
+    {
+      "id": "EXECUTION1",
+      "scope": "execution",
+      "statement": "New actual reports bind an exact Content Task under a currently ACTIVE Contract Work/Task line, observed Task prerequisite version and optional qualified physical Resource pins. Review preserves immutable original facts. Current authority precedes replay; writes and receipts are atomic. Quantities do not imply Task completion, payment or legal acceptance.",
+      "severity": "error",
+      "enforcement": ["semantic-policy", "source-code", "schema", "tests"],
+      "tags": ["ownership", "authorization", "immutable-history", "transaction", "replay"]
+    },
+    {
+      "id": "CONTRACT2",
+      "scope": "contract",
+      "statement": "ContractDocument revisions retain the complete target-owned structured candidate and an exact transaction-qualified File source. Current authorization precedes replay; expected version, aggregate head, immutable revision and command receipt commit atomically. Only an explicit Contract confirmation may confirm a candidate, and an acknowledged financial discrepancy is retained rather than silently normalized.",
+      "severity": "error",
+      "enforcement": ["semantic-policy", "source-code", "schema", "tests"],
+      "tags": [
+        "ownership",
+        "authorization",
+        "source-qualification",
+        "immutable-history",
+        "transaction",
+        "replay"
+      ]
+    },
+    {
+      "id": "FILE1",
+      "scope": "file",
+      "statement": "Original file bytes reside in immutable private Storage objects keyed by exact Repository/File/Revision; an object never becomes a visible FileRevision before verified upload and transactional Finalize. Current Repository authorization precedes access/replay, and storage paths/keys do not grant access. Uncertain external outcome is resolved by explicit readback, never blind overwrite.",
+      "severity": "error",
+      "enforcement": ["source-code", "schema", "tests"],
+      "tags": ["file", "privacy", "immutable-evidence"]
+    },
+    {
+      "id": "FILE2",
+      "scope": "file",
+      "statement": "File only owns original bytes and immutable file revisions. File does not invoke processors, persist processing runs/results, or own processing history.",
+      "severity": "error",
+      "enforcement": ["source-code", "schema", "tests"],
+      "tags": ["file", "processing", "user-intent", "recovery", "trust"]
+    },
+    {
+      "id": "INTELLIGENCE1",
+      "scope": "intelligence",
+      "statement": "Intelligence owns authorized processing lifecycle, provider protocol, immutable run revisions, saved extraction evidence and processing receipts. It reads exact File sources only through File's public reader; extracted data remains untrusted, and target business facts remain owned by their target contracts.",
+      "severity": "error",
+      "enforcement": ["semantic-policy", "source-code", "tests"],
+      "tags": ["intelligence", "trust", "ownership", "provider-boundary"]
+    },
+    {
+      "id": "INTELLIGENCE2",
+      "scope": "intelligence",
+      "statement": "Before provider execution, Intelligence durably records one source-qualified target-intent attempt. Only a fresh STARTED attempt may call the provider; duplicate or UNKNOWN attempts never trigger a second provider call. Target receipt readback may complete the attempt, and the attempt never stores extracted candidate or assumes Contract confirmation.",
+      "severity": "error",
+      "enforcement": ["semantic-policy", "source-code", "schema", "tests"],
+      "tags": ["intelligence", "provider-attempt", "recovery", "replay", "trust"]
+    }
+  ],
+  "truthRegistry": [
+    {
+      "id": "business-definition",
+      "authority": "architecture/registry.json#domain",
+      "scope": "Line_Bot_v1 product extensions, semantic owners, invariants, relationships and implementation expectations not defined by GitHub FPT"
+    },
+    {
+      "id": "owner-local-business-rules",
+      "authority": "docs/owners/* + source + tests",
+      "scope": "owner-local current semantics"
+    },
+    {
+      "id": "github-fpt-domain-truth",
+      "authority": "architecture/fpt/*.json",
+      "scope": "canonical GitHub GraphQL domain semantics vendored exactly from pinned github/docs FPT JSON"
+    },
+    {
+      "id": "module-topology",
+      "authority": "architecture/registry.json#modules",
+      "scope": "workspace paths and allowed workspace dependencies"
+    },
+    {
+      "id": "public-contract",
+      "authority": "package.json#exports",
+      "scope": "cross-module source contract"
+    },
+    {
+      "id": "runtime-behavior",
+      "authority": "source-code + tests",
+      "scope": "implemented behavior"
+    },
+    {
+      "id": "persistence-current-state",
+      "authority": "packages/integration-supabase/src/schemas/",
+      "scope": "database current structure"
+    },
+    {
+      "id": "repository-command-surface",
+      "authority": "package.json#scripts",
+      "scope": "canonical repository commands"
+    },
+    {
+      "id": "historical-change",
+      "authority": "docs/change/",
+      "scope": "proposal/migration/history/acceptance evidence"
+    },
+    {
+      "id": "external-current-state",
+      "authority": "provider/API/device readback",
+      "scope": "dated remote/runtime truth"
+    },
+    {
+      "id": "data-topology",
+      "authority": "architecture/registry.json#data",
+      "scope": "schema surface ownership, role and cross-owner participation"
+    }
+  ],
+  "policies": [
+    {
+      "id": "SEM-001",
+      "kind": "single-concept-owner",
+      "severity": "error",
+      "rationale": "Authoritative business truth needs one decision owner.",
+      "remediation": "Choose one semantic owner; make other representations references, snapshots or projections."
+    },
+    {
+      "id": "SEM-002",
+      "kind": "relationship-endpoints-exist",
+      "severity": "error",
+      "rationale": "Cross-owner contracts cannot target invented responsibilities.",
+      "remediation": "Declare the real owner or remove the relationship."
+    },
+    {
+      "id": "SEM-003",
+      "kind": "fpt-reference-must-resolve",
+      "severity": "error",
+      "rationale": "GitHub-derived semantics are read directly from the canonical vendored FPT JSON; local overlay references identify the exact upstream symbol or field without duplicating category or adoption metadata.",
+      "remediation": "Reference only the exact FPT file, symbol and optional field; remove local category/adoption summaries or unsupported GitHub-semantic claims."
+    },
+    {
+      "id": "SEM-004",
+      "kind": "derived-concept-cannot-be-authoritative",
+      "severity": "error",
+      "rationale": "Derived state is rebuildable and cannot replace its source authority.",
+      "remediation": "Point the projection to authoritative sources and keep writes with the source owner."
+    },
+    {
+      "id": "SEM-005",
+      "kind": "implementation-mapping-must-resolve",
+      "severity": "error",
+      "rationale": "Semantic responsibility must map explicitly to implementation when implementation exists.",
+      "remediation": "Fix the mapping or explicitly keep the owner data-only/target-only."
+    },
+    {
+      "id": "SEM-006",
+      "kind": "module-owner-must-resolve",
+      "severity": "error",
+      "rationale": "A module cannot exist without a semantic responsibility owner.",
+      "remediation": "Assign the real semantic owner or remove the module."
+    },
+    {
+      "id": "SEM-007",
+      "kind": "selected-target-module-not-required",
+      "severity": "error",
+      "rationale": "Target semantics must not imply runtime implementation.",
+      "remediation": "Keep target-only owners unmapped until an implementation boundary actually exists."
+    },
+    {
+      "id": "SEM-008",
+      "kind": "workspace-dependency-must-resolve",
+      "severity": "error",
+      "rationale": "Declared dependencies must be directional and point to real public modules.",
+      "remediation": "Fix or remove the stale dependency."
+    },
+    {
+      "id": "SEM-009",
+      "kind": "consumer-contract",
+      "severity": "error",
+      "rationale": "Cross-owner module dependencies and business effects require an explicit relationship contract; implementation dependency alone is not semantic authority.",
+      "remediation": "Declare the real provider/consumer relationship or remove the stale cross-owner dependency; do not add a dependency merely to satisfy a stale semantic edge."
+    },
+    {
+      "id": "SEM-010",
+      "kind": "evidence-scope-integrity",
+      "severity": "error",
+      "rationale": "Validation evidence cannot prove a stronger scope than it executed.",
+      "remediation": "Use the validation profile whose evidence class matches the claim."
+    },
+    {
+      "id": "SEM-011",
+      "kind": "runtime-feedback-derived-proposal",
+      "severity": "error",
+      "rationale": "Observed reality is evidence and must not silently rewrite design authority.",
+      "remediation": "Produce a derived revision proposal, review the affected owner and evidence, then change canonical semantics explicitly if justified."
+    },
+    {
+      "id": "SEM-012",
+      "kind": "data-topology-integrity",
+      "severity": "error",
+      "rationale": "Persistence authority belongs to database objects/relationships, not schema filenames; file grouping must never hide mixed semantic ownership.",
+      "remediation": "Assign every persisted relation exactly one semantic owner, group only same-owner authoritative relations in object-shaped schema files, and keep cross-owner projections/enforcement/coordinators non-authoritative."
+    }
+  ],
+  "language": {
+    "canonicalNamePolicy": "One business concept has one canonical name inside its semantic boundary.",
+    "ambiguityPolicy": "The same display name may exist in different semantic boundaries only when the concept ids and owners remain explicit.",
+    "aliasPolicy": "Aliases are lookup metadata only; aliases never create a second concept or owner.",
+    "globalVocabularyProjection": "Derived from concepts; human glossaries are projections or owner-local detail."
+  },
+  "conceptTypes": [
+    {
+      "id": "authoritative",
+      "authorityMode": "authoritative",
+      "meaning": "Owner-controlled business truth."
+    },
+    {
+      "id": "reference",
+      "authorityMode": "reference-only",
+      "meaning": "Pointer to truth owned elsewhere; cannot rewrite provider truth."
+    },
+    {
+      "id": "historical-evidence",
+      "authorityMode": "reference-only",
+      "meaning": "Retained legacy evidence that may be read under current authorization but is not writable or current business authority."
+    },
+    {
+      "id": "derived-projection",
+      "authorityMode": "derived",
+      "meaning": "Rebuildable view derived from authoritative sources."
+    },
+    {
+      "id": "policy-decision",
+      "authorityMode": "policy-decision",
+      "meaning": "Decision produced by the explicit policy owner."
+    },
+    {
+      "id": "external-proof",
+      "authorityMode": "external-evidence-only",
+      "meaning": "Verified external evidence that never implies business authorization."
+    }
+  ],
+  "boundaryTypes": [
+    {
+      "id": "semantic",
+      "meaning": "Where a domain model and Ubiquitous Language are coherent.",
+      "source": "boundedContexts"
+    },
+    {
+      "id": "module",
+      "meaning": "Source-code responsibility and public surface.",
+      "source": "architecture/registry.json#modules"
+    },
+    {
+      "id": "data",
+      "meaning": "Persisted facts, access and isolation ownership.",
+      "source": "architecture/registry.json#data + packages/integration-supabase/src/schemas"
+    },
+    {
+      "id": "consistency",
+      "meaning": "Facts and invariants that must be kept mutually valid.",
+      "source": "invariants + capabilities"
+    },
+    {
+      "id": "transaction",
+      "meaning": "Effects that must commit atomically or use durable recovery.",
+      "source": "relationships.consistency + invariants"
+    },
+    {
+      "id": "trust",
+      "meaning": "Where untrusted/external input becomes verified evidence.",
+      "source": "external-proof concepts + integration relationships"
+    },
+    {
+      "id": "runtime",
+      "meaning": "Execution environment that owns lifecycle.",
+      "source": "architecture/registry.json#modules"
+    }
+  ],
+  "integrationModes": [
+    {
+      "id": "stable-identity",
+      "authorityTransfer": false
+    },
+    {
+      "id": "query",
+      "authorityTransfer": false
+    },
+    {
+      "id": "command",
+      "authorityTransfer": false
+    },
+    {
+      "id": "event",
+      "authorityTransfer": false
+    },
+    {
+      "id": "projection",
+      "authorityTransfer": false
+    },
+    {
+      "id": "snapshot",
+      "authorityTransfer": false
+    },
+    {
+      "id": "reference",
+      "authorityTransfer": false
+    },
+    {
+      "id": "external-proof",
+      "authorityTransfer": false
+    },
+    {
+      "id": "stable-identity+query",
+      "authorityTransfer": false
+    }
+  ],
+  "contractModel": {
+    "authority": "relationships",
+    "requiredRelationshipFields": [
+      "id",
+      "provider",
+      "consumer",
+      "meaning",
+      "integrationMode",
+      "authority",
+      "consistency"
+    ],
+    "rule": "A cross-owner dependency exists only through an explicit provider-to-consumer public capability relationship. A source fact or decision may flow in the opposite direction under a separate relationship without transferring authority. Implemented leaf capability consumes entries reference relationship IDs and never redefine those contracts."
+  },
+  "evidenceModel": {
+    "scopeRule": "Evidence proves only the scope actually exercised; stronger claims require stronger evidence.",
+    "classes": [
+      {
+        "id": "static",
+        "meaning": "Static source/configuration analysis."
+      },
+      {
+        "id": "type",
+        "meaning": "Type-system verification."
+      },
+      {
+        "id": "unit-test",
+        "meaning": "Isolated behavior verification."
+      },
+      {
+        "id": "integration-test",
+        "meaning": "Cross-component behavior verification."
+      },
+      {
+        "id": "architecture",
+        "meaning": "Architecture/model invariant verification."
+      },
+      {
+        "id": "database",
+        "meaning": "Database/schema/constraint verification."
+      },
+      {
+        "id": "security",
+        "meaning": "Authorization, isolation and trust-boundary verification."
+      },
+      {
+        "id": "build",
+        "meaning": "Artifact build verification."
+      },
+      {
+        "id": "deployment",
+        "meaning": "Deployment state verification."
+      },
+      {
+        "id": "provider-readback",
+        "meaning": "External provider current-state readback."
+      },
+      {
+        "id": "runtime",
+        "meaning": "Observed runtime behavior."
+      },
+      {
+        "id": "device",
+        "meaning": "Real device/WebView behavior."
+      },
+      {
+        "id": "human-acceptance",
+        "meaning": "Explicit human acceptance evidence."
+      }
+    ],
+    "validationProfiles": [
+      {
+        "id": "semantic-architecture",
+        "evidenceClass": "architecture",
+        "proves": ["semantic ownership, type, contract and mapping consistency"],
+        "doesNotProve": ["runtime behavior", "deployment", "device behavior"],
+        "command": "pnpm exec biome check architecture"
+      },
+      {
+        "id": "architecture",
+        "evidenceClass": "architecture",
+        "proves": ["semantic + implementation topology and dependency invariants"],
+        "doesNotProve": ["deployment", "provider current state"],
+        "command": "pnpm exec dependency-cruiser --config .dependency-cruiser.mjs ."
+      },
+      {
+        "id": "architecture-tests",
+        "evidenceClass": "integration-test",
+        "proves": ["legal, violating and repaired architecture cases"],
+        "doesNotProve": ["production behavior"],
+        "command": "pnpm lint"
+      },
+      {
+        "id": "docs",
+        "evidenceClass": "static",
+        "proves": ["documentation structure and local-link integrity"],
+        "doesNotProve": ["business behavior"],
+        "command": "pnpm lint"
+      },
+      {
+        "id": "schema",
+        "evidenceClass": "database",
+        "proves": [
+          "declarative database contract and security constraints exercised by schema tests"
+        ],
+        "doesNotProve": ["remote database equality"],
+        "command": "pnpm schema:check"
+      },
+      {
+        "id": "typecheck",
+        "evidenceClass": "type",
+        "proves": ["TypeScript type correctness"],
+        "doesNotProve": ["tests", "build", "deployment"],
+        "command": "pnpm typecheck"
+      },
+      {
+        "id": "tests",
+        "evidenceClass": "integration-test",
+        "proves": ["repository test behavior in executed scope"],
+        "doesNotProve": ["deployment", "device behavior"],
+        "command": "pnpm test"
+      },
+      {
+        "id": "build",
+        "evidenceClass": "build",
+        "proves": ["repository build succeeds"],
+        "doesNotProve": ["deployment", "runtime correctness"],
+        "command": "pnpm build"
+      },
+      {
+        "id": "fast-repository",
+        "evidenceClass": "static",
+        "proves": ["affected fast repository validation selected by canonical planner"],
+        "doesNotProve": ["full merge validation", "deployment"],
+        "command": "pnpm lint"
+      },
+      {
+        "id": "full-repository",
+        "evidenceClass": "integration-test",
+        "proves": ["full repository validation pipeline"],
+        "doesNotProve": ["deployment", "provider readback", "device verification"],
+        "command": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"
+      }
+    ],
+    "feedback": {
+      "observationsEmbeddedInSemanticModel": false,
+      "observationAuthority": "external-current-state",
+      "channels": [
+        {
+          "id": "deployment",
+          "evidenceClass": "deployment",
+          "mayRevise": ["implementation mapping", "runtime assumptions"]
+        },
+        {
+          "id": "provider-readback",
+          "evidenceClass": "provider-readback",
+          "mayRevise": ["external integration assumptions", "drift status"]
+        },
+        {
+          "id": "runtime",
+          "evidenceClass": "runtime",
+          "mayRevise": ["capability assumptions", "failure semantics", "quality attributes"]
+        },
+        {
+          "id": "device",
+          "evidenceClass": "device",
+          "mayRevise": ["browser/WebView assumptions"]
+        },
+        {
+          "id": "human-acceptance",
+          "evidenceClass": "human-acceptance",
+          "mayRevise": ["business semantics", "acceptance criteria"]
+        }
+      ],
+      "bundleVersion": 1,
+      "claimSubject": "capability",
+      "statuses": ["pass", "fail", "unknown"],
+      "comparisonPrecedence": ["drift", "review", "inconclusive", "aligned"],
+      "revisionProposal": {
+        "derived": true,
+        "autoApply": false,
+        "rule": "Observed reality may propose semantic revision but never mutates canonical semantics automatically."
+      }
+    }
+  },
+  "sharedBoundedContexts": [
+    {
+      "id": "work-collaboration",
+      "owners": ["team", "repository"],
+      "status": "candidate",
+      "note": "Candidate semantic boundary; Team and Repository remain separate responsibility owners.",
+      "evidence": {
+        "ownerContracts": ["docs/owners/team.md", "docs/owners/repository.md"],
+        "sourcePaths": [
+          "packages/team/src/domain/team.ts",
+          "packages/repository/src/domain/repository/entities/repository.ts"
+        ],
+        "testPaths": [
+          "packages/team/test/team-write-postgres.test.ts",
+          "packages/repository/test/access.test.ts"
+        ],
+        "rationale": "Team 的 membership/maintainer 與 Repository 的存取 grant 由不同 owner 維護，透過 current membership projection 協作；GitHub 的包含關係不能證明兩者是一套模型，故保留 candidate，不合併 packages。"
+      }
+    }
+  ]
+}

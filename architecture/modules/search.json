@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "id": "@line_bot_v1/search",
+  "status": "target",
+  "path": "packages/search",
+  "moduleKind": "application-module",
+  "semanticOwner": "search",
+  "fptFiles": ["schema-search.json"],
+  "fptRoots": [
+    {
+      "file": "schema-search.json",
+      "symbol": "search"
+    },
+    {
+      "file": "schema-search.json",
+      "symbol": "SearchResultItem"
+    },
+    {
+      "file": "schema-search.json",
+      "symbol": "SearchType"
+    }
+  ],
+  "dependsOn": [
+    "@line_bot_v1/account",
+    "@line_bot_v1/organization",
+    "@line_bot_v1/repository",
+    "@line_bot_v1/issue",
+    "@line_bot_v1/discussion",
+    "@line_bot_v1/app"
+  ],
+  "primaryOwnerImplementation": true,
+  "implementationNote": "Selected FPT target application boundary only; Search composes provider-owned resources without acquiring their authority."
+}

@@ -1,14 +1,14 @@
 # Object / Relationship schema tree
 
-`packages/integration-supabase/src/schemas/` 的 executable SQL 是 application-owned PostgreSQL current desired state。此目錄不是 migration history，也不按 TypeScript package鏡像；relation authority 與 physical file mapping 由 `architecture/data-topology.json` 擁有。
+`packages/integration-supabase/src/schemas/` 的 executable SQL 是 application-owned PostgreSQL current desired state。此目錄不是 migration history，也不按 TypeScript package鏡像；relation authority 與 physical file mapping 由 `architecture/registry.json#data` 擁有。
 
 ## Authority chain
 
 ```text
-architecture/semantic-model.json
+architecture/registry.json#domain
 → concept / relationship owner
 
-architecture/data-topology.json
+architecture/registry.json#data
 → persisted relation role / semantic owner / physical file
 
 packages/integration-supabase/src/schemas/*.sql
@@ -30,7 +30,7 @@ Lexical prefix 用來表達可重建的 dependency order，不是第二套 Domai
 
 100–899
 → current owner-authoritative object / relationship definitions
-  （精確 mapping 查 data-topology.json；未使用的 prefix 直接留空）
+  （精確 mapping 查 registry.json#data；未使用的 prefix 直接留空）
 
 900–930
 → late cross-owner mechanisms
@@ -53,7 +53,7 @@ Cross-owner mechanism 只允許：
 
 ## Future targets stay outside the schema SSOT
 
-沒有 current executable database object，就不建立 `.sql` placeholder，也不在 `architecture/data-topology.json#files` 預留 future filename。未使用的 lexical prefix 直接留空；Workforce、Payroll、Audit 等 target rationale / migration state 留在 `docs/change/` 與 owner docs。
+沒有 current executable database object，就不建立 `.sql` placeholder，也不在 `architecture/registry.json#data` 預留 future filename。未使用的 lexical prefix 直接留空；Workforce、Payroll、Audit 等 target rationale / migration state 留在 `docs/change/` 與 owner docs。
 
 啟用新的 persisted fact 時，同一 changeset 才建立 actual SQL、relation mapping、current owner contract、consumer、authorization / transaction semantics、tests 與適用 evidence。這讓 `packages/integration-supabase/src/schemas/*.sql` 永遠只回答「現在的 database desired state 是什麼」。
 
@@ -61,7 +61,7 @@ Cross-owner mechanism 只允許：
 
 | Need | Owner |
 | --- | --- |
-| Exact relation → owner → file mapping | [Data topology](../../../../architecture/data-topology.json) |
+| Exact relation → owner → file mapping | [Data topology](../../../../architecture/registry.json#data) |
 | DDL / schema design semantics | [Schema model](../../../../docs/reference/data/schema.md) |
 | Cross-owner Data Boundary | [Data boundary](../../../../docs/reference/data/boundaries.md) |
 | Owner business semantics | [Domain owners](../../../../docs/owners/README.md) |
@@ -71,4 +71,4 @@ Cross-owner mechanism 只允許：
 
 ## Validation
 
-`pnpm exec biome check architecture` 與適用 package checks 驗證 schema files 與 `data-topology.json` 的 ownership/mapping invariants；`pnpm schema:check` 執行 declarative schema/database contract tests。Production remote mutation 由 current `main` 的 GitHub workflow 執行；provider readback 證明 remote result，不能由 local file 存在推定。
+`pnpm exec biome check architecture` 與適用 package checks 驗證 schema files 與 `registry.json#data` 的 ownership/mapping invariants；`pnpm schema:check` 執行 declarative schema/database contract tests。Production remote mutation 由 current `main` 的 GitHub workflow 執行；provider readback 證明 remote result，不能由 local file 存在推定。

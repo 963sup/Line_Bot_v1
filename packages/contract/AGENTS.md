@@ -1,11 +1,7 @@
-# Contract package constraints
+# Contract scope
 
-Inherits [packages](../AGENTS.md). Contract owns Repository-scoped engineering agreements and a separate purchase-order document intake aggregate. Each has immutable revisions and exact command receipts.
+繼承 [packages 約束](../AGENTS.md)。
 
-- The historical engineering-agreement lifecycle is `DRAFT -> ACTIVE -> CLOSED`; preserve its Content-pinned snapshots without reinterpreting them as purchase orders.
-- Purchase-order intake owns complete source rows, exact decimal commercial facts, draft diagnostics, confirmations, source pins and receipts. These facts do not belong in File or Intelligence.
-- Each purchase-order revision pins an exact File revision and SHA-256, qualified by File within the Contract transaction.
-- Engineering-agreement commitments pin exact Content Work/Task plan items through its public reader in the same transaction; Contract never owns Content structure or actual completion.
-- Legacy engineering-agreement rows remain Content-based; purchase-order documents use their own schema and persistence without a compatibility writer.
-- Contract reference reads expose exact ACTIVE revision line facts to Execution and never rewrite already frozen source facts. Persistence never queries private Content tables.
-- Preserve current Repository authorization, qualification, locking, exact replay, expected-version concurrency, atomic head/revision/receipt storage, and detached DTO projection.
+變更採購單與工程合約時，分別核對各自用例及 consumer；候選資料儲存與人工確認須保留明確區別。
+
+實際公開入口以 [package.json](./package.json) 為準，行為以 [source](./src/) 與 [tests](./test/) 確認。

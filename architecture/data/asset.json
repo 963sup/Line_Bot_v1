@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "owner": "asset",
+  "files": [
+    {
+      "path": "packages/integration-supabase/src/schemas/800_asset_definitions.sql",
+      "role": "authoritative"
+    }
+  ],
+  "relations": [
+    {
+      "name": "asset_definitions",
+      "kind": "view",
+      "path": "packages/integration-supabase/src/schemas/800_asset_definitions.sql",
+      "authority": true,
+      "semanticOwner": "asset",
+      "concept": "asset"
+    }
+  ]
+}
