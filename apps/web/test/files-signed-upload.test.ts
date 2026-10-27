@@ -20,8 +20,7 @@ function fixture() {
     file: new File([binary], command.name, { type: command.mediaType }),
   };
   const revisionId = randomUUID();
-  const signedUrl =
-    `https://test.supabase.co/storage/v1/object/upload/sign/repository-files/hash/${command.fileId}/${revisionId}?token=opaque`;
+  const signedUrl = `https://test.supabase.co/storage/v1/object/upload/sign/repository-files/hash/${command.fileId}/${revisionId}?token=opaque`;
   const file = {
     repositoryId: command.repositoryId,
     fileId: command.fileId,
@@ -77,15 +76,21 @@ test("File upload refuses signed tickets to another revision or origin before tr
     signedUrl.replace(revisionId, randomUUID()),
     signedUrl.replace("test.supabase.co", "evil.example"),
   ]) {
-    await assert.rejects(uploadSelectedFile(
-      next,
-      async ({ operation }: FileMutation) => {
-        assert.equal(operation, "prepare-upload");
-        return { requestId: command.requestId, revisionId, signedUrl: url };
-      },
-      () => {},
-      async () => { used = true; return new Response(null, { status: 200 }); },
-    ), /Storage ticket is invalid/);
+    await assert.rejects(
+      uploadSelectedFile(
+        next,
+        async ({ operation }: FileMutation) => {
+          assert.equal(operation, "prepare-upload");
+          return { requestId: command.requestId, revisionId, signedUrl: url };
+        },
+        () => {},
+        async () => {
+          used = true;
+          return new Response(null, { status: 200 });
+        },
+      ),
+      /Storage ticket is invalid/,
+    );
   }
   assert.equal(used, false);
 });
