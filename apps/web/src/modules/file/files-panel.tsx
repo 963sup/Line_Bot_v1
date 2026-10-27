@@ -477,7 +477,7 @@ export default function FilesPanel({
         // Signed tickets are capabilities: never send original bytes to an arbitrary URL.
         const destination = new URL(signedUrl);
         if (destination.protocol !== "https:" ||
-            !/^[a-z0-9-]+\\.supabase\\.co$/.test(destination.hostname) ||
+            !/^[a-z0-9-]+\.supabase\.co$/.test(destination.hostname) ||
             !destination.pathname.startsWith("/storage/v1/object/upload/sign/repository-files/") ||
             !destination.searchParams.has("token"))
           throw new Error("Storage ticket is invalid.");
