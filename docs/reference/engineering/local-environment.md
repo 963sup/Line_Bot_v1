@@ -71,6 +71,12 @@ Cloud 安裝腳本從該設定綁定的 repo root 執行 `bash .codex/bootstrap/
 
 OpenAI Developer Docs 另以官方 hosted MCP 提供文件查詢，不需本地安裝或 credential；連接位置只由 `.codex/config.toml` 擁有，Cloud 網路需允許 `developers.openai.com`，實際工具註冊與唯讀查詢仍由 host 驗證。
 
+### Local Supabase stack
+
+Default bootstrap checks the image-provided Docker daemon and starts the package-owned [local stack lifecycle](../../../packages/integration-supabase/README.md). Docker endpoint/context/TLS selectors are cleared for the local-socket check; bootstrap never installs or starts a competing daemon. Supabase uses its canonical package workdir and the official `ghcr.io` image registry by default, preserving proxy and registry credentials. Set `SUPABASE_INTERNAL_IMAGE_REGISTRY` only when the environment requires another supported registry.
+
+The default service set and local environment-file instructions live in the package README. Stack setup checks free disk before downloading, waits for CLI health checks, initializes current application SQL without migration history, and verifies PostgreSQL and Storage. `verify.sh` only probes existing services; it does not start them. CLI output may contain local credentials and stays in ignored mode-0600 files. pnpm data directories also live under the workspace, and install runs noninteractively without changing HOME.
+
 ### Serena v2 MCP
 
 Serena 依官方安裝模型由 `uv tool install` 建立隔離工具環境；目前固定 `serena-agent==2.1.0`，並使用 Serena 官方建議的 Python 3.13。這不改變專案一般 Python runtime 的 3.12.14。`uvx` 適合臨時執行，但 MCP 每次啟動不應重新解析或下載套件，因此 Codex launcher 使用已安裝的 `$UV_TOOL_BIN_DIR/serena`。
@@ -130,4 +136,4 @@ bash .codex/bootstrap/update.sh
 bash .codex/bootstrap/install.sh --exec playwright screenshot --browser chromium http://127.0.0.1:3000/ .artifacts/ui/page.png
 ```
 
-Port 以 dev server 的實際輸出為準；登入狀態與受影響互動仍需按任務驗收。Bootstrap 不預設啟動 Web、資料庫、Redis 或 Docker daemon。
+Port 以 dev server 的實際輸出為準；登入狀態與受影響互動仍需按任務驗收。Bootstrap 預設準備 Supabase 本地 stack；Web 與 Redis 依任務啟動，Docker daemon 由 Cloud host 提供。

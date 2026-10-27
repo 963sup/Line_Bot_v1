@@ -34,7 +34,7 @@ const commands = {
     "taplo",
     "check",
     ".codex/config.toml",
-    "packages/integration-supabase/src/config.toml",
+    "packages/integration-supabase/supabase/config.toml",
   ],
 };
 const explicitStages = ["format", "bootstrap", "bootstrap:smoke", "actionlint", "shfmt", "taplo"];

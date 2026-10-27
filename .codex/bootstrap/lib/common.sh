@@ -14,6 +14,8 @@ export UV_PYTHON_INSTALL_DIR="$BOOTSTRAP_PREFIX/python"
 export UV_TOOL_DIR="$BOOTSTRAP_PREFIX/uv-tools"
 export UV_TOOL_BIN_DIR="$BOOTSTRAP_PREFIX/bin"
 export NPM_CONFIG_CACHE="$BOOTSTRAP_ROOT/.cache/npm"
+export PNPM_HOME="$BOOTSTRAP_PREFIX/pnpm"
+export XDG_DATA_HOME="$BOOTSTRAP_ROOT/.cache/share"
 export SERENA_HOME="$BOOTSTRAP_ROOT/.cache/serena"
 export SUPABASE_HOME="$BOOTSTRAP_ROOT/.cache/supabase"
 export PLAYWRIGHT_BROWSERS_PATH="$BOOTSTRAP_ROOT/.cache/ms-playwright"
@@ -35,7 +37,7 @@ workspace_version() {
 bootstrap_fingerprint() {
   {
     printf '%s\n' "$BOOTSTRAP_TOOLS" "$BOOTSTRAP_MCP_SERVERS"
-    for file in .node-version package.json pnpm-workspace.yaml pnpm-lock.yaml .codex/config.toml apps/*/package.json packages/*/package.json; do
+    for file in .node-version package.json pnpm-workspace.yaml pnpm-lock.yaml .codex/config.toml apps/*/package.json packages/*/package.json packages/integration-supabase/supabase/config.toml packages/integration-supabase/supabase/loopback-wget.sh packages/integration-supabase/scripts/local-stack.mjs packages/integration-supabase/src/schemas/*.sql; do
       [[ ! -f "$file" ]] || sha256sum "$file"
     done
     while IFS= read -r file; do sha256sum "$file"; done < <(find .codex/bootstrap -type f \( -name '*.sh' -o -name '*.env' \) | sort)
