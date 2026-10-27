@@ -1,6 +1,6 @@
 # File 第一性原理與效能重構設計
 
-Status: design only. 本文件不代表已修改 runtime 或 production schema。
+Status: runtime 實作採用下述 File 邊界，並參考 #441 加入直傳、統一 Upload Intent 流程與 metadata overview；實際入口與行為以 `packages/file` 及 `apps/web/src/modules/file` source/tests 為準。未修改 production schema，未量測真實網路 p50/p95；下方涉及 schema cutover 的前置條件仍適用。
 
 ## 交談要求
 
@@ -41,11 +41,12 @@ packages/file/
 ├── src/domain/                 # identity、revision invariant、純 domain error
 ├── src/application/            # upload/read/list/reclaim use cases
 ├── src/contracts/              # ports、DTO、reference qualification
+├── src/adapters/inbound/       # HTTP transport factory
 ├── src/adapters/outbound/      # PostgreSQL、object store、payload inspection
 └── src/composition/bootstrap/  # concrete dependency wiring
 
 apps/web/
-└── src/modules/file/           # transport mapping、UI state、File use-case invocation only
+└── src/modules/file/           # UI、Hook、互動狀態
 ```
 
 ```mermaid

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
-import { fileObjects } from "../src/adapters/outbound/storage/supabase.js";
+import { fileObjects, supabaseFileObjects } from "../src/adapters/outbound/storage/supabase.js";
 import { FileError } from "../src/domain/error.js";
 import { nextFileRevision } from "../src/domain/file.js";
 
@@ -13,6 +13,69 @@ function fixture() {
     );
   return { bytes, digest };
 }
+
+test("local Storage tickets require an explicitly configured exact loopback origin", async () => {
+  const { bytes, digest } = fixture();
+  const revision = nextFileRevision(
+    null,
+    0,
+    randomUUID(),
+    {
+      name: "source.txt",
+      mediaType: "text/plain",
+      byteLength: bytes.length,
+      sha256: await digest(bytes),
+    },
+    { id: randomUUID(), repositoryId: "repo", actorUserId: "actor", at: 1 },
+  );
+  const origin = "http://127.0.0.1:54321";
+  let ticketOrigin = origin;
+  const bucket = {
+    async createSignedUploadUrl(path: string) {
+      return {
+        data: {
+          signedUrl: `${ticketOrigin}/storage/v1/object/upload/sign/repository-files/${path}?token=opaque`,
+        },
+        error: null,
+      };
+    },
+    async download() {
+      assert.fail("Unexpected download");
+    },
+    async upload() {
+      assert.fail("Unexpected upload");
+    },
+    async remove() {
+      assert.fail("Unexpected remove");
+    },
+  };
+  const local = fileObjects(bucket, origin);
+  assert.ok(local.signUpload);
+  assert.match(await local.signUpload(revision), /^http:\/\/127\.0\.0\.1:54321\//);
+  assert.doesNotThrow(() => supabaseFileObjects({ url: origin, serviceRoleKey: "local-test-key" }));
+  const unconfigured = fileObjects(bucket);
+  assert.ok(unconfigured.signUpload);
+  await assert.rejects(unconfigured.signUpload(revision), { code: "UNAVAILABLE" });
+  for (ticketOrigin of [
+    "http://127.0.0.1:54322",
+    "http://localhost:54321",
+    "http://192.168.1.1:54321",
+    "http://test.supabase.co",
+  ]) {
+    await assert.rejects(local.signUpload(revision), { code: "UNAVAILABLE" });
+  }
+  for (const url of [
+    "http://192.168.1.1:54321",
+    "http://test.supabase.co",
+    `${origin}/other`,
+    `${origin}?x=1`,
+    `http://user@127.0.0.1:54321`,
+  ]) {
+    assert.throws(() => supabaseFileObjects({ url, serviceRoleKey: "local-test-key" }), {
+      code: "UNAVAILABLE",
+    });
+  }
+});
 
 test("private object upload is write-once, verifies downloaded bytes, and replay never overwrites", async () => {
   const { bytes, digest } = fixture();
@@ -45,6 +108,7 @@ test("private object upload is write-once, verifies downloaded bytes, and replay
     async upload(key: string, input: Uint8Array, options: { upsert: false; contentType: string }) {
       assert.equal(options.upsert, false);
       assert.equal(options.contentType, "text/plain");
+      assert.strictEqual(input, bytes, "Storage upload must reuse the verified byte view");
       uploads++;
       observedKey = key;
       if (values.has(key)) return { error: { status: 409 } };
@@ -136,5 +200,92 @@ test("provider unknown result is accepted only after independent readback", asyn
   await assert.rejects(failed.putVerified(revision, bytes), (error: unknown) => {
     assert.deepEqual(error, { status: 503 });
     return true;
+  });
+});
+
+test("signed uploads issue write-once private-object tickets without a readback or upload", async () => {
+  const { bytes, digest } = fixture();
+  const revision = nextFileRevision(
+    null,
+    0,
+    randomUUID(),
+    {
+      name: "source.txt",
+      mediaType: "text/plain",
+      byteLength: bytes.byteLength,
+      sha256: await digest(bytes),
+    },
+    { id: randomUUID(), repositoryId: "repo-A", actorUserId: "actor", at: 1 },
+  );
+  let calls = 0;
+  const objects = fileObjects({
+    async createSignedUploadUrl(path, options) {
+      calls++;
+      assert.equal(options.upsert, false);
+      assert.equal(path.split("/").length, 3);
+      assert.equal(path.includes("repo-A"), false);
+      return {
+        data: {
+          signedUrl: `https://test.supabase.co/storage/v1/object/upload/sign/repository-files/${path}?token=opaque`,
+        },
+        error: null,
+      };
+    },
+    async download() {
+      assert.fail("Signing must not load object bytes");
+    },
+    async upload() {
+      assert.fail("Signing must not upload server bytes");
+    },
+    async remove() {
+      assert.fail("Signing must not delete objects");
+    },
+  });
+  assert.ok(objects.signUpload);
+  const ticket = await objects.signUpload(revision);
+  assert.match(ticket, /^https:\/\/test\.supabase\.co\/storage\/v1\/object\/upload\/sign\//);
+  assert.equal(calls, 1);
+});
+
+test("signed upload refuses untrusted or unsigned provider destinations", async () => {
+  const { bytes, digest } = fixture();
+  const revision = nextFileRevision(
+    null,
+    0,
+    randomUUID(),
+    {
+      name: "source.txt",
+      mediaType: "text/plain",
+      byteLength: bytes.byteLength,
+      sha256: await digest(bytes),
+    },
+    { id: randomUUID(), repositoryId: "repo", actorUserId: "actor", at: 1 },
+  );
+  const bucket = (signedUrl: string) =>
+    fileObjects({
+      async createSignedUploadUrl() {
+        return { data: { signedUrl }, error: null };
+      },
+      async download() {
+        assert.fail("Unexpected read");
+      },
+      async upload() {
+        assert.fail("Unexpected upload");
+      },
+      async remove() {
+        assert.fail("Unexpected remove");
+      },
+    });
+  const unsafe = bucket("https://evil.example/steal?token=abc");
+  assert.ok(unsafe.signUpload);
+  await assert.rejects(unsafe.signUpload(revision), {
+    code: "UNAVAILABLE",
+  });
+  const unsigned = bucket(
+    "https://test.supabase.co/storage/v1/object/upload/sign/repository-files/key",
+  );
+  assert.ok(unsigned.signUpload);
+  await assert.rejects(unsigned.signUpload(revision), {
+    code: "UNAVAILABLE",
   });
 });

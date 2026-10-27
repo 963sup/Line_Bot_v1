@@ -12,6 +12,10 @@ type StorageFailure = {
 type PrivateBucket = {
   download(key: string): Promise<{ data: Blob | null; error: StorageFailure | null }>;
   remove(keys: string[]): Promise<{ error: StorageFailure | null }>;
+  createSignedUploadUrl?(
+    key: string,
+    options: { upsert: false },
+  ): Promise<{ data: { signedUrl: string } | null; error: StorageFailure | null }>;
   upload(
     key: string,
     bytes: Uint8Array,
@@ -22,6 +26,15 @@ type PrivateBucket = {
 function key(revision: FileRevision): string {
   const repository = createHash("sha256").update(revision.repositoryId).digest("hex");
   return `${repository}/${revision.fileId}/${revision.id}`;
+}
+
+function storageOrigin(url: URL): boolean {
+  return (
+    !url.username &&
+    !url.password &&
+    ((url.protocol === "https:" && /^[a-z0-9-]+\.supabase\.co$/.test(url.hostname)) ||
+      (url.protocol === "http:" && ["127.0.0.1", "localhost", "[::1]"].includes(url.hostname)))
+  );
 }
 
 function notFound(failure: StorageFailure | null): boolean {
@@ -37,7 +50,10 @@ function verify(revision: FileRevision, bytes: Uint8Array): void {
 }
 
 /** Exact readback resolves uncertain writes; failed recovery preserves the provider failure. */
-export function fileObjects(bucket: PrivateBucket): FileObjectStore & FileObjectRemoval {
+export function fileObjects(
+  bucket: PrivateBucket,
+  expectedOrigin?: string,
+): FileObjectStore & FileObjectRemoval {
   async function read(revision: FileRevision, missing: boolean): Promise<Uint8Array | null> {
     const response = await bucket.download(key(revision));
     if (response.error) {
@@ -51,6 +67,25 @@ export function fileObjects(bucket: PrivateBucket): FileObjectStore & FileObject
     return bytes;
   }
   return {
+    async signUpload(revision) {
+      if (!bucket.createSignedUploadUrl)
+        throw new FileError(503, "Signed File uploads are unavailable.", "UNAVAILABLE");
+      const result = await bucket.createSignedUploadUrl(key(revision), { upsert: false });
+      if (result.error) throw result.error;
+      if (!result.data?.signedUrl)
+        throw new FileError(503, "Signed File upload is unavailable.", "UNAVAILABLE");
+      const url = new URL(result.data.signedUrl);
+      if (
+        !storageOrigin(url) ||
+        (url.protocol === "http:" && expectedOrigin === undefined) ||
+        (expectedOrigin !== undefined && url.origin !== expectedOrigin) ||
+        url.pathname !== `/storage/v1/object/upload/sign/repository-files/${key(revision)}` ||
+        !url.searchParams.get("token") ||
+        url.hash !== ""
+      )
+        throw new FileError(503, "Invalid Storage upload ticket.", "UNAVAILABLE");
+      return url.toString();
+    },
     async readVerified(revision) {
       const bytes = await read(revision, false);
       if (!bytes) throw new FileError(503, "File object unavailable.", "UNAVAILABLE");
@@ -79,7 +114,8 @@ export function fileObjects(bucket: PrivateBucket): FileObjectStore & FileObject
       if (await read(revision, true)) return;
       let failure: { error: unknown } | undefined;
       try {
-        const response = await bucket.upload(key(revision), Buffer.from(bytes), {
+        // The payload is already a verified Uint8Array; avoid an additional full-size copy.
+        const response = await bucket.upload(key(revision), bytes, {
           upsert: false,
           contentType: revision.mediaType,
           cacheControl: "0",
@@ -102,9 +138,20 @@ export function supabaseFileObjects(config: {
   url: string;
   serviceRoleKey: string;
 }): FileObjectStore & FileObjectRemoval {
-  const url = config.url;
-  if (!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/.test(url) || !config.serviceRoleKey.trim())
+  let url: URL;
+  try {
+    url = new URL(config.url);
+  } catch {
+    throw new FileError(503, "File Storage is not configured.", "UNAVAILABLE");
+  }
+  if (
+    !storageOrigin(url) ||
+    url.pathname !== "/" ||
+    url.search ||
+    url.hash ||
+    !config.serviceRoleKey.trim()
+  )
     throw new FileError(503, "File Storage is not configured.", "UNAVAILABLE");
   const client = createPrivateStorageClient(config);
-  return fileObjects(client.storage.from("repository-files"));
+  return fileObjects(client.storage.from("repository-files"), url.origin);
 }

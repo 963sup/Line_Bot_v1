@@ -1,230 +1,28 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import { Button } from "../../shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../shared/ui/card";
 import { Input } from "../../shared/ui/input";
 import { Label } from "../../shared/ui/label";
-import PurchaseOrderReview from "./purchase-order-review";
-
-type FileInfo = {
-  repositoryId: string;
-  fileId: string;
-  revisionId: string;
-  version: number;
-  name: string;
-  mediaType: string;
-  byteLength: number;
-  sha256: string;
-};
-type PendingUpload = {
-  requestId: string;
-  fileId: string;
-  revisionId: string;
-  expectedVersion: number;
-  name: string;
-  mediaType: string;
-  byteLength: number;
-  sha256: string;
-};
-type View = {
-  actorUserId: string;
-  repository: { id: string };
-  canEdit: boolean;
-  canManage: boolean;
-  files: FileInfo[];
-  next: string | null;
-  uploadMaxBytes: number;
-};
-type UploadCommand = {
-  repositoryId: string;
-  fileId: string;
-  requestId: string;
-  expectedVersion: number;
-  name: string;
-  mediaType: string;
-};
-type DocumentIntakeReceipt = {
-  requestId: string;
-  documentId: string;
-  revisionId: string;
-  version: number;
-  intentFingerprint: string;
-};
-type DocumentSource = { fileId: string; fileRevisionId: string; fileSha256: string };
-type DocumentIntakeRevision = {
-  documentId: string;
-  revisionId: string;
-  version: number;
-  state: "DRAFT" | "CONFIRMED";
-  source: DocumentSource;
-  candidate: Record<string, unknown>;
-  diagnostics: string[];
-};
-type DocumentIntakeCommand = {
-  action: "save";
-  repositoryId: string;
-  documentId: string;
-  requestId: string;
-  expectedVersion: number;
-  source: DocumentSource;
-};
-type Pending = { command: UploadCommand; file: File };
-const diagnosticLabels: Readonly<Record<string, string>> = {
-  UNCERTAIN_LINE: "部分明細尚待釐清",
-  MISSING_REQUIRED_FACT: "缺少必要的採購單資料",
-  MISSING_SOURCE_PAGE: "部分明細缺少來源頁",
-  DUPLICATE_SOURCE_ROW_ID: "來源明細重複",
-  INVALID_LINE_MEASURE: "數量或單價不符合要求",
-  LINE_AMOUNT_MISMATCH: "明細毛額、折扣與淨額不一致",
-  LINE_GROSS_MISMATCH: "數量乘以單價與明細毛額不一致",
-  GROSS_TOTAL_MISMATCH: "明細毛額與毛額合計不一致",
-  DISCOUNT_TOTAL_MISMATCH: "明細折扣與折扣合計不一致",
-  LINE_NET_TOTAL_MISMATCH: "明細淨額與淨額合計不一致",
-  NET_TAX_TOTAL_MISMATCH: "淨額加稅額與應付總額不一致",
-};
-class StaleRequest extends Error {}
-
-/** Validate unknown HTTP projections at the browser boundary; server DTOs are not trusted casts. */
-function record(value: unknown): Record<string, unknown> {
-  if (!value || typeof value !== "object" || Array.isArray(value))
-    throw new Error("File response format is invalid.");
-  return Object.fromEntries(Object.entries(value));
-}
-function stringValue(value: unknown): string {
-  if (typeof value !== "string") throw new Error("File response field is invalid.");
-  return value;
-}
-function intValue(value: unknown): number {
-  if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0)
-    throw new Error("File response number is invalid.");
-  return value;
-}
-function boolValue(value: unknown): boolean {
-  if (typeof value !== "boolean") throw new Error("File response boolean is invalid.");
-  return value;
-}
-function optionalString(value: unknown): string | null {
-  return value === null ? null : stringValue(value);
-}
-function listOf<T>(value: unknown, parse: (item: unknown) => T): T[] {
-  if (!Array.isArray(value)) throw new Error("File response list is invalid.");
-  return value.map(parse);
-}
-function parseFile(value: unknown): FileInfo {
-  const r = record(value);
-  return {
-    repositoryId: stringValue(r.repositoryId),
-    fileId: stringValue(r.fileId),
-    revisionId: stringValue(r.revisionId),
-    version: intValue(r.version),
-    name: stringValue(r.name),
-    mediaType: stringValue(r.mediaType),
-    byteLength: intValue(r.byteLength),
-    sha256: stringValue(r.sha256),
-  };
-}
-function parseView(value: unknown): View {
-  const r = record(value);
-  const repository = record(r.repository);
-  return {
-    actorUserId: stringValue(r.actorUserId),
-    repository: { id: stringValue(repository.id) },
-    canEdit: boolValue(r.canEdit),
-    canManage: boolValue(r.canManage),
-    files: listOf(r.files, parseFile),
-    next: optionalString(r.next),
-    uploadMaxBytes: intValue(r.uploadMaxBytes),
-  };
-}
-function parsePendingPage(value: unknown): { uploads: PendingUpload[]; next: string | null } {
-  const r = record(value);
-  return {
-    uploads: listOf(r.uploads, (item): PendingUpload => {
-      const entry = record(item);
-      return {
-        requestId: stringValue(entry.requestId),
-        fileId: stringValue(entry.fileId),
-        revisionId: stringValue(entry.revisionId),
-        expectedVersion: intValue(entry.expectedVersion),
-        name: stringValue(entry.name),
-        mediaType: stringValue(entry.mediaType),
-        byteLength: intValue(entry.byteLength),
-        sha256: stringValue(entry.sha256),
-      };
-    }),
-    next: optionalString(r.next),
-  };
-}
-function parseMutation(value: unknown): { requestId: string; file: FileInfo } {
-  const r = record(value);
-  return { requestId: stringValue(r.requestId), file: parseFile(r.file) };
-}
-
-function errorMessage(cause: unknown) {
-  return cause instanceof Error ? cause.message : String(cause);
-}
-
-function parseDocumentIntakeReceipt(value: unknown): DocumentIntakeReceipt {
-  const r = record(value);
-  return {
-    requestId: stringValue(r.requestId),
-    documentId: stringValue(r.documentId),
-    revisionId: stringValue(r.revisionId),
-    version: intValue(r.version),
-    intentFingerprint: stringValue(r.intentFingerprint),
-  };
-}
-function parseDocumentSource(value: unknown): DocumentSource {
-  const r = record(value);
-  return {
-    fileId: stringValue(r.fileId),
-    fileRevisionId: stringValue(r.fileRevisionId),
-    fileSha256: stringValue(r.fileSha256),
-  };
-}
-function parseDocumentIntakeRevision(value: unknown): DocumentIntakeRevision {
-  const r = record(value);
-  const state = stringValue(r.state);
-  if (state !== "DRAFT" && state !== "CONFIRMED")
-    throw new Error("ContractDocument state is invalid.");
-  return {
-    documentId: stringValue(r.documentId),
-    revisionId: stringValue(r.id),
-    version: intValue(r.version),
-    state,
-    source: parseDocumentSource(r.source),
-    candidate: record(r.candidate),
-    diagnostics: listOf(r.diagnostics, stringValue),
-  };
-}
-function candidateLines(candidate: Record<string, unknown>) {
-  return listOf(candidate.lines, (value) => {
-    const line = record(value);
-    return {
-      sourceRowId: stringValue(line.sourceRowId),
-      sourcePages: listOf(line.sourcePages, intValue),
-    };
-  });
-}
-function sourceReviewPages(candidate: Record<string, unknown>): number[] {
-  const pages = new Set<number>();
-  const visit = (value: unknown) => {
-    if (Array.isArray(value)) {
-      value.forEach(visit);
-      return;
-    }
-    if (!value || typeof value !== "object") return;
-    const object = record(value);
-    if (Array.isArray(object.sourcePages))
-      for (const page of object.sourcePages) if (typeof page === "number") pages.add(page);
-    Object.values(object).forEach(visit);
-  };
-  visit(candidate);
-  return [...pages].sort((left, right) => left - right);
-}
+import { createFileRequests } from "./file-requests";
+import {
+  errorMessage,
+  type FileInfo,
+  type Pending,
+  type PendingUpload,
+  parseFile,
+  parsePendingPage,
+  parseView,
+  record,
+  StaleRequest,
+  type View,
+} from "./files-projection";
+import PurchaseOrderIntakeReview from "./purchase-order-intake-review";
+import { uploadSelectedFile } from "./signed-file-upload";
+import { usePurchaseOrderIntake } from "./use-purchase-order-intake";
 
 export default function FilesPanel({
   liffId,
@@ -239,20 +37,6 @@ export default function FilesPanel({
 }) {
   const [view, setView] = useState<View | null>(null);
   const [selected, setSelected] = useState<FileInfo | null>(null);
-  const [documentIntakeReceipt, setDocumentIntakeReceipt] = useState<DocumentIntakeReceipt | null>(
-    null,
-  );
-  const [documentIntakeRevision, setDocumentIntakeRevision] =
-    useState<DocumentIntakeRevision | null>(null);
-  const [sourceReviewConfirmed, setSourceReviewConfirmed] = useState(false);
-  const [acknowledgementReason, setAcknowledgementReason] = useState("");
-  const [pendingDocumentConfirmation, setPendingDocumentConfirmation] = useState<Record<
-    string,
-    unknown
-  > | null>(null);
-  const [pendingDocumentIntake, setPendingDocumentIntake] = useState<DocumentIntakeCommand | null>(
-    null,
-  );
   const [sourceFile, setSourceFile] = useState<File | null>(null);
   const [pendingUploads, setPendingUploads] = useState<PendingUpload[]>([]);
   const [pendingUploadsNext, setPendingUploadsNext] = useState<string | null>(null);
@@ -262,22 +46,38 @@ export default function FilesPanel({
   const epoch = useRef(0);
   const mutationLock = useRef(false);
   const fileInput = useRef<HTMLInputElement>(null);
-  const review = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (documentIntakeRevision) review.current?.focus();
-  }, [documentIntakeRevision]);
+  const {
+    documentIntakeReceipt,
+    documentIntakeRevision,
+    sourceReviewConfirmed,
+    setSourceReviewConfirmed,
+    acknowledgementReason,
+    setAcknowledgementReason,
+    pendingDocumentConfirmation,
+    pendingDocumentIntake,
+    clearPurchaseOrder,
+    intakePurchaseOrder,
+    confirmPurchaseOrder,
+    startPurchaseOrderIntake,
+  } = usePurchaseOrderIntake({
+    view,
+    selected,
+    setSelected,
+    pending,
+    busy,
+    setBusy,
+    setError,
+    epoch,
+    mutationLock,
+    requestDocumentIntake: (query, command) => requestDocumentIntake(query, command),
+  });
 
   const clear = useCallback(() => {
     epoch.current++;
     mutationLock.current = false;
     setView(null);
     setSelected(null);
-    setDocumentIntakeReceipt(null);
-    setDocumentIntakeRevision(null);
-    setSourceReviewConfirmed(false);
-    setAcknowledgementReason("");
-    setPendingDocumentConfirmation(null);
-    setPendingDocumentIntake(null);
+    clearPurchaseOrder();
     setSourceFile(null);
     setPendingUploads([]);
     setPendingUploadsNext(null);
@@ -286,97 +86,20 @@ export default function FilesPanel({
     setError("");
     if (fileInput.current) fileInput.current.value = "";
     onCanManageChange(false);
-  }, [onCanManageChange]);
+  }, [onCanManageChange, clearPurchaseOrder]);
 
-  const request = useCallback(
-    async (query: Record<string, string> = {}, mutation?: Pending): Promise<unknown> => {
-      const ticket = epoch.current;
-      const session = await liffClient.ensureSession(liffId);
-      if (ticket !== epoch.current) throw new StaleRequest();
-      if (!session) throw new Error("請完成 LINE 登入後重試。");
-      const search = new URLSearchParams({ owner: ownerLogin, name: repositoryName, ...query });
-      const headers: Record<string, string> = { "X-App-Session-Generation": session };
-      let body: BodyInit | undefined;
-      if (mutation) {
-        const form = new FormData();
-        form.set("command", JSON.stringify(mutation.command));
-        form.set("file", mutation.file, mutation.file.name);
-        body = form;
-      }
-      const response = await fetch("/api/repository-files?" + search.toString(), {
-        method: mutation ? "POST" : "GET",
-        headers,
-        ...(body === undefined ? {} : { body }),
-        cache: "no-store",
-      });
-      const value: unknown =
-        query.view === "download" && response.ok ? await response.blob() : await response.json();
-      if (ticket !== epoch.current) throw new StaleRequest();
-      if (!response.ok) {
-        const message =
-          value && typeof value === "object" && "error" in value && typeof value.error === "string"
-            ? value.error
-            : "File 請求失敗。";
-        const code = value && typeof value === "object" && "code" in value ? value.code : null;
-        if (response.status === 401 || response.status === 403) {
+  const { file: request, document: requestDocumentIntake } = useMemo(
+    () =>
+      createFileRequests({
+        ownerLogin,
+        repositoryName,
+        epoch,
+        session: () => liffClient.ensureSession(liffId),
+        onDenied(message) {
           clear();
           setError(message);
-          throw new StaleRequest();
-        }
-        throw Object.assign(new Error(message), { status: response.status, code });
-      }
-      return value;
-    },
-    [clear, liffId, ownerLogin, repositoryName],
-  );
-
-  const requestDocumentIntake = useCallback(
-    async (query: Record<string, string>, command?: object) => {
-      const ticket = epoch.current;
-      const session = await liffClient.ensureSession(liffId);
-      if (ticket !== epoch.current) throw new StaleRequest();
-      if (!session) throw new Error("請完成 LINE 登入後重試。");
-      const search = new URLSearchParams({ owner: ownerLogin, name: repositoryName, ...query });
-      const response = await fetch(`/api/repository-document-intake?${search}`, {
-        method: command ? "POST" : "GET",
-        headers: {
-          ...(command ? { "Content-Type": "application/json" } : {}),
-          "X-App-Session-Generation": session,
         },
-        ...(command ? { body: JSON.stringify(command) } : {}),
-        cache: "no-store",
-      });
-      const contentType = response.headers.get("content-type") ?? "";
-      const value: unknown = contentType.includes("application/json")
-        ? await response.json()
-        : await response.text();
-      if (ticket !== epoch.current) throw new StaleRequest();
-      if (!response.ok) {
-        const message =
-          value && typeof value === "object" && "error" in value && typeof value.error === "string"
-            ? value.error
-            : response.status === 504
-              ? "採購單 AI 解析逾時，請稍後重試。"
-              : query.operation === "read"
-                ? "ContractDocument 讀取失敗。"
-                : "採購單操作失敗。";
-        if (response.status === 401 || response.status === 403) {
-          clear();
-          setError(message);
-          throw new StaleRequest();
-        }
-        const code = value && typeof value === "object" && "code" in value ? value.code : null;
-        throw Object.assign(
-          new Error(
-            code === "UNKNOWN_RESULT"
-              ? "解析結果尚未確認；原命令重試只會查詢已保存回執，不會重新解析。請保留此頁並聯絡管理員查核。"
-              : message,
-          ),
-          { status: response.status, code },
-        );
-      }
-      return value;
-    },
+      }),
     [clear, liffId, ownerLogin, repositoryName],
   );
 
@@ -386,13 +109,11 @@ export default function FilesPanel({
     setBusy(true);
     setError("");
     try {
-      const [filePage, uploadsPage] = await Promise.all([request(), request({ view: "uploads" })]);
-      const page = parseView(filePage);
-      const uploads = parsePendingPage(uploadsPage);
+      const page = parseView(await request());
       if (ticket !== epoch.current) return;
       setView(page);
-      setPendingUploads(uploads.uploads);
-      setPendingUploadsNext(uploads.next);
+      setPendingUploads(page.uploads);
+      setPendingUploadsNext(page.pendingNext);
       onCanManageChange(page.canManage);
     } catch (cause) {
       if (cause instanceof StaleRequest || ticket !== epoch.current) return;
@@ -406,6 +127,7 @@ export default function FilesPanel({
     const unsubscribe = liffClient.onSessionBlocked(clear);
     window.addEventListener("pagehide", clear);
     return () => {
+      epoch.current++;
       unsubscribe();
       window.removeEventListener("pagehide", clear);
     };
@@ -435,11 +157,7 @@ export default function FilesPanel({
       const current = await request({ view: "file", fileId: file.fileId });
       if (ticket !== epoch.current) return;
       setSelected(parseFile(record(current).file));
-      setDocumentIntakeReceipt(null);
-      setDocumentIntakeRevision(null);
-      setSourceReviewConfirmed(false);
-      setAcknowledgementReason("");
-      setPendingDocumentConfirmation(null);
+      clearPurchaseOrder();
     } catch (cause) {
       if (cause instanceof StaleRequest || ticket !== epoch.current) return;
       setError(errorMessage(cause));
@@ -455,7 +173,13 @@ export default function FilesPanel({
     setBusy(true);
     setError("");
     try {
-      const response = parseMutation(await request({}, next));
+      const response = await uploadSelectedFile(
+        next,
+        (mutation) => request({}, mutation),
+        () => {
+          if (ticket !== epoch.current) throw new StaleRequest();
+        },
+      );
       if (ticket !== epoch.current) return;
       if (response.requestId !== next.command.requestId)
         throw new Error("File receipt 尚未確認，請使用原命令重試。");
@@ -545,194 +269,6 @@ export default function FilesPanel({
     };
     setPending(next);
     void send(next);
-  }
-
-  async function intakePurchaseOrder(command: DocumentIntakeCommand) {
-    if (!view?.canEdit || pending || busy || pendingDocumentConfirmation || mutationLock.current)
-      return;
-    mutationLock.current = true;
-    const ticket = epoch.current;
-    const file = view.files.find((item) => item.fileId === command.source.fileId);
-    if (file) setSelected(file);
-    setPendingDocumentIntake(command);
-    setBusy(true);
-    setError("");
-    let saved = false;
-    try {
-      const receipt = parseDocumentIntakeReceipt(
-        await requestDocumentIntake({ operation: "intake" }, command),
-      );
-      if (ticket !== epoch.current) return;
-      if (receipt.requestId !== command.requestId || receipt.documentId !== command.documentId)
-        throw new Error("Contract 草稿回執不符，請使用原命令重試。");
-      saved = true;
-      setDocumentIntakeReceipt(receipt);
-      const revision = parseDocumentIntakeRevision(
-        record(
-          await requestDocumentIntake({
-            operation: "read",
-            documentId: receipt.documentId,
-            revisionId: receipt.revisionId,
-          }),
-        ).revision,
-      );
-      if (ticket !== epoch.current) return;
-      if (
-        revision.documentId !== receipt.documentId ||
-        revision.revisionId !== receipt.revisionId ||
-        revision.source.fileId !== command.source.fileId ||
-        revision.source.fileRevisionId !== command.source.fileRevisionId ||
-        revision.source.fileSha256 !== command.source.fileSha256
-      )
-        throw new Error("Contract 草稿來源不符，請使用原命令重新查核。");
-      setDocumentIntakeRevision(revision);
-      setSourceReviewConfirmed(false);
-      setAcknowledgementReason("");
-      setPendingDocumentConfirmation(null);
-      setPendingDocumentIntake(null);
-    } catch (cause) {
-      if (cause instanceof StaleRequest || ticket !== epoch.current) return;
-      const status =
-        cause && typeof cause === "object" && "status" in cause ? Number(cause.status) : 503;
-      if (!saved && status >= 400 && status < 500 && status !== 409 && status !== 429)
-        setPendingDocumentIntake(null);
-      setError(errorMessage(cause));
-    } finally {
-      if (ticket === epoch.current) {
-        setBusy(false);
-        mutationLock.current = false;
-      }
-    }
-  }
-
-  async function confirmPurchaseOrder() {
-    if (
-      !view?.canEdit ||
-      !documentIntakeReceipt ||
-      !documentIntakeRevision ||
-      busy ||
-      pending ||
-      mutationLock.current
-    )
-      return;
-    if (documentIntakeRevision.state !== "DRAFT") return;
-    if (!sourceReviewConfirmed) {
-      setError("請先逐行核對原始檔，再確認採購單。");
-      return;
-    }
-    const lines = candidateLines(documentIntakeRevision.candidate);
-    const reviewedSourcePages = sourceReviewPages(documentIntakeRevision.candidate);
-    if (reviewedSourcePages.length === 0) {
-      setError("候選資料缺少完整行數或來源頁，不能確認。");
-      return;
-    }
-    const command =
-      pendingDocumentConfirmation ??
-      (() => {
-        const financialDiagnostic = documentIntakeRevision.diagnostics.some((item) =>
-          item.includes("MISMATCH"),
-        );
-        if (financialDiagnostic && !acknowledgementReason.trim()) {
-          setError("存在金額差異，請填寫明確的差異確認理由。");
-          return null;
-        }
-        return {
-          action: "confirm",
-          repositoryId: view.repository.id,
-          documentId: documentIntakeRevision.documentId,
-          requestId: crypto.randomUUID(),
-          intentFingerprint: documentIntakeReceipt.intentFingerprint,
-          expectedVersion: documentIntakeRevision.version,
-          source: documentIntakeRevision.source,
-          candidate: documentIntakeRevision.candidate,
-          sourceReviewAttestation: {
-            verifiedLineCount: lines.length,
-            reviewedSourcePages,
-            reviewedSourceRowIds: lines.map((line) => line.sourceRowId),
-            confirmedFromOriginal: true,
-          },
-          ...(financialDiagnostic
-            ? { acknowledgement: { reason: acknowledgementReason.trim() } }
-            : {}),
-        };
-      })();
-    if (!command) return;
-    mutationLock.current = true;
-    const ticket = epoch.current;
-    setPendingDocumentConfirmation(command);
-    setBusy(true);
-    setError("");
-    try {
-      const receipt = parseDocumentIntakeReceipt(
-        await requestDocumentIntake(
-          { operation: "contract", documentId: documentIntakeRevision.documentId },
-          command,
-        ),
-      );
-      const revision = parseDocumentIntakeRevision(
-        record(
-          await requestDocumentIntake({
-            operation: "read",
-            documentId: receipt.documentId,
-            revisionId: receipt.revisionId,
-          }),
-        ).revision,
-      );
-      if (ticket !== epoch.current) return;
-      if (
-        receipt.requestId !== command.requestId ||
-        receipt.documentId !== command.documentId ||
-        revision.documentId !== receipt.documentId ||
-        revision.revisionId !== receipt.revisionId
-      )
-        throw new Error("Contract 確認回執不符，請使用原命令重試。");
-      setDocumentIntakeReceipt(receipt);
-      setDocumentIntakeRevision(revision);
-      setSourceReviewConfirmed(false);
-      setPendingDocumentConfirmation(null);
-    } catch (cause) {
-      if (cause instanceof StaleRequest || ticket !== epoch.current) return;
-      const status =
-        cause && typeof cause === "object" && "status" in cause ? Number(cause.status) : 503;
-      if (status >= 400 && status < 500 && status !== 409 && status !== 429)
-        setPendingDocumentConfirmation(null);
-      setError(errorMessage(cause));
-    } finally {
-      if (ticket === epoch.current) {
-        setBusy(false);
-        mutationLock.current = false;
-      }
-    }
-  }
-
-  function startPurchaseOrderIntake(file = selected) {
-    if (
-      !view?.canEdit ||
-      !file ||
-      pending ||
-      busy ||
-      pendingDocumentIntake ||
-      pendingDocumentConfirmation ||
-      mutationLock.current
-    )
-      return;
-    setDocumentIntakeReceipt(null);
-    setDocumentIntakeRevision(null);
-    setPendingDocumentConfirmation(null);
-    setSourceReviewConfirmed(false);
-    setAcknowledgementReason("");
-    void intakePurchaseOrder({
-      action: "save",
-      repositoryId: view.repository.id,
-      documentId: crypto.randomUUID(),
-      requestId: crypto.randomUUID(),
-      expectedVersion: 0,
-      source: {
-        fileId: file.fileId,
-        fileRevisionId: file.revisionId,
-        fileSha256: file.sha256,
-      },
-    });
   }
 
   async function download() {
@@ -991,71 +527,18 @@ export default function FilesPanel({
                     </p>
                   )}
                   {documentIntakeRevision && (
-                    <div
-                      ref={review}
-                      tabIndex={-1}
-                      role="region"
-                      aria-label="採購單審核"
-                      className="grid min-w-0 gap-3 rounded-md border p-3"
-                    >
-                      <div>
-                        <p className="font-medium">採購單審核</p>
-                        <p className="text-xs text-muted-foreground">
-                          {documentIntakeRevision.state === "CONFIRMED"
-                            ? "採購單已確認並保存。"
-                            : `候選 v${documentIntakeRevision.version} · 系統辨識 ${candidateLines(documentIntakeRevision.candidate).length} 筆明細`}
-                        </p>
-                      </div>
-                      {documentIntakeRevision.diagnostics.length > 0 && (
-                        <p className="text-sm text-destructive">
-                          {documentIntakeRevision.diagnostics
-                            .map((code) => diagnosticLabels[code] ?? `需核對：${code}`)
-                            .join("；")}
-                        </p>
-                      )}
-                      <PurchaseOrderReview candidate={documentIntakeRevision.candidate} />
-                      {documentIntakeRevision.state === "DRAFT" && (
-                        <>
-                          <label className="flex items-start gap-2 text-sm">
-                            <input
-                              type="checkbox"
-                              checked={sourceReviewConfirmed}
-                              disabled={busy || !!pending || !!pendingDocumentConfirmation}
-                              onChange={(event) => setSourceReviewConfirmed(event.target.checked)}
-                            />
-                            <span>
-                              我已核對原始檔、全部明細、來源頁與金額，確認以上採購單資料正確。
-                            </span>
-                          </label>
-                          {documentIntakeRevision.diagnostics.some((item) =>
-                            item.includes("MISMATCH"),
-                          ) && (
-                            <div className="grid gap-2">
-                              <Label htmlFor="purchase-order-acknowledgement">
-                                金額差異確認理由
-                              </Label>
-                              <Input
-                                id="purchase-order-acknowledgement"
-                                placeholder="請說明接受此金額差異的原因"
-                                value={acknowledgementReason}
-                                disabled={busy || !!pending || !!pendingDocumentConfirmation}
-                                onChange={(event) => setAcknowledgementReason(event.target.value)}
-                              />
-                            </div>
-                          )}
-                          <Button
-                            disabled={
-                              busy ||
-                              !!pending ||
-                              (!pendingDocumentConfirmation && !sourceReviewConfirmed)
-                            }
-                            onClick={() => void confirmPurchaseOrder()}
-                          >
-                            {pendingDocumentConfirmation ? "以原請求重試確認" : "確認採購單"}
-                          </Button>
-                        </>
-                      )}
-                    </div>
+                    <PurchaseOrderIntakeReview
+                      key={documentIntakeRevision.revisionId}
+                      revision={documentIntakeRevision}
+                      sourceReviewConfirmed={sourceReviewConfirmed}
+                      setSourceReviewConfirmed={setSourceReviewConfirmed}
+                      acknowledgementReason={acknowledgementReason}
+                      setAcknowledgementReason={setAcknowledgementReason}
+                      pendingDocumentConfirmation={pendingDocumentConfirmation}
+                      busy={busy}
+                      pending={!!pending}
+                      confirmPurchaseOrder={confirmPurchaseOrder}
+                    />
                   )}
                 </>
               )}

@@ -6,13 +6,14 @@ export type FileSourceReference = Readonly<{
   fileSha256: string;
 }>;
 
-/** File alone authorizes and verifies exact original bytes, before and after object I/O. */
+/** File verifies exact original bytes and current access; returned bytes own a detached buffer. */
 export interface FileSourceReader {
   read(
     actor: string,
     repositoryId: string,
     source: Readonly<Pick<FileSourceReference, "fileId" | "fileRevisionId">>,
-  ): Promise<{ revision: FileRevision; bytes: Uint8Array }>;
+    maxBytes?: number,
+  ): Promise<{ revision: FileRevision; bytes: Uint8Array<ArrayBuffer> }>;
 }
 
 /** Bound to the consuming owner's transaction; never performs external object I/O. */
