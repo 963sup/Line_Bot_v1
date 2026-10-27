@@ -9,229 +9,32 @@ import { Input } from "../../shared/ui/input";
 import { Label } from "../../shared/ui/label";
 import PurchaseOrderReview from "./purchase-order-review";
 
-type FileInfo = {
-  repositoryId: string;
-  fileId: string;
-  revisionId: string;
-  version: number;
-  name: string;
-  mediaType: string;
-  byteLength: number;
-  sha256: string;
-};
-type PendingUpload = {
-  requestId: string;
-  fileId: string;
-  revisionId: string;
-  expectedVersion: number;
-  name: string;
-  mediaType: string;
-  byteLength: number;
-  sha256: string;
-};
-type View = {
-  actorUserId: string;
-  repository: { id: string };
-  canEdit: boolean;
-  canManage: boolean;
-  files: FileInfo[];
-  next: string | null;
-  uploads: PendingUpload[];
-  pendingNext: string | null;
-  uploadMaxBytes: number;
-};
-type UploadCommand = {
-  repositoryId: string;
-  fileId: string;
-  requestId: string;
-  expectedVersion: number;
-  name: string;
-  mediaType: string;
-};
-type DocumentIntakeReceipt = {
-  requestId: string;
-  documentId: string;
-  revisionId: string;
-  version: number;
-  intentFingerprint: string;
-};
-type DocumentSource = { fileId: string; fileRevisionId: string; fileSha256: string };
-type DocumentIntakeRevision = {
-  documentId: string;
-  revisionId: string;
-  version: number;
-  state: "DRAFT" | "CONFIRMED";
-  source: DocumentSource;
-  candidate: Record<string, unknown>;
-  diagnostics: string[];
-};
-type DocumentIntakeCommand = {
-  action: "save";
-  repositoryId: string;
-  documentId: string;
-  requestId: string;
-  expectedVersion: number;
-  source: DocumentSource;
-};
-type Pending = { command: UploadCommand; file: File };
-type SignedCommand = UploadCommand & { byteLength: number; sha256: string };
-type FileMutation = { operation: "prepare-upload" | "complete-upload"; command: SignedCommand };
-const diagnosticLabels: Readonly<Record<string, string>> = {
-  UNCERTAIN_LINE: "部分明細尚待釐清",
-  MISSING_REQUIRED_FACT: "缺少必要的採購單資料",
-  MISSING_SOURCE_PAGE: "部分明細缺少來源頁",
-  DUPLICATE_SOURCE_ROW_ID: "來源明細重複",
-  INVALID_LINE_MEASURE: "數量或單價不符合要求",
-  LINE_AMOUNT_MISMATCH: "明細毛額、折扣與淨額不一致",
-  LINE_GROSS_MISMATCH: "數量乘以單價與明細毛額不一致",
-  GROSS_TOTAL_MISMATCH: "明細毛額與毛額合計不一致",
-  DISCOUNT_TOTAL_MISMATCH: "明細折扣與折扣合計不一致",
-  LINE_NET_TOTAL_MISMATCH: "明細淨額與淨額合計不一致",
-  NET_TAX_TOTAL_MISMATCH: "淨額加稅額與應付總額不一致",
-};
-class StaleRequest extends Error {}
-
-/** Validate unknown HTTP projections at the browser boundary; server DTOs are not trusted casts. */
-function record(value: unknown): Record<string, unknown> {
-  if (!value || typeof value !== "object" || Array.isArray(value))
-    throw new Error("File response format is invalid.");
-  return Object.fromEntries(Object.entries(value));
-}
-function stringValue(value: unknown): string {
-  if (typeof value !== "string") throw new Error("File response field is invalid.");
-  return value;
-}
-function intValue(value: unknown): number {
-  if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0)
-    throw new Error("File response number is invalid.");
-  return value;
-}
-function boolValue(value: unknown): boolean {
-  if (typeof value !== "boolean") throw new Error("File response boolean is invalid.");
-  return value;
-}
-function optionalString(value: unknown): string | null {
-  return value === null ? null : stringValue(value);
-}
-function listOf<T>(value: unknown, parse: (item: unknown) => T): T[] {
-  if (!Array.isArray(value)) throw new Error("File response list is invalid.");
-  return value.map(parse);
-}
-function parseFile(value: unknown): FileInfo {
-  const r = record(value);
-  return {
-    repositoryId: stringValue(r.repositoryId),
-    fileId: stringValue(r.fileId),
-    revisionId: stringValue(r.revisionId),
-    version: intValue(r.version),
-    name: stringValue(r.name),
-    mediaType: stringValue(r.mediaType),
-    byteLength: intValue(r.byteLength),
-    sha256: stringValue(r.sha256),
-  };
-}
-function parseView(value: unknown): View {
-  const r = record(value);
-  const pending = parsePendingPage({ uploads: r.uploads, next: r.pendingNext });
-  const repository = record(r.repository);
-  return {
-    actorUserId: stringValue(r.actorUserId),
-    repository: { id: stringValue(repository.id) },
-    canEdit: boolValue(r.canEdit),
-    canManage: boolValue(r.canManage),
-    files: listOf(r.files, parseFile),
-    next: optionalString(r.next),
-    uploads: pending.uploads,
-    pendingNext: pending.next,
-    uploadMaxBytes: intValue(r.uploadMaxBytes),
-  };
-}
-function parsePendingPage(value: unknown): { uploads: PendingUpload[]; next: string | null } {
-  const r = record(value);
-  return {
-    uploads: listOf(r.uploads, (item): PendingUpload => {
-      const entry = record(item);
-      return {
-        requestId: stringValue(entry.requestId),
-        fileId: stringValue(entry.fileId),
-        revisionId: stringValue(entry.revisionId),
-        expectedVersion: intValue(entry.expectedVersion),
-        name: stringValue(entry.name),
-        mediaType: stringValue(entry.mediaType),
-        byteLength: intValue(entry.byteLength),
-        sha256: stringValue(entry.sha256),
-      };
-    }),
-    next: optionalString(r.next),
-  };
-}
-function parseMutation(value: unknown): { requestId: string; file: FileInfo } {
-  const r = record(value);
-  return { requestId: stringValue(r.requestId), file: parseFile(r.file) };
-}
-
-function errorMessage(cause: unknown) {
-  return cause instanceof Error ? cause.message : String(cause);
-}
-
-function parseDocumentIntakeReceipt(value: unknown): DocumentIntakeReceipt {
-  const r = record(value);
-  return {
-    requestId: stringValue(r.requestId),
-    documentId: stringValue(r.documentId),
-    revisionId: stringValue(r.revisionId),
-    version: intValue(r.version),
-    intentFingerprint: stringValue(r.intentFingerprint),
-  };
-}
-function parseDocumentSource(value: unknown): DocumentSource {
-  const r = record(value);
-  return {
-    fileId: stringValue(r.fileId),
-    fileRevisionId: stringValue(r.fileRevisionId),
-    fileSha256: stringValue(r.fileSha256),
-  };
-}
-function parseDocumentIntakeRevision(value: unknown): DocumentIntakeRevision {
-  const r = record(value);
-  const state = stringValue(r.state);
-  if (state !== "DRAFT" && state !== "CONFIRMED")
-    throw new Error("ContractDocument state is invalid.");
-  return {
-    documentId: stringValue(r.documentId),
-    revisionId: stringValue(r.id),
-    version: intValue(r.version),
-    state,
-    source: parseDocumentSource(r.source),
-    candidate: record(r.candidate),
-    diagnostics: listOf(r.diagnostics, stringValue),
-  };
-}
-function candidateLines(candidate: Record<string, unknown>) {
-  return listOf(candidate.lines, (value) => {
-    const line = record(value);
-    return {
-      sourceRowId: stringValue(line.sourceRowId),
-      sourcePages: listOf(line.sourcePages, intValue),
-    };
-  });
-}
-function sourceReviewPages(candidate: Record<string, unknown>): number[] {
-  const pages = new Set<number>();
-  const visit = (value: unknown) => {
-    if (Array.isArray(value)) {
-      value.forEach(visit);
-      return;
-    }
-    if (!value || typeof value !== "object") return;
-    const object = record(value);
-    if (Array.isArray(object.sourcePages))
-      for (const page of object.sourcePages) if (typeof page === "number") pages.add(page);
-    Object.values(object).forEach(visit);
-  };
-  visit(candidate);
-  return [...pages].sort((left, right) => left - right);
-}
+import {
+  type FileInfo,
+  type PendingUpload,
+  type View,
+  type Pending,
+  type SignedCommand,
+  type FileMutation,
+  StaleRequest,
+  record,
+  stringValue,
+  parseFile,
+  parseView,
+  parsePendingPage,
+  parseMutation,
+  errorMessage,
+} from "./files-projection";
+import {
+  type DocumentIntakeReceipt,
+  type DocumentIntakeRevision,
+  type DocumentIntakeCommand,
+  diagnosticLabels,
+  parseDocumentIntakeReceipt,
+  parseDocumentIntakeRevision,
+  candidateLines,
+  sourceReviewPages,
+} from "./purchase-order-intake-view";
 
 export default function FilesPanel({
   liffId,
