@@ -360,7 +360,7 @@ test("File owner errors and infrastructure failure never become empty authorized
     ...runtime,
     owner: () => ({
       ...runtime.owner(),
-      list: async () => {
+      overview: async () => {
         throw new FileError(403, "File access denied.", "FORBIDDEN");
       },
     }),
@@ -372,7 +372,7 @@ test("File owner errors and infrastructure failure never become empty authorized
     ...runtime,
     owner: () => ({
       ...runtime.owner(),
-      list: async () => {
+      overview: async () => {
         throw new Error("sensitive database message");
       },
     }),
