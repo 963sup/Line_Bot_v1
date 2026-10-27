@@ -23,7 +23,7 @@ export function createPurchaseOrderAgent(config: { gateway: StructuredGateway; m
             mediaType: input.mediaType,
           },
           maxOutputTokens: 24_000,
-          timeoutMs: 45_000,
+          timeoutMs: 105_000,
         }),
       );
     },
