@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { createHash, randomUUID } from "node:crypto";
 import test from "node:test";
-import { uploadSelectedFile } from "../src/modules/file/signed-file-upload";
 import type { FileMutation, Pending } from "../src/modules/file/files-projection";
+import { uploadSelectedFile } from "../src/modules/file/signed-file-upload";
 
 const binary = new TextEncoder().encode("original File source");
 const digest = createHash("sha256").update(binary).digest("hex");
@@ -103,7 +103,9 @@ test("unknown PUT transport results still reconcile with File owner using same r
         : { requestId: command.requestId, file };
     },
     () => {},
-    async () => { throw new Error("lost provider acknowledgement"); },
+    async () => {
+      throw new Error("lost provider acknowledgement");
+    },
   );
   assert.deepEqual(actions, ["prepare-upload", "complete-upload"]);
   assert.equal(result.file.revisionId, file.revisionId);
