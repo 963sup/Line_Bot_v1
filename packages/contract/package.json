@@ -54,10 +54,11 @@
     "test": "node --no-wasm-code-gc --import tsx --test --test-concurrency=2 test/*.test.ts"
   },
   "dependencies": {
+    "@line_bot_v1/content": "workspace:*",
+    "@line_bot_v1/file": "workspace:*",
     "@line_bot_v1/platform": "workspace:*",
     "@line_bot_v1/repository": "workspace:*",
-    "@line_bot_v1/content": "workspace:*",
-    "@line_bot_v1/file": "workspace:*"
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@types/node": "catalog:",

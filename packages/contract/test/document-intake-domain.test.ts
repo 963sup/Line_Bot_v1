@@ -11,6 +11,10 @@ import {
   createDocumentRevision,
   type PurchaseOrderCandidate,
 } from "../src/domain/document-intake.js";
+import {
+  decodePurchaseOrderCandidate,
+  decodeStoredPurchaseOrderCandidate,
+} from "../src/domain/document-intake-decoder.js";
 import { ContractError } from "../src/domain/error.js";
 
 function candidate(lineCount: number): PurchaseOrderCandidate {
@@ -153,6 +157,22 @@ test("purchase-order response schema has no dynamic evidence object keys", () =>
     required: [],
     properties: {},
   });
+});
+
+test("purchase-order Zod decoder rejects duplicate rows and unexpected fields", () => {
+  const source = candidate(2);
+  const duplicateRows = {
+    ...source,
+    lines: source.lines.map((line, index) => ({
+      ...line,
+      sourceRowId: index === 1 ? source.lines[0]?.sourceRowId : line.sourceRowId,
+    })),
+  };
+  assert.throws(() => decodePurchaseOrderCandidate(duplicateRows), ContractError);
+  assert.doesNotThrow(() => decodeStoredPurchaseOrderCandidate(duplicateRows));
+
+  const unexpectedField = { ...candidate(1), untrustedProviderField: true };
+  assert.throws(() => decodePurchaseOrderCandidate(unexpectedField), ContractError);
 });
 
 test("confirmation preserves reported tax and requires an auditable reason for total discrepancies", () => {

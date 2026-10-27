@@ -15,7 +15,7 @@ import type {
 } from "../../../domain/document-intake.js";
 import {
   decodeDocumentSource,
-  decodePurchaseOrderCandidate,
+  decodeStoredPurchaseOrderCandidate,
   decodeSourceReviewAttestation,
 } from "../../../domain/document-intake-decoder.js";
 import { ContractError } from "../../../domain/error.js";
@@ -39,7 +39,7 @@ function documentSource(value: unknown): DocumentSource {
 
 function purchaseOrderCandidate(value: unknown): PurchaseOrderCandidate {
   try {
-    return decodePurchaseOrderCandidate(value);
+    return decodeStoredPurchaseOrderCandidate(value);
   } catch {
     throw new TypeError("Invalid stored Contract document candidate.");
   }

@@ -65,7 +65,7 @@ function failure(error: unknown) {
   });
   return jsonResponse(
     {
-      error: known ? error.message : "Contract service is unavailable.",
+      error: error instanceof Error ? error.message : String(error),
       ...(error instanceof ContractError ? { code: error.code } : {}),
     },
     status,

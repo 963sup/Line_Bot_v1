@@ -68,7 +68,7 @@ function failure(error: unknown) {
   });
   return jsonResponse(
     {
-      error: known ? error.message : "Content service is unavailable.",
+      error: error instanceof Error ? error.message : String(error),
       ...(error instanceof ContentError ? { code: error.code } : {}),
     },
     status,

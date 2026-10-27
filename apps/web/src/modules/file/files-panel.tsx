@@ -283,7 +283,7 @@ function parseMutation(value: unknown): {
 }
 
 function errorMessage(cause: unknown) {
-  return cause instanceof Error ? cause.message : "File 操作暫不可用，請重新讀取後重試。";
+  return cause instanceof Error ? cause.message : String(cause);
 }
 
 function parseDocumentIntakeReceipt(value: unknown): DocumentIntakeReceipt {
