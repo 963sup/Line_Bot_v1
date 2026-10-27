@@ -6,7 +6,7 @@ import type {
 } from "../../contracts/output/files.js";
 import type { FileObjectStore } from "../../contracts/output/object-store.js";
 import { FileError, fileErrorFromUnknown } from "../../domain/error.js";
-import { type FileRevision, type FileUploadIntent, nextFileRevision } from "../../domain/file.js";
+import { type FileDescriptor, type FileRevision, type FileUploadIntent, nextFileRevision } from "../../domain/file.js";
 import { assertWritable, checkVersion, identifier, scopeId } from "../../domain/values.js";
 import { directUploadCommand, uploadCommand } from "../commands/files.js";
 import { createFileSourceReader } from "./sources.js";
@@ -68,14 +68,7 @@ export function createFiles(deps: {
   }
   function uploadEvidence(
     c: UploadDetails,
-    descriptor:
-      | FileRevision
-      | {
-          name: string;
-          mediaType: string;
-          byteLength: number;
-          sha256: string;
-        },
+    descriptor: FileDescriptor,
   ) {
     // The same payload fingerprint is used by legacy CLI and signed Web upload.
     return {
@@ -94,12 +87,7 @@ export function createFiles(deps: {
   async function prepare(
     actor: string,
     c: UploadDetails,
-    descriptor: {
-      name: string;
-      mediaType: string;
-      byteLength: number;
-      sha256: string;
-    },
+    descriptor: FileDescriptor,
   ) {
     return deps.transactions.transact(
       actor,
@@ -137,12 +125,7 @@ export function createFiles(deps: {
   async function pending(
     actor: string,
     c: UploadDetails,
-    descriptor: {
-      name: string;
-      mediaType: string;
-      byteLength: number;
-      sha256: string;
-    },
+    descriptor: FileDescriptor,
   ) {
     return deps.transactions.transact(
       actor,
@@ -166,12 +149,7 @@ export function createFiles(deps: {
   async function finalize(
     actor: string,
     c: UploadDetails,
-    descriptor: {
-      name: string;
-      mediaType: string;
-      byteLength: number;
-      sha256: string;
-    },
+    descriptor: FileDescriptor,
   ) {
     return deps.transactions.transact(
       actor,
