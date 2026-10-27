@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "@line_bot_v1/integration-openai",
+  "status": "current",
+  "path": "packages/integration-openai",
+  "moduleKind": "integration-adapter",
+  "semanticOwner": "openai-integration",
+  "allowedWorkspaceDependencies": [],
+  "primaryOwnerImplementation": true
+}

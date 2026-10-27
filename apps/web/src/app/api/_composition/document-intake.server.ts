@@ -5,10 +5,8 @@ import {
   purchaseOrderExtractionSchemaVersion,
 } from "@line_bot_v1/contract/contracts/input/document-intake";
 import { createPostgresFileSourceReader } from "@line_bot_v1/file/composition/bootstrap/files";
-import { createPurchaseOrderAgent } from "@line_bot_v1/integration-vercel/agents/purchase-order";
-import { createVercelAiGateway } from "@line_bot_v1/integration-vercel/gateway";
-import { gatewayConfiguration } from "@line_bot_v1/integration-vercel/gateway-config";
 import {
+  createConfiguredOpenAIDocumentExtractor,
   createDocumentIntakeWithExtractor,
   createPostgresDocumentIntakeAttempts,
 } from "@line_bot_v1/intelligence/composition/bootstrap/document-intake";
@@ -20,15 +18,11 @@ let runtime: DocumentIntakeWebRuntime | undefined;
 export function documentIntake(): DocumentIntakeWebRuntime {
   if (runtime) return runtime;
   const target = createPostgresContractDocuments();
-  const gateway = gatewayConfiguration();
-  if (!gateway) {
+  const extractor = createConfiguredOpenAIDocumentExtractor();
+  if (!extractor) {
     runtime = { scope: repositoryOwnerScope, intake: null, documents: target };
     return runtime;
   }
-  const agent = createPurchaseOrderAgent({
-    gateway: createVercelAiGateway(gateway).transport,
-    model: gateway.model,
-  });
   const intake = createDocumentIntakeWithExtractor({
     attempts: createPostgresDocumentIntakeAttempts(),
     reader: createPostgresFileSourceReader(),
@@ -38,7 +32,7 @@ export function documentIntake(): DocumentIntakeWebRuntime {
       version: purchaseOrderExtractionSchemaVersion,
       schema: purchaseOrderExtractionSchema,
     },
-    extractor: agent.documentExtractor(),
+    extractor,
   });
   runtime = { scope: repositoryOwnerScope, intake, documents: target };
   return runtime;

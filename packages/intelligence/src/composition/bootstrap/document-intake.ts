@@ -1,6 +1,7 @@
 import { createPostgresFileRevisionQualifier } from "@line_bot_v1/file/composition/bootstrap/files";
 import type { FileSourceReader } from "@line_bot_v1/file/contracts/output/references";
 import type { Database } from "@line_bot_v1/platform/postgres";
+import { createOpenAIDocumentExtractor } from "../../adapters/outbound/openai-document-extractor.js";
 import { createPostgresDocumentAttempts } from "../../adapters/outbound/persistence/document-attempts.js";
 import { createDocumentIntake } from "../../application/use-cases/intake-document.js";
 import type { DocumentAttempts } from "../../contracts/output/document-attempts.js";
@@ -10,6 +11,10 @@ import type {
   IntakeSchema,
   IntakeTarget,
 } from "../../contracts/output/document-intake.js";
+
+export function createConfiguredOpenAIDocumentExtractor() {
+  return process.env.OPENAI_API_KEY ? createOpenAIDocumentExtractor("gpt-4.1") : undefined;
+}
 
 export function createPostgresDocumentIntakeAttempts(db?: Database): DocumentAttempts {
   return createPostgresDocumentAttempts(createPostgresFileRevisionQualifier, db);
