@@ -324,5 +324,5 @@ test("File owner errors and infrastructure failure never become empty authorized
   };
   const response = await filesRequest(new Request(baseUrl), unavailable, identity);
   assert.equal(response.status, 500);
-  assert.deepEqual(await response.json(), { error: "sensitive database message" });
+  assert.deepEqual(await response.json(), { error: "File operation failed." });
 });
