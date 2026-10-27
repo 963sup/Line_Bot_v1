@@ -8,7 +8,7 @@ import type { FileObjectStore } from "../../contracts/output/object-store.js";
 import { FileError, fileErrorFromUnknown } from "../../domain/error.js";
 import { type FileRevision, type FileUploadIntent, nextFileRevision } from "../../domain/file.js";
 import { assertWritable, checkVersion, identifier, scopeId } from "../../domain/values.js";
-import { uploadCommand } from "../commands/files.js";
+import { directUploadCommand, uploadCommand } from "../commands/files.js";
 import { createFileSourceReader } from "./sources.js";
 
 function fileDto(r: FileRevision) {
@@ -48,6 +48,80 @@ export function createFiles(deps: {
       actorUserId: actor,
       at: deps.now(),
     };
+  }
+
+  type UploadDetails = ReturnType<typeof uploadCommand>;
+  function uploadIdentity(c: UploadDetails) {
+    return { repositoryId: c.repositoryId, kind: "file" as const, id: c.fileId };
+  }
+  function uploadEvidence(c: UploadDetails, descriptor: FileRevision | {
+    name: string; mediaType: string; byteLength: number; sha256: string
+  }) {
+    // The same payload fingerprint is used by legacy CLI and signed Web upload.
+    return { requestId: c.requestId, payload: JSON.stringify({ ...c, descriptor: {
+      name: descriptor.name, mediaType: descriptor.mediaType,
+      byteLength: descriptor.byteLength, sha256: descriptor.sha256,
+    } }) };
+  }
+  async function prepare(actor: string, c: UploadDetails, descriptor: {
+    name: string; mediaType: string; byteLength: number; sha256: string
+  }) {
+    return deps.transactions.transact(actor, uploadIdentity(c), uploadEvidence(c, descriptor), async (tx) => {
+      writable(tx);
+      const replay = await tx.replay();
+      if (replay) return { committed: true as const, revision: replay.revision };
+      newWrite(tx);
+      const pending = await tx.uploads.load();
+      const current = await tx.files.load(c.fileId);
+      checkVersion(current, c.expectedVersion);
+      if (pending) {
+        await tx.uploads.touch();
+        return { committed: false as const, intent: pending };
+      }
+      const revision = nextFileRevision(
+        current, c.expectedVersion, c.fileId, descriptor, context(tx, actor)
+      );
+      const intent: FileUploadIntent = {
+        requestId: c.requestId, expectedVersion: c.expectedVersion, revision,
+      };
+      await tx.uploads.prepare(intent);
+      return { committed: false as const, intent };
+    });
+  }
+  async function pending(actor: string, c: UploadDetails, descriptor: {
+    name: string; mediaType: string; byteLength: number; sha256: string
+  }) {
+    return deps.transactions.transact(actor, uploadIdentity(c), uploadEvidence(c, descriptor), async (tx) => {
+      writable(tx);
+      const replay = await tx.replay();
+      if (replay) return { committed: true as const, revision: replay.revision };
+      newWrite(tx);
+      const intent = await tx.uploads.load();
+      if (!intent) throw new FileError(409, "Upload intent was not prepared.", "LIFECYCLE_CONFLICT");
+      const current = await tx.files.load(c.fileId);
+      checkVersion(current, intent.expectedVersion);
+      await tx.uploads.touch();
+      return { committed: false as const, intent };
+    });
+  }
+  async function finalize(actor: string, c: UploadDetails, descriptor: {
+    name: string; mediaType: string; byteLength: number; sha256: string
+  }) {
+    return deps.transactions.transact(actor, uploadIdentity(c), uploadEvidence(c, descriptor), async (tx) => {
+      writable(tx);
+      const replay = await tx.replay();
+      if (replay) return { requestId: c.requestId, file: fileDto(replay.revision) };
+      newWrite(tx);
+      const intent = await tx.uploads.load();
+      if (!intent) throw new FileError(503, "Upload intent unavailable.", "UNAVAILABLE");
+      const current = await tx.files.load(c.fileId);
+      const next = nextFileRevision(
+        current, intent.expectedVersion, c.fileId, intent.revision, intent.revision,
+      );
+      await tx.files.save(next, intent.expectedVersion);
+      await tx.record({ kind: "file", requestId: c.requestId, revision: next });
+      return { requestId: c.requestId, file: fileDto(next) };
+    });
   }
   return {
     async source(actor: string, scope: string, id: string, revision: string) {
@@ -108,76 +182,46 @@ export function createFiles(deps: {
         throw fileErrorFromUnknown(error);
       }
     },
-    async upload(actor: string, input: unknown, bytes: Uint8Array) {
-      const c = uploadCommand(input);
-      const payload = deps.payloads.inspect(bytes, c.name, c.mediaType);
-      const identity = { repositoryId: c.repositoryId, kind: "file" as const, id: c.fileId };
-      const evidence = {
-        requestId: c.requestId,
-        payload: JSON.stringify({ ...c, descriptor: payload.descriptor }),
-      };
+
+    /** Prepare an immutable request before allowing an untrusted browser to write bytes. */
+    async prepareUpload(actor: string, input: unknown) {
       try {
-        // First commit an immutable intent; do not hold any DB lock over object I/O.
-        const prepared = await deps.transactions.transact(actor, identity, evidence, async (tx) => {
-          writable(tx);
-          const replay = await tx.replay();
-          if (replay) {
-            if (replay.kind !== "file")
-              throw new FileError(409, "Request identity reused.", "REQUEST_ID_REUSED");
-            return { committed: true as const, revision: replay.revision };
-          }
-          newWrite(tx);
-          const pending = await tx.uploads.load();
-          const current = await tx.files.load(c.fileId);
-          checkVersion(current, c.expectedVersion);
-          if (pending) {
-            await tx.uploads.touch();
-            return { committed: false as const, intent: pending };
-          }
-          const revision = nextFileRevision(
-            current,
-            c.expectedVersion,
-            c.fileId,
-            payload.descriptor,
-            context(tx, actor),
-          );
-          const intent: FileUploadIntent = {
-            requestId: c.requestId,
-            expectedVersion: c.expectedVersion,
-            revision,
-          };
-          await tx.uploads.prepare(intent);
-          return { committed: false as const, intent };
-        });
-        if (prepared.committed) return { requestId: c.requestId, file: fileDto(prepared.revision) };
-
-        // A successful upload is not yet a visible File revision. Readback checks exact bytes.
+        const { descriptor, ...c } = directUploadCommand(input);
+        const prepared = await prepare(actor, c, descriptor);
+        if (prepared.committed)
+          return { requestId: c.requestId, file: fileDto(prepared.revision) };
+        const sign = deps.objects().signUpload;
+        if (!sign) throw new FileError(503, "Signed uploads are unavailable.", "UNAVAILABLE");
+        const signedUrl = await sign.call(deps.objects(), prepared.intent.revision);
+        return { requestId: c.requestId, signedUrl, revisionId: prepared.intent.revision.id };
+      } catch (error) {
+        throw fileErrorFromUnknown(error);
+      }
+    },
+    /** Finalize only after an independent Storage read proves digest and exact length. */
+    async completeUpload(actor: string, input: unknown) {
+      try {
+        const { descriptor, ...c } = directUploadCommand(input);
+        const prepared = await pending(actor, c, descriptor);
+        if (prepared.committed)
+          return { requestId: c.requestId, file: fileDto(prepared.revision) };
+        // No database lock is held while downloading and verifying untrusted bytes.
+        await deps.objects().readVerified(prepared.intent.revision);
+        return await finalize(actor, c, descriptor);
+      } catch (error) {
+        throw fileErrorFromUnknown(error);
+      }
+    },
+    /** Existing CLI/multipart contract is retained; both transports share File invariants. */
+    async upload(actor: string, input: unknown, bytes: Uint8Array) {
+      try {
+        const c = uploadCommand(input);
+        const payload = deps.payloads.inspect(bytes, c.name, c.mediaType);
+        const prepared = await prepare(actor, c, payload.descriptor);
+        if (prepared.committed)
+          return { requestId: c.requestId, file: fileDto(prepared.revision) };
         await deps.objects().putVerified(prepared.intent.revision, payload.bytes);
-
-        return await deps.transactions.transact(actor, identity, evidence, async (tx) => {
-          writable(tx);
-          const replay = await tx.replay();
-          if (replay) {
-            if (replay.kind !== "file")
-              throw new FileError(409, "Request identity reused.", "REQUEST_ID_REUSED");
-            return { requestId: c.requestId, file: fileDto(replay.revision) };
-          }
-          newWrite(tx);
-          const intent = await tx.uploads.load();
-          if (!intent) throw new FileError(503, "Upload intent unavailable.", "UNAVAILABLE");
-          const { revision: preparedRevision } = intent;
-          const current = await tx.files.load(c.fileId);
-          const next = nextFileRevision(
-            current,
-            intent.expectedVersion,
-            c.fileId,
-            preparedRevision,
-            preparedRevision,
-          );
-          await tx.files.save(next, intent.expectedVersion);
-          await tx.record({ kind: "file", requestId: c.requestId, revision: next });
-          return { requestId: c.requestId, file: fileDto(next) };
-        });
+        return await finalize(actor, c, payload.descriptor);
       } catch (error) {
         throw fileErrorFromUnknown(error);
       }
