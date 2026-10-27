@@ -127,7 +127,16 @@ export async function fileHttpRequest(
         revisionId,
         uploadLimit,
       );
-      return new Response(Uint8Array.from(original.bytes).buffer, {
+      // Source bytes are already detached after the second authorization check.
+      // Avoid a second full-buffer copy when the view spans its own ArrayBuffer.
+      const bytes = original.bytes;
+      const body =
+        bytes.buffer instanceof ArrayBuffer &&
+        bytes.byteOffset === 0 &&
+        bytes.byteLength === bytes.buffer.byteLength
+          ? bytes.buffer
+          : Uint8Array.from(bytes).buffer;
+      return new Response(body, {
         headers: {
           "Content-Type": "application/octet-stream",
           "Content-Disposition": "attachment",

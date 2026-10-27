@@ -198,6 +198,25 @@ test("File detail and Download consume only File-owned authorized reads", async 
   );
 });
 
+test("File download transmits only a bounded source byte view, not adjacent bytes", async () => {
+  const { runtime } = fixture();
+  const bytes = new Uint8Array([99, 1, 2, 3, 88]).subarray(1, 4);
+  const selected: FilesWebRuntime = {
+    ...runtime,
+    owner: () => ({
+      ...runtime.owner(),
+      source: async () => ({ file, bytes }),
+    }),
+  };
+  const result = await filesRequest(
+    new Request(baseUrl + "&view=download&fileId=" + file.fileId + "&revisionId=" + file.revisionId),
+    selected,
+    identity,
+  );
+  assert.equal(result.status, 200);
+  assert.deepEqual(new Uint8Array(await result.arrayBuffer()), Uint8Array.of(1, 2, 3));
+});
+
 test("Browser download refuses large response bodies before fetching private source bytes", async () => {
   const { calls, runtime } = fixture();
   const oversized: FilesWebRuntime = {

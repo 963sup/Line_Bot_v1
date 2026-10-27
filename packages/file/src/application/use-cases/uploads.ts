@@ -140,9 +140,10 @@ export function createFileUploads(deps: {
         const { descriptor, ...c } = directUploadCommand(input);
         const prepared = await prepare(actor, c, descriptor);
         if (prepared.committed) return { requestId: c.requestId, file: fileDto(prepared.revision) };
-        const sign = deps.objects().signUpload;
-        if (!sign) throw new FileError(503, "Signed uploads are unavailable.", "UNAVAILABLE");
-        const signedUrl = await sign.call(deps.objects(), prepared.intent.revision);
+        const objects = deps.objects();
+        if (!objects.signUpload)
+          throw new FileError(503, "Signed uploads are unavailable.", "UNAVAILABLE");
+        const signedUrl = await objects.signUpload(prepared.intent.revision);
         return { requestId: c.requestId, signedUrl, revisionId: prepared.intent.revision.id };
       } catch (error) {
         throw fileErrorFromUnknown(error);
