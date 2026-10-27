@@ -27,6 +27,10 @@
     "./domain/file": {
       "types": "./dist/domain/file.d.ts",
       "default": "./dist/domain/file.js"
+    },
+    "./adapters/inbound/http": {
+      "types": "./dist/adapters/inbound/http.d.ts",
+      "default": "./dist/adapters/inbound/http.js"
     }
   },
   "files": [
