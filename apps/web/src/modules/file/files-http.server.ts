@@ -8,7 +8,6 @@ import { captureHandledServerError } from "../../shared/observability/server-err
 import {
   BodyTooLargeError,
   jsonResponse,
-  readBodyBytes,
   readBodyText,
 } from "../../shared/server/http";
 import { RequestIdentityError } from "../../shared/server/request-identity-error";
@@ -66,40 +65,6 @@ async function jsonBody(request: Request): Promise<Record<string, unknown>> {
   } catch {
     return invalid("Invalid JSON body.");
   }
-}
-async function uploadBody(request: Request) {
-  const contentType = request.headers.get("content-type") ?? "";
-  if (!/^multipart\/form-data\s*;\s*boundary=/i.test(contentType))
-    throw new FileError(415, "Multipart upload is required.", "INVALID_INPUT");
-  const bounded = await readBodyBytes(request, multipartLimit);
-  let form: FormData;
-  try {
-    form = await new Response(Uint8Array.from(bounded).buffer, {
-      headers: { "content-type": contentType },
-    }).formData();
-  } catch {
-    return invalid("Invalid multipart File request.");
-  }
-  if ([...form.keys()].some((key) => key !== "file" && key !== "command"))
-    return invalid("Unknown upload field.");
-  const commandText = form.get("command");
-  const file = form.get("file");
-  if (typeof commandText !== "string" || !(file instanceof File))
-    return invalid("File and command are required.");
-  if (file.size < 1 || file.size > uploadLimit)
-    throw new FileError(413, "Browser upload is limited to 3 MB.", "INVALID_INPUT");
-  let command: unknown;
-  try {
-    command = JSON.parse(commandText);
-  } catch {
-    return invalid("Invalid upload command.");
-  }
-  if (!command || typeof command !== "object" || Array.isArray(command))
-    return invalid("Invalid upload command.");
-  const fields = Object.fromEntries(Object.entries(command));
-  if (fields.name !== file.name || fields.mediaType !== (file.type || "application/octet-stream"))
-    return invalid("Declared source metadata does not match the selected file.");
-  return { command: fields, bytes: new Uint8Array(await file.arrayBuffer()) };
 }
 function checkScope(value: unknown, scope: Scope) {
   if (!value || typeof value !== "object" || Array.isArray(value))
@@ -208,11 +173,6 @@ export async function filesRequest(
       return invalid("Unknown File query.");
     }
 
-    if (request.headers.get("content-type")?.startsWith("multipart/form-data")) {
-      const upload = await uploadBody(request);
-      checkScope(upload.command, scope);
-      return jsonResponse(await owner.upload(scope.actorUserId, upload.command, upload.bytes));
-    }
     const body = await jsonBody(request);
     if (Object.keys(body).some((key) => !["operation", "command"].includes(key)))
       return invalid("Unknown File operation field.");
