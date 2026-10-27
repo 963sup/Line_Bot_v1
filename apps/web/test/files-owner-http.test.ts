@@ -74,6 +74,15 @@ function fixture() {
       called("source", [actor, scope, fileId, revisionId]);
       return { file, bytes: Uint8Array.from([1, 2, 3]) };
     },
+    async prepareUpload(actor, input) {
+      called("prepare", [actor, input]);
+      return { requestId: requestIdOf(input), revisionId: file.revisionId,
+        signedUrl: "https://test.supabase.co/storage/v1/object/upload/sign/repository-files/key?token=secret" };
+    },
+    async completeUpload(actor, input) {
+      called("complete", [actor, input]);
+      return { requestId: requestIdOf(input), file };
+    },
     async upload(actor, input, bytes) {
       called("upload", [actor, input, bytes]);
       return { requestId: requestIdOf(input), file };
@@ -196,7 +205,10 @@ test("Browser download refuses large response bodies before fetching private sou
     ...runtime,
     owner: () => ({
       ...runtime.owner(),
-      file: async () => ({ ...file, byteLength: 3_000_001 }),
+      source: async (...args) => {
+        calls.push({ operation: "bounded-source", args });
+        throw new FileError(413, "File is too large for this transport.", "INVALID_INPUT");
+      },
     }),
   };
   const response = await filesRequest(
@@ -207,10 +219,7 @@ test("Browser download refuses large response bodies before fetching private sou
     identity,
   );
   assert.equal(response.status, 413);
-  assert.equal(
-    calls.some((item) => item.operation === "source"),
-    false,
-  );
+  assert.equal(calls.find((item) => item.operation === "bounded-source")?.args[4], 3_000_000);
 });
 
 test("File mutation refuses foreign Repository, forged Origin and processing commands", async () => {
@@ -292,6 +301,36 @@ test("Browser Upload accepts only bounded file bytes, matching metadata and curr
     const oversized = await filesRequest(uploadRequest({ size: 3_000_001 }), runtime, identity);
     assert.equal(oversized.status, 413);
     assert.equal(calls.filter((call) => call.operation === "upload").length, 1);
+  });
+});
+
+test("Signed upload uses authenticated JSON commands and never transfers Binary through API", async () => {
+  await withOrigin(async () => {
+    const { calls, runtime } = fixture();
+    const command = {
+      repositoryId: scope.repository.id, fileId: file.fileId,
+      requestId: randomUUID(), expectedVersion: 0,
+      name: file.name, mediaType: file.mediaType, byteLength: 3,
+      sha256: "a".repeat(64),
+    };
+    const prepared = await filesRequest(post({ operation: "prepare-upload", command }), runtime, identity);
+    assert.equal(prepared.status, 200);
+    const ticket = await prepared.json();
+    assert.equal(ticket.requestId, command.requestId);
+    assert.match(ticket.signedUrl, /storage\\/v1\\/object\\/upload\\/sign/);
+    const completed = await filesRequest(post({ operation: "complete-upload", command }), runtime, identity);
+    assert.equal(completed.status, 200);
+    assert.equal((await completed.json()).file.revisionId, file.revisionId);
+    assert.deepEqual(calls.map((item) => item.operation), ["prepare", "complete"]);
+    const tooLarge = await filesRequest(post({ operation: "prepare-upload", command: {
+      ...command, byteLength: 3_000_001,
+    } }), runtime, identity);
+    assert.equal(tooLarge.status, 413);
+    const foreign = await filesRequest(post({ operation: "prepare-upload", command: {
+      ...command, repositoryId: "another",
+    } }), runtime, identity);
+    assert.equal(foreign.status, 400);
+    assert.equal(calls.length, 2);
   });
 });
 
