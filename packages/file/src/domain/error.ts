@@ -27,9 +27,5 @@ export function fileErrorFromUnknown(error: unknown): FileError {
     if (status === 403) return new FileError(403, "File access denied.", "FORBIDDEN");
     if (status === 404) return new FileError(404, "File evidence not found.", "NOT_FOUND");
   }
-  // Normalize untrusted provider/SQL failures without disclosing underlying details to HTTP callers.
-  // Retain the original exception for structured server observability.
-  return Object.assign(new FileError(503, "File operation unavailable.", "UNAVAILABLE"), {
-    cause: error,
-  });
+  throw error;
 }
