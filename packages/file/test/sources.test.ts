@@ -73,3 +73,17 @@ test("revocation during object read prevents bytes from reaching a downstream co
     code: "FORBIDDEN",
   });
 });
+
+
+test("bounded Web source rejects large bytes before object I/O without weakening File authorization", async () => {
+  const calls: string[] = [];
+  const reader = createFileSourceReader({
+    reads: { async file() { calls.push("authorize"); return { ...revision, byteLength: 3_000_001 }; } },
+    objects: () => ({
+      async readVerified() { assert.fail("Storage read must not occur"); },
+      async putVerified() { assert.fail("Unexpected upload"); },
+    }),
+  });
+  await assert.rejects(reader.read("owner", "repo", source, 3_000_000), { status: 413 });
+  assert.deepEqual(calls, ["authorize"]);
+});
