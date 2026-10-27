@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "@line_bot_v1/google-workspace",
+  "status": "current",
+  "path": "packages/google-workspace",
+  "moduleKind": "integration-adapter",
+  "semanticOwner": "google-workspace",
+  "allowedWorkspaceDependencies": [],
+  "primaryOwnerImplementation": true
+}

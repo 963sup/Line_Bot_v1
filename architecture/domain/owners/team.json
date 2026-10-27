@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "owner": {
+    "id": "team",
+    "kind": "business-owner",
+    "lifecycle": "current",
+    "doc": "docs/owners/team.md"
+  },
+  "boundedContexts": [],
+  "concepts": [
+    {
+      "id": "team",
+      "kind": "authoritative",
+      "owner": "team",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-teams.json",
+        "symbol": "Team"
+      }
+    },
+    {
+      "id": "team-membership",
+      "kind": "authoritative",
+      "owner": "team",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-users.json",
+        "symbol": "TeamMemberEdge"
+      }
+    },
+    {
+      "id": "team-role-assignment",
+      "kind": "authoritative",
+      "owner": "team",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-users.json",
+        "symbol": "TeamMemberEdge",
+        "field": "role"
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "id": "team-project-collaborator",
+      "provider": "team",
+      "consumer": "project",
+      "meaning": "Project-owned Team grants consume current Team membership and Team organization scope; Team identity or membership does not become Project-owned authority.",
+      "integrationMode": "query",
+      "authority": "team",
+      "consistency": "transaction-recheck"
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "manage-team-collaboration",
+      "owner": "team",
+      "kind": "leaf",
+      "intent": "Manage Organization-scoped Team collaboration, direct/effective membership, hierarchy, privacy, notification setting, maintainer state, and locator access.",
+      "preserves": ["K1", "K2", "K3", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "consumes": [
+        "account-team-qualification",
+        "identity-access-team-actor-resolution",
+        "namespace-team-locator",
+        "namespace-team-naming",
+        "organization-team-scope"
+      ],
+      "implementation": {
+        "status": "implemented",
+        "scope": "current Organization Team aggregate including FPT parent/child membership semantics, TeamPrivacy and TeamNotificationSetting",
+        "sourcePaths": [
+          "packages/team/src/application/collaboration.ts",
+          "packages/team/src/application/commands/team-command.ts",
+          "packages/team/src/application/commands/team-slug.ts",
+          "packages/team/src/application/use-cases/team-command.ts",
+          "packages/team/src/contracts/input/team-command.ts",
+          "packages/team/src/contracts/input/team-collaboration.ts",
+          "packages/team/src/contracts/output/team-query.ts",
+          "packages/team/src/contracts/output/team-mutation.ts",
+          "packages/team/src/contracts/errors/team-error.ts",
+          "packages/team/src/contracts.ts",
+          "packages/team/src/adapters/outbound/persistence/team-query.ts",
+          "packages/team/src/adapters/outbound/persistence/team-mutation.ts",
+          "packages/team/src/adapters/outbound/persistence/team-maintainer.ts",
+          "packages/team/src/composition/bootstrap/team.ts",
+          "packages/team/src/domain/team.ts"
+        ],
+        "publicExports": [
+          "./application/collaboration",
+          "./application/commands/team-command",
+          "./contracts/input/team-command",
+          "./contracts",
+          "./contracts/errors/team-error",
+          "./application/commands/team-slug",
+          "./postgres"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/(mobile)/(tabs)/team/page.tsx",
+          "apps/web/src/app/(mobile)/(tabs)/orgs/[login]/teams/[teamSlug]/page.tsx"
+        ],
+        "testPaths": [
+          "packages/team/test/team.test.ts",
+          "packages/team/test/team-hierarchy-postgres.test.ts",
+          "packages/team/test/team-write-postgres.test.ts",
+          "packages/team/test/team-write-concurrency-postgres.test.ts"
+        ],
+        "note": "Organization Team keeps direct membership authoritative and derives FPT CHILD_TEAM/ALL semantics with source provenance. TeamPrivacy is SECRET/VISIBLE and TeamNotificationSetting is NOTIFICATIONS_DISABLED/NOTIFICATIONS_ENABLED. Hierarchy never grants Repository access without an explicit Repository Team grant; EnterpriseTeam remains a separate Enterprise-owned identity. Team notification setting is distinct from User subscription, recipient Notification and delivery attempts."
+      }
+    }
+  ],
+  "locators": [
+    {
+      "id": "organization-team-slug",
+      "concept": "team",
+      "status": "active",
+      "fields": ["organizationLogin", "teamSlug"],
+      "scope": "organization-scoped-team-slug",
+      "scopeAuthority": "namespace",
+      "routeFiles": ["apps/web/src/app/(mobile)/(tabs)/orgs/[login]/teams/[teamSlug]/page.tsx"],
+      "note": "Team slug is Organization-scoped and mutable separately from Team identity.",
+      "fpt": {
+        "file": "schema-teams.json",
+        "symbol": "Team",
+        "field": "slug"
+      }
+    }
+  ]
+}

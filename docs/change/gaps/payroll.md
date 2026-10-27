@@ -30,4 +30,4 @@
 
 首版薪資規則範圍、Earning/Deduction、approval segregation、publication vs payment owner、Finance sync/async contract仍待真實 business decision。
 
-Current owner/status： [Payroll owner](../../owners/payroll.md) · [Semantic model](../../../architecture/semantic-model.json)。Implementation sequencing： [Migration slices](../migrations/enterprise-organization-workforce-payroll.md#workforce--attendance--payroll-implementation-slices)。
+Current owner/status： [Payroll owner](../../owners/payroll.md) · [Semantic model](../../../architecture/registry.json#domain)。Implementation sequencing： [Migration slices](../migrations/enterprise-organization-workforce-payroll.md#workforce--attendance--payroll-implementation-slices)。

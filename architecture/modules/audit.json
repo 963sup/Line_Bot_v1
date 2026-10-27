@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "@line_bot_v1/audit",
+  "status": "current",
+  "path": "packages/audit",
+  "moduleKind": "domain-module",
+  "semanticOwner": "audit",
+  "allowedWorkspaceDependencies": ["@line_bot_v1/identity-access"],
+  "primaryOwnerImplementation": true,
+  "implementationNote": "Audit query application consumes the IdentityAccess-owned authorized governance evidence projection; source history ownership remains IdentityAccess."
+}

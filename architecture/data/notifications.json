@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "owner": "notifications",
+  "files": [
+    {
+      "path": "packages/integration-supabase/src/schemas/850_notifications.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/851_notification_deliveries.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/852_notification_receipts.sql",
+      "role": "authoritative"
+    }
+  ],
+  "relations": [
+    {
+      "name": "notifications",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/850_notifications.sql",
+      "authority": true,
+      "semanticOwner": "notifications",
+      "concept": "notification"
+    },
+    {
+      "name": "notification_deliveries",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/851_notification_deliveries.sql",
+      "authority": true,
+      "semanticOwner": "notifications"
+    },
+    {
+      "name": "notification_receipts",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/852_notification_receipts.sql",
+      "authority": true,
+      "semanticOwner": "notifications",
+      "concept": "notification-receipt"
+    }
+  ]
+}

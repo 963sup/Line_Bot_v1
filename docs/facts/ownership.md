@@ -1,6 +1,6 @@
 # Ownership facts
 
-Use this file only for the stable cross-owner mental model. Exact owner/capability status remains in `architecture/semantic-model.json`. Complete DDD mapping see [Strategic Design](../reference/architecture/strategic-design.md).
+Use this file only for the stable cross-owner mental model. Exact owner/capability status remains in `architecture/registry.json#domain`. Complete DDD mapping see [Strategic Design](../reference/architecture/strategic-design.md).
 
 ```text
 Account/User

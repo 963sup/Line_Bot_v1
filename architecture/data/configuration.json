@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "version": 2,
+  "role": "relation-data-topology",
+  "semanticModel": "architecture/registry.json#domain",
+  "schemaRoot": "packages/integration-supabase/src/schemas",
+  "databaseSchema": "app_private",
+  "rules": {
+    "everySchemaFileDeclared": true,
+    "everyPersistedRelationMappedOnce": true,
+    "authoritativeRelationHasSingleSemanticOwner": true,
+    "relationOwnerMustMatchConceptOwner": true,
+    "relationRequiredConceptMustPersist": true,
+    "crossOwnerMechanismCannotOwnBusinessTruth": true
+  }
+}

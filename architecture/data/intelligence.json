@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "owner": "intelligence",
+  "files": [
+    {
+      "path": "packages/integration-supabase/src/schemas/619_intelligence_processing.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/619_intelligence_intakes.sql",
+      "role": "authoritative"
+    }
+  ],
+  "relations": [
+    {
+      "name": "intelligence_document_intakes",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/619_intelligence_intakes.sql",
+      "authority": true,
+      "semanticOwner": "intelligence",
+      "concept": "intelligence-document-intake-attempt"
+    },
+    {
+      "name": "intelligence_processing_runs",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/619_intelligence_processing.sql",
+      "authority": true,
+      "semanticOwner": "intelligence",
+      "concept": "intelligence-processing-run"
+    },
+    {
+      "name": "intelligence_processing_revisions",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/619_intelligence_processing.sql",
+      "authority": true,
+      "semanticOwner": "intelligence",
+      "concept": "intelligence-processing-revision"
+    },
+    {
+      "name": "intelligence_processing_commands",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/619_intelligence_processing.sql",
+      "authority": true,
+      "semanticOwner": "intelligence",
+      "concept": "intelligence-processing-command-receipt"
+    },
+    {
+      "name": "intelligence_legacy_processing_runs",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/619_intelligence_processing.sql",
+      "authority": true,
+      "semanticOwner": "intelligence",
+      "concept": "intelligence-legacy-processing-history"
+    },
+    {
+      "name": "intelligence_legacy_processing_revisions",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/619_intelligence_processing.sql",
+      "authority": true,
+      "semanticOwner": "intelligence",
+      "concept": "intelligence-legacy-processing-history"
+    },
+    {
+      "name": "intelligence_legacy_processing_commands",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/619_intelligence_processing.sql",
+      "authority": true,
+      "semanticOwner": "intelligence",
+      "concept": "intelligence-legacy-processing-history"
+    },
+    {
+      "name": "intelligence_processing_history_cutovers",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/619_intelligence_processing.sql",
+      "authority": true,
+      "semanticOwner": "intelligence",
+      "concept": "intelligence-processing-history-cutover"
+    }
+  ]
+}

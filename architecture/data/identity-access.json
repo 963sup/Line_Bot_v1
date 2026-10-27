@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "owner": "identity-access",
+  "files": [
+    {
+      "path": "packages/integration-supabase/src/schemas/510_permission_definitions.sql",
+      "role": "authoritative-definition",
+      "mechanismOwner": "identity-access"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/511_permission_grants.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/512_permission_administration.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/520_governance_evidence.sql",
+      "role": "authoritative"
+    }
+  ],
+  "relations": [
+    {
+      "name": "permission_grants",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/511_permission_grants.sql",
+      "authority": true,
+      "semanticOwner": "identity-access",
+      "concept": "permission"
+    },
+    {
+      "name": "permission_subject_versions",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/512_permission_administration.sql",
+      "authority": true,
+      "semanticOwner": "identity-access"
+    },
+    {
+      "name": "permission_administrators",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/512_permission_administration.sql",
+      "authority": true,
+      "semanticOwner": "identity-access"
+    },
+    {
+      "name": "permission_commands",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/512_permission_administration.sql",
+      "authority": true,
+      "semanticOwner": "identity-access"
+    },
+    {
+      "name": "governance_bootstrap_receipts",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/520_governance_evidence.sql",
+      "authority": true,
+      "semanticOwner": "identity-access"
+    },
+    {
+      "name": "governance_command_receipts",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/520_governance_evidence.sql",
+      "authority": true,
+      "semanticOwner": "identity-access"
+    },
+    {
+      "name": "governance_audit_events",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/520_governance_evidence.sql",
+      "authority": true,
+      "semanticOwner": "identity-access"
+    }
+  ]
+}

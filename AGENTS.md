@@ -33,12 +33,12 @@
 
 以下是完整 governing authority，所有 repository 任務一律遵守。具體讀取依下方 Effective context contract 選取 target ref 的 current file／section／symbol；不要求每次將無關檔案全文預載進 context：
 
-- `architecture/README.md`
-- `architecture/data-topology.json`
-- `architecture/implementation-topology.json`
+- `architecture/registry.json`：ID、分片路徑與 schemaVersion；依任務選取下列分片，禁止預載整套模型。
+- `architecture/domain/vocabulary.json` 與 `architecture/domain/owners/*.json`：共通語彙與各 owner 的概念、能力、關係。
+- `architecture/modules/*.json`：模組路徑、owner 與允許依賴；target 不代表 current runtime。
+- `architecture/data/*.json`：資料關係、SQL 位置與共用機制。
 - `architecture/domain/fpt/*.json`
 - `architecture/domain/fpt-source.json`
-- `architecture/semantic-model.json`
 - `.dependency-cruiser.mjs`
 - `biome.json`
 - `knip.jsonc`
@@ -47,7 +47,7 @@
 
 - 一般 feature、refactor、bug fix、CI fix：修 source、ownership、dependency、public export、placement 或真正 root cause；不得透過弱化 governing file、加 ignore、exception、alias、wrapper 或 compatibility surface 消除 violation。
 - 若任務本身就是修改 governing file，先證明 authority / contract 為何真的需要改，再同步所有受影響 consumer、guard、tests、docs 與 validation evidence；不得從 symptom 反推規則應放寬。
-- `architecture/domain/fpt/*.json` 是從 pinned `github/docs/src/graphql/data/fpt` 原樣 vendoring 的 GitHub GraphQL domain truth；不得手改、轉寫或由 `semantic-model.json` 覆蓋。`semantic-model.json` 只補本產品 owner、invariant、relationship、capability 與 implementation expectation。
+- `architecture/domain/fpt/*.json` 是從 pinned `github/docs/src/graphql/data/fpt` 原樣 vendoring 的 GitHub GraphQL domain truth；不得手改、轉寫或由產品 domain 分片覆蓋。`domain/vocabulary.json` 與 `domain/owners/*.json` 只補本產品 owner、invariant、relationship、capability 與 implementation expectation。
 - Nested `AGENTS.md` 只能增加 local constraint，不能削弱或覆寫本 governing set。
 - 所有 nested scope 完整繼承 [system invariants](docs/rules/system-invariants.md)，包括 bounded tool output；不得以 local validation、debug 或 verbose 慣例恢復無界 stdout／stderr。需要完整原始證據時寫入 ignored artifact，Agent context 只載入摘要與有界片段。
 

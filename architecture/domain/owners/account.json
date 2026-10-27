@@ -1,0 +1,456 @@
+{
+  "schemaVersion": 1,
+  "owner": {
+    "id": "account",
+    "kind": "business-owner",
+    "lifecycle": "current",
+    "doc": "docs/owners/account.md"
+  },
+  "boundedContexts": [
+    {
+      "id": "account",
+      "owner": "account",
+      "status": "strong-candidate",
+      "evidence": {
+        "ownerContracts": ["docs/owners/account.md"],
+        "sourcePaths": ["packages/account/src/domain/user.ts"],
+        "testPaths": ["packages/account/test/user.test.ts"],
+        "rationale": "User lifecycle 與 qualification 有獨立模型和測試；與 Organization membership、Namespace login 與獎勵 owner 分開。這證明責任邊界，不自動完成 context 選定。"
+      }
+    }
+  ],
+  "concepts": [
+    {
+      "id": "user",
+      "kind": "authoritative",
+      "owner": "account",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-users.json",
+        "symbol": "User"
+      }
+    },
+    {
+      "id": "user-follow",
+      "kind": "authoritative",
+      "owner": "account",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-users.json",
+        "symbol": "User",
+        "field": "following"
+      }
+    },
+    {
+      "id": "user-profile-status",
+      "kind": "authoritative",
+      "owner": "account",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation",
+      "fpt": {
+        "file": "schema-users.json",
+        "symbol": "UserStatus"
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "id": "account-team-qualification",
+      "provider": "account",
+      "consumer": "team",
+      "meaning": "Team commands recheck Account-owned User identity, active qualification, and status version in the caller transaction.",
+      "integrationMode": "stable-identity+query",
+      "authority": "account",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "account-attendance-qualification",
+      "provider": "account",
+      "consumer": "attendance",
+      "meaning": "Qualified User/current subject.",
+      "integrationMode": "stable-identity+query",
+      "authority": "account",
+      "consistency": "current-state"
+    },
+    {
+      "id": "account-daily-check-in-qualification",
+      "provider": "account",
+      "consumer": "daily-check-in",
+      "meaning": "User identity and transaction-time qualification.",
+      "integrationMode": "stable-identity+query",
+      "authority": "account",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "project-owner-account",
+      "provider": "account",
+      "consumer": "project",
+      "meaning": "Project owner identity is an Account constrained to User or Organization; Project also rechecks Account-owned active User qualification before accepting direct User collaborator or DraftIssue assignee references.",
+      "integrationMode": "stable-identity+query",
+      "authority": "account",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "account-enterprise-identity",
+      "provider": "account",
+      "consumer": "enterprise",
+      "meaning": "Enterprise affiliations, invitations, and Team membership reference Account-owned stable identities and recheck current User qualification and status version in the caller transaction.",
+      "integrationMode": "stable-identity+query",
+      "authority": "account",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "account-enterprise-root-provisioning",
+      "provider": "account",
+      "consumer": "enterprise",
+      "meaning": "Enterprise creation uses the narrow atomic provision_enterprise_scope coordinator to establish the Account-owned root and initial qualified User reference; Enterprise owns its scoped lifecycle after provisioning.",
+      "integrationMode": "command",
+      "authority": "account",
+      "consistency": "same-transaction"
+    },
+    {
+      "id": "account-expense-qualification",
+      "provider": "account",
+      "consumer": "expense",
+      "meaning": "Expense consumes current User identity and qualification, including transaction-time mutation rechecks.",
+      "integrationMode": "stable-identity+query",
+      "authority": "account",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "account-identity-access-qualification",
+      "provider": "account",
+      "consumer": "identity-access",
+      "meaning": "IdentityAccess consumes current User identity, qualification and status version when evaluating permissions and RoleAssignments.",
+      "integrationMode": "stable-identity+query",
+      "authority": "account",
+      "consistency": "current-state"
+    },
+    {
+      "id": "account-ledger-holder-identity",
+      "provider": "account",
+      "consumer": "ledger",
+      "meaning": "Ledger value facts reference the Account-owned stable holder identity without taking Account lifecycle authority.",
+      "integrationMode": "reference",
+      "authority": "account",
+      "consistency": "current-identity"
+    },
+    {
+      "id": "account-organization-identity",
+      "provider": "account",
+      "consumer": "organization",
+      "meaning": "Organization participation and public locator behavior reference Account-owned identities and recheck current User qualification and status version in the caller transaction.",
+      "integrationMode": "stable-identity+query",
+      "authority": "account",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "account-organization-root-provisioning",
+      "provider": "account",
+      "consumer": "organization",
+      "meaning": "Organization creation uses the narrow atomic provision_organization_scope coordinator to establish the Account-owned root and initial qualified User reference; Organization owns its scoped lifecycle after provisioning.",
+      "integrationMode": "command",
+      "authority": "account",
+      "consistency": "same-transaction"
+    },
+    {
+      "id": "account-partner-qualification",
+      "provider": "account",
+      "consumer": "partner-directory",
+      "meaning": "PartnerDirectory management consumes current User identity and qualification before protected operations.",
+      "integrationMode": "stable-identity+query",
+      "authority": "account",
+      "consistency": "transaction-recheck"
+    },
+    {
+      "id": "account-repository-owner-principal",
+      "provider": "account",
+      "consumer": "repository",
+      "meaning": "Repository owner locators and User principals reference Account-owned identity and current User qualification.",
+      "integrationMode": "stable-identity+query",
+      "authority": "account",
+      "consistency": "current-state"
+    },
+    {
+      "id": "account-wallet-holder-qualification",
+      "provider": "account",
+      "consumer": "wallet",
+      "meaning": "Wallet balance projection consumes current User holder qualification and stable Account identity.",
+      "integrationMode": "stable-identity+query",
+      "authority": "account",
+      "consistency": "current-state"
+    },
+    {
+      "id": "actions-delegation",
+      "from": "action-rule",
+      "to": "user",
+      "kind": "reference",
+      "owner": "actions",
+      "provider": "account",
+      "consumer": "actions",
+      "integrationMode": "query",
+      "authority": "account",
+      "consistency": "current-state",
+      "meaning": "Active Account qualification version binds revocable execution delegation."
+    },
+    {
+      "id": "notifications-account-target",
+      "from": "notification",
+      "to": "user",
+      "kind": "reference",
+      "owner": "notifications",
+      "provider": "account",
+      "consumer": "notifications",
+      "integrationMode": "query",
+      "authority": "account",
+      "consistency": "current-state",
+      "meaning": "Account supplies current active provider binding; Notifications retains the first delivery target snapshot."
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "qualify-user",
+      "owner": "account",
+      "kind": "leaf",
+      "intent": "Determine current User qualification for a consumer operation.",
+      "preserves": ["K2", "K5"],
+      "validationProfiles": ["semantic-architecture", "architecture-tests", "fast-repository"],
+      "runtimeExpectation": "required",
+      "consumes": ["namespace-account-root-reservation"],
+      "implementation": {
+        "status": "implemented",
+        "scope": "current account qualification use case and login identity surface",
+        "sourcePaths": [
+          "packages/account/src/application/user.ts",
+          "packages/account/src/contracts/input/user.ts",
+          "packages/account/src/contracts/output/user-transactions.ts",
+          "packages/account/src/application/use-cases/user-lifecycle.ts",
+          "packages/account/src/domain/user.ts",
+          "packages/account/src/adapters/outbound/persistence/user.ts",
+          "packages/account/src/composition/bootstrap/user.ts",
+          "packages/account/src/domain/google-link.ts",
+          "packages/account/src/application/use-cases/google-link.ts",
+          "packages/account/src/contracts/output/google-link-transactions.ts",
+          "packages/account/src/adapters/outbound/persistence/google-link.ts",
+          "packages/account/src/composition/bootstrap/google-link.ts"
+        ],
+        "publicExports": ["./application/user"],
+        "entrypoints": [],
+        "testPaths": [
+          "packages/account/test/user.test.ts",
+          "packages/account/test/user-lifecycle.test.ts",
+          "packages/account/test/google-link.test.ts"
+        ],
+        "note": "Source/export and User lifecycle/identity-link test locations are recorded; executed test evidence and provider/device acceptance remain distinct."
+      }
+    },
+    {
+      "id": "manage-user-profile",
+      "owner": "account",
+      "kind": "leaf",
+      "intent": "Read and update User profile metadata without changing User identity or login authority.",
+      "preserves": ["K1", "K2", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "current User profile application surface",
+        "sourcePaths": [
+          "packages/account/src/application/profile.ts",
+          "packages/account/src/contracts/repositories/profile.ts",
+          "packages/account/src/domain/profile.ts",
+          "packages/account/src/adapters/outbound/persistence/profile.ts"
+        ],
+        "publicExports": ["./application/profile", "./contracts/repositories/profile"],
+        "entrypoints": [
+          "apps/web/src/app/api/profile/route.ts",
+          "apps/web/src/app/(mobile)/(secondary)/settings/profile/page.tsx"
+        ],
+        "testPaths": ["packages/account/test/profile.test.ts"],
+        "note": "Profile source and public exports exist; tests are evidence locations, not proof unless executed."
+      }
+    },
+    {
+      "id": "manage-user-administration",
+      "owner": "account",
+      "kind": "leaf",
+      "intent": "Read managed Users and suspend or restore their Account-owned lifecycle while preserving current authorization, source activity, version, and exact replay semantics.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "consumes": [
+        "attendance-account-management-activity",
+        "identity-access-account-administration",
+        "issue-account-management-activity"
+      ],
+      "implementation": {
+        "status": "implemented",
+        "scope": "current User administration read, suspend, and unsuspend surface with Account-owned lifecycle, status version, replay, and source activity projection",
+        "sourcePaths": [
+          "packages/account/src/application/manage-users.ts",
+          "packages/account/src/application/commands/user-status.ts",
+          "packages/account/src/application/use-cases/change-user-status.ts",
+          "packages/account/src/domain/user.ts",
+          "packages/account/src/contracts/input/user-management.ts",
+          "packages/account/src/contracts/output/user-management-transactions.ts",
+          "packages/account/src/adapters/outbound/persistence/user-management.ts",
+          "packages/account/src/composition/bootstrap/user-management.ts"
+        ],
+        "publicExports": ["./application/manage-users"],
+        "entrypoints": ["apps/web/src/app/api/membership/manage/route.ts"],
+        "testPaths": [
+          "packages/account/test/user-management.test.ts",
+          "packages/account/test/user-status-command.test.ts",
+          "packages/identity-access/test/user-management-integration.test.ts",
+          "apps/web/test/user-management-api.test.ts"
+        ],
+        "note": "IdentityAccess decides users.read, users.suspend, and last-permission-administrator protection. Account owns User lifecycle, status, version, and exact replay; Attendance and Issue retain their source activity writers and lifecycles."
+      }
+    },
+    {
+      "id": "manage-user-profile-status",
+      "owner": "account",
+      "kind": "leaf",
+      "intent": "Read publicly visible User status and let the currently qualified User set or clear their own message, emoji, limited-availability flag, and expiry; organization-scoped audience is unsupported.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "public-only User status with Application-owned self set, clear, version, expiry, and exact-replay orchestration",
+        "sourcePaths": [
+          "packages/account/src/domain/user-profile-status.ts",
+          "packages/account/src/application/user-profile-status.ts",
+          "packages/account/src/contracts/repositories/user-profile-status.ts",
+          "packages/account/src/contracts/output/user-profile-status.ts",
+          "packages/account/src/adapters/outbound/persistence/user-profile-status.ts"
+        ],
+        "publicExports": [
+          "./application/user-profile-status",
+          "./contracts/repositories/user-profile-status"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/profile/status/route.ts",
+          "apps/web/src/app/(public)/[login]/page.tsx",
+          "apps/web/src/modules/account/status-panel.tsx"
+        ],
+        "testPaths": [
+          "packages/account/test/user-profile-status.test.ts",
+          "apps/web/test/profile-status-api.test.ts"
+        ],
+        "note": "Account Application owns mutation orchestration through the persistence output contract; the repository contract is read-only and the PostgreSQL adapter implements atomic version and exact-replay persistence. Organization-scoped audience, deployment, and device acceptance are not asserted."
+      }
+    },
+    {
+      "id": "read-user-achievements",
+      "owner": "account",
+      "kind": "leaf",
+      "intent": "Read the current User's earned Achievement facts without turning recognition into identity or authorization.",
+      "preserves": ["K1", "K2", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "authenticated self Achievement read projection for Profile",
+        "sourcePaths": [
+          "packages/account/src/application/achievements.ts",
+          "packages/account/src/contracts/output/achievements.ts",
+          "packages/account/src/postgres/achievements.ts"
+        ],
+        "publicExports": ["./application/achievements", "./contracts/output/achievements"],
+        "entrypoints": [
+          "apps/web/src/app/api/profile/achievements/route.ts",
+          "apps/web/src/app/(public)/[login]/page.tsx"
+        ],
+        "testPaths": [
+          "packages/account/test/achievements.test.ts",
+          "apps/web/test/profile-discovery-api.test.ts"
+        ],
+        "note": "Read-only Account-owned recognition; source evidence remains durable and no Achievement mutation is implied."
+      }
+    },
+    {
+      "id": "manage-user-follow",
+      "owner": "account",
+      "kind": "leaf",
+      "intent": "Manage directional User follow relationships and their follower/following read projections.",
+      "preserves": ["K1", "K2", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "current User follow application surface consumed by Profile and network settings",
+        "sourcePaths": [
+          "packages/account/src/application/follows.ts",
+          "packages/account/src/contracts/output/follows.ts",
+          "packages/account/src/domain/user.ts",
+          "packages/account/src/postgres/follows.ts"
+        ],
+        "publicExports": ["./application/follows", "./contracts/output/follows"],
+        "entrypoints": [
+          "apps/web/src/app/api/follows/route.ts",
+          "apps/web/src/app/(public)/_components/profile-overview.tsx",
+          "apps/web/src/app/(mobile)/(secondary)/settings/network/page.tsx"
+        ],
+        "testPaths": [
+          "packages/account/test/follows.test.ts",
+          "packages/account/test/follow-qualification.test.ts",
+          "packages/account/test/follow-postgres.test.ts"
+        ],
+        "note": "Current qualification and transaction test locations are recorded; PostgreSQL multi-session cases require the disposable CI service and are not local runtime proof when skipped."
+      }
+    }
+  ],
+  "locators": [
+    {
+      "id": "user-login",
+      "concept": "user",
+      "status": "active",
+      "fields": ["login"],
+      "scope": "shared-account-login-namespace",
+      "scopeAuthority": "namespace",
+      "routeFiles": ["apps/web/src/app/(public)/[login]/page.tsx"],
+      "note": "User and Organization share the login namespace. URL/resourcePath is locator evidence, not authorization or stable database identity.",
+      "fpt": {
+        "file": "schema-users.json",
+        "symbol": "User",
+        "field": "login"
+      }
+    }
+  ]
+}

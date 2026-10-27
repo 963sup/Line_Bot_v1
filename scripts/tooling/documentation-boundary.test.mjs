@@ -19,17 +19,24 @@ const retiredNames = [
     (_, index) => `document-owner-skeleton-reduction-step-${index + 1}.md`,
   ),
 ];
-const retiredPaths = [...retiredNames.map((name) => `docs/change/proposals/${name}`)];
+const retiredPaths = [
+  ...retiredNames.map((name) => `docs/change/proposals/${name}`),
+  "architecture/AGENTS.md",
+  "architecture/README.md",
+  ...["semantic-model", "implementation-topology", "data-topology"].map(
+    (name) => `architecture/${name}.json`,
+  ),
+];
 
 // Basic owner documentation is explicitly allowed; the retired proposal series remains blocked.
-test("retired document-owner proposals stay removed", () => {
+test("retired proposals and aggregate architecture sources stay removed", () => {
   const restored = retiredPaths.filter((path) =>
     lstatSync(resolve(root, path), { throwIfNoEntry: false }),
   );
   assert.deepEqual(
     restored,
     [],
-    "Retired Markdown was restored; review source structure before reintroducing guidance.",
+    "Retired sources were restored; use registered architecture fragments.",
   );
   const obsoleteSeries = readdirSync(resolve(root, "docs/change/proposals")).filter((name) =>
     /^(?:platform-integration-root-migration-step-(?:start|end|\d+)|document-owner-skeleton-reduction-step-\d+)\.md$/.test(

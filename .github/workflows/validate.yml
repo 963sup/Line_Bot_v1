@@ -26,8 +26,8 @@ jobs:
           cache_dependency_path: pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile --prefer-offline
       - name: Validate repository metadata
-        run: pnpm exec biome check package.json architecture/semantic-model.json knip.jsonc
-      - name: Prevent retired document design from returning
-        run: node --test scripts/tooling/documentation-boundary.test.mjs
+        run: pnpm exec biome check package.json architecture knip.jsonc
+      - name: Validate repository contracts
+        run: pnpm check:repository
       - name: Validate patch
         run: git diff --check

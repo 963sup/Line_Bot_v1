@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "owner": "issue",
+  "files": [
+    {
+      "path": "packages/integration-supabase/src/schemas/620_issues.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/621_issue_commands.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/622_issue_events.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/623_issue_labels.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/624_issue_assignees.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/625_issue_comments.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/626_issue_relations.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/627_issue_types.sql",
+      "role": "authoritative"
+    }
+  ],
+  "relations": [
+    {
+      "name": "issues",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/620_issues.sql",
+      "authority": true,
+      "semanticOwner": "issue",
+      "concept": "issue"
+    },
+    {
+      "name": "issue_commands",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/621_issue_commands.sql",
+      "authority": true,
+      "semanticOwner": "issue"
+    },
+    {
+      "name": "issue_assignees",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/624_issue_assignees.sql",
+      "authority": true,
+      "semanticOwner": "issue",
+      "concept": "issue-assignment"
+    },
+    {
+      "name": "issue_events",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/622_issue_events.sql",
+      "authority": true,
+      "semanticOwner": "issue"
+    },
+    {
+      "name": "issue_labels",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/623_issue_labels.sql",
+      "authority": true,
+      "semanticOwner": "issue",
+      "concept": "issue-label-link"
+    },
+    {
+      "name": "issue_comments",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/625_issue_comments.sql",
+      "authority": true,
+      "semanticOwner": "issue",
+      "concept": "issue-comment"
+    },
+    {
+      "name": "issue_sub_issues",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/626_issue_relations.sql",
+      "authority": true,
+      "semanticOwner": "issue",
+      "concept": "issue-parent-link"
+    },
+    {
+      "name": "issue_dependencies",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/626_issue_relations.sql",
+      "authority": true,
+      "semanticOwner": "issue",
+      "concept": "issue-dependency-link"
+    },
+    {
+      "name": "issue_related",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/626_issue_relations.sql",
+      "authority": true,
+      "semanticOwner": "issue",
+      "concept": "issue-related-link"
+    },
+    {
+      "name": "issue_types",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/627_issue_types.sql",
+      "authority": true,
+      "semanticOwner": "issue",
+      "concept": "issue-type"
+    },
+    {
+      "name": "issue_type_assignments",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/627_issue_types.sql",
+      "authority": true,
+      "semanticOwner": "issue",
+      "concept": "issue-type-link"
+    },
+    {
+      "name": "issue_type_events",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/627_issue_types.sql",
+      "authority": true,
+      "semanticOwner": "issue"
+    }
+  ]
+}

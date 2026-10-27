@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "owner": {
+    "id": "payroll",
+    "kind": "business-owner",
+    "lifecycle": "current-foundation",
+    "doc": "docs/owners/payroll.md"
+  },
+  "boundedContexts": [],
+  "concepts": [
+    {
+      "id": "payroll-readiness",
+      "canonicalName": "Payroll Readiness",
+      "kind": "authoritative",
+      "owner": "payroll",
+      "lifecycle": "current-foundation",
+      "definition": "Current foundation for determining whether payroll inputs are ready; not formal payroll finalization.",
+      "authorityMode": "authoritative"
+    }
+  ],
+  "relationships": [],
+  "capabilities": [],
+  "locators": []
+}

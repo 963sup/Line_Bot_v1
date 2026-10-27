@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "owner": {
+    "id": "supabase-integration",
+    "kind": "integration-owner",
+    "lifecycle": "current",
+    "doc": "docs/owners/supabase-integration.md"
+  },
+  "boundedContexts": [],
+  "concepts": [],
+  "relationships": [
+    {
+      "id": "supabase-file-storage-client",
+      "provider": "supabase-integration",
+      "consumer": "file",
+      "meaning": "File adapter uses the server-only Supabase Storage transport client; File retains object keys, SHA-256 verification, errors, writes and readback consistency.",
+      "integrationMode": "reference",
+      "authority": "supabase-integration",
+      "consistency": "per-operation-verified"
+    }
+  ],
+  "capabilities": [],
+  "locators": []
+}

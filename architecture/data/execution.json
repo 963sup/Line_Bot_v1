@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "owner": "execution",
+  "files": [
+    {
+      "path": "packages/integration-supabase/src/schemas/617_executions.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/620_task_dependencies.sql",
+      "role": "authoritative"
+    }
+  ],
+  "relations": [
+    {
+      "name": "engineering_executions",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/617_executions.sql",
+      "authority": true,
+      "semanticOwner": "execution",
+      "concept": "engineering-execution"
+    },
+    {
+      "name": "engineering_execution_revisions",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/617_executions.sql",
+      "authority": true,
+      "semanticOwner": "execution",
+      "concept": "engineering-execution-revision"
+    },
+    {
+      "name": "engineering_execution_commands",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/617_executions.sql",
+      "authority": true,
+      "semanticOwner": "execution",
+      "concept": "engineering-execution-command-receipt"
+    },
+    {
+      "name": "execution_task_dependencies",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/620_task_dependencies.sql",
+      "authority": true,
+      "semanticOwner": "execution",
+      "concept": "task-dependency-plan"
+    },
+    {
+      "name": "execution_task_dependency_revisions",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/620_task_dependencies.sql",
+      "authority": true,
+      "semanticOwner": "execution",
+      "concept": "task-dependency-revision"
+    },
+    {
+      "name": "execution_task_dependency_commands",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/620_task_dependencies.sql",
+      "authority": true,
+      "semanticOwner": "execution",
+      "concept": "task-dependency-command-receipt"
+    }
+  ]
+}

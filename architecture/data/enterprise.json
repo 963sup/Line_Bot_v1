@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "owner": "enterprise",
+  "files": [
+    {
+      "path": "packages/integration-supabase/src/schemas/200_enterprises.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/201_enterprise_affiliations.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/202_enterprise_organizations.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/210_enterprise_teams.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/211_enterprise_team_memberships.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/212_enterprise_team_organization_assignments.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/220_enterprise_invitations.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/500_enterprise_role_assignments.sql",
+      "role": "authoritative"
+    }
+  ],
+  "relations": [
+    {
+      "name": "enterprises",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/200_enterprises.sql",
+      "authority": true,
+      "semanticOwner": "enterprise",
+      "concept": "enterprise"
+    },
+    {
+      "name": "enterprise_direct_affiliations",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/201_enterprise_affiliations.sql",
+      "authority": true,
+      "semanticOwner": "enterprise"
+    },
+    {
+      "name": "enterprise_organizations",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/202_enterprise_organizations.sql",
+      "authority": true,
+      "semanticOwner": "enterprise",
+      "concept": "enterprise-organization-link"
+    },
+    {
+      "name": "enterprise_teams",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/210_enterprise_teams.sql",
+      "authority": true,
+      "semanticOwner": "enterprise",
+      "concept": "enterprise-team"
+    },
+    {
+      "name": "enterprise_team_memberships",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/211_enterprise_team_memberships.sql",
+      "authority": true,
+      "semanticOwner": "enterprise",
+      "concept": "enterprise-team-membership"
+    },
+    {
+      "name": "enterprise_team_organizations",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/212_enterprise_team_organization_assignments.sql",
+      "authority": true,
+      "semanticOwner": "enterprise",
+      "concept": "enterprise-team-organization-assignment"
+    },
+    {
+      "name": "enterprise_invitations",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/220_enterprise_invitations.sql",
+      "authority": true,
+      "semanticOwner": "enterprise",
+      "concept": "enterprise-invitation"
+    },
+    {
+      "name": "enterprise_role_assignments",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/500_enterprise_role_assignments.sql",
+      "authority": true,
+      "semanticOwner": "enterprise",
+      "concept": "enterprise-role-assignment"
+    }
+  ]
+}

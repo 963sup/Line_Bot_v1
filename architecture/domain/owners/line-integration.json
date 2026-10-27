@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "owner": {
+    "id": "line-integration",
+    "kind": "integration-owner",
+    "lifecycle": "current",
+    "doc": "docs/owners/line-integration.md"
+  },
+  "boundedContexts": [],
+  "concepts": [
+    {
+      "id": "line-identity-proof",
+      "canonicalName": "LINE Identity Proof",
+      "kind": "external-proof",
+      "owner": "line-integration",
+      "lifecycle": "current",
+      "definition": "Verified external provider identity proof; never business authorization.",
+      "authorityMode": "external-evidence-only"
+    }
+  ],
+  "relationships": [
+    {
+      "id": "line-account-proof",
+      "provider": "line-integration",
+      "consumer": "account",
+      "meaning": "Verified LINE identity proof consumed for account mapping/qualification.",
+      "integrationMode": "external-proof",
+      "authority": "line-integration",
+      "consistency": "verified-request"
+    }
+  ],
+  "capabilities": [],
+  "locators": []
+}

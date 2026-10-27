@@ -53,8 +53,8 @@ Effective period 與 lifecycle 必須同時成立。ENDED 不原地改回 active
 未完成前不建立 department/job-grade、generic HR、rules DSL、完整 leave entitlement 或 external calendar sync。
 
 Machine owner / status：
-[`architecture/semantic-model.json`](../../architecture/semantic-model.json) ·
-[`architecture/implementation-topology.json`](../../architecture/implementation-topology.json)
+[`architecture/registry.json#domain`](../../architecture/registry.json#domain) ·
+[`architecture/registry.json#modules`](../../architecture/registry.json#modules)
 
 Migration sequencing：
 [Workforce / Attendance / Payroll slices](../change/migrations/enterprise-organization-workforce-payroll.md#workforce--attendance--payroll-implementation-slices)

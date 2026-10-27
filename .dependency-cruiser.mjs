@@ -1,14 +1,12 @@
 // Canonical dependency contract: docs/rules/dependency-boundaries.md.
-import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { readModuleContracts } from "./scripts/tooling/repository-contracts.mjs";
 
-const topology = JSON.parse(
-  readFileSync(new URL("./architecture/implementation-topology.json", import.meta.url), "utf8"),
+const workspaces = new Map(
+  [...readModuleContracts(fileURLToPath(new URL("./", import.meta.url)))].filter(
+    ([, module]) => module.status !== "target",
+  ),
 );
-
-const workspaces = new Map([
-  ...Object.entries(topology.modules ?? {}),
-  ...Object.entries(topology.applications ?? {}),
-]);
 
 function escapeRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");

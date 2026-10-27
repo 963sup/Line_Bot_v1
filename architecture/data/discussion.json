@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "owner": "discussion",
+  "files": [
+    {
+      "path": "packages/integration-supabase/src/schemas/630_discussions.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/631_discussion_comments.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/632_discussion_categories.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/633_discussion_collaboration.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/634_discussion_commands.sql",
+      "role": "authoritative"
+    }
+  ],
+  "relations": [
+    {
+      "name": "discussions",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/630_discussions.sql",
+      "authority": true,
+      "semanticOwner": "discussion",
+      "concept": "discussion"
+    },
+    {
+      "name": "discussion_comments",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/631_discussion_comments.sql",
+      "authority": true,
+      "semanticOwner": "discussion",
+      "concept": "discussion-comment"
+    },
+    {
+      "name": "discussion_categories",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/632_discussion_categories.sql",
+      "authority": true,
+      "semanticOwner": "discussion",
+      "concept": "discussion-category"
+    },
+    {
+      "name": "discussion_answers",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/633_discussion_collaboration.sql",
+      "authority": true,
+      "semanticOwner": "discussion",
+      "concept": "discussion-answer"
+    },
+    {
+      "name": "discussion_labels",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/633_discussion_collaboration.sql",
+      "authority": true,
+      "semanticOwner": "discussion",
+      "concept": "discussion-label-link"
+    },
+    {
+      "name": "discussion_upvotes",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/633_discussion_collaboration.sql",
+      "authority": true,
+      "semanticOwner": "discussion",
+      "concept": "discussion-upvote"
+    },
+    {
+      "name": "discussion_comment_upvotes",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/633_discussion_collaboration.sql",
+      "authority": true,
+      "semanticOwner": "discussion",
+      "concept": "discussion-comment-upvote"
+    },
+    {
+      "name": "discussion_polls",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/633_discussion_collaboration.sql",
+      "authority": true,
+      "semanticOwner": "discussion",
+      "concept": "discussion-poll"
+    },
+    {
+      "name": "discussion_poll_options",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/633_discussion_collaboration.sql",
+      "authority": true,
+      "semanticOwner": "discussion",
+      "concept": "discussion-poll-option"
+    },
+    {
+      "name": "discussion_poll_votes",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/633_discussion_collaboration.sql",
+      "authority": true,
+      "semanticOwner": "discussion",
+      "concept": "discussion-poll-vote"
+    },
+    {
+      "name": "discussion_commands",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/634_discussion_commands.sql",
+      "authority": true,
+      "semanticOwner": "discussion"
+    },
+    {
+      "name": "discussion_events",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/634_discussion_commands.sql",
+      "authority": true,
+      "semanticOwner": "discussion"
+    },
+    {
+      "name": "discussion_category_events",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/634_discussion_commands.sql",
+      "authority": true,
+      "semanticOwner": "discussion"
+    }
+  ]
+}

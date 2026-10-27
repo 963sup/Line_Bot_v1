@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "@line_bot_v1/actions",
+  "status": "current",
+  "path": "packages/actions",
+  "moduleKind": "domain-module",
+  "semanticOwner": "actions",
+  "allowedWorkspaceDependencies": [
+    "@line_bot_v1/account",
+    "@line_bot_v1/platform",
+    "@line_bot_v1/project",
+    "@line_bot_v1/repository",
+    "@line_bot_v1/wbs",
+    "@line_bot_v1/notifications"
+  ],
+  "primaryOwnerImplementation": true
+}

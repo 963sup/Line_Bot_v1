@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "@line_bot_v1/numbering",
+  "status": "current",
+  "path": "packages/numbering",
+  "moduleKind": "domain-module",
+  "semanticOwner": "numbering",
+  "allowedWorkspaceDependencies": ["@line_bot_v1/platform"],
+  "primaryOwnerImplementation": true,
+  "implementationNote": "Numbering owns typed Series and immutable Allocation facts; callers retain resource lifecycle, authorization, replay receipts and transaction orchestration."
+}

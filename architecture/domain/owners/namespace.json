@@ -1,0 +1,271 @@
+{
+  "schemaVersion": 1,
+  "owner": {
+    "id": "namespace",
+    "kind": "business-owner",
+    "lifecycle": "current",
+    "doc": "docs/owners/namespace.md"
+  },
+  "boundedContexts": [],
+  "concepts": [
+    {
+      "id": "namespace-binding",
+      "canonicalName": "Namespace Binding",
+      "kind": "authoritative",
+      "owner": "namespace",
+      "lifecycle": "current",
+      "definition": "Current versioned binding between a typed stable target and a canonical name inside one typed namespace scope.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "namespace-claim",
+      "canonicalName": "Namespace Claim",
+      "kind": "authoritative",
+      "owner": "namespace",
+      "lifecycle": "current",
+      "definition": "Current, alias, or reserved occupancy of one canonical key inside one typed namespace scope.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "namespace-binding-history",
+      "canonicalName": "Namespace Binding History",
+      "kind": "authoritative",
+      "owner": "namespace",
+      "lifecycle": "current",
+      "definition": "Append-only record of known Namespace binding transitions after activation, without fabricated legacy actors or versions.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    }
+  ],
+  "relationships": [
+    {
+      "id": "namespace-account-root-reservation",
+      "provider": "namespace",
+      "consumer": "account",
+      "meaning": "Account validates qualification and calls Namespace for global login claim/rename in the same transaction; Namespace owns normalization, collision and persistence.",
+      "integrationMode": "command",
+      "authority": "namespace",
+      "consistency": "same-transaction"
+    },
+    {
+      "id": "namespace-organization-root-reservation",
+      "provider": "namespace",
+      "consumer": "organization",
+      "meaning": "Organization creation coordinates a Namespace-owned global login claim in the same transaction; Organization owns its lifecycle while Namespace owns normalization, collision, binding, and history.",
+      "integrationMode": "command",
+      "authority": "namespace",
+      "consistency": "same-transaction"
+    },
+    {
+      "id": "namespace-enterprise-naming",
+      "provider": "namespace",
+      "consumer": "enterprise",
+      "meaning": "Enterprise validates lifecycle and authorization, then claims or renames Enterprise and EnterpriseTeam slugs through Namespace in the same transaction; Namespace owns normalization and occupancy.",
+      "integrationMode": "command",
+      "authority": "namespace",
+      "consistency": "same-transaction"
+    },
+    {
+      "id": "namespace-repository-naming",
+      "provider": "namespace",
+      "consumer": "repository",
+      "meaning": "Repository retains lifecycle, authorization and rename eligibility while Namespace owns Repository names, retained aliases and Label name occupancy in the caller transaction.",
+      "integrationMode": "command",
+      "authority": "namespace",
+      "consistency": "same-transaction"
+    },
+    {
+      "id": "namespace-team-naming",
+      "provider": "namespace",
+      "consumer": "team",
+      "meaning": "Team retains lifecycle and authorization while Namespace owns Organization-scoped Team slug normalization and occupancy in the caller transaction.",
+      "integrationMode": "command",
+      "authority": "namespace",
+      "consistency": "same-transaction"
+    },
+    {
+      "id": "namespace-issue-type-naming",
+      "provider": "namespace",
+      "consumer": "issue",
+      "meaning": "Issue retains IssueType lifecycle and authorization while Namespace owns active Organization-scoped IssueType name occupancy and release on tombstone in the caller transaction.",
+      "integrationMode": "command",
+      "authority": "namespace",
+      "consistency": "same-transaction"
+    },
+    {
+      "id": "namespace-discussion-category-naming",
+      "provider": "namespace",
+      "consumer": "discussion",
+      "meaning": "Discussion retains category lifecycle and deletion rules while Namespace owns Repository-scoped category slug normalization and occupancy in the caller transaction.",
+      "integrationMode": "command",
+      "authority": "namespace",
+      "consistency": "same-transaction"
+    },
+    {
+      "id": "namespace-project-naming",
+      "provider": "namespace",
+      "consumer": "project",
+      "meaning": "Project retains field, option and view lifecycle while Namespace owns their scoped exact-name occupancy and release in the caller transaction.",
+      "integrationMode": "command",
+      "authority": "namespace",
+      "consistency": "same-transaction"
+    },
+    {
+      "id": "namespace-project-owner-locator",
+      "provider": "namespace",
+      "consumer": "project",
+      "meaning": "Project presentation resolves the current canonical owner login without treating the locator as authorization.",
+      "integrationMode": "query",
+      "authority": "namespace",
+      "consistency": "current-state"
+    },
+    {
+      "id": "namespace-discussion-locator",
+      "provider": "namespace",
+      "consumer": "discussion",
+      "meaning": "Discussion uses Namespace-owned Account login normalization for Repository-scoped locators without acquiring Namespace authority.",
+      "integrationMode": "query",
+      "authority": "namespace",
+      "consistency": "current-state"
+    },
+    {
+      "id": "namespace-organization-locator",
+      "provider": "namespace",
+      "consumer": "organization",
+      "meaning": "Consumer uses Namespace-owned global Account login normalization and public locator reads; resource authority stays with the consumer.",
+      "integrationMode": "query",
+      "authority": "namespace",
+      "consistency": "current-state"
+    },
+    {
+      "id": "namespace-repository-locator",
+      "provider": "namespace",
+      "consumer": "repository",
+      "meaning": "Consumer uses Namespace-owned global Account login normalization and public locator reads; resource authority stays with the consumer.",
+      "integrationMode": "query",
+      "authority": "namespace",
+      "consistency": "current-state"
+    },
+    {
+      "id": "namespace-issue-locator",
+      "provider": "namespace",
+      "consumer": "issue",
+      "meaning": "Issue uses Namespace-owned Account login normalization for Repository-scoped locators without acquiring Namespace authority.",
+      "integrationMode": "query",
+      "authority": "namespace",
+      "consistency": "current-state"
+    },
+    {
+      "id": "namespace-team-locator",
+      "provider": "namespace",
+      "consumer": "team",
+      "meaning": "Consumer uses Namespace-owned global Account login normalization and public locator reads; resource authority stays with the consumer.",
+      "integrationMode": "query",
+      "authority": "namespace",
+      "consistency": "current-state"
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "construct-namespace-paths",
+      "owner": "namespace",
+      "kind": "leaf",
+      "intent": "Describe cross-owner resource path scopes and construct only active canonical paths from owner-validated locator values.",
+      "preserves": ["K1", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "structured active/planned route contract and pure path construction consumed by Web Account and Team navigation",
+        "sourcePaths": ["packages/namespace/src/domain/routes.ts"],
+        "publicExports": ["."],
+        "entrypoints": [
+          "apps/web/src/modules/account/profile-destination.ts",
+          "apps/web/src/modules/account/member-avatar.tsx",
+          "apps/web/src/modules/team/panel.tsx"
+        ],
+        "testPaths": [
+          "packages/namespace/test/routes.test.ts",
+          "apps/web/test/profile-settings-navigation.test.ts"
+        ],
+        "note": "Path construction is not resource lookup, normalization, number allocation, or authorization. Planned routes remain unbuildable and do not activate their business capabilities."
+      }
+    },
+    {
+      "id": "govern-root-namespace",
+      "owner": "namespace",
+      "kind": "leaf",
+      "intent": "Define and evaluate shared global-root reservations so product root routes cannot be claimed as Account login locators.",
+      "preserves": ["K1", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "current shared global-root reservation policy consumed by Account login validation",
+        "sourcePaths": ["packages/namespace/src/domain/root.ts"],
+        "publicExports": ["."],
+        "entrypoints": ["packages/namespace/src/domain/namespace.ts"],
+        "testPaths": ["packages/namespace/test/root.test.ts", "packages/account/test/user.test.ts"],
+        "note": "Namespace owns root collision and global Account login naming. Qualification stays with Account."
+      }
+    },
+    {
+      "id": "manage-namespace-bindings",
+      "owner": "namespace",
+      "kind": "leaf",
+      "intent": "Claim, resolve, conditionally rename and release typed scoped names according to frozen family profiles, without changing resource identity, lifecycle or authorization.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Global and scoped business name occupancy in existing caller transactions, with family-specific normalization, alias and release rules",
+        "sourcePaths": [
+          "packages/namespace/src/domain/namespace.ts",
+          "packages/namespace/src/domain/profiles.ts",
+          "packages/namespace/src/application/claim-namespace.ts",
+          "packages/namespace/src/application/rename-namespace.ts",
+          "packages/namespace/src/application/resolve-namespace.ts",
+          "packages/namespace/src/postgres.ts"
+        ],
+        "publicExports": [".", "./postgres"],
+        "entrypoints": [
+          "packages/account/src/adapters/outbound/persistence/user.ts",
+          "packages/discussion/src/adapters/postgres-management.ts",
+          "packages/enterprise/src/adapters/outbound/persistence/enterprise-identity.ts",
+          "packages/enterprise/src/adapters/outbound/persistence/enterprise-team.ts",
+          "packages/issue/src/adapters/postgres/issue-types.ts",
+          "packages/project/src/adapters/outbound/persistence/postgres-project-fields.ts",
+          "packages/project/src/adapters/outbound/persistence/postgres-project-view-status.ts",
+          "packages/repository/src/postgres/resource-management.ts",
+          "packages/team/src/adapters/outbound/persistence/team-mutation.ts",
+          "apps/web/src/app/api/_composition/namespace.server.ts"
+        ],
+        "testPaths": [
+          "packages/namespace/test/namespace.test.ts",
+          "packages/account/test/user.test.ts"
+        ],
+        "note": "Namespace owns the binding and occupancy facts; each resource Owner still decides whether the business operation is allowed and supplies the caller transaction. account_logins and retained resource columns are constrained projections. History begins only from verified import or activation and never fabricates legacy actor/version facts."
+      }
+    }
+  ],
+  "locators": []
+}

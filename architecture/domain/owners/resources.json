@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "owner": {
+    "id": "resources",
+    "kind": "business-owner",
+    "lifecycle": "current",
+    "doc": "docs/owners/resources.md"
+  },
+  "boundedContexts": [
+    {
+      "id": "resources",
+      "owner": "resources",
+      "status": "selected"
+    }
+  ],
+  "concepts": [
+    {
+      "id": "physical-resource",
+      "canonicalName": "PhysicalResource",
+      "kind": "authoritative",
+      "owner": "resources",
+      "lifecycle": "current",
+      "definition": "Repository-shared Location, Equipment or Material stable identity and lifecycle; no work hierarchy, plan quantities or execution actuals.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "physical-resource-revision",
+      "canonicalName": "PhysicalResourceRevision",
+      "kind": "authoritative",
+      "owner": "resources",
+      "lifecycle": "current",
+      "definition": "Immutable resource identity-kind, name, description, lifecycle and actor snapshot.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "physical-resource-command-receipt",
+      "canonicalName": "PhysicalResourceCommandReceipt",
+      "kind": "authoritative",
+      "owner": "resources",
+      "lifecycle": "current",
+      "definition": "Durable physical-resource command fingerprint and exact committed revision.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "resource-location",
+      "canonicalName": "Location",
+      "kind": "authoritative",
+      "owner": "resources",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "definition": "Physical place identity with LOCATION kind in the shared Repository Resource registry; referenced by work definitions and actual execution, never a Content hierarchy node."
+    },
+    {
+      "id": "resource-equipment",
+      "canonicalName": "Equipment",
+      "kind": "authoritative",
+      "owner": "resources",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "definition": "Physical equipment identity with EQUIPMENT kind and its own lifecycle; assignment or use does not transfer work hierarchy or actual execution authority."
+    },
+    {
+      "id": "resource-material",
+      "canonicalName": "Material",
+      "kind": "authoritative",
+      "owner": "resources",
+      "lifecycle": "current",
+      "authorityMode": "authoritative",
+      "definition": "Physical material identity with MATERIAL kind and lifecycle. Identity does not infer stock, planned work quantity or actual consumption."
+    }
+  ],
+  "relationships": [
+    {
+      "id": "content-physical-resource-pins",
+      "provider": "resources",
+      "consumer": "content",
+      "meaning": "New resource assignments qualify exact physical identities through the public reader; unchanged historical pins survive archive.",
+      "integrationMode": "stable-identity+query",
+      "authority": "resources",
+      "consistency": "transaction-recheck+immutable-pin"
+    },
+    {
+      "id": "execution-physical-resource-use",
+      "provider": "resources",
+      "consumer": "execution",
+      "meaning": "New resource-use pins qualify current physical resources; historical actuals retain immutable source evidence.",
+      "integrationMode": "stable-identity+query",
+      "authority": "resources",
+      "consistency": "transaction-recheck+immutable-pin"
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "manage-physical-resources",
+      "owner": "resources",
+      "kind": "leaf",
+      "intent": "Manage shared Location/Equipment/Material identity and lifecycle with immutable revisions and exact replay.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6"],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Manage shared Location/Equipment/Material identity and lifecycle with immutable revisions and exact replay.",
+        "sourcePaths": [
+          "packages/resources/src/domain/resource.ts",
+          "packages/resources/src/application/use-cases/resources.ts",
+          "packages/resources/src/adapters/outbound/persistence/resources.ts",
+          "packages/resources/src/domain/resource-reference.ts"
+        ],
+        "publicExports": [
+          "./application/use-cases/resources",
+          "./contracts/output/resource-references",
+          "./composition/bootstrap/resources",
+          "./composition/bootstrap/resource-references",
+          "./domain/resource-reference"
+        ],
+        "testPaths": [
+          "packages/resources/test/resource-domain.test.ts",
+          "packages/resources/test/resource-persistence.test.ts"
+        ],
+        "entrypoints": ["apps/web/src/app/api/repository-resources/route.ts"],
+        "note": "Web consumes public owner application/composition contracts. Source implementation, local verification and production publication are separate evidence."
+      }
+    }
+  ],
+  "locators": []
+}

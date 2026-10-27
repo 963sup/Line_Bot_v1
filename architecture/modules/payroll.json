@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "@line_bot_v1/payroll",
+  "status": "current",
+  "path": "packages/payroll",
+  "moduleKind": "domain-module",
+  "semanticOwner": "payroll",
+  "allowedWorkspaceDependencies": [],
+  "primaryOwnerImplementation": true
+}

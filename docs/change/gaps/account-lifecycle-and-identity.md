@@ -43,4 +43,4 @@ Identity transfer、Account merge、Enterprise/Organization ownership transfer�
 
 任何新 lifecycle capability 必須保持 stable UserId、qualification/version、authorization、transaction/replay、history/audit 與 provider-proof boundary；外部 email/display name/provider session possession 不得推導 ownership。
 
-Current source/status： [Account owner](../../owners/account.md) · [Semantic model](../../../architecture/semantic-model.json)。
+Current source/status： [Account owner](../../owners/account.md) · [Semantic model](../../../architecture/registry.json#domain)。

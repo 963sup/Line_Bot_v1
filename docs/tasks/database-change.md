@@ -16,7 +16,7 @@
 
 ## Execute
 
-修改 `packages/integration-supabase/src/schemas/`；ownership/mapping改變才同步 `architecture/data-topology.json`。Runtime writer仍走 owner use case/adapter。
+修改 `packages/integration-supabase/src/schemas/`；ownership/mapping改變才同步 `architecture/registry.json#data`。Runtime writer仍走 owner use case/adapter。
 
 ## Validate
 

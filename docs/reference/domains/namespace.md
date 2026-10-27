@@ -41,7 +41,7 @@ Owner authorizes deletion. Pause, suspend, disable, archive and close do not imp
 
 ## Routes and resolution
 
-Current locator ownership is declared in `architecture/semantic-model.json#locators`; active/planned
+Current locator ownership is declared in `architecture/registry.json#domain`; active/planned
 path shapes remain in `packages/namespace/src/domain/routes.ts`. Path building validates active routes
 and encodes each segment. Resolution yields only target identity, current name and alias status;
 resource visibility and mutation permission are rechecked by the resource Owner.

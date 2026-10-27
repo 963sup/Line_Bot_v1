@@ -24,6 +24,6 @@ pnpm dev
 
 不要先讀完整 architecture 文件。從 [docs task router](docs/README.md) 依任務載入最小上下文。
 
-Machine-readable architecture入口在 [architecture/README.md](architecture/README.md)；source-of-truth 分工見 [docs/facts/sources-of-truth.md](docs/facts/sources-of-truth.md)。AI修改規則見 [AGENTS.md](AGENTS.md)。
+Machine-readable architecture入口在 [architecture/](architecture/)；source-of-truth 分工見 [docs/facts/sources-of-truth.md](docs/facts/sources-of-truth.md)。AI修改規則見 [AGENTS.md](AGENTS.md)。
 
 本機 validation 不代表 Supabase remote convergence、Vercel deployment、LINE publication 或真機 acceptance。

@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "owner": {
+    "id": "partner-directory",
+    "kind": "business-owner",
+    "lifecycle": "current",
+    "doc": "docs/owners/partners.md"
+  },
+  "boundedContexts": [
+    {
+      "id": "partner-directory",
+      "owner": "partner-directory",
+      "status": "strong-candidate",
+      "evidence": {
+        "ownerContracts": ["docs/owners/partners.md"],
+        "sourcePaths": [
+          "packages/partners/src/domain.ts",
+          "packages/partners/src/application/partners.ts"
+        ],
+        "testPaths": ["apps/web/test/partners-api.test.ts"],
+        "rationale": "名錄與推薦案件有獨立模型及 consumer 測試；Team participation 與權限授予不是名錄 owner 的責任。測試路徑不等於遠端或實機驗收。"
+      }
+    }
+  ],
+  "concepts": [
+    {
+      "id": "partner",
+      "canonicalName": "Partner",
+      "kind": "authoritative",
+      "owner": "partner-directory",
+      "lifecycle": "current",
+      "definition": "Partner/contact directory identity.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    }
+  ],
+  "relationships": [],
+  "capabilities": [],
+  "locators": []
+}

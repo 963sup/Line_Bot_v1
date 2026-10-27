@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "@line_bot_v1/notifications",
+  "status": "current",
+  "path": "packages/notifications",
+  "moduleKind": "domain-module",
+  "semanticOwner": "notifications",
+  "allowedWorkspaceDependencies": [
+    "@line_bot_v1/platform",
+    "@line_bot_v1/account",
+    "@line_bot_v1/repository"
+  ],
+  "primaryOwnerImplementation": true
+}

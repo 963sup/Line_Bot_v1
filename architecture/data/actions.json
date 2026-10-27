@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "owner": "actions",
+  "files": [
+    {
+      "path": "packages/integration-supabase/src/schemas/612_actions.sql",
+      "role": "authoritative"
+    },
+    {
+      "path": "packages/integration-supabase/src/schemas/712_project_actions.sql",
+      "role": "authoritative"
+    }
+  ],
+  "relations": [
+    {
+      "name": "project_action_rules",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/712_project_actions.sql",
+      "authority": true,
+      "semanticOwner": "actions",
+      "concept": "action-rule"
+    },
+    {
+      "name": "project_action_rule_versions",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/712_project_actions.sql",
+      "authority": true,
+      "semanticOwner": "actions",
+      "concept": "action-rule"
+    },
+    {
+      "name": "project_action_events",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/712_project_actions.sql",
+      "authority": true,
+      "semanticOwner": "actions",
+      "concept": "action-event-receipt"
+    },
+    {
+      "name": "project_action_runs",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/712_project_actions.sql",
+      "authority": true,
+      "semanticOwner": "actions",
+      "concept": "action-run"
+    },
+    {
+      "name": "project_action_attempts",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/712_project_actions.sql",
+      "authority": true,
+      "semanticOwner": "actions",
+      "concept": "action-attempt"
+    },
+    {
+      "name": "project_action_commands",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/712_project_actions.sql",
+      "authority": true,
+      "semanticOwner": "actions",
+      "concept": "action-command-receipt"
+    },
+    {
+      "name": "action_rules",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/612_actions.sql",
+      "authority": true,
+      "semanticOwner": "actions",
+      "concept": "action-rule"
+    },
+    {
+      "name": "action_rule_versions",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/612_actions.sql",
+      "authority": true,
+      "semanticOwner": "actions",
+      "concept": "action-rule"
+    },
+    {
+      "name": "action_runs",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/612_actions.sql",
+      "authority": true,
+      "semanticOwner": "actions",
+      "concept": "action-run"
+    },
+    {
+      "name": "action_attempts",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/612_actions.sql",
+      "authority": true,
+      "semanticOwner": "actions",
+      "concept": "action-attempt"
+    },
+    {
+      "name": "action_commands",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/612_actions.sql",
+      "authority": true,
+      "semanticOwner": "actions",
+      "concept": "action-command-receipt"
+    },
+    {
+      "name": "action_events",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/612_actions.sql",
+      "authority": true,
+      "semanticOwner": "actions",
+      "concept": "action-event-receipt"
+    }
+  ]
+}

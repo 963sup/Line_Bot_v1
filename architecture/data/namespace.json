@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "owner": "namespace",
+  "files": [
+    {
+      "path": "packages/integration-supabase/src/schemas/103_namespace_bindings.sql",
+      "role": "authoritative"
+    }
+  ],
+  "relations": [
+    {
+      "name": "namespace_bindings",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/103_namespace_bindings.sql",
+      "authority": true,
+      "semanticOwner": "namespace",
+      "concept": "namespace-binding"
+    },
+    {
+      "name": "namespace_claims",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/103_namespace_bindings.sql",
+      "authority": true,
+      "semanticOwner": "namespace",
+      "concept": "namespace-claim"
+    },
+    {
+      "name": "namespace_binding_history",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/103_namespace_bindings.sql",
+      "authority": true,
+      "semanticOwner": "namespace",
+      "concept": "namespace-binding-history"
+    }
+  ]
+}
