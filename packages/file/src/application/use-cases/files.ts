@@ -1,4 +1,8 @@
-import type { FilePayloadInspector, FileReads, FileTransactions } from "../../contracts/output/files.js";
+import type {
+  FilePayloadInspector,
+  FileReads,
+  FileTransactions,
+} from "../../contracts/output/files.js";
 import type { FileObjectStore } from "../../contracts/output/object-store.js";
 import { createFileQueries } from "./queries.js";
 import { createFileUploads } from "./uploads.js";

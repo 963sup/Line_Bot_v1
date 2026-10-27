@@ -7,24 +7,22 @@ import { Button } from "../../shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../shared/ui/card";
 import { Input } from "../../shared/ui/input";
 import { Label } from "../../shared/ui/label";
-import PurchaseOrderIntakeReview from "./purchase-order-intake-review";
-import { usePurchaseOrderIntake } from "./use-purchase-order-intake";
-import { uploadSelectedFile } from "./signed-file-upload";
-
 import {
-  type FileInfo,
-  type PendingUpload,
-  type View,
-  type Pending,
-  type FileMutation,
-  StaleRequest,
-  record,
-  parseFile,
-  parseView,
-  parsePendingPage,
   errorMessage,
+  type FileInfo,
+  type FileMutation,
+  type Pending,
+  type PendingUpload,
+  parseFile,
+  parsePendingPage,
+  parseView,
+  record,
+  StaleRequest,
+  type View,
 } from "./files-projection";
-
+import PurchaseOrderIntakeReview from "./purchase-order-intake-review";
+import { uploadSelectedFile } from "./signed-file-upload";
+import { usePurchaseOrderIntake } from "./use-purchase-order-intake";
 
 export default function FilesPanel({
   liffId,
@@ -49,20 +47,33 @@ export default function FilesPanel({
   const mutationLock = useRef(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const {
-    documentIntakeReceipt, setDocumentIntakeReceipt,
-    documentIntakeRevision, setDocumentIntakeRevision,
-    sourceReviewConfirmed, setSourceReviewConfirmed,
-    acknowledgementReason, setAcknowledgementReason,
-    pendingDocumentConfirmation, setPendingDocumentConfirmation,
+    documentIntakeReceipt,
+    setDocumentIntakeReceipt,
+    documentIntakeRevision,
+    setDocumentIntakeRevision,
+    sourceReviewConfirmed,
+    setSourceReviewConfirmed,
+    acknowledgementReason,
+    setAcknowledgementReason,
+    pendingDocumentConfirmation,
+    setPendingDocumentConfirmation,
     pendingDocumentIntake,
     clearPurchaseOrder,
-    intakePurchaseOrder, confirmPurchaseOrder, startPurchaseOrderIntake,
+    intakePurchaseOrder,
+    confirmPurchaseOrder,
+    startPurchaseOrderIntake,
   } = usePurchaseOrderIntake({
-    view, selected, setSelected, pending, busy, setBusy, setError, epoch,
+    view,
+    selected,
+    setSelected,
+    pending,
+    busy,
+    setBusy,
+    setError,
+    epoch,
     mutationLock,
     requestDocumentIntake: (query, command) => requestDocumentIntake(query, command),
   });
-
 
   const clear = useCallback(() => {
     epoch.current++;
@@ -246,7 +257,9 @@ export default function FilesPanel({
       const response = await uploadSelectedFile(
         next,
         (mutation) => request({}, mutation),
-        () => { if (ticket !== epoch.current) throw new StaleRequest(); },
+        () => {
+          if (ticket !== epoch.current) throw new StaleRequest();
+        },
       );
       if (ticket !== epoch.current) return;
       if (response.requestId !== next.command.requestId)

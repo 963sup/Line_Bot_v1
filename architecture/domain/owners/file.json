@@ -12,15 +12,9 @@
       "owner": "file",
       "status": "selected",
       "evidence": {
-        "ownerContracts": [
-          "docs/owners/file.md"
-        ],
-        "sourcePaths": [
-          "packages/file/src/domain/file.ts"
-        ],
-        "testPaths": [
-          "packages/file/test/persistence.test.ts"
-        ],
+        "ownerContracts": ["docs/owners/file.md"],
+        "sourcePaths": ["packages/file/src/domain/file.ts"],
+        "testPaths": ["packages/file/test/persistence.test.ts"],
         "rationale": "File owns original source evidence and immutable bytes; Intelligence owns the separate processing lifecycle and retained interpretation evidence."
       }
     }
@@ -113,20 +107,8 @@
       "owner": "file",
       "kind": "leaf",
       "intent": "Preserve protected Repository-scoped files via explicit durable Upload Intent, private immutable Storage Object readback, atomic File revision/head/receipt Finalize and exact replay; list/read/download require current access.",
-      "preserves": [
-        "K1",
-        "K2",
-        "K3",
-        "K4",
-        "K5",
-        "K6",
-        "FILE1",
-        "FILE2"
-      ],
-      "consumes": [
-        "file-repository-scope",
-        "file-platform-persistence"
-      ],
+      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6", "FILE1", "FILE2"],
+      "consumes": ["file-repository-scope", "file-platform-persistence"],
       "validationProfiles": [
         "semantic-architecture",
         "architecture-tests",

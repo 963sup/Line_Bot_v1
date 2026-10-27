@@ -1,4 +1,8 @@
-import type { FilePayloadInspector, FileTransaction, FileTransactions } from "../../contracts/output/files.js";
+import type {
+  FilePayloadInspector,
+  FileTransaction,
+  FileTransactions,
+} from "../../contracts/output/files.js";
 import type { FileObjectStore } from "../../contracts/output/object-store.js";
 import { FileError, fileErrorFromUnknown } from "../../domain/error.js";
 import { type FileDescriptor, type FileUploadIntent, nextFileRevision } from "../../domain/file.js";
@@ -12,7 +16,6 @@ function writable(tx: FileTransaction): void {
 function newWrite(tx: FileTransaction): void {
   if (tx.scope.archived) throw new FileError(409, "Repository is archived.", "LIFECYCLE_CONFLICT");
 }
-
 
 /** One command owner for durable intent, object I/O and atomic File revision commit. */
 export function createFileUploads(deps: {

@@ -67,96 +67,100 @@ function commandRecord(value: unknown): Record<string, unknown> {
 }
 
 /** File alone maps its queries and commands; the host must supply a verified actor and locator. */
-export async function fileHttpRequest(request: Request, scope: FileHttpScope, owner: FileHttpOwner) {
+export async function fileHttpRequest(
+  request: Request,
+  scope: FileHttpScope,
+  owner: FileHttpOwner,
+) {
   const query = new URL(request.url).searchParams;
   if (request.method !== "GET" && request.method !== "POST")
     throw new FileError(405, "File method is not available.", "INVALID_INPUT");
-    if (request.method === "GET") {
-      const view = query.get("view") ?? "list";
-      if (view === "list")
-        return jsonResponse({
-          ...scope,
-          ...(query.has("after")
-            ? {
-                ...(await owner.list(
-                  scope.actorUserId,
-                  scope.repository.id,
-                  query.get("after") ?? undefined,
-                )),
-                uploads: [],
-                pendingNext: null,
-              }
-            : await owner.overview(scope.actorUserId, scope.repository.id)),
-          uploadMaxBytes: uploadLimit,
-        });
-      if (view === "uploads")
-        return jsonResponse(
-          await owner.pendingUploads(
-            scope.actorUserId,
-            scope.repository.id,
-            query.get("after") ?? undefined,
-          ),
-        );
-      const fileId = query.get("fileId") ?? "";
-      if (view === "file") {
-        const file = await owner.file(
-          scope.actorUserId,
-          scope.repository.id,
-          fileId,
-          query.get("revisionId") ?? undefined,
-        );
-        return jsonResponse({
-          ...scope,
-          file,
-          processing: null,
-        });
-      }
-      if (view === "runs" || view === "processing")
-        return invalid("File processing is owned by Intelligence.");
-      if (view === "download") {
-        const revisionId = query.get("revisionId") ?? "";
-        // File owner bounds the payload before Storage I/O, while retaining post-I/O authorization.
-        const original = await owner.source(
-          scope.actorUserId,
-          scope.repository.id,
-          fileId,
-          revisionId,
-          uploadLimit,
-        );
-        return new Response(Uint8Array.from(original.bytes).buffer, {
-          headers: {
-            "Content-Type": "application/octet-stream",
-            "Content-Disposition": "attachment",
-            "Cache-Control": "private, no-store",
-            "Referrer-Policy": "no-referrer",
-            "X-Content-Type-Options": "nosniff",
-            "Content-Security-Policy": "default-src 'none'",
-          },
-        });
-      }
-      return invalid("Unknown File query.");
-    }
-
-    const body = await jsonBody(request);
-    if (Object.keys(body).some((key) => !["operation", "command"].includes(key)))
-      return invalid("Unknown File operation field.");
-    checkScope(body.command, scope);
-    if (body.operation === "prepare-upload" || body.operation === "complete-upload") {
-      const command = commandRecord(body.command);
-      if (
-        typeof command.byteLength !== "number" ||
-        !Number.isSafeInteger(command.byteLength) ||
-        command.byteLength < 1 ||
-        command.byteLength > uploadLimit
-      )
-        throw new FileError(413, "Browser upload is limited to 3 MB.", "INVALID_INPUT");
+  if (request.method === "GET") {
+    const view = query.get("view") ?? "list";
+    if (view === "list")
+      return jsonResponse({
+        ...scope,
+        ...(query.has("after")
+          ? {
+              ...(await owner.list(
+                scope.actorUserId,
+                scope.repository.id,
+                query.get("after") ?? undefined,
+              )),
+              uploads: [],
+              pendingNext: null,
+            }
+          : await owner.overview(scope.actorUserId, scope.repository.id)),
+        uploadMaxBytes: uploadLimit,
+      });
+    if (view === "uploads")
       return jsonResponse(
-        body.operation === "prepare-upload"
-          ? await owner.prepareUpload(scope.actorUserId, command)
-          : await owner.completeUpload(scope.actorUserId, command),
+        await owner.pendingUploads(
+          scope.actorUserId,
+          scope.repository.id,
+          query.get("after") ?? undefined,
+        ),
       );
+    const fileId = query.get("fileId") ?? "";
+    if (view === "file") {
+      const file = await owner.file(
+        scope.actorUserId,
+        scope.repository.id,
+        fileId,
+        query.get("revisionId") ?? undefined,
+      );
+      return jsonResponse({
+        ...scope,
+        file,
+        processing: null,
+      });
     }
-    if (body.operation === "run" || body.operation === "result")
+    if (view === "runs" || view === "processing")
       return invalid("File processing is owned by Intelligence.");
-    return invalid("Unknown File operation.");
+    if (view === "download") {
+      const revisionId = query.get("revisionId") ?? "";
+      // File owner bounds the payload before Storage I/O, while retaining post-I/O authorization.
+      const original = await owner.source(
+        scope.actorUserId,
+        scope.repository.id,
+        fileId,
+        revisionId,
+        uploadLimit,
+      );
+      return new Response(Uint8Array.from(original.bytes).buffer, {
+        headers: {
+          "Content-Type": "application/octet-stream",
+          "Content-Disposition": "attachment",
+          "Cache-Control": "private, no-store",
+          "Referrer-Policy": "no-referrer",
+          "X-Content-Type-Options": "nosniff",
+          "Content-Security-Policy": "default-src 'none'",
+        },
+      });
+    }
+    return invalid("Unknown File query.");
+  }
+
+  const body = await jsonBody(request);
+  if (Object.keys(body).some((key) => !["operation", "command"].includes(key)))
+    return invalid("Unknown File operation field.");
+  checkScope(body.command, scope);
+  if (body.operation === "prepare-upload" || body.operation === "complete-upload") {
+    const command = commandRecord(body.command);
+    if (
+      typeof command.byteLength !== "number" ||
+      !Number.isSafeInteger(command.byteLength) ||
+      command.byteLength < 1 ||
+      command.byteLength > uploadLimit
+    )
+      throw new FileError(413, "Browser upload is limited to 3 MB.", "INVALID_INPUT");
+    return jsonResponse(
+      body.operation === "prepare-upload"
+        ? await owner.prepareUpload(scope.actorUserId, command)
+        : await owner.completeUpload(scope.actorUserId, command),
+    );
+  }
+  if (body.operation === "run" || body.operation === "result")
+    return invalid("File processing is owned by Intelligence.");
+  return invalid("Unknown File operation.");
 }

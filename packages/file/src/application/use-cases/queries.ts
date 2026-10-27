@@ -6,10 +6,7 @@ import { fileDto, pendingDto } from "../file-projections.js";
 import { createFileSourceReader } from "./sources.js";
 
 /** Read-only File capabilities never require upload/reclamation dependencies. */
-export function createFileQueries(deps: {
-  reads: FileReads;
-  objects: () => FileObjectStore;
-}) {
+export function createFileQueries(deps: { reads: FileReads; objects: () => FileObjectStore }) {
   const sources = createFileSourceReader(deps);
   return {
     async source(actor: string, scope: string, id: string, revision: string, maxBytes?: number) {
@@ -76,6 +73,5 @@ export function createFileQueries(deps: {
         throw fileErrorFromUnknown(error);
       }
     },
-
   };
 }

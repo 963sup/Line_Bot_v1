@@ -39,7 +39,10 @@ type UploadCommand = {
 };
 export type Pending = { command: UploadCommand; file: File };
 export type SignedCommand = UploadCommand & { byteLength: number; sha256: string };
-export type FileMutation = { operation: "prepare-upload" | "complete-upload"; command: SignedCommand };
+export type FileMutation = {
+  operation: "prepare-upload" | "complete-upload";
+  command: SignedCommand;
+};
 export class StaleRequest extends Error {}
 
 /** Validate unknown HTTP projections at the browser boundary; server DTOs are not trusted casts. */
@@ -97,7 +100,10 @@ export function parseView(value: unknown): View {
     uploadMaxBytes: intValue(r.uploadMaxBytes),
   };
 }
-export function parsePendingPage(value: unknown): { uploads: PendingUpload[]; next: string | null } {
+export function parsePendingPage(value: unknown): {
+  uploads: PendingUpload[];
+  next: string | null;
+} {
   const r = record(value);
   return {
     uploads: listOf(r.uploads, (item): PendingUpload => {
@@ -124,4 +130,3 @@ export function parseMutation(value: unknown): { requestId: string; file: FileIn
 export function errorMessage(cause: unknown) {
   return cause instanceof Error ? cause.message : String(cause);
 }
-

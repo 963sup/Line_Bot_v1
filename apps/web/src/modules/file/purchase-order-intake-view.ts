@@ -1,4 +1,4 @@
-import { record, stringValue, intValue, listOf } from "./files-projection";
+import { intValue, listOf, record, stringValue } from "./files-projection";
 
 export type DocumentIntakeReceipt = {
   requestId: string;
@@ -96,4 +96,3 @@ export function sourceReviewPages(candidate: Record<string, unknown>): number[] 
   visit(candidate);
   return [...pages].sort((left, right) => left - right);
 }
-

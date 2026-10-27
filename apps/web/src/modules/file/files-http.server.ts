@@ -1,5 +1,9 @@
 import { UserError } from "@line_bot_v1/account/domain/user";
-import { fileHttpRequest, type FileHttpOwner, type FileHttpScope } from "@line_bot_v1/file/adapters/inbound/http";
+import {
+  type FileHttpOwner,
+  type FileHttpScope,
+  fileHttpRequest,
+} from "@line_bot_v1/file/adapters/inbound/http";
 import { FileError } from "@line_bot_v1/file/domain/error";
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
 import { RepositoryError } from "@line_bot_v1/repository/contracts/errors/repository-error";
@@ -9,7 +13,10 @@ import { jsonResponse } from "../../shared/server/http";
 import { RequestIdentityError } from "../../shared/server/request-identity-error";
 
 export type FilesWebRuntime = {
-  scope(subject: string, selector: { ownerLogin: string; repositoryName: string }): Promise<FileHttpScope>;
+  scope(
+    subject: string,
+    selector: { ownerLogin: string; repositoryName: string },
+  ): Promise<FileHttpScope>;
   owner(): FileHttpOwner;
 };
 function invalid(message = "Invalid File request."): never {

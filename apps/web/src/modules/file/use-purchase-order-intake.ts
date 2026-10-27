@@ -2,12 +2,12 @@
 
 import { useCallback, useState } from "react";
 import type { FileInfo, Pending, View } from "./files-projection";
-import { StaleRequest, errorMessage, record } from "./files-projection";
+import { errorMessage, record, StaleRequest } from "./files-projection";
 import {
+  candidateLines,
   type DocumentIntakeCommand,
   type DocumentIntakeReceipt,
   type DocumentIntakeRevision,
-  candidateLines,
   parseDocumentIntakeReceipt,
   parseDocumentIntakeRevision,
   sourceReviewPages,
@@ -15,8 +15,16 @@ import {
 
 /** ContractDocument UI lifecycle is separate from File's source and upload ownership. */
 export function usePurchaseOrderIntake({
-  view, selected, setSelected, pending, busy, setBusy, setError, epoch,
-  mutationLock, requestDocumentIntake,
+  view,
+  selected,
+  setSelected,
+  pending,
+  busy,
+  setBusy,
+  setError,
+  epoch,
+  mutationLock,
+  requestDocumentIntake,
 }: {
   view: View | null;
   selected: FileInfo | null;
@@ -241,15 +249,22 @@ export function usePurchaseOrderIntake({
     });
   }
 
-
   return {
-    documentIntakeReceipt, setDocumentIntakeReceipt,
-    documentIntakeRevision, setDocumentIntakeRevision,
-    sourceReviewConfirmed, setSourceReviewConfirmed,
-    acknowledgementReason, setAcknowledgementReason,
-    pendingDocumentConfirmation, setPendingDocumentConfirmation,
-    pendingDocumentIntake, setPendingDocumentIntake,
+    documentIntakeReceipt,
+    setDocumentIntakeReceipt,
+    documentIntakeRevision,
+    setDocumentIntakeRevision,
+    sourceReviewConfirmed,
+    setSourceReviewConfirmed,
+    acknowledgementReason,
+    setAcknowledgementReason,
+    pendingDocumentConfirmation,
+    setPendingDocumentConfirmation,
+    pendingDocumentIntake,
+    setPendingDocumentIntake,
     clearPurchaseOrder,
-    intakePurchaseOrder, confirmPurchaseOrder, startPurchaseOrderIntake,
+    intakePurchaseOrder,
+    confirmPurchaseOrder,
+    startPurchaseOrderIntake,
   };
 }
