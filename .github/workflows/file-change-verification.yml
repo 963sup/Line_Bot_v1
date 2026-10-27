@@ -66,4 +66,4 @@ jobs:
       - name: File owner unit and persistence tests
         run: pnpm exec turbo run test --filter=@line_bot_v1/file --concurrency=2
       - name: Web transport regression tests
-        run: pnpm --filter @line_bot_v1/web exec node --no-wasm-code-gc --import tsx --test test/files-owner-http.test.ts
+        run: pnpm --filter @line_bot_v1/web exec node --no-wasm-code-gc --import tsx --test test/files-owner-http.test.ts test/files-signed-upload.test.ts
