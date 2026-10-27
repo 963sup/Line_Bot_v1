@@ -7,7 +7,7 @@ import { Button } from "../../shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../shared/ui/card";
 import { Input } from "../../shared/ui/input";
 import { Label } from "../../shared/ui/label";
-import PurchaseOrderReview from "./purchase-order-review";
+import PurchaseOrderIntakeReview from "./purchase-order-intake-review";
 
 import {
   type FileInfo,
@@ -29,7 +29,6 @@ import {
   type DocumentIntakeReceipt,
   type DocumentIntakeRevision,
   type DocumentIntakeCommand,
-  diagnosticLabels,
   parseDocumentIntakeReceipt,
   parseDocumentIntakeRevision,
   candidateLines,
@@ -72,10 +71,6 @@ export default function FilesPanel({
   const epoch = useRef(0);
   const mutationLock = useRef(false);
   const fileInput = useRef<HTMLInputElement>(null);
-  const review = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (documentIntakeRevision) review.current?.focus();
-  }, [documentIntakeRevision]);
 
   const clear = useCallback(() => {
     epoch.current++;
@@ -839,71 +834,17 @@ export default function FilesPanel({
                     </p>
                   )}
                   {documentIntakeRevision && (
-                    <div
-                      ref={review}
-                      tabIndex={-1}
-                      role="region"
-                      aria-label="採購單審核"
-                      className="grid min-w-0 gap-3 rounded-md border p-3"
-                    >
-                      <div>
-                        <p className="font-medium">採購單審核</p>
-                        <p className="text-xs text-muted-foreground">
-                          {documentIntakeRevision.state === "CONFIRMED"
-                            ? "採購單已確認並保存。"
-                            : `候選 v${documentIntakeRevision.version} · 系統辨識 ${candidateLines(documentIntakeRevision.candidate).length} 筆明細`}
-                        </p>
-                      </div>
-                      {documentIntakeRevision.diagnostics.length > 0 && (
-                        <p className="text-sm text-destructive">
-                          {documentIntakeRevision.diagnostics
-                            .map((code) => diagnosticLabels[code] ?? `需核對：${code}`)
-                            .join("；")}
-                        </p>
-                      )}
-                      <PurchaseOrderReview candidate={documentIntakeRevision.candidate} />
-                      {documentIntakeRevision.state === "DRAFT" && (
-                        <>
-                          <label className="flex items-start gap-2 text-sm">
-                            <input
-                              type="checkbox"
-                              checked={sourceReviewConfirmed}
-                              disabled={busy || !!pending || !!pendingDocumentConfirmation}
-                              onChange={(event) => setSourceReviewConfirmed(event.target.checked)}
-                            />
-                            <span>
-                              我已核對原始檔、全部明細、來源頁與金額，確認以上採購單資料正確。
-                            </span>
-                          </label>
-                          {documentIntakeRevision.diagnostics.some((item) =>
-                            item.includes("MISMATCH"),
-                          ) && (
-                            <div className="grid gap-2">
-                              <Label htmlFor="purchase-order-acknowledgement">
-                                金額差異確認理由
-                              </Label>
-                              <Input
-                                id="purchase-order-acknowledgement"
-                                placeholder="請說明接受此金額差異的原因"
-                                value={acknowledgementReason}
-                                disabled={busy || !!pending || !!pendingDocumentConfirmation}
-                                onChange={(event) => setAcknowledgementReason(event.target.value)}
-                              />
-                            </div>
-                          )}
-                          <Button
-                            disabled={
-                              busy ||
-                              !!pending ||
-                              (!pendingDocumentConfirmation && !sourceReviewConfirmed)
-                            }
-                            onClick={() => void confirmPurchaseOrder()}
-                          >
-                            {pendingDocumentConfirmation ? "以原請求重試確認" : "確認採購單"}
-                          </Button>
-                        </>
-                      )}
-                    </div>
+                    <PurchaseOrderIntakeReview
+                      revision={documentIntakeRevision}
+                      sourceReviewConfirmed={sourceReviewConfirmed}
+                      setSourceReviewConfirmed={setSourceReviewConfirmed}
+                      acknowledgementReason={acknowledgementReason}
+                      setAcknowledgementReason={setAcknowledgementReason}
+                      pendingDocumentConfirmation={pendingDocumentConfirmation}
+                      busy={busy}
+                      pending={!!pending}
+                      confirmPurchaseOrder={confirmPurchaseOrder}
+                    />
                   )}
                 </>
               )}
