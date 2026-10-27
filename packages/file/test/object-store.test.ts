@@ -139,3 +139,50 @@ test("provider unknown result is accepted only after independent readback", asyn
     return true;
   });
 });
+
+
+test("signed uploads issue write-once private-object tickets without a readback or upload", async () => {
+  const { bytes, digest } = fixture();
+  const revision = nextFileRevision(null, 0, randomUUID(), {
+    name: "source.txt", mediaType: "text/plain", byteLength: bytes.byteLength,
+    sha256: await digest(bytes),
+  }, { id: randomUUID(), repositoryId: "repo-A", actorUserId: "actor", at: 1 });
+  let calls = 0;
+  const objects = fileObjects({
+    async createSignedUploadUrl(path, options) {
+      calls++;
+      assert.equal(options.upsert, false);
+      assert.equal(path.split("/").length, 3);
+      assert.equal(path.includes("repo-A"), false);
+      return { data: {
+        signedUrl: `https://test.supabase.co/storage/v1/object/upload/sign/repository-files/${path}?token=opaque`,
+      }, error: null };
+    },
+    async download() { assert.fail("Signing must not load object bytes"); },
+    async upload() { assert.fail("Signing must not upload server bytes"); },
+    async remove() { assert.fail("Signing must not delete objects"); },
+  });
+  const ticket = await objects.signUpload(revision);
+  assert.match(ticket, /^https:\/\/test\.supabase\.co\/storage\/v1\/object\/upload\/sign\//);
+  assert.equal(calls, 1);
+});
+
+test("signed upload refuses untrusted or unsigned provider destinations", async () => {
+  const { bytes, digest } = fixture();
+  const revision = nextFileRevision(null, 0, randomUUID(), {
+    name: "source.txt", mediaType: "text/plain", byteLength: bytes.byteLength,
+    sha256: await digest(bytes),
+  }, { id: randomUUID(), repositoryId: "repo", actorUserId: "actor", at: 1 });
+  const bucket = (signedUrl: string) => fileObjects({
+    async createSignedUploadUrl() { return { data: { signedUrl }, error: null }; },
+    async download() { assert.fail("Unexpected read"); },
+    async upload() { assert.fail("Unexpected upload"); },
+    async remove() { assert.fail("Unexpected remove"); },
+  });
+  await assert.rejects(bucket("https://evil.example/steal?token=abc").signUpload(revision), {
+    code: "UNAVAILABLE",
+  });
+  await assert.rejects(bucket("https://test.supabase.co/storage/v1/object/upload/sign/repository-files/key").signUpload(revision), {
+    code: "UNAVAILABLE",
+  });
+});
