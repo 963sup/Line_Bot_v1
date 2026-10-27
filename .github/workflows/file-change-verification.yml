@@ -8,6 +8,7 @@ on:
       - "apps/web/src/app/api/_composition/files.server.ts"
       - "apps/web/src/app/api/_composition/files-request.server.ts"
       - "apps/web/src/app/api/repository-files/route.ts"
+      - "scripts/tooling/file-architecture.config.mjs"
       - "apps/web/test/files-owner-http.test.ts"
       - "apps/web/test/files-signed-upload.test.ts"
       - "architecture/domain/owners/file.json"
@@ -52,6 +53,16 @@ jobs:
         run: pnpm check lint -- packages/file/src packages/file/test apps/web/src/modules/file apps/web/src/app/api/_composition/files.server.ts apps/web/src/app/api/_composition/files-request.server.ts apps/web/test/files-owner-http.test.ts apps/web/test/files-signed-upload.test.ts
       - name: Typecheck File and Web with dependency builds
         run: pnpm exec turbo run typecheck --filter=@line_bot_v1/file --filter=@line_bot_v1/web --concurrency=2
+      - name: Check File dependencies and cycles
+        run: >-
+          pnpm exec depcruise
+          --config scripts/tooling/file-architecture.config.mjs
+          --include-only "^(packages/file/src/|apps/web/src/modules/file/|apps/web/src/app/api/_composition/files(-request)?[.]server[.]ts|apps/web/src/app/api/repository-files/route[.]ts)"
+          packages/file/src
+          apps/web/src/modules/file
+          apps/web/src/app/api/_composition/files.server.ts
+          apps/web/src/app/api/_composition/files-request.server.ts
+          apps/web/src/app/api/repository-files/route.ts
       - name: Audit File workspace reachability
         run: pnpm exec knip --workspace packages/file
       - name: File owner unit and persistence tests
