@@ -12,6 +12,7 @@ export interface FileSourceReader {
     actor: string,
     repositoryId: string,
     source: Readonly<Pick<FileSourceReference, "fileId" | "fileRevisionId">>,
+    maxBytes?: number,
   ): Promise<{ revision: FileRevision; bytes: Uint8Array }>;
 }
 
