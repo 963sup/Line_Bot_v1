@@ -13,10 +13,10 @@ Schema change 的基本流程只有一個：
 1. 修改負責的 `packages/integration-supabase/src/schemas/*.sql`。
 2. 以 `schema:check` 驗證 clean build 與核心 RLS／role boundary。
 3. 需要完整 local Supabase 時，用 `schema:local` 從 current schemas 重建 local `app_private`。
-4. Remote publication 由 repository-owned reconciliation 比較 deployed current state 與 desired schemas；validated schema source 授權 DDL convergence。
+4. Remote publication 由受信任 operator 比較 deployed current state 與已核准的 current `main` desired schemas；validated canonical source 授權 exact DDL convergence。
 5. Remote write 後必須以 catalog／RLS／grant／function／trigger／role readback與 second diff 證明 deployed state 已收斂。
 
-不得先在 remote Dashboard／SQL Editor 改 application schema再回填 Git，也不得用 migration history、migration file或 local success 冒充 remote current state。
+不得先在 remote Dashboard／SQL Editor 改 application schema 再回填 Git，也不得用 migration history、migration file 或 local success 冒充 remote current state。Supabase MCP 只可執行已存在於 current `main` canonical schema 的 bounded DDL，不能成為第二套 schema authority。
 
 Supabase 官方 `db push`、`db reset --linked`、`migration up` 與 `migration repair` 都不屬於本專案 remote schema path。
 
