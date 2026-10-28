@@ -2,13 +2,15 @@
 
 <!-- Generated from package.json and architecture/modules/*.json. -->
 
+## Context Card
+
 | Field | Value |
 | --- | --- |
-| Package module | @line_bot_v1/intelligence |
-| semanticOwner | intelligence |
-| moduleKind | application-module |
+| Owner | intelligence |
+| Module | @line_bot_v1/intelligence |
+| Kind | application-module |
 
-## Owner boundary
+## Context Boundary
 
 ```mermaid
 flowchart LR
@@ -17,48 +19,32 @@ flowchart LR
   Module --> Evidence[Source / tests / schema]
 ```
 
-## Ubiquitous language
+## Domain Model
 
-| Term | Meaning |
-| --- | --- |
-| Owner | intelligence |
-| Module kind | application-module |
-| Package role | implementation module mapped through registry topology |
+```mermaid
+flowchart TD
+  Application[Application boundary] --> Port[Public port / DTO]
+  Port --> Boundary[External boundary]
+```
 
-## Dependencies
+## Boundary and Dependencies
 
 ```mermaid
 flowchart LR
+  Consumer[Consumer] --> Application[Application]
+  Application --> Ports[Ports / dependencies]
   intelligence --> file
   intelligence --> integration-openai
   intelligence --> platform
   intelligence --> repository
 ```
 
-## Application boundary
+## Key Invariants
 
-```mermaid
-flowchart TD
-  Consumer[Consumer] --> Application[Application orchestration]
-  Application --> Ports[Ports / contracts]
-  Application --> Dependencies[Owner dependencies]
-```
+- This module does not acquire another Owner's business authority.
+- Boundary errors remain explicit and evidence-backed.
 
-## Invariants
-
-- Orchestration does not acquire another Owner's business authority.
-- Public contracts and evidence remain the compatibility boundary.
-
-## State and data flow
-
-```mermaid
-flowchart LR
-  Input[Input / command] --> UseCase[Use case]
-  UseCase --> Result[Result / state]
-  Result --> Persistence[Persistence / evidence]
-```
-
-## Public functions
+## Public Surface
 
 - ./composition/bootstrap/commercial-intake
 - ./composition/bootstrap/document-intake

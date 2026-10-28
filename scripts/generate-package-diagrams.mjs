@@ -14,44 +14,33 @@ for (const entry of readdirSync(packagesDir, { withFileTypes: true }).filter((it
   const name = entry.name;
   const manifest = JSON.parse(readFileSync(resolve(packagesDir, name, "package.json"), "utf8"));
   const topology = modules.get(name) ?? {};
+  const kind = topology.moduleKind ?? "unknown";
   const deps = Object.keys({ ...manifest.dependencies, ...manifest.devDependencies })
     .filter((item) => item.startsWith("@line_bot_v1/"))
     .map((item) => item.replace("@line_bot_v1/", ""))
     .sort();
   const exports = Object.keys(manifest.exports ?? {}).sort();
   const edges = deps.length ? deps.map((dep) => `  ${name} --> ${dep}`).join("\n") : `  ${name} --> none`;
-  const kind = topology.moduleKind ?? "unknown";
-  const language = [
-    `| Owner | ${topology.semanticOwner ?? "unregistered"} |`,
-    `| Module kind | ${topology.moduleKind ?? "unknown"} |`,
-    "| Package role | implementation module mapped through registry topology |",
-  ];
+  const model = kind === "domain-module"
+    ? ["  Aggregate[Aggregate Root] --> Entity[Entities]", "  Aggregate --> ValueObject[Value Objects]", "  Aggregate --> Invariant[Business invariants]"]
+    : ["  Application[Application boundary] --> Port[Public port / DTO]", "  Port --> Boundary[External boundary]"];
+  const boundary = kind === "integration-adapter"
+    ? ["  Application[Owner application] --> Port[Port / DTO]", "  Port --> Adapter[Integration adapter]", "  Adapter --> Provider[External provider]"]
+    : kind === "domain-module"
+      ? ["  Consumer[Consumer] --> Application[Application]", "  Application --> Domain[Domain]", "  Application --> Ports[Ports]", "  Composition[Composition] --> Adapters[Adapters]", "  Adapters --> Ports"]
+      : ["  Consumer[Consumer] --> Application[Application]", "  Application --> Ports[Ports / dependencies]"];
   const invariants = kind === "domain-module"
-    ? ["- Domain invariants remain in this Owner.", "- Authorization, isolation, replay, and expected-version rules fail closed."]
-    : kind === "integration-adapter"
-      ? ["- Provider protocol details remain behind the adapter boundary.", "- External errors are normalized without inventing business truth."]
-      : ["- Orchestration does not acquire another Owner's business authority.", "- Public contracts and evidence remain the compatibility boundary."];
-  const architecture = kind === "domain-module"
-    ? ["## Domain boundary", "", `${fence}mermaid`, "flowchart TD", "  Domain[Domain invariants] --> Application[Application use cases]", "  Application --> Ports[Contracts / ports]", "  Composition[Composition] --> Application", "  Adapters[Adapters] --> Ports", "  Composition --> Adapters", fence]
-    : kind === "integration-adapter"
-      ? ["## Integration boundary", "", `${fence}mermaid`, "flowchart LR", "  Application[Owner application] --> Port[Port / DTO]", "  Port --> Adapter[Integration adapter]", "  Adapter --> Provider[External provider]", fence]
-      : kind === "application-module"
-        ? ["## Application boundary", "", `${fence}mermaid`, "flowchart TD", "  Consumer[Consumer] --> Application[Application orchestration]", "  Application --> Ports[Ports / contracts]", "  Application --> Dependencies[Owner dependencies]", fence]
-        : ["## Module boundary", "", `${fence}mermaid`, "flowchart LR", "  Consumer[Consumer] --> Module[Module]", "  Module --> Dependencies[Dependencies]", fence];
+    ? ["- Domain invariants remain owned here.", "- Authorization, isolation, replay, and version rules fail closed."]
+    : ["- This module does not acquire another Owner's business authority.", "- Boundary errors remain explicit and evidence-backed."];
   const lines = [
-    `# ${name} Owner Architecture`, "",
-    "<!-- Generated from package.json and architecture/modules/*.json. -->", "",
-    "| Field | Value |", "| --- | --- |", `| Package module | ${manifest.name} |`,
-    `| semanticOwner | ${topology.semanticOwner ?? "unregistered"} |`, `| moduleKind | ${topology.moduleKind ?? "unknown"} |`, "",
-    "## Owner boundary", "", `${fence}mermaid`, "flowchart LR", `  Owner[${topology.semanticOwner ?? "unregistered"} Owner] --> Module[${name} module]`, "  Module --> Consumer[Real consumer]", "  Module --> Evidence[Source / tests / schema]", fence, "",
-    "## Ubiquitous language", "", "| Term | Meaning |", "| --- | --- |", ...language, "",
-    "## Dependencies", "", `${fence}mermaid`, "flowchart LR", edges, fence, "",
-    ...architecture, "",
-    "## Invariants", "", ...invariants, "",
-    "## State and data flow", "", `${fence}mermaid`, "flowchart LR", "  Input[Input / command] --> UseCase[Use case]", "  UseCase --> Result[Result / state]", "  Result --> Persistence[Persistence / evidence]", fence, "",
-    "## Public functions", "", ...(exports.length ? exports.map((item) => `- ${item}`) : ["- No public functions exported."]), "",
-    "## Evidence", "", "- [Manifest](./package.json)", "- [Source](./src/)", "- [Tests](./test/)",
-    `- [Module topology](../../architecture/modules/${name}.json)`, "",
+    `# ${name} Owner Architecture`, "", "<!-- Generated from package.json and architecture/modules/*.json. -->", "",
+    "## Context Card", "", "| Field | Value |", "| --- | --- |", `| Owner | ${topology.semanticOwner ?? "unregistered"} |`, `| Module | ${manifest.name} |`, `| Kind | ${kind} |`, "",
+    "## Context Boundary", "", `${fence}mermaid`, "flowchart LR", `  Owner[${topology.semanticOwner ?? "unregistered"} Owner] --> Module[${name} module]`, "  Module --> Consumer[Real consumer]", "  Module --> Evidence[Source / tests / schema]", fence, "",
+    "## Domain Model", "", `${fence}mermaid`, "flowchart TD", ...model, fence, "",
+    "## Boundary and Dependencies", "", `${fence}mermaid`, "flowchart LR", ...boundary, edges, fence, "",
+    "## Key Invariants", "", ...invariants, "",
+    "## Public Surface", "", ...(exports.length ? exports.map((item) => `- ${item}`) : ["- No public exports declared."]), "",
+    "## Evidence", "", "- [Manifest](./package.json)", "- [Source](./src/)", "- [Tests](./test/)", `- [Module topology](../../architecture/modules/${name}.json)`, "",
   ];
   writeFileSync(resolve(packagesDir, name, "ARCHITECTURE.md"), `${lines.join("\n")}\n`);
 }

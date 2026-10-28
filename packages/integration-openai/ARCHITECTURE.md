@@ -2,13 +2,15 @@
 
 <!-- Generated from package.json and architecture/modules/*.json. -->
 
+## Context Card
+
 | Field | Value |
 | --- | --- |
-| Package module | @line_bot_v1/integration-openai |
-| semanticOwner | openai-integration |
-| moduleKind | integration-adapter |
+| Owner | openai-integration |
+| Module | @line_bot_v1/integration-openai |
+| Kind | integration-adapter |
 
-## Owner boundary
+## Context Boundary
 
 ```mermaid
 flowchart LR
@@ -17,45 +19,30 @@ flowchart LR
   Module --> Evidence[Source / tests / schema]
 ```
 
-## Ubiquitous language
-
-| Term | Meaning |
-| --- | --- |
-| Owner | openai-integration |
-| Module kind | integration-adapter |
-| Package role | implementation module mapped through registry topology |
-
-## Dependencies
+## Domain Model
 
 ```mermaid
-flowchart LR
-  integration-openai --> none
+flowchart TD
+  Application[Application boundary] --> Port[Public port / DTO]
+  Port --> Boundary[External boundary]
 ```
 
-## Integration boundary
+## Boundary and Dependencies
 
 ```mermaid
 flowchart LR
   Application[Owner application] --> Port[Port / DTO]
   Port --> Adapter[Integration adapter]
   Adapter --> Provider[External provider]
+  integration-openai --> none
 ```
 
-## Invariants
+## Key Invariants
 
-- Provider protocol details remain behind the adapter boundary.
-- External errors are normalized without inventing business truth.
+- This module does not acquire another Owner's business authority.
+- Boundary errors remain explicit and evidence-backed.
 
-## State and data flow
-
-```mermaid
-flowchart LR
-  Input[Input / command] --> UseCase[Use case]
-  UseCase --> Result[Result / state]
-  Result --> Persistence[Persistence / evidence]
-```
-
-## Public functions
+## Public Surface
 
 - ./structured-output
 

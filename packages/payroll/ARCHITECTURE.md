@@ -2,13 +2,15 @@
 
 <!-- Generated from package.json and architecture/modules/*.json. -->
 
+## Context Card
+
 | Field | Value |
 | --- | --- |
-| Package module | @line_bot_v1/payroll |
-| semanticOwner | payroll |
-| moduleKind | domain-module |
+| Owner | payroll |
+| Module | @line_bot_v1/payroll |
+| Kind | domain-module |
 
-## Owner boundary
+## Context Boundary
 
 ```mermaid
 flowchart LR
@@ -17,47 +19,33 @@ flowchart LR
   Module --> Evidence[Source / tests / schema]
 ```
 
-## Ubiquitous language
-
-| Term | Meaning |
-| --- | --- |
-| Owner | payroll |
-| Module kind | domain-module |
-| Package role | implementation module mapped through registry topology |
-
-## Dependencies
-
-```mermaid
-flowchart LR
-  payroll --> none
-```
-
-## Domain boundary
+## Domain Model
 
 ```mermaid
 flowchart TD
-  Domain[Domain invariants] --> Application[Application use cases]
-  Application --> Ports[Contracts / ports]
-  Composition[Composition] --> Application
-  Adapters[Adapters] --> Ports
-  Composition --> Adapters
+  Aggregate[Aggregate Root] --> Entity[Entities]
+  Aggregate --> ValueObject[Value Objects]
+  Aggregate --> Invariant[Business invariants]
 ```
 
-## Invariants
-
-- Domain invariants remain in this Owner.
-- Authorization, isolation, replay, and expected-version rules fail closed.
-
-## State and data flow
+## Boundary and Dependencies
 
 ```mermaid
 flowchart LR
-  Input[Input / command] --> UseCase[Use case]
-  UseCase --> Result[Result / state]
-  Result --> Persistence[Persistence / evidence]
+  Consumer[Consumer] --> Application[Application]
+  Application --> Domain[Domain]
+  Application --> Ports[Ports]
+  Composition[Composition] --> Adapters[Adapters]
+  Adapters --> Ports
+  payroll --> none
 ```
 
-## Public functions
+## Key Invariants
+
+- Domain invariants remain owned here.
+- Authorization, isolation, replay, and version rules fail closed.
+
+## Public Surface
 
 - ./application/readiness
 - ./contracts/input/payroll-readiness-query

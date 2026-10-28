@@ -2,13 +2,15 @@
 
 <!-- Generated from package.json and architecture/modules/*.json. -->
 
+## Context Card
+
 | Field | Value |
 | --- | --- |
-| Package module | @line_bot_v1/workforce |
-| semanticOwner | workforce |
-| moduleKind | domain-module |
+| Owner | workforce |
+| Module | @line_bot_v1/workforce |
+| Kind | domain-module |
 
-## Owner boundary
+## Context Boundary
 
 ```mermaid
 flowchart LR
@@ -17,49 +19,35 @@ flowchart LR
   Module --> Evidence[Source / tests / schema]
 ```
 
-## Ubiquitous language
-
-| Term | Meaning |
-| --- | --- |
-| Owner | workforce |
-| Module kind | domain-module |
-| Package role | implementation module mapped through registry topology |
-
-## Dependencies
-
-```mermaid
-flowchart LR
-  workforce --> none
-```
-
-## Domain boundary
+## Domain Model
 
 ```mermaid
 flowchart TD
-  Domain[Domain invariants] --> Application[Application use cases]
-  Application --> Ports[Contracts / ports]
-  Composition[Composition] --> Application
-  Adapters[Adapters] --> Ports
-  Composition --> Adapters
+  Aggregate[Aggregate Root] --> Entity[Entities]
+  Aggregate --> ValueObject[Value Objects]
+  Aggregate --> Invariant[Business invariants]
 ```
 
-## Invariants
-
-- Domain invariants remain in this Owner.
-- Authorization, isolation, replay, and expected-version rules fail closed.
-
-## State and data flow
+## Boundary and Dependencies
 
 ```mermaid
 flowchart LR
-  Input[Input / command] --> UseCase[Use case]
-  UseCase --> Result[Result / state]
-  Result --> Persistence[Persistence / evidence]
+  Consumer[Consumer] --> Application[Application]
+  Application --> Domain[Domain]
+  Application --> Ports[Ports]
+  Composition[Composition] --> Adapters[Adapters]
+  Adapters --> Ports
+  workforce --> none
 ```
 
-## Public functions
+## Key Invariants
 
-- No public functions exported.
+- Domain invariants remain owned here.
+- Authorization, isolation, replay, and version rules fail closed.
+
+## Public Surface
+
+- No public exports declared.
 
 ## Evidence
 

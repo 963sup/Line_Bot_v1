@@ -2,13 +2,15 @@
 
 <!-- Generated from package.json and architecture/modules/*.json. -->
 
+## Context Card
+
 | Field | Value |
 | --- | --- |
-| Package module | @line_bot_v1/organization |
-| semanticOwner | organization |
-| moduleKind | domain-module |
+| Owner | organization |
+| Module | @line_bot_v1/organization |
+| Kind | domain-module |
 
-## Owner boundary
+## Context Boundary
 
 ```mermaid
 flowchart LR
@@ -17,50 +19,36 @@ flowchart LR
   Module --> Evidence[Source / tests / schema]
 ```
 
-## Ubiquitous language
+## Domain Model
 
-| Term | Meaning |
-| --- | --- |
-| Owner | organization |
-| Module kind | domain-module |
-| Package role | implementation module mapped through registry topology |
+```mermaid
+flowchart TD
+  Aggregate[Aggregate Root] --> Entity[Entities]
+  Aggregate --> ValueObject[Value Objects]
+  Aggregate --> Invariant[Business invariants]
+```
 
-## Dependencies
+## Boundary and Dependencies
 
 ```mermaid
 flowchart LR
+  Consumer[Consumer] --> Application[Application]
+  Application --> Domain[Domain]
+  Application --> Ports[Ports]
+  Composition[Composition] --> Adapters[Adapters]
+  Adapters --> Ports
   organization --> account
   organization --> identity-access
   organization --> namespace
   organization --> platform
 ```
 
-## Domain boundary
+## Key Invariants
 
-```mermaid
-flowchart TD
-  Domain[Domain invariants] --> Application[Application use cases]
-  Application --> Ports[Contracts / ports]
-  Composition[Composition] --> Application
-  Adapters[Adapters] --> Ports
-  Composition --> Adapters
-```
+- Domain invariants remain owned here.
+- Authorization, isolation, replay, and version rules fail closed.
 
-## Invariants
-
-- Domain invariants remain in this Owner.
-- Authorization, isolation, replay, and expected-version rules fail closed.
-
-## State and data flow
-
-```mermaid
-flowchart LR
-  Input[Input / command] --> UseCase[Use case]
-  UseCase --> Result[Result / state]
-  Result --> Persistence[Persistence / evidence]
-```
-
-## Public functions
+## Public Surface
 
 - ./application/commands/organization-lifecycle
 - ./application/organization-governance

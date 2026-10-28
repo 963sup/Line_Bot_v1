@@ -2,13 +2,15 @@
 
 <!-- Generated from package.json and architecture/modules/*.json. -->
 
+## Context Card
+
 | Field | Value |
 | --- | --- |
-| Package module | @line_bot_v1/explore |
-| semanticOwner | repository |
-| moduleKind | application-module |
+| Owner | repository |
+| Module | @line_bot_v1/explore |
+| Kind | application-module |
 
-## Owner boundary
+## Context Boundary
 
 ```mermaid
 flowchart LR
@@ -17,45 +19,29 @@ flowchart LR
   Module --> Evidence[Source / tests / schema]
 ```
 
-## Ubiquitous language
-
-| Term | Meaning |
-| --- | --- |
-| Owner | repository |
-| Module kind | application-module |
-| Package role | implementation module mapped through registry topology |
-
-## Dependencies
-
-```mermaid
-flowchart LR
-  explore --> repository
-```
-
-## Application boundary
+## Domain Model
 
 ```mermaid
 flowchart TD
-  Consumer[Consumer] --> Application[Application orchestration]
-  Application --> Ports[Ports / contracts]
-  Application --> Dependencies[Owner dependencies]
+  Application[Application boundary] --> Port[Public port / DTO]
+  Port --> Boundary[External boundary]
 ```
 
-## Invariants
-
-- Orchestration does not acquire another Owner's business authority.
-- Public contracts and evidence remain the compatibility boundary.
-
-## State and data flow
+## Boundary and Dependencies
 
 ```mermaid
 flowchart LR
-  Input[Input / command] --> UseCase[Use case]
-  UseCase --> Result[Result / state]
-  Result --> Persistence[Persistence / evidence]
+  Consumer[Consumer] --> Application[Application]
+  Application --> Ports[Ports / dependencies]
+  explore --> repository
 ```
 
-## Public functions
+## Key Invariants
+
+- This module does not acquire another Owner's business authority.
+- Boundary errors remain explicit and evidence-backed.
+
+## Public Surface
 
 - ./application/queries/repository-discovery
 
