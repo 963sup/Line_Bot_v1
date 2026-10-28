@@ -7,6 +7,7 @@
   "semanticOwner": "intelligence",
   "allowedWorkspaceDependencies": [
     "@line_bot_v1/integration-openai",
+    "@line_bot_v1/integration-supabase",
     "@line_bot_v1/file",
     "@line_bot_v1/platform",
     "@line_bot_v1/repository"
