@@ -11,7 +11,7 @@ semantic-model
 → owner adapter / use case
 ```
 
-- `packages/integration-supabase/src/schemas/` 是 current declarative DDL；migration history不是 current authority。
+- Supabase schema DDL、migration-history 與 remote reconciliation 規則集中在 [`integration-supabase` Canonical Supabase rules](../../packages/integration-supabase/src/README.md#canonical-supabase-rules)；本文件只定義跨 domain 的 database write boundary。
 - Authoritative relation恰好一個 semantic owner；cross-owner mechanism不能取得 business truth。
 - Domain model不等於 table model；transaction boundary由必須一起成立的 invariants決定。
 

@@ -11,6 +11,10 @@ Routing and module overview for `@line_bot_v1/platform`.
 
 Cross-cutting technical utilities: clock, UUID generation, structured errors, database helpers.
 
+## Redis boundary
+
+Redis coordination is limited to bounded TTL concerns such as rate limiting and webhook claims. PostgreSQL remains the authority for durable business idempotency, qualification, ledger and receipts. `KV_REST_API_URL` and `KV_REST_API_TOKEN` are server-only; keys use scoped hashed identifiers, finite TTL and environment prefixes. Redis loss or expiry never becomes an exactly-once guarantee or changes an external business result. Detailed provider diagnostics and limits belong to the platform implementation and its tests; product owners retain authorization and durable state.
+
 ## Test fixture profiling
 
 `postgresFixture()` creates an isolated PGlite database and applies the current declarative SQL schema for each fixture. To measure its phases without changing test isolation, run an affected package test explicitly with profiling enabled:
