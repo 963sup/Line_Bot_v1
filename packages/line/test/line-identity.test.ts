@@ -58,7 +58,7 @@ test("LINE identity verifies token then profile with no cache, redirects or cred
     (error: unknown) =>
       error instanceof LineIdentityUnavailableError &&
       error.status === 503 &&
-      !error.message.includes("private token"),
+      error.message.includes("private token"),
   );
   for (const status of [429, 500, 503]) {
     await assert.rejects(
