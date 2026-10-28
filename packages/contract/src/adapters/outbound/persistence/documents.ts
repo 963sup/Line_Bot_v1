@@ -20,20 +20,6 @@ import {
 } from "../../../domain/document-intake-decoder.js";
 import { ContractError } from "../../../domain/error.js";
 
-function contractPersistenceError(error: unknown): never {
-  if (error instanceof ContractError || (error && typeof error === "object" && "status" in error))
-    throw error;
-  const production = process.env.VERCEL_ENV
-    ? process.env.VERCEL_ENV === "production"
-    : process.env.NODE_ENV === "production";
-  const detail = production
-    ? ""
-    : `: ${error instanceof Error ? error.message : String(error)}`.slice(0, 1000);
-  throw new ContractError(503, `Contract persistence is unavailable${detail}.`, "UNAVAILABLE", {
-    cause: error,
-  });
-}
-
 function json(value: unknown): unknown {
   if (typeof value !== "string") return value;
   try {
@@ -176,7 +162,7 @@ export class PostgresContractDocuments implements ContractDocumentIntakeTransact
     }>,
     operation: (tx: ContractDocumentIntakeTransaction) => Promise<T>,
   ) {
-    const transaction = this.db.transaction(async (sql) => {
+    return this.db.transaction(async (sql) => {
       const { repository, archived } = await repositoryContentScope(sql, actor, {
         repositoryId: input.repositoryId,
       });
@@ -315,7 +301,6 @@ export class PostgresContractDocuments implements ContractDocumentIntakeTransact
       };
       return operation(transaction);
     });
-    return transaction.catch(contractPersistenceError);
   }
 }
 

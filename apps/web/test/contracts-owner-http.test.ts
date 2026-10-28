@@ -29,3 +29,23 @@ test("Contracts HTTP preserves owner status and code", async () => {
   assert.equal(response.status, 409);
   assert.deepEqual(await response.json(), { error: "conflict", code: "VERSION_CONFLICT" });
 });
+
+test("Contracts HTTP does not disclose unclassified persistence details", async () => {
+  const response = await contractsRequest(
+    new Request("https://app.example/api?owner=owner&name=repo"),
+    {
+      scope: async () => {
+        throw new TypeError("private SQL details");
+      },
+      owner: () => {
+        throw new Error("unreachable");
+      },
+    },
+    async () => "subject",
+  );
+  const body = await response.json();
+  assert.equal(response.status, 500);
+  assert.equal(body.code, "CONTRACT_OPERATION_FAILED");
+  assert.equal(JSON.stringify(body).includes("private SQL"), false);
+  assert.match(body.traceId, /^[a-f0-9-]{36}$/);
+});

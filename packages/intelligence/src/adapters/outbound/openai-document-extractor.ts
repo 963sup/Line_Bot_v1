@@ -29,11 +29,13 @@ export function createOpenAIDocumentExtractor(model: string): DocumentExtractor 
             413,
             "Document exceeds the AI extraction input limit.",
             "INPUT_LIMIT",
+            { cause: error },
           );
         throw new IntelligenceError(
           503,
           "Document extraction is unavailable.",
           "EXTRACTION_UNAVAILABLE",
+          { cause: error },
         );
       }
     },

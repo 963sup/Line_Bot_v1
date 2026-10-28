@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import test from "node:test";
+import { createOpenAIDocumentExtractor } from "../src/adapters/outbound/openai-document-extractor.js";
 import { createDocumentIntake } from "../src/application/use-cases/intake-document.js";
 import type { IntakeSchema } from "../src/contracts/output/document-intake.js";
 import { IntakeError } from "../src/contracts/output/document-intake.js";
@@ -96,6 +97,7 @@ function harness(
     hash?: string;
     rejectCandidate?: boolean;
     sourceTooLarge?: boolean;
+    singleAttempt?: boolean;
   } = {},
 ) {
   const calls: {
@@ -172,7 +174,10 @@ function harness(
       async reserve(actor) {
         calls.reserves++;
         calls.actors.push(actor);
-        return { id: "66666666-6666-4666-8666-666666666666", fresh: true };
+        return {
+          id: "66666666-6666-4666-8666-666666666666",
+          fresh: !options.singleAttempt || calls.reserves === 1,
+        };
       },
       async complete(actor) {
         calls.completes++;
@@ -266,4 +271,46 @@ test("runtime rejects a forged confirm command before any attempt or provider wo
     (error: unknown) => error instanceof IntakeError && error.code === "INVALID_INPUT",
   );
   assert.equal(calls.reserves + calls.reads + calls.extracts + calls.submits, 0);
+});
+
+test("failed save identifies its stage and retry never repeats billable extraction", async () => {
+  const { intake, calls } = harness({ rejectCandidate: true, singleAttempt: true });
+  const stages: string[] = [];
+  await assert.rejects(
+    intake("verified-actor", command, (stage) => stages.push(stage)),
+    /Contract rejected candidate/,
+  );
+  assert.deepEqual(stages, [
+    "attempt.reserve",
+    "target.receipt",
+    "file.read",
+    "intelligence.extract",
+    "target.submit",
+  ]);
+  await assert.rejects(
+    intake("verified-actor", command),
+    (error: unknown) => error instanceof IntakeError && error.code === "UNKNOWN_RESULT",
+  );
+  assert.equal(calls.extracts, 1);
+  assert.equal(calls.submits, 1);
+});
+
+test("extractor retains the provider cause without exposing source bytes", async (t) => {
+  const previous = process.env.OPENAI_API_KEY;
+  process.env.OPENAI_API_KEY = "synthetic-test-key";
+  t.after(() => {
+    if (previous === undefined) delete process.env.OPENAI_API_KEY;
+    else process.env.OPENAI_API_KEY = previous;
+  });
+  t.mock.method(globalThis, "fetch", async () => Response.json({}, { status: 503 }));
+  await assert.rejects(
+    createOpenAIDocumentExtractor("test-model").extract({ bytes, mediaType: "image/png", schema }),
+    (error: unknown) => {
+      assert.ok(error instanceof Error);
+      assert.ok(error.cause instanceof Error);
+      assert.equal(Reflect.get(error.cause, "code"), "UNAVAILABLE");
+      assert.equal(error.message.includes("authorized exact"), false);
+      return true;
+    },
+  );
 });

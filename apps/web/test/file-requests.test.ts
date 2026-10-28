@@ -90,7 +90,10 @@ test("unknown-result and non-JSON timeout responses preserve intake recovery mes
       error.message.includes("不會重新解析"),
   );
   t.mock.method(globalThis, "fetch", async () => new Response("gateway timeout", { status: 504 }));
-  await assert.rejects(requests.document({ operation: "intake" }), /採購單 AI 解析逾時/);
+  await assert.rejects(
+    requests.document({ operation: "intake" }),
+    /採購單請求逾時.*保存結果待確認/,
+  );
 });
 
 test("a session resolved after invalidation never dispatches a request", async (t) => {
@@ -110,4 +113,27 @@ test("a session resolved after invalidation never dispatches a request", async (
   epoch.current++;
   session.resolve("old-session");
   await assert.rejects(request, StaleRequest);
+});
+
+test("document failures display bounded stage, code and correlation without losing recovery guidance", async (t) => {
+  const { requests } = client();
+  t.mock.method(globalThis, "fetch", async () =>
+    Response.json(
+      {
+        error: "採購單保存失敗，保存結果待確認。",
+        code: "CONTRACT_SAVE_FAILED",
+        stage: "target.submit",
+        traceId: "11111111-1111-4111-8111-111111111111",
+      },
+      { status: 500 },
+    ),
+  );
+  await assert.rejects(requests.document({ operation: "intake" }), (error: unknown) => {
+    assert.ok(error instanceof Error);
+    assert.match(error.message, /保存結果待確認/);
+    assert.match(error.message, /CONTRACT_SAVE_FAILED/);
+    assert.match(error.message, /target.submit/);
+    assert.match(error.message, /11111111-1111-4111-8111-111111111111/);
+    return true;
+  });
 });

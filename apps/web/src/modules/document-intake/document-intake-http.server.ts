@@ -1,9 +1,11 @@
+import { randomUUID } from "node:crypto";
 import { UserError } from "@line_bot_v1/account/domain/user";
 import type { ContractDocumentIntake } from "@line_bot_v1/contract/contracts/input/document-intake";
 import { ContractError } from "@line_bot_v1/contract/domain/error";
 import {
   type IntakeCommand,
   IntakeError,
+  type IntakeStage,
 } from "@line_bot_v1/intelligence/contracts/output/document-intake";
 import { IntelligenceError } from "@line_bot_v1/intelligence/domain/error";
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
@@ -20,7 +22,11 @@ type Scope = {
   canEdit: boolean;
   canManage: boolean;
 };
-type Intake = (actor: string, input: IntakeCommand) => Promise<unknown>;
+type Intake = (
+  actor: string,
+  input: IntakeCommand,
+  onStage?: (stage: IntakeStage) => void,
+) => Promise<unknown>;
 
 export type DocumentIntakeWebRuntime = {
   scope(subject: string, selector: { ownerLogin: string; repositoryName: string }): Promise<Scope>;
@@ -97,7 +103,11 @@ function parseIntakeCommand(value: unknown): IntakeCommand {
   };
 }
 
-function failure(error: unknown) {
+function failure(
+  error: unknown,
+  stage: IntakeStage | "request" | "intake" | "contract.read" | "contract.review",
+) {
+  const traceId = randomUUID();
   const known =
     error instanceof ContractError ||
     error instanceof IntakeError ||
@@ -105,20 +115,74 @@ function failure(error: unknown) {
     error instanceof RepositoryError ||
     error instanceof UserError ||
     error instanceof RequestIdentityError;
-  const status = known ? error.status : 500;
+  const connectionCode =
+    error && typeof error === "object" ? Reflect.get(error, "code") : undefined;
+  const connectionFailure =
+    typeof connectionCode === "string" &&
+    [
+      "08000",
+      "08001",
+      "08003",
+      "08004",
+      "08006",
+      "08007",
+      "08P01",
+      "57P01",
+      "57P02",
+      "57P03",
+      "53300",
+      "ECONNREFUSED",
+      "ECONNRESET",
+      "ETIMEDOUT",
+      "ENOTFOUND",
+    ].includes(connectionCode);
+  const persistenceStage = [
+    "attempt.reserve",
+    "target.receipt",
+    "target.submit",
+    "attempt.complete",
+    "contract.read",
+    "contract.review",
+  ].includes(stage);
+  const status = known ? error.status : connectionFailure && persistenceStage ? 503 : 500;
+  const code =
+    error instanceof ContractError ||
+    error instanceof IntakeError ||
+    error instanceof IntelligenceError
+      ? error.code
+      : connectionFailure && persistenceStage
+        ? "PERSISTENCE_UNAVAILABLE"
+        : stage === "target.submit"
+          ? "CONTRACT_SAVE_FAILED"
+          : stage === "file.read"
+            ? "FILE_READ_FAILED"
+            : stage === "intelligence.extract"
+              ? "EXTRACTION_FAILED"
+              : "DOCUMENT_INTAKE_FAILED";
+  const message =
+    known && (status < 500 || stage === "request")
+      ? error.message
+      : stage === "target.submit" || stage === "attempt.complete"
+        ? "採購單保存失敗，保存結果待確認；請保留此頁，使用原命令查詢回執，勿重新建立。"
+        : code === "UNKNOWN_RESULT"
+          ? "解析結果尚未確認；原命令重試只會查詢已保存回執，不會重新解析。"
+          : stage === "intelligence.extract"
+            ? "採購單 AI 解析失敗，請提供追蹤 ID 給管理員查核。"
+            : stage === "file.read"
+              ? "採購單來源檔案讀取失敗。"
+              : "採購單操作失敗，請提供追蹤 ID 給管理員查核。";
   captureHandledServerError(error, {
     service: "repository-document-intake-api",
-    operation: "request",
+    operation: stage,
     status,
+    traceId,
   });
   return jsonResponse(
     {
-      error: error instanceof Error ? error.message : String(error),
-      ...(error instanceof ContractError ||
-      error instanceof IntakeError ||
-      error instanceof IntelligenceError
-        ? { code: error.code }
-        : {}),
+      error: message,
+      code,
+      stage,
+      traceId,
     },
     status,
   );
@@ -129,6 +193,7 @@ export async function documentIntakeRequest(
   runtime: DocumentIntakeWebRuntime,
   identity: (request: Request) => Promise<string>,
 ) {
+  let stage: IntakeStage | "request" | "intake" | "contract.read" | "contract.review" = "request";
   try {
     const subject = await identity(request);
     const query = new URL(request.url).searchParams;
@@ -148,12 +213,18 @@ export async function documentIntakeRequest(
           "Document intake scope does not match the URL.",
           "INVALID_INPUT",
         );
-      return jsonResponse(await runtime.intake(scope.actorUserId, command));
+      stage = "intake";
+      return jsonResponse(
+        await runtime.intake(scope.actorUserId, command, (current) => {
+          stage = current;
+        }),
+      );
     }
     if (!runtime.documents)
       throw new ContractError(503, "採購單 AI 服務尚未設定，請聯絡系統管理員。", "UNAVAILABLE");
     const documentId = query.get("documentId") ?? "";
     if (!documentId) throw new ContractError(400, "Document ID is required.", "INVALID_INPUT");
+    stage = "contract.read";
     if (operation === "receipt") {
       const requestId = query.get("requestId") ?? "";
       return jsonResponse(
@@ -165,6 +236,7 @@ export async function documentIntakeRequest(
       );
     }
     if (operation === "contract") {
+      stage = "contract.review";
       if (request.method !== "POST")
         throw new ContractError(405, "Contract document review requires POST.", "INVALID_INPUT");
       if (!scope.canEdit || scope.archived)
@@ -188,6 +260,6 @@ export async function documentIntakeRequest(
       });
     throw new ContractError(400, "Unknown document intake operation.", "INVALID_INPUT");
   } catch (error) {
-    return failure(error);
+    return failure(error, stage);
   }
 }

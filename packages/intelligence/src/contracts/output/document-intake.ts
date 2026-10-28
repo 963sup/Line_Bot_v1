@@ -3,6 +3,15 @@ import type {
   FileSourceReference,
 } from "@line_bot_v1/file/contracts/output/references";
 
+/** Request-local technical progress only; never includes source bytes or extracted content. */
+export type IntakeStage =
+  | "attempt.reserve"
+  | "target.receipt"
+  | "file.read"
+  | "intelligence.extract"
+  | "target.submit"
+  | "attempt.complete";
+
 export class IntakeError extends Error {
   override readonly name = "IntakeError";
 

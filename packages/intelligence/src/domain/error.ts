@@ -10,7 +10,8 @@ export class IntelligenceError extends Error {
     readonly status: number,
     message: string,
     readonly code: IntelligenceErrorCode,
+    options?: ErrorOptions,
   ) {
-    super(message);
+    super(message, options);
   }
 }

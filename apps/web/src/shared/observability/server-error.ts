@@ -11,6 +11,7 @@ export function captureHandledServerError(
     service: string;
     operation: string;
     status: number;
+    traceId?: string;
   },
 ) {
   if (!shouldCaptureHandledServerError(context.status) || !serverSentryEnabled(process.env)) return;
@@ -20,6 +21,7 @@ export function captureHandledServerError(
       operation: context.operation,
       http_status: String(context.status),
       handled: "true",
+      ...(context.traceId ? { trace_id: context.traceId } : {}),
     },
   });
 }
