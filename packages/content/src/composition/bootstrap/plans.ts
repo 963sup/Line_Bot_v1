@@ -1,11 +1,8 @@
 import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import { createPostgresResourceReferenceReader } from "@line_bot_v1/resources/composition/bootstrap/resource-references";
 import { PostgresContentPlans } from "../../adapters/outbound/persistence/plans.js";
-import type {
-  ContentPlanReads,
-  ContentPlanTransactions,
-  ContractDocumentExpansionReader,
-} from "../../contracts/output/plans.js";
+import { createContentPlans } from "../../application/use-cases/plans.js";
+import type { ContractDocumentExpansionReader } from "../../contracts/output/plans.js";
 import { ContentError } from "../../domain/error.js";
 
 type ContractDocumentExpansionFactory = (sql: Sql) => ContractDocumentExpansionReader;
@@ -15,17 +12,21 @@ const unavailableContractDocuments: ContractDocumentExpansionFactory = () => ({
   },
 });
 
-export function createPostgresContentPlanDependencies(
-  db: Database = businessDatabase(),
-  contractDocuments: ContractDocumentExpansionFactory = unavailableContractDocuments,
-): {
-  reads: ContentPlanReads;
-  transactions: ContentPlanTransactions;
-} {
+export function createPostgresContentPlans(
+  config: Readonly<{
+    db?: Database;
+    contractDocuments?: ContractDocumentExpansionFactory;
+    now?: () => number;
+  }> = {},
+) {
   const persistence = new PostgresContentPlans(
     createPostgresResourceReferenceReader,
-    contractDocuments,
-    db,
+    config.contractDocuments ?? unavailableContractDocuments,
+    config.db ?? businessDatabase(),
   );
-  return { reads: persistence, transactions: persistence };
+  return createContentPlans({
+    reads: persistence,
+    transactions: persistence,
+    now: config.now ?? Date.now,
+  });
 }

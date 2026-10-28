@@ -1,9 +1,8 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
-import { createContentPlans } from "@line_bot_v1/content/application/use-cases/plans";
 import { createPostgresContentPlanReferenceReader } from "@line_bot_v1/content/composition/bootstrap/plan-references";
-import { createPostgresContentPlanDependencies } from "@line_bot_v1/content/composition/bootstrap/plans";
+import { createPostgresContentPlans } from "@line_bot_v1/content/composition/bootstrap/plans";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { postgresSessions } from "@line_bot_v1/platform/testing/postgres-sessions";
@@ -14,8 +13,8 @@ import { reviseContract } from "../src/domain/contract.js";
 import { ContractError } from "../src/domain/error.js";
 
 async function seedContentPlan(db: Database, repositoryId = "repo") {
-  const plans = createContentPlans({
-    ...createPostgresContentPlanDependencies(db),
+  const plans = createPostgresContentPlans({
+    db,
     now: () => 50,
   });
   const ids = {

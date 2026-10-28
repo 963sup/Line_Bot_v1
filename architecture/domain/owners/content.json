@@ -175,12 +175,13 @@
         "sourcePaths": [
           "packages/content/src/domain/plan.ts",
           "packages/content/src/application/use-cases/plans.ts",
+          "packages/content/src/application/use-cases/contract-document-expansion.ts",
           "packages/content/src/adapters/outbound/persistence/plans.ts",
           "packages/content/src/domain/plan-reference.ts"
         ],
         "publicExports": [
           "./application/use-cases/plans",
-          "./contracts/output/plans",
+          "./application/use-cases/contract-document-expansion",
           "./contracts/output/plan-references",
           "./contracts/output/wbs-expansion",
           "./composition/bootstrap/plans",
