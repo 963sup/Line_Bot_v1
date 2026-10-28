@@ -62,6 +62,12 @@ function context(ctx: CommercialIntakeContext) {
     throw new CommercialIntakeError("INVALID_INPUT", 400, "intake.validate");
 }
 export function createCommercialIntake(deps: {
+  persistExtractionResult?(input: {
+    actorUserId: string;
+    repositoryId: string;
+    extractionResultId: string;
+    result: CommercialExtractionResult;
+  }): Promise<void>;
   assertProviderReady?(): Promise<void>;
   store: CommercialIntakeStore;
   target: CommercialIntakeTarget;
@@ -310,6 +316,12 @@ export function createCommercialIntake(deps: {
       throw error;
     }
     try {
+      await deps.persistExtractionResult?.({
+        actorUserId: ctx.actorUserId,
+        repositoryId: command.repositoryId,
+        extractionResultId: result.extractionResultId,
+        result,
+      });
       await store.complete(job, result);
     } catch (error) {
       // A lost commit acknowledgement may already have committed result+READY.

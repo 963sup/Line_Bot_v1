@@ -7,6 +7,7 @@ import { inspectOpenAIDocument } from "@line_bot_v1/integration-openai/structure
 import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
 import { createCommercialExtractor } from "../../adapters/outbound/commercial-extractor.js";
 import { createPostgresCommercialIntakeStore } from "../../adapters/outbound/persistence/commercial-intake.js";
+import { createSupabaseExtractionJsonStore } from "../../adapters/outbound/persistence/extraction-json-storage.js";
 import { createCommercialIntake } from "../../application/use-cases/commercial-intake.js";
 import {
   type CommercialIntake,
@@ -35,7 +36,15 @@ export function createPostgresCommercialIntake(config: {
 }): CommercialIntake {
   const db = config.db ?? businessDatabase();
   const extractor = config.extractor ?? createCommercialExtractor();
+  const extractionJsonStore =
+    process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
+      ? createSupabaseExtractionJsonStore({
+          url: process.env.SUPABASE_URL,
+          serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+        })
+      : undefined;
   return createCommercialIntake({
+    persistExtractionResult: extractionJsonStore,
     async assertProviderReady() {
       if (!config.extractor && !process.env.OPENAI_API_KEY)
         throw new CommercialIntakeError("EXTRACTION_NOT_CONFIGURED", 503, "extraction.preflight");
