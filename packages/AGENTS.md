@@ -54,7 +54,7 @@ or rename code merely to make a directory shape look complete.
 
 ## Package-specific files
 
-Each child `packages/<owner>/AGENTS.md` should contain only:
+Each child package scope `packages/*/AGENTS.md` should contain only:
 
 - the owner's unique business authority;
 - owner-specific authorization or data rules;
