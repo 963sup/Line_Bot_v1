@@ -138,6 +138,7 @@ included_apis:
 - edit.insert_after_symbol
 - edit.insert_before_symbol
 - edit.replace_symbol_body
+- edit.replace_in_files
 - edit.rename_symbol
 - edit.safe_delete_symbol
 - lsp.find_declaration
@@ -145,6 +146,7 @@ included_apis:
 - lsp.find_referencing_symbols
 - lsp.find_symbol
 - lsp.get_diagnostics_for_file
+- lsp.get_diagnostics_for_symbol
 - lsp.get_symbols_overview
 - lsp.rename_symbol
 - lsp.safe_delete_symbol
