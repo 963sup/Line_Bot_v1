@@ -316,13 +316,13 @@ export function createCommercialIntake(deps: {
       throw error;
     }
     try {
+      await store.complete(job, result);
       await deps.persistExtractionResult?.({
         actorUserId: ctx.actorUserId,
         repositoryId: command.repositoryId,
         extractionResultId: result.extractionResultId,
         result,
       });
-      await store.complete(job, result);
     } catch (error) {
       // A lost commit acknowledgement may already have committed result+READY.
       const persisted = await store
