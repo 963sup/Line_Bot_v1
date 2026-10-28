@@ -85,6 +85,30 @@ config_file = "./agents/architect.toml"
 description = "Analyze test coverage, design regression cases, and identify untested behavior."
 config_file = "./agents/test-engineer.toml"
 
+[agents.release-gatekeeper]
+description = "Evaluate release readiness, branch protection, CI evidence, and merge gates."
+config_file = "./agents/release-gatekeeper.toml"
+
+[agents.database-steward]
+description = "Review Supabase migrations, schema drift, RLS, rollback, and data compatibility."
+config_file = "./agents/database-steward.toml"
+
+[agents.observability-investigator]
+description = "Investigate Sentry, Vercel logs, trace IDs, and production error evidence."
+config_file = "./agents/observability-investigator.toml"
+
+[agents.performance-cost-analyst]
+description = "Analyze latency, token usage, database query cost, bundle size, and provider cost."
+config_file = "./agents/performance-cost-analyst.toml"
+
+[agents.accessibility-ux-auditor]
+description = "Audit UI accessibility, keyboard flows, forms, errors, responsive behavior, and UX friction."
+config_file = "./agents/accessibility-ux-auditor.toml"
+
+[agents.documentation-curator]
+description = "Maintain repository documentation, AGENTS guidance, Serena README, and durable memory routing."
+config_file = "./agents/documentation-curator.toml"
+
 [agents.integration-validator]
 description = "Validate cross-service contracts, runtime behavior, and external integration evidence."
 config_file = "./agents/integration-validator.toml"
