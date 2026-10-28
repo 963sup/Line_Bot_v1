@@ -18,10 +18,18 @@ export function createOpenAIDocumentExtractor(model: string): DocumentExtractor 
           text: `Schema id ${input.schema.id}, version ${input.schema.version}. Extract every visible source row and retain its source location.`,
           bytes: input.bytes,
           mediaType: input.mediaType,
+          maxInputBytes: 558_512,
+          maxPdfPages: 24,
           maxOutputTokens: 24000,
           timeoutMs: 105000,
         });
-      } catch {
+      } catch (error) {
+        if (error instanceof RangeError)
+          throw new IntelligenceError(
+            413,
+            "Document exceeds the AI extraction input limit.",
+            "INPUT_LIMIT",
+          );
         throw new IntelligenceError(
           503,
           "Document extraction is unavailable.",

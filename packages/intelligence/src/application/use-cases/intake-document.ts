@@ -81,6 +81,7 @@ export function createDocumentIntake<Receipt extends IntakeReceipt>(dependencies
   attempts: DocumentAttempts;
   extractor: DocumentExtractor;
   schema: IntakeSchema;
+  maxSourceBytes: number;
   onTargetSubmit?: () => void;
 }) {
   return async function intake(actor: string, rawCommand: IntakeCommand): Promise<Receipt> {
@@ -127,10 +128,23 @@ export function createDocumentIntake<Receipt extends IntakeReceipt>(dependencies
     }
     if (!attempt.fresh) throw new IntakeError("UNKNOWN_RESULT", 503);
     try {
-      const { revision, bytes } = await dependencies.reader.read(actor, command.repositoryId, {
-        fileId: command.source.fileId,
-        fileRevisionId: command.source.fileRevisionId,
-      });
+      let source: Awaited<ReturnType<DocumentIntakeSource["read"]>>;
+      try {
+        source = await dependencies.reader.read(
+          actor,
+          command.repositoryId,
+          {
+            fileId: command.source.fileId,
+            fileRevisionId: command.source.fileRevisionId,
+          },
+          dependencies.maxSourceBytes,
+        );
+      } catch (error) {
+        if (error && typeof error === "object" && Reflect.get(error, "status") === 413)
+          throw new IntakeError("SOURCE_TOO_LARGE", 413, { cause: error });
+        throw error;
+      }
+      const { revision, bytes } = source;
       if (
         revision.id !== command.source.fileRevisionId ||
         revision.sha256 !== command.source.fileSha256

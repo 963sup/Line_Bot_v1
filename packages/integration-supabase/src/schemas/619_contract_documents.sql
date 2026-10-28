@@ -20,7 +20,11 @@ create table app_private.contract_document_revisions (
  file_id uuid not null,
  file_revision_id uuid not null,
  file_sha256 text not null check(file_sha256 ~ '^[0-9a-f]{64}$'),
- candidate jsonb not null check(jsonb_typeof(candidate)='object'),
+ candidate jsonb not null check(
+  jsonb_typeof(candidate)='object' and
+  jsonb_typeof(candidate->'lines')='array' and
+  jsonb_array_length(candidate->'lines') between 1 and 1000
+ ),
  diagnostics jsonb not null check(jsonb_typeof(diagnostics)='array'),
  acknowledgement_reason text,
  source_review_attestation jsonb,

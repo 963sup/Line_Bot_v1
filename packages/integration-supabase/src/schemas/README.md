@@ -71,4 +71,4 @@ Cross-owner mechanism 只允許：
 
 ## Validation
 
-`pnpm exec biome check architecture` 與適用 package checks 驗證 schema files 與 `registry.json#data` 的 ownership/mapping invariants；`pnpm schema:check` 執行 declarative schema/database contract tests。Production remote mutation 由 current `main` 的 GitHub workflow 執行；provider readback 證明 remote result，不能由 local file 存在推定。
+`pnpm exec biome check architecture` 與適用 package checks 驗證 schema files 與 `registry.json#data` 的 ownership/mapping invariants；`pnpm schema:check` 執行 declarative schema/database contract tests。Production remote mutation 由受信任 operator 依 validated current `main` 執行；provider readback 證明 remote result，不能由 local file 存在推定。

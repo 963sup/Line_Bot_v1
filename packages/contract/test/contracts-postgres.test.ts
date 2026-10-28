@@ -295,7 +295,11 @@ test("Contract persists Content-based revisions, replay and established active l
   });
   await assert.rejects(
     contracts.read("owner", { repositoryId: "repo", contractId: retiredContractId }),
-    (error) => error instanceof ContractError && error.code === "UNAVAILABLE",
+    (error) =>
+      error instanceof ContractError &&
+      error.code === "UNAVAILABLE" &&
+      error.message.includes("Expected Content Contract line basis") &&
+      error.cause instanceof Error,
   );
   await assert.rejects(
     pg.query(

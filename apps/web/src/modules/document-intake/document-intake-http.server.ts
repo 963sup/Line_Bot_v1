@@ -5,6 +5,7 @@ import {
   type IntakeCommand,
   IntakeError,
 } from "@line_bot_v1/intelligence/contracts/output/document-intake";
+import { IntelligenceError } from "@line_bot_v1/intelligence/domain/error";
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
 import { RepositoryError } from "@line_bot_v1/repository/contracts/errors/repository-error";
 import { normalizeRepositoryName } from "@line_bot_v1/repository/domain/repository/value-objects/repository-name";
@@ -100,6 +101,7 @@ function failure(error: unknown) {
   const known =
     error instanceof ContractError ||
     error instanceof IntakeError ||
+    error instanceof IntelligenceError ||
     error instanceof RepositoryError ||
     error instanceof UserError ||
     error instanceof RequestIdentityError;
@@ -112,7 +114,9 @@ function failure(error: unknown) {
   return jsonResponse(
     {
       error: error instanceof Error ? error.message : String(error),
-      ...(error instanceof ContractError || error instanceof IntakeError
+      ...(error instanceof ContractError ||
+      error instanceof IntakeError ||
+      error instanceof IntelligenceError
         ? { code: error.code }
         : {}),
     },

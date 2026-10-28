@@ -30,7 +30,15 @@ import { ContractError } from "../../../domain/error.js";
 function contractPersistenceError(error: unknown): never {
   if (error instanceof ContractError || (error && typeof error === "object" && "status" in error))
     throw error;
-  throw new ContractError(503, "Contract persistence is unavailable.", "UNAVAILABLE");
+  const production = process.env.VERCEL_ENV
+    ? process.env.VERCEL_ENV === "production"
+    : process.env.NODE_ENV === "production";
+  const detail = production
+    ? ""
+    : `: ${error instanceof Error ? error.message : String(error)}`.slice(0, 1000);
+  throw new ContractError(503, `Contract persistence is unavailable${detail}.`, "UNAVAILABLE", {
+    cause: error,
+  });
 }
 
 type ContentReaderFactory = (sql: Sql) => ContentPlanReferenceReader;

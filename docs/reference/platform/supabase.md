@@ -37,7 +37,7 @@ Supabase secret / service-role 類高權限變數即使由 Marketplace 一併注
 
 Web runtime 的 PostgreSQL application connection contract 是 provider-owned `POSTGRES_URL`。Vercel 與 Supabase resource 綁定後由平台同步該值；Vercel serverless runtime 使用 Supavisor transaction pooler（port 6543），business transaction 內立即 `SET LOCAL ROLE line_app`，維持 grants、RLS 與 application data boundary。
 
-Supabase schema/operator reconciliation 與 product runtime 明確解耦：production remote mutation 由 current `main` 的 GitHub workflow 使用官方 Supabase CLI，並以 provider readback 驗證 exact project 與 revision；本機與任意 branch 只執行 Docker stack、schema contract tests 與 read-only provider checks。每個 remote SQL write 在 query 前再次要求 release SHA 仍為 GitHub current `main`。不讀 `POSTGRES_URL` 作 operator fallback，也不建立 migration history。
+Supabase schema/operator reconciliation 與 product runtime 明確解耦。Production remote mutation 只接受已合併且已驗證的 current `main` canonical schema，並由受信任 Supabase MCP 或官方 non-pooling operator connection 執行及 readback。Branch 可使用 local stack 或明確隔離、可重建的 non-production project 做整合驗證；它不得寫入 Production，也不能產生 migration history 或 Production publication evidence。
 
 ## RLS / application authorization separation
 
@@ -91,24 +91,17 @@ Schema authority與「DDL vs business data transform」的語意由 [Schema mode
 
 Repository-owned remote reconciliation使用 `POSTGRES_URL_NON_POOLING`，並以 `SUPABASE_URL`／`SUPABASE_CONFIRM_PROJECT`交叉確認 exact target。Application mutation boundary只包含 repository-owned application schema；`auth`、`storage`、provider `public` helper與 `supabase_migrations` 不在其中。
 
-只有 `packages/integration-supabase/src/schemas/*.sql` 有待發布變更才自動執行 sync；不在每次 Release 修補或驗證未變更的 schema。已移除 repair／prepare 舊結構轉換與 reviewed-plan 模式。
+`packages/integration-supabase/src/schemas/*.sql` 是所有環境的 application-schema DDL authority。Non-production target 可跟隨正在驗證的 branch source；Production 只跟隨 current `main`。Repository 目前沒有 `schema:remote` operator command 或通用 schema Release workflow；受信任 operator 使用 Supabase MCP 或官方 non-pooling connection 套用 exact bounded DDL，並保存 environment、target、source revision、preflight 與 readback evidence。
 
-Current commands：
-
-- `plan`：由 clean-local desired state比較 exact remote，產生 plan與 fingerprint；`noop / routine / sensitive`只作診斷。
-- `sync`：對完整 generated diff做 bounded transaction apply，然後要求 second diff = 0與 ownership/security readback PASS。
-- `activate-identifiers`：只在 exact-SHA production deployment/readback 成功後，將已完成 cutover 的 frozen runtime marker 原子切換為 ready；已 ready 時只驗證並 no-op。
-- `verify`：不寫入 schema，只驗 desired/current parity與 acceptance boundary。
-- `recovery`：read-only 查驗 exact project 的 provider backup／PITR recovery evidence，不套用 schema 或修改 migration history。
-- Business identity/data 不由 Supabase reconciliation 補值；需要 owner confirmation 的資料修正必須走 owning domain command。Schema publication 只接受 validated `main` 的 `packages/integration-supabase/src/schemas/*.sql` desired state，經 Release 呼叫 plain `schema:remote sync` 收斂 remote。
+Read-only diagnosis 使用 Supabase logs、catalog query 與 local `schema:check`。Remote write 前確認 exact project、current-main source 與既有資料能承受 DDL；write 後驗 catalog／RLS／grant 及受影響 invariant。Business identity/data 不由 schema reconciliation 補值；需要 owner confirmation 的資料修正必須走 owning domain command。
 
 Numbering / Namespace 首次成為 central authority 是一個明確、不可重播的例外 cutover contract，而非 generic schema backfill。Operator 只在 desired schema 含完整 authority objects、remote 尚無任何 business authority object時判定需要 cutover；existing database 必須先取得 machine-readable recovery readback，或 [Recovery](../operations/recovery.md) 規定的 exact project / authority / schema 無備份風險授權，才凍結 legacy writers並於同一 transaction 套用 DDL與呼叫 operator-only cutover function。風險授權不會讓 `recovery` 診斷宣稱有備份。Catalog 證明沒有 application schema 的 fresh bootstrap 沒有 retained business data，可略過 recovery gate。Function 只能從可證明的 current/tombstone/event/high-water facts建立 imported records，通過 parity後寫入 `scoped-identifiers-v1` marker，但保持 `runtime_ready=false`。此狀態是資料庫持有的 stop/drain 維護窗：舊 runtime 與已部署但未驗證的新 runtime 都不能寫入受保護資源。只有 Vercel exact SHA production deployment/readback 成功後的 operator-only activation function能設為 ready；deployment/activation failure 保持 frozen，由後續 compatible current-main Release forward-fix。後續發布只驗 marker、current parity與 readiness，不重 seed；partial deployment、缺 marker或 runtime role 可執行 lifecycle functions 皆 fail closed。
 
-所有 repository-owned remote mutation只允許 current `main` 的 GitHub Actions Release 授權，並共用 PostgreSQL advisory lock與 production resource concurrency。任一 remote write都必須保存必要 plan/readback evidence。
+Production repository-owned remote mutation 只允許已合併且已驗證的 current `main` canonical source 授權。Non-production mutation 必須使用明確隔離、可重建且不承載 Production data 的 target。執行端可以是受信任 Supabase MCP 或官方 operator connection；任一 remote write 都必須保存 environment、target、source revision 與必要 preflight/readback evidence。
 
 Supabase migration history不是 current schema authority，也不是 deployment mechanism。Reconciliation不得新增、replay或repair migration history；`supabase_migrations.schema_migrations` fingerprint before/after必須完全相同。
 
-Schema publication何時由 validated `main`觸發、schema changed／unchanged如何 routing、Supabase成功後何時允許Vercel Production，由 [Release](../operations/release.md) 擁有；backup／restore與 data-cutover recovery要求由 [Recovery](../operations/recovery.md) 擁有。
+Production schema publication 必須在 validated `main` 後由 operator 明確執行；repository 目前沒有自動 Supabase schema Release workflow。與 runtime 協調的 ordering 由 [Release](../operations/release.md) 擁有；backup／restore 與 data-cutover recovery 要求由 [Recovery](../operations/recovery.md) 擁有。
 
 PGlite/local SQL test能驗局部 schema／transaction，不等於 remote TLS、pool、multi-connection contention或 production state。
 
@@ -143,5 +136,5 @@ Supabase Free currently documents approximately 500 MB per project for Database,
 - Bucket configuration Source of Truth: native `packages/integration-supabase/supabase/config.toml#storage.buckets.repository-files`. Do not add another `supabase/storage/file.json` manifest.
 - Bucket is **private**, format-neutral, and shared across Repositories. RepositoryId isolation comes from current Repository authorization in File; object keys or bucket visibility alone do not grant access.
 - `packages/integration-supabase/src/schemas/*.sql` remains the sole application PostgreSQL schema authority; it must never `INSERT/UPDATE/ALTER` provider-owned `storage.buckets` or `storage.objects` to publish File Storage.
-- Storage provider checks use the pinned Supabase CLI and the corresponding GitHub workflow. They require exact current-main authorization, the pinned project, a matching preflight and a post-write readback. Unknown outcomes must be read back rather than blindly retried; existing divergent Bucket settings must fail closed rather than overwrite.
+- Storage provider mutation uses the pinned Supabase CLI or trusted provider operator; repository currently has no Storage Release workflow. Production requires exact current-main authorization, the pinned project, a matching preflight and a post-write readback. Unknown outcomes must be read back rather than blindly retried; existing divergent Bucket settings must fail closed rather than overwrite.
 - Bucket creation and File's object storage adapter are independent deliverables. A configured empty Bucket does **not** mean objects are safely persisted. File requires a durable upload identity, hash verification, finalize, immutable key, rollback/recovery and protected download before replacing its current PostgreSQL `bytea` implementation.

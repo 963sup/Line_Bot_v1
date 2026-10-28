@@ -88,7 +88,10 @@ const reused = (error: unknown) =>
 const sourceInvalid = (error: unknown) =>
   error instanceof ContractError && error.code === "SOURCE_INVALID";
 const unavailable = (error: unknown) =>
-  error instanceof ContractError && error.code === "UNAVAILABLE";
+  error instanceof ContractError &&
+  error.code === "UNAVAILABLE" &&
+  error.message.includes("forced document receipt failure") &&
+  error.cause instanceof Error;
 
 test("PostgreSQL document intake authorizes, pins source, replays exactly and rolls back failed receipts", async (t) => {
   const { pg, db } = await postgresFixture();

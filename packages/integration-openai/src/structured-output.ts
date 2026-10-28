@@ -1,3 +1,5 @@
+import { PDFDocument } from "pdf-lib";
+
 export class OpenAIOutputError extends Error {
   constructor(readonly code: "UNAVAILABLE" | "REFUSAL" | "INCOMPLETE" | "INVALID_OUTPUT") {
     super(`OpenAI structured output: ${code}`);
@@ -17,6 +19,8 @@ export function createOpenAIStructuredOutput(config: {
       text: string;
       bytes: Uint8Array;
       mediaType: string;
+      maxInputBytes: number;
+      maxPdfPages: number;
       maxOutputTokens: number;
       timeoutMs: number;
     }): Promise<unknown> {
@@ -25,13 +29,28 @@ export function createOpenAIStructuredOutput(config: {
         input.maxOutputTokens < 1 ||
         input.maxOutputTokens > 24000 ||
         !Number.isSafeInteger(input.timeoutMs) ||
-        input.timeoutMs < 1
+        input.timeoutMs < 1 ||
+        !Number.isSafeInteger(input.maxInputBytes) ||
+        input.maxInputBytes < 1 ||
+        !Number.isSafeInteger(input.maxPdfPages) ||
+        input.maxPdfPages < 1
       )
         throw new RangeError("Invalid OpenAI extraction budget.");
       const apiKey = (config.apiKey ?? (() => process.env.OPENAI_API_KEY))();
       if (!apiKey || !config.model.trim()) throw new OpenAIOutputError("UNAVAILABLE");
       if (!["application/pdf", "image/png", "image/jpeg", "image/webp"].includes(input.mediaType))
         throw new RangeError("Unsupported OpenAI document media type.");
+      if (input.bytes.byteLength > input.maxInputBytes)
+        throw new RangeError("OpenAI document exceeds the input byte budget.");
+      if (input.mediaType === "application/pdf") {
+        let pages: number;
+        try {
+          pages = (await PDFDocument.load(input.bytes, { updateMetadata: false })).getPageCount();
+        } catch {
+          throw new RangeError("OpenAI PDF is malformed or encrypted.");
+        }
+        if (pages > input.maxPdfPages) throw new RangeError("OpenAI PDF exceeds the page budget.");
+      }
       const data = `data:${input.mediaType};base64,${Buffer.from(input.bytes).toString("base64")}`;
       const attachment =
         input.mediaType === "application/pdf"

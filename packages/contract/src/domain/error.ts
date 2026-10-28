@@ -13,8 +13,9 @@ export class ContractError extends Error {
     readonly status: number,
     message: string,
     readonly code: ContractErrorCode,
+    options?: ErrorOptions,
   ) {
-    super(message);
+    super(message, options);
   }
 }
 
