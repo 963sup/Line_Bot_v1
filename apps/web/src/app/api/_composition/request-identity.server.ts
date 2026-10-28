@@ -94,7 +94,7 @@ export async function limitRequest(scope: "member-api", token: string) {
         code: redisUnavailableCode(error),
       }),
     );
-    throw new RequestIdentityError(503, "請求保護服務暫不可用，請稍後再試。", {
+    throw new RequestIdentityError(503, error instanceof Error ? error.message : String(error), {
       cause: error,
     });
   }
@@ -106,7 +106,8 @@ function sessionStore(): SessionStore {
     globalThis.redisSessions ??= new RedisSessionStore(redisNamespace(), transport);
     return globalThis.redisSessions;
   }
-  if (process.env.VERCEL_ENV) throw new RequestIdentityError(503, "登入服務暫不可用，請稍後重試。");
+  if (process.env.VERCEL_ENV)
+    throw new RequestIdentityError(503, "Request-protection transport is not configured.");
   globalThis.developmentSessions ??= new DevelopmentSessionStore();
   return globalThis.developmentSessions;
 }
@@ -201,13 +202,13 @@ export async function createLineSession(lineToken: string, request: Request) {
           cookie: lineSessionCookie(id),
         };
     }
-    throw new RequestIdentityError(503, "登入服務暫不可用，請稍後重試。");
+    throw new RequestIdentityError(503, "Session store did not create a session after three attempts.");
   } catch (error) {
     if (error instanceof RequestIdentityError) throw error;
     if (error instanceof RedisUnavailableError) {
-      throw new RequestIdentityError(503, "登入服務暫不可用，請稍後重試。", { cause: error });
+      throw new RequestIdentityError(503, error.message, { cause: error });
     }
-    throw new RequestIdentityError(503, "登入服務暫不可用，請稍後重試。", { cause: error });
+    throw new RequestIdentityError(503, error instanceof Error ? error.message : String(error), { cause: error });
   }
 }
 
@@ -226,7 +227,7 @@ async function sessionFromCookie(request: Request): Promise<StoredSession> {
     return { id, raw, record };
   } catch (error) {
     if (error instanceof RequestIdentityError) throw error;
-    throw new RequestIdentityError(503, "登入服務暫不可用，請稍後重試。", { cause: error });
+    throw new RequestIdentityError(503, error instanceof Error ? error.message : String(error), { cause: error });
   }
 }
 
@@ -276,7 +277,7 @@ async function renewStoredSession(current: StoredSession) {
     };
   } catch (error) {
     if (error instanceof RequestIdentityError) throw error;
-    throw new RequestIdentityError(503, "登入服務暫不可用，請稍後重試。", { cause: error });
+    throw new RequestIdentityError(503, error instanceof Error ? error.message : String(error), { cause: error });
   }
 }
 
@@ -291,7 +292,7 @@ export async function revokeLineSession(request: Request) {
     return { cookie: clearLineSessionCookie() };
   } catch (error) {
     if (error instanceof RequestIdentityError) throw error;
-    throw new RequestIdentityError(503, "登出暫不可用，請稍後重試。", { cause: error });
+    throw new RequestIdentityError(503, error instanceof Error ? error.message : String(error), { cause: error });
   }
 }
 

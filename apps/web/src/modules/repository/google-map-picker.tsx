@@ -349,19 +349,19 @@ export default function GoogleMapPicker({
               instance.setZoom(17);
               commitSelection(selected, place.formattedAddress?.trim() || null);
               setStatus("已選取搜尋結果；地址描述可編輯。");
-            } catch {
-              setStatus("地點資料讀取失敗，請移動地圖選點。");
+            } catch (error) {
+              setStatus(error instanceof Error ? error.message : String(error));
             }
           });
           searchElement.current.replaceChildren(placeElement);
-        } catch {
-          setStatus("地圖可使用，但地址搜尋暫不可用；仍可移動地圖選點。");
+        } catch (error) {
+          setStatus(error instanceof Error ? error.message : String(error));
         }
       })
       .catch((error) => {
         if (ticket === lifecycleGeneration.current) {
           setRetryableError(true);
-          setStatus(error instanceof Error ? error.message : "Google Maps 載入失敗。");
+          setStatus(error instanceof Error ? error.message : String(error));
         }
       });
     return () => {

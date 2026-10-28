@@ -61,7 +61,7 @@ export default function InsightsPanel({
       if (ticket === generation.current) setView(next);
     } catch (cause) {
       if (ticket === generation.current)
-        setError(cause instanceof Error ? cause.message : "Insights 讀取失敗。");
+        setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       if (ticket === generation.current) setBusy(false);
     }

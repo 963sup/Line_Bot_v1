@@ -48,7 +48,10 @@ export async function downloadLineImage(
     signal: AbortSignal.timeout(5_000),
     redirect: "error",
   });
-  if (!response.ok || !response.body) throw new Error("LINE image unavailable");
+  if (!response.ok || !response.body) {
+    const body = await response.text();
+    throw new Error(body || `${response.status} ${response.statusText}`);
+  }
 
   // 串流邊界讀取：即時計算尺寸，防範記憶體溢位
   const reader = response.body.getReader();

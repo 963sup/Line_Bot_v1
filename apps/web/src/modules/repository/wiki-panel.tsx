@@ -157,7 +157,7 @@ export default function WikiPanel({
       } catch (cause) {
         if (ticket === generation.current) {
           clear();
-          setError(cause instanceof Error ? cause.message : "Wiki 讀取失敗。");
+          setError(cause instanceof Error ? cause.message : String(cause));
         }
       } finally {
         if (ticket === generation.current) setBusy(false);
@@ -242,7 +242,7 @@ export default function WikiPanel({
           cause && typeof cause === "object" && "status" in cause ? Number(cause.status) : 0;
         if ([401, 403, 404].includes(status)) clear();
         else if ([400, 409, 413, 415].includes(status)) remember(null);
-        setError(cause instanceof Error ? cause.message : "Wiki 儲存結果未知，請重試原操作。");
+        setError(cause instanceof Error ? cause.message : String(cause));
       }
     } finally {
       locked.current = false;
@@ -287,7 +287,7 @@ export default function WikiPanel({
     } catch (cause) {
       if (ticket === generation.current) {
         clear();
-        setError(cause instanceof Error ? cause.message : "Wiki 讀取失敗。");
+        setError(cause instanceof Error ? cause.message : String(cause));
       }
     } finally {
       if (ticket === generation.current) setBusy(false);

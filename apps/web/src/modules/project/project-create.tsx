@@ -142,14 +142,14 @@ export default function ProjectCreate({ liffId }: { liffId: string }) {
       } catch (cause) {
         if (ticket !== generation.current) return;
         setRepositories(null);
-        setRepositoryError(cause instanceof Error ? cause.message : "儲存庫清單讀取失敗。");
+        setRepositoryError(cause instanceof Error ? cause.message : String(cause));
       }
     } catch (cause) {
       if (ticket === generation.current) {
         setActor(null);
         setOwners(null);
         setPending(null);
-        setError(cause instanceof Error ? cause.message : "Project 建立頁讀取失敗。");
+        setError(cause instanceof Error ? cause.message : String(cause));
       }
     } finally {
       if (ticket === generation.current) setBusy(false);
@@ -191,7 +191,7 @@ export default function ProjectCreate({ liffId }: { liffId: string }) {
         setPending(null);
       }
       setError(
-        cause instanceof Error ? cause.message : "建立結果尚待確認；請重試原操作以確認結果。",
+        cause instanceof Error ? cause.message : String(cause),
       );
     } finally {
       locked.current = false;

@@ -171,7 +171,7 @@ export default function StatusPanel({ token }: { token: string }) {
       setLoaded(true);
     } catch (cause) {
       if (ticket === generation.current) {
-        setError(cause instanceof Error ? cause.message : "狀態讀取失敗。");
+        setError(cause instanceof Error ? cause.message : String(cause));
       }
     } finally {
       if (ticket === generation.current) setBusy(false);
@@ -236,7 +236,7 @@ export default function StatusPanel({ token }: { token: string }) {
       setNotice(clear ? "狀態已清除。" : "狀態已更新。");
     } catch (cause) {
       if (ticket === generation.current) {
-        setError(cause instanceof Error ? cause.message : "狀態更新結果尚待確認。");
+        setError(cause instanceof Error ? cause.message : String(cause));
       }
     } finally {
       if (ticket === generation.current) setBusy(false);

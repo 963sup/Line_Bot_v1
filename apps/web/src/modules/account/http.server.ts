@@ -52,7 +52,7 @@ export function apiError(error: unknown) {
       )
     : jsonResponse(
         {
-          error: `會員服務暫不可用（錯誤代碼：${membershipFailureCode(error)}）。請稍後重試。`,
+          error: error instanceof Error ? error.message : String(error),
           code,
           retryable: true,
         },

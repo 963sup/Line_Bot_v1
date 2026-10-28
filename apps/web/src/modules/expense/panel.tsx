@@ -110,7 +110,7 @@ export default function ExpensePanel({ liffId }: { liffId: string }) {
     });
     const data: unknown = await result.json();
     if (!result.ok)
-      throw new Error(isRecord(data) && typeof data.error === "string" ? data.error : "載入失敗。");
+      throw new Error(isRecord(data) && typeof data.error === "string" ? data.error : JSON.stringify(data));
     setHasRecognition(false);
     setExpense(readExpense(data));
   }
@@ -129,7 +129,7 @@ export default function ExpensePanel({ liffId }: { liffId: string }) {
       setId(expenseId);
       await load(access, expenseId);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "載入失敗。");
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(false);
     }
@@ -181,7 +181,7 @@ export default function ExpensePanel({ liffId }: { liffId: string }) {
       setExpense(readExpense(data));
       if (type === "save") setNotice("已儲存修改。");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "操作失敗，請重試。");
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(false);
     }
@@ -208,7 +208,7 @@ export default function ExpensePanel({ liffId }: { liffId: string }) {
                 if (token && id) await load(token, id);
                 else await initialize();
               } catch (e) {
-                setError(e instanceof Error ? e.message : "載入失敗");
+                setError(e instanceof Error ? e.message : String(e));
               } finally {
                 setBusy(false);
               }

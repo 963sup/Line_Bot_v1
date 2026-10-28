@@ -49,7 +49,7 @@ export default function ProjectRepositoryImports({
       if (ticket === generation.current) setRepositories(choices);
     } catch (cause) {
       if (ticket === generation.current)
-        setError(cause instanceof Error ? cause.message : "儲存庫清單讀取失敗。");
+        setError(cause instanceof Error ? cause.message : String(cause));
     }
   }, [liffId, actorUserId, canManage]);
   useEffect(() => {

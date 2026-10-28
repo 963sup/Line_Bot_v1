@@ -110,9 +110,7 @@ async function run(
       operation: mutate ? "change" : "read",
       status,
     });
-    return known
-      ? json({ error: error.message }, status)
-      : json({ error: "服務暫不可用，請稍後重試。" }, status);
+    return json({ error: error instanceof Error ? error.message : String(error) }, status);
   }
 }
 

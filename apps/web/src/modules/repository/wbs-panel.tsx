@@ -186,7 +186,7 @@ export default function WbsPanel({
             /* State is already cleared in memory. */
           }
         }
-        setError(cause instanceof Error ? cause.message : "WBS 讀取失敗。");
+        setError(cause instanceof Error ? cause.message : String(cause));
         setView(null);
         current.current = null;
       }
@@ -249,11 +249,11 @@ export default function WbsPanel({
       if (status === 401 || status === 403 || status === 404) {
         remember(null);
         clear();
-        setError(cause instanceof Error ? cause.message : "WBS 存取已失效。");
+        setError(cause instanceof Error ? cause.message : String(cause));
         return;
       }
       if (typeof status === "number" && status >= 400 && status < 500) remember(null);
-      setError(cause instanceof Error ? cause.message : "結果未知，請重試原操作。");
+      setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       locked.current = false;
       if (ticket === generation.current) setBusy(false);
@@ -324,7 +324,7 @@ export default function WbsPanel({
           remember(null);
           clear();
         }
-        setError(cause instanceof Error ? cause.message : "歷史讀取失敗。");
+        setError(cause instanceof Error ? cause.message : String(cause));
       }
     } finally {
       if (ticket === generation.current) setBusy(false);
@@ -352,7 +352,7 @@ export default function WbsPanel({
           remember(null);
           clear();
         }
-        setError(cause instanceof Error ? cause.message : "版本讀取失敗。");
+        setError(cause instanceof Error ? cause.message : String(cause));
       }
     } finally {
       if (ticket === generation.current) setBusy(false);

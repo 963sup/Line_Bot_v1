@@ -132,7 +132,7 @@ export default function ContractsPanel({
         const value = await response.json();
         if (ticket !== responseGeneration.current) throw new StaleRequestError();
         if (!response.ok)
-          throw Object.assign(new Error(value.error ?? "Contracts 載入失敗。"), {
+          throw Object.assign(new Error(value.error ?? JSON.stringify(value)), {
             status: response.status,
             code: value.code,
           });
@@ -191,7 +191,7 @@ export default function ContractsPanel({
       }
     } catch (cause) {
       if (cause instanceof StaleRequestError) return;
-      setError(cause instanceof Error ? cause.message : "Contracts 載入失敗。");
+      setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       if (operationGeneration === responseGeneration.current) setBusy(false);
     }
@@ -223,7 +223,7 @@ export default function ContractsPanel({
       setLines(editableLines(revision));
     } catch (cause) {
       if (cause instanceof StaleRequestError) return;
-      setError(cause instanceof Error ? cause.message : "Contract 載入失敗。");
+      setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       if (operationGeneration === responseGeneration.current) setBusy(false);
     }
@@ -251,7 +251,7 @@ export default function ContractsPanel({
       );
     } catch (cause) {
       if (cause instanceof StaleRequestError) return;
-      setError(cause instanceof Error ? cause.message : "Contracts 下一頁載入失敗。");
+      setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       if (operationGeneration === responseGeneration.current) setBusy(false);
     }
@@ -273,7 +273,7 @@ export default function ContractsPanel({
     try {
       const result = await request("contracts", {}, saved.command);
       if (!confirmsPendingReceipt(result, saved))
-        throw new Error("操作結果尚未確認；請沿用原命令重試。");
+        throw new Error(JSON.stringify(result));
       if (!removePendingCommand(sessionStorage, saved)) return;
       setPending((current) => (samePendingCommand(current, saved) ? null : current));
       setSelected(result.revision);
@@ -287,7 +287,7 @@ export default function ContractsPanel({
         const removed = removePendingCommand(sessionStorage, saved);
         if (removed) setPending((current) => (samePendingCommand(current, saved) ? null : current));
       }
-      setError(cause instanceof Error ? cause.message : "Contract 操作結果不明，請先重新讀取。");
+      setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       if (operationGeneration === responseGeneration.current) setBusy(false);
       releasePendingCommandLock(mutationLock, token);
@@ -316,7 +316,7 @@ export default function ContractsPanel({
       await executeCommand(saved, false, token);
     } catch (cause) {
       releasePendingCommandLock(mutationLock, token);
-      setError(cause instanceof Error ? cause.message : "無法安全保存操作，未送出請求。");
+      setError(cause instanceof Error ? cause.message : String(cause));
     }
   };
   return (

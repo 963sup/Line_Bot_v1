@@ -76,7 +76,7 @@ export default function RepositoryCreate({ liffId }: { liffId: string }) {
       const status =
         cause !== null && typeof cause === "object" && "status" in cause ? cause.status : undefined;
       if (status === 401 || status === 403) clear();
-      setError(cause instanceof Error ? cause.message : "Repository owner 讀取失敗。");
+      setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       setBusy(false);
     }
@@ -117,7 +117,7 @@ export default function RepositoryCreate({ liffId }: { liffId: string }) {
       window.location.assign(repositoryPath(payload.ownerLogin, payload.name));
     } catch (cause) {
       setError(
-        cause instanceof Error ? cause.message : "Repository 建立結果尚待確認，請重試原操作。",
+        cause instanceof Error ? cause.message : String(cause),
       );
     } finally {
       setBusy(false);

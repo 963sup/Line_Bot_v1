@@ -158,7 +158,7 @@ export default function ContentPanel({
         const value = await response.json();
         assertCurrentRequest(ticket, responseGeneration.current);
         if (!response.ok)
-          throw Object.assign(new Error(value.error ?? "Content 載入失敗。"), {
+          throw Object.assign(new Error(value.error ?? JSON.stringify(value)), {
             status: response.status,
             code: value.code,
           });
@@ -187,7 +187,7 @@ export default function ContentPanel({
       onCanManageChange(next.canManage);
     } catch (cause) {
       if (cause instanceof StaleRequestError) return;
-      setError(cause instanceof Error ? cause.message : "Content 載入失敗。");
+      setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       if (operationGeneration === responseGeneration.current) setBusy(false);
     }
@@ -247,7 +247,7 @@ export default function ContentPanel({
       setResourceNext(value.next);
     } catch (cause) {
       if (cause instanceof StaleRequestError) return;
-      setError(cause instanceof Error ? cause.message : "Resources 下一頁載入失敗。");
+      setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       if (operationGeneration === responseGeneration.current) setBusy(false);
     }
@@ -265,7 +265,7 @@ export default function ContentPanel({
     try {
       const result = await request("content", saved.command);
       if (!confirmsPendingReceipt(result, saved))
-        throw new Error("操作結果尚未確認；請沿用原命令重試。");
+        throw new Error(JSON.stringify(result));
       if (!removePendingCommand(sessionStorage, saved)) return;
       setPending((current) => (samePendingCommand(current, saved) ? null : current));
       const next = { ...view, revision: result.revision };
@@ -277,7 +277,7 @@ export default function ContentPanel({
         const removed = removePendingCommand(sessionStorage, saved);
         if (removed) setPending((current) => (samePendingCommand(current, saved) ? null : current));
       }
-      setError(cause instanceof Error ? cause.message : "Content 儲存結果不明，請先重新讀取。");
+      setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       if (operationGeneration === responseGeneration.current) setBusy(false);
       releasePendingCommandLock(mutationLock, token);
@@ -313,7 +313,7 @@ export default function ContentPanel({
         document,
       });
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "無法安全保存操作，未送出請求。");
+      setError(cause instanceof Error ? cause.message : String(cause));
     }
   };
   return (

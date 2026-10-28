@@ -15,9 +15,9 @@ export interface UserManagementAuthorization extends AccountAdministrationGuard 
 
 export const unavailableAccountAuthorization: UserManagementAuthorization = {
   async protectPermissionAdministrator() {
-    throw new UserError(503, "使用者權限服務暫不可用。");
+    throw new UserError(503, "Account authorization adapter is not configured.");
   },
   async hasPermission() {
-    throw new UserError(503, "使用者權限服務暫不可用。");
+    throw new UserError(503, "Account authorization adapter is not configured.");
   },
 };

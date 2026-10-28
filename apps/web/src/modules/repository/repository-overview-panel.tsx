@@ -126,7 +126,7 @@ export default function RepositoryOverviewPanel({
             typeof cause.status === "number"
               ? cause.status
               : 503,
-          message: cause instanceof Error ? cause.message : "Repository Overview 讀取失敗。",
+          message: cause instanceof Error ? cause.message : String(cause),
         });
       }
     } finally {

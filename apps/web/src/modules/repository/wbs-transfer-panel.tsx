@@ -252,7 +252,7 @@ export default function WbsTransferPanel({
         if (ticket !== generation.current) return;
         const status = cause instanceof TransferRequestError ? cause.status : 503;
         if ([401, 403, 404].includes(status)) clearPrivateState();
-        setError(cause instanceof Error ? cause.message : "WBS 移轉狀態讀取失敗。");
+        setError(cause instanceof Error ? cause.message : String(cause));
       } finally {
         if (ticket === generation.current) setLoading(false);
       }
@@ -339,7 +339,7 @@ export default function WbsTransferPanel({
       if (ticket !== generation.current) return;
       const status = cause instanceof TransferRequestError ? cause.status : 503;
       if ([401, 403, 404].includes(status)) clearPrivateState();
-      setError(cause instanceof Error ? cause.message : "WBS 移轉請求結果尚待確認，請重試原操作。");
+      setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       locked.current = false;
       if (ticket === generation.current) setBusy(false);
@@ -378,7 +378,7 @@ export default function WbsTransferPanel({
       if (ticket !== generation.current) return;
       const status = cause instanceof TransferRequestError ? cause.status : 503;
       if ([401, 403, 404].includes(status)) clearPrivateState();
-      setError(cause instanceof Error ? cause.message : "WBS 移轉撤回結果尚待確認，請重試原操作。");
+      setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       locked.current = false;
       if (ticket === generation.current) setBusy(false);
@@ -398,7 +398,7 @@ export default function WbsTransferPanel({
       rememberCancellation(value);
       void withdraw(value.command, transfer.id);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "撤回操作尚未送出。");
+      setError(cause instanceof Error ? cause.message : String(cause));
     }
   }
 
@@ -436,7 +436,7 @@ export default function WbsTransferPanel({
       remember(value);
       void execute(value);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "操作尚未送出。");
+      setError(cause instanceof Error ? cause.message : String(cause));
     }
   }
 

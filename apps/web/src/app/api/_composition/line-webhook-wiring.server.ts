@@ -71,7 +71,7 @@ export function createLineWebhookHandler(channelSecret: string) {
         messages: [
           {
             type: "text",
-            text: `會員服務暫不可用（錯誤代碼：${membershipFailureCode(error)}）。請稍後再試；不需要重新註冊。`,
+            text: error instanceof Error ? error.message : String(error),
           },
         ],
       }),

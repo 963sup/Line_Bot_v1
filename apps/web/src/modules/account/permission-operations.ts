@@ -25,7 +25,7 @@ export async function requestPermissions(
   });
   const value = await response.json();
   if (!response.ok) {
-    throw Object.assign(new Error(value.error ?? "權限服務暫不可用。"), {
+    throw Object.assign(new Error(value.error ?? JSON.stringify(value)), {
       status: response.status,
     });
   }

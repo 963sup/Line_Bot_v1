@@ -220,7 +220,7 @@ test("qualification failure remains forbidden without resolving persistence", as
   assert.deepEqual(calls, []);
 });
 
-test("unexpected storage failure is unavailable, not an empty inbox or leaked detail", async () => {
+test("unexpected storage failure preserves its original detail", async () => {
   const fail = async () => {
     throw new Error("private database detail");
   };
@@ -231,6 +231,6 @@ test("unexpected storage failure is unavailable, not an empty inbox or leaked de
   ];
   for (const response of responses) {
     assert.equal(response.status, 503);
-    assert.deepEqual(await response.json(), { error: "通知服務暫不可用，請稍後重試。" });
+    assert.deepEqual(await response.json(), { error: "private database detail" });
   }
 });

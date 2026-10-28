@@ -12,7 +12,6 @@ export class LineIdentityUnavailableError extends Error {
   }
 }
 
-const unavailableMessage = "LINE 身分驗證服務暫不可用，請稍後重試。";
 const invalidMessage = "LINE 登入已失效，請重新開啟。";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -23,7 +22,7 @@ async function lineRequest(request: typeof fetch, input: string, init: RequestIn
   try {
     return await request(input, init);
   } catch (error) {
-    throw new LineIdentityUnavailableError(unavailableMessage, { cause: error });
+    throw new LineIdentityUnavailableError(error instanceof Error ? error.message : String(error), { cause: error });
   }
 }
 
@@ -33,14 +32,14 @@ async function providerJson(response: Response) {
     if (!isRecord(value)) throw new TypeError("Invalid provider response");
     return value;
   } catch (error) {
-    throw new LineIdentityUnavailableError(unavailableMessage, { cause: error });
+    throw new LineIdentityUnavailableError(error instanceof Error ? error.message : String(error), { cause: error });
   }
 }
 
 function requireUsableResponse(response: Response) {
   if (response.ok) return;
   if (response.status === 429 || response.status >= 500) {
-    throw new LineIdentityUnavailableError(unavailableMessage);
+    throw new LineIdentityUnavailableError(`LINE identity provider returned HTTP ${response.status}.`);
   }
   throw new LineIdentityError(invalidMessage);
 }
@@ -88,7 +87,7 @@ export async function verifyLiffUser(
   const profile = await providerJson(profileResponse);
 
   if (typeof profile.userId !== "string" || !/^U[a-f0-9]{32}$/i.test(profile.userId)) {
-    throw new LineIdentityUnavailableError(unavailableMessage);
+    throw new LineIdentityUnavailableError("LINE profile payload does not contain a valid userId.");
   }
 
   return profile.userId;

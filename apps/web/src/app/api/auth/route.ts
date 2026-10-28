@@ -63,7 +63,7 @@ function emptySessionResponse(cookie: string) {
 function errorResponse(error: unknown) {
   if (error instanceof SessionRouteError || error instanceof RequestIdentityError)
     return jsonResponse({ error: error.message }, error.status);
-  return jsonResponse({ error: "登入服務暫不可用，請稍後重試。" }, 503);
+  return jsonResponse({ error: error instanceof Error ? error.message : String(error) }, 503);
 }
 
 async function sessionIntent(request: Request) {

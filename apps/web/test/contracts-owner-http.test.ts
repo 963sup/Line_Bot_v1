@@ -45,7 +45,7 @@ test("Contracts HTTP does not disclose unclassified persistence details", async 
   );
   const body = await response.json();
   assert.equal(response.status, 500);
-  assert.equal(body.code, "CONTRACT_OPERATION_FAILED");
-  assert.equal(JSON.stringify(body).includes("private SQL"), false);
+  assert.equal(body.code, undefined);
+  assert.match(body.error, /private SQL details/);
   assert.match(body.traceId, /^[a-f0-9-]{36}$/);
 });

@@ -90,8 +90,6 @@ export async function assistantRequest(
       operation: "request",
       status,
     });
-    return known
-      ? jsonResponse({ error: error.message }, status)
-      : jsonResponse({ error: "AI 暫時不可用，請稍後重試。" }, status);
+    return jsonResponse({ error: error instanceof Error ? error.message : String(error) }, status);
   }
 }

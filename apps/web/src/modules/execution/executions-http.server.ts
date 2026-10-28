@@ -67,7 +67,7 @@ function failure(error: unknown) {
   });
   return jsonResponse(
     {
-      error: known ? error.message : "Execution service is unavailable.",
+      error: error instanceof Error ? error.message : String(error),
       ...(error instanceof ExecutionError ? { code: error.code } : {}),
     },
     status,

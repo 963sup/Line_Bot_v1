@@ -96,7 +96,7 @@ export default function ResourcesPanel({
         const value = await response.json();
         if (ticket !== responseGeneration.current) throw new StaleRequestError();
         if (!response.ok)
-          throw Object.assign(new Error(value.error ?? "Resources 載入失敗。"), {
+          throw Object.assign(new Error(value.error ?? JSON.stringify(value)), {
             status: response.status,
             code: value.code,
           });
@@ -121,7 +121,7 @@ export default function ResourcesPanel({
       onCanManageChange(next.canManage);
     } catch (cause) {
       if (cause instanceof StaleRequestError) return;
-      setError(cause instanceof Error ? cause.message : "Resources 載入失敗。");
+      setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       if (operationGeneration === responseGeneration.current) setBusy(false);
     }
@@ -152,7 +152,7 @@ export default function ResourcesPanel({
       setDescription(result.revision.description);
     } catch (cause) {
       if (cause instanceof StaleRequestError) return;
-      setError(cause instanceof Error ? cause.message : "Resource 載入失敗。");
+      setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       if (operationGeneration === responseGeneration.current) setBusy(false);
     }
@@ -180,7 +180,7 @@ export default function ResourcesPanel({
       );
     } catch (cause) {
       if (cause instanceof StaleRequestError) return;
-      setError(cause instanceof Error ? cause.message : "Resources 下一頁載入失敗。");
+      setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       if (operationGeneration === responseGeneration.current) setBusy(false);
     }
@@ -202,7 +202,7 @@ export default function ResourcesPanel({
     try {
       const result = await request({}, saved.command);
       if (!confirmsPendingReceipt(result, saved))
-        throw new Error("操作結果尚未確認；請沿用原命令重試。");
+        throw new Error(JSON.stringify(result));
       if (!removePendingCommand(sessionStorage, saved)) return;
       setPending((current) => (samePendingCommand(current, saved) ? null : current));
       setSelected(result.revision);
@@ -215,7 +215,7 @@ export default function ResourcesPanel({
         const removed = removePendingCommand(sessionStorage, saved);
         if (removed) setPending((current) => (samePendingCommand(current, saved) ? null : current));
       }
-      setError(cause instanceof Error ? cause.message : "Resource 操作結果不明，請先重新讀取。");
+      setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       if (operationGeneration === responseGeneration.current) setBusy(false);
       releasePendingCommandLock(mutationLock, token);
@@ -248,7 +248,7 @@ export default function ResourcesPanel({
       await executeCommand(saved, false, token);
     } catch (cause) {
       releasePendingCommandLock(mutationLock, token);
-      setError(cause instanceof Error ? cause.message : "無法安全保存操作，未送出請求。");
+      setError(cause instanceof Error ? cause.message : String(cause));
     }
   };
   return (

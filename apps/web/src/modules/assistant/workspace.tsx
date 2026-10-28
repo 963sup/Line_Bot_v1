@@ -69,7 +69,7 @@ export default function AssistantWorkspace({ liffId }: { liffId: string }) {
       setResult(payload.text);
     } catch (cause) {
       if (ticket === generation.current) {
-        setError(cause instanceof Error ? cause.message : "AI 暫時不可用。");
+        setError(cause instanceof Error ? cause.message : String(cause));
       }
     } finally {
       if (ticket === generation.current) setBusy(false);

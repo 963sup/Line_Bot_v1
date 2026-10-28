@@ -31,7 +31,7 @@ function permissionApiError(error: unknown) {
               : "invalid_request";
   return jsonResponse(
     {
-      error: known ? error.message : "權限服務暫不可用，請稍後重試。",
+      error: error instanceof Error ? error.message : String(error),
       code,
       retryable: status === 429 || status >= 500,
     },

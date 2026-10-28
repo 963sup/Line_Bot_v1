@@ -34,7 +34,7 @@ export default function ServiceSessionControl({ liffId }: { liffId: string }) {
           return;
         }
         setStatus("unavailable");
-        setMessage(error instanceof Error ? error.message : "登入狀態讀取失敗，請重試。");
+        setMessage(error instanceof Error ? error.message : String(error));
       });
     return () => {
       active = false;
@@ -51,7 +51,7 @@ export default function ServiceSessionControl({ liffId }: { liffId: string }) {
       setMessage("你已登出此服務。LINE 帳號本身仍保持登入。");
     } catch (error) {
       setStatus("sign-out-failed");
-      setMessage(error instanceof Error ? error.message : "登出失敗，請重試。");
+      setMessage(error instanceof Error ? error.message : String(error));
     } finally {
       setBusy(false);
     }
@@ -71,7 +71,7 @@ export default function ServiceSessionControl({ liffId }: { liffId: string }) {
       setMessage("已重新登入此服務。");
     } catch (error) {
       setStatus(error instanceof SessionBlockedError ? "signed-out" : "unavailable");
-      setMessage(error instanceof Error ? error.message : "登入失敗，請重試。");
+      setMessage(error instanceof Error ? error.message : String(error));
     } finally {
       setBusy(false);
     }

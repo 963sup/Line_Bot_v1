@@ -113,7 +113,7 @@ export default function DiscoveryPanel({
     } catch (cause) {
       if (ticket === generation.current) {
         setSnapshot(null);
-        setError(cause instanceof Error ? cause.message : "儲存庫探索暫不可用。");
+        setError(cause instanceof Error ? cause.message : String(cause));
       }
     } finally {
       if (ticket === generation.current) setBusy(false);
@@ -147,7 +147,7 @@ export default function DiscoveryPanel({
       setNotice(item.starred ? "已取消 Star。" : "已加入 Star。");
     } catch (cause) {
       if (ticket === generation.current) {
-        setError(cause instanceof Error ? cause.message : "儲存庫 Star 操作失敗。");
+        setError(cause instanceof Error ? cause.message : String(cause));
       }
     } finally {
       if (ticket === generation.current) setBusy(false);

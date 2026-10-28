@@ -48,7 +48,7 @@ export default function RepositoryStarListCollection({ liffId }: { liffId: strin
     } catch (cause) {
       if (ticket === generation.current) {
         setItems(null);
-        setError(cause instanceof Error ? cause.message : "Lists 暫不可用。");
+        setError(cause instanceof Error ? cause.message : String(cause));
       }
     } finally {
       if (ticket === generation.current) setBusy(false);

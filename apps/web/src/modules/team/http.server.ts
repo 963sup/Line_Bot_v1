@@ -57,11 +57,7 @@ export function teamApiError(error: unknown) {
   });
   return jsonResponse(
     {
-      error: known
-        ? error.message
-        : status === 413
-          ? "內容過大。"
-          : "團隊服務暫不可用，請稍後重試。",
+      error: error instanceof Error ? error.message : String(error),
       retryable: status >= 500 || status === 429,
     },
     status,

@@ -157,7 +157,7 @@ test("create batch removes every known menu created in a failed operation", asyn
     },
   });
 
-  await assert.rejects(createRichMenuBatch(client, configs), /newly created menus were removed/);
+  await assert.rejects(createRichMenuBatch(client, configs), /synthetic upload failure/);
   assert.deepEqual(deleted, ["richmenu-00000002", "richmenu-00000001"]);
 });
 
@@ -551,7 +551,7 @@ test("known create batch failure cleans up menus without alias or default public
     },
   });
 
-  await assert.rejects(createRichMenuBatch(client, [home]), /newly created menus were removed/);
+  await assert.rejects(createRichMenuBatch(client, [home]), /Rich menu definition readback mismatch/);
   assert.deepEqual(deleted, [newId]);
   assert.equal(publicationWrites, 0);
 });

@@ -74,7 +74,7 @@ export function createLineWebhookRouter(config: {
               });
               if (assistant?.imageId) return false;
               if (config.replyUnavailable) return config.replyUnavailable(token, error);
-              throw new Error("Authorization service unavailable", { cause: error });
+              throw error;
             }
             if (!authorized) {
               return assistant?.imageId

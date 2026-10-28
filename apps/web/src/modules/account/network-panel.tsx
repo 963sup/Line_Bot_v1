@@ -82,7 +82,7 @@ export default function NetworkPanel({ liffId }: { liffId: string }) {
     } catch (cause) {
       if (ticket === generation.current) {
         setData(null);
-        setError(cause instanceof Error ? cause.message : "追蹤關係讀取失敗。");
+        setError(cause instanceof Error ? cause.message : String(cause));
       }
     } finally {
       if (ticket === generation.current) setBusy(false);
@@ -116,7 +116,7 @@ export default function NetworkPanel({ liffId }: { liffId: string }) {
       setNotice(action === "follow" ? "已追蹤使用者。" : "已取消追蹤。");
     } catch (cause) {
       if (ticket === generation.current) {
-        setError(cause instanceof Error ? cause.message : "追蹤操作失敗。");
+        setError(cause instanceof Error ? cause.message : String(cause));
       }
     } finally {
       if (ticket === generation.current) setBusy(false);

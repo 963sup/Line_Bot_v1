@@ -98,7 +98,7 @@ async function readClaim(sql: Sql, userId: string, day: string): Promise<DailyCh
   ).rows[0];
   if (!row) return null;
   const definition = await createPostgresAssetDefinitionQuery(sql)(COIN_ASSET_CODE);
-  if (!definition) throw new DailyCheckInError(503, "簽到獎勵設定暫不可用。");
+  if (!definition) throw new DailyCheckInError(503, "Asset definition COIN is missing.");
   return mapClaim(row, definition);
 }
 
@@ -116,7 +116,7 @@ async function hasLedgerFact(sql: Sql, userId: string, day: string) {
 
 async function ensureLedgerParity(sql: Sql, userId: string, claim: DailyCheckInClaim) {
   const definition = await createPostgresAssetDefinitionQuery(sql)(COIN_ASSET_CODE);
-  if (!definition) throw new DailyCheckInError(503, "簽到獎勵設定暫不可用。");
+  if (!definition) throw new DailyCheckInError(503, "Asset definition COIN is missing.");
   const expectedUnits = toAssetUnits(claim.reward, definition.unitsPerWhole);
   const fact = await readLedgerCreditFact(
     sql,
@@ -132,7 +132,7 @@ async function ensureLedgerParity(sql: Sql, userId: string, claim: DailyCheckInC
 
 async function prizeUnits(sql: Sql, reward: number) {
   const definition = await createPostgresAssetDefinitionQuery(sql)(COIN_ASSET_CODE);
-  if (!definition) throw new DailyCheckInError(503, "簽到獎勵設定暫不可用。");
+  if (!definition) throw new DailyCheckInError(503, "Asset definition COIN is missing.");
   return { amountUnits: toAssetUnits(reward, definition.unitsPerWhole), definition };
 }
 

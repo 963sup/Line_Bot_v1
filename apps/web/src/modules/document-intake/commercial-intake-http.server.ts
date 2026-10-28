@@ -189,23 +189,18 @@ export async function commercialIntakeRequest(
       error instanceof UserError;
     const stage = error instanceof CommercialIntakeError ? error.stage : operation;
     const status = known ? error.status : 500;
-    const code = known && "code" in error ? String(error.code) : "COMMERCIAL_REQUEST_FAILED";
+    const code = known && "code" in error ? String(error.code) : undefined;
     logServerError(error, {
       service: resource === "intake" ? "document-intakes-api" : "commercial-documents-api",
       operation: stage,
       status,
-      code,
+      ...(code ? { code } : {}),
       traceId,
     });
     return jsonResponse(
       {
-        error:
-          error instanceof FileError
-            ? "目前無法存取此解析來源，請重新登入或確認檔案授權後重試。"
-            : status < 500 && known
-              ? error.message
-              : "商務文件操作失敗；請保留原命令，查詢狀態或聯絡管理員。",
-        code,
+        error: error instanceof Error ? error.message : String(error),
+        ...(code ? { code } : {}),
         stage,
         traceId,
       },

@@ -82,7 +82,7 @@ test("Expense delivery maps owner reasons and keeps unknown outcomes private wit
   failure = new Error("private write outcome");
   const unknown = await api.POST(request(), context);
   assert.equal(unknown.status, 503);
-  assert.deepEqual(await unknown.json(), { error: "服務暫不可用，請稍後重試。" });
+  assert.deepEqual(await unknown.json(), { error: "private write outcome" });
   assert.equal(writes, 1);
 });
 

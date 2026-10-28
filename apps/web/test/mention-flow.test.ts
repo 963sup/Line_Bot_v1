@@ -156,8 +156,7 @@ test("real webhook composition: mentions answer, ordinary images are silent, one
       throw new Error("offline database");
     });
     await deliver(mention("今天幾號"));
-    assert.match(JSON.stringify(sent.at(-1)), /會員服務暫不可用/);
-    assert.match(JSON.stringify(sent.at(-1)), /錯誤代碼：unknown/);
+    assert.match(JSON.stringify(sent.at(-1)), /offline database/);
     assert.doesNotMatch(JSON.stringify(sent.at(-1)), /register=1/);
     sent.pop();
     outage.mock.restore();

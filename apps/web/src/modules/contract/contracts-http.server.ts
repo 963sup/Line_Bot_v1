@@ -68,8 +68,7 @@ function failure(error: unknown) {
   });
   return jsonResponse(
     {
-      error: known ? error.message : "合約操作失敗，請提供追蹤 ID 給管理員查核。",
-      ...(!known ? { code: "CONTRACT_OPERATION_FAILED" } : {}),
+      error: error instanceof Error ? error.message : String(error),
       ...(status >= 500 ? { traceId } : {}),
       ...(error instanceof ContractError ? { code: error.code } : {}),
     },

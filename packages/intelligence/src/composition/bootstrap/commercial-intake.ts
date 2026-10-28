@@ -32,10 +32,19 @@ export function createPostgresCommercialIntake(config: {
       timeoutMs: number;
     }): Promise<unknown>;
   };
+  persistExtractionResult?(input: {
+    actorUserId: string;
+    repositoryId: string;
+    extractionResultId: string;
+    result: import("../../contracts/output/commercial-intake.js").CommercialExtractionResult;
+  }): Promise<void>;
 }): CommercialIntake {
   const db = config.db ?? businessDatabase();
   const extractor = config.extractor ?? createCommercialExtractor();
   return createCommercialIntake({
+    ...(config.persistExtractionResult
+      ? { persistExtractionResult: config.persistExtractionResult }
+      : {}),
     async assertProviderReady() {
       if (!config.extractor && !process.env.OPENAI_API_KEY)
         throw new CommercialIntakeError("EXTRACTION_NOT_CONFIGURED", 503, "extraction.preflight");

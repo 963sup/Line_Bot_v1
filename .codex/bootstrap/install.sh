@@ -38,6 +38,12 @@ for tool in $tools; do
   fi
 done
 run_stage workspace-install env CI=true pnpm install --frozen-lockfile --prefer-offline
+# Serena v2 LSP resolves this binary from the workspace; verify it immediately
+# after the single standard dependency installation.
+[[ -x "$BOOTSTRAP_ROOT/node_modules/.bin/typescript-language-server" ]] || {
+  echo 'typescript-language-server is required by Serena v2 LSP but was not installed' >&2
+  exit 1
+}
 for tool in $tools; do
   case "$tool" in supabase | vercel)
     source "$BOOTSTRAP_DIR/modules/$tool/install.sh"

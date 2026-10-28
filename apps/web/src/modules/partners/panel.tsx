@@ -240,7 +240,7 @@ export default function PartnersPanel({ liffId, mode }: { liffId: string; mode: 
       setAfter(cursor);
     } catch (failure) {
       if (ticket === sequence.current)
-        setError(failure instanceof Error ? failure.message : "讀取失敗。");
+        setError(failure instanceof Error ? failure.message : String(failure));
     } finally {
       if (ticket === sequence.current) setBusy(false);
     }
@@ -261,7 +261,7 @@ export default function PartnersPanel({ liffId, mode }: { liffId: string; mode: 
       await load();
     } catch (failure) {
       if (ticket === sequence.current)
-        setError(failure instanceof Error ? failure.message : "結果尚未確認，請重試。");
+        setError(failure instanceof Error ? failure.message : String(failure));
     } finally {
       if (ticket === sequence.current) setBusy(false);
     }

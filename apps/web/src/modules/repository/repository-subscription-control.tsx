@@ -139,7 +139,7 @@ export default function RepositorySubscriptionControl({
       if (ticket === generation.current) {
         setData(null);
         setPending(null);
-        setError(cause instanceof Error ? cause.message : "Repository subscription 讀取失敗。");
+        setError(cause instanceof Error ? cause.message : String(cause));
       }
     } finally {
       if (ticket === generation.current) setBusy(false);
@@ -211,7 +211,7 @@ export default function RepositorySubscriptionControl({
     } catch (cause) {
       if (ticket === generation.current) {
         setData(null);
-        setError(cause instanceof Error ? cause.message : "結果尚待確認，請重試原操作。");
+        setError(cause instanceof Error ? cause.message : String(cause));
       }
     } finally {
       locked.current = false;

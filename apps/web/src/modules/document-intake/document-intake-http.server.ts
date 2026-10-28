@@ -84,6 +84,32 @@ function requiredInteger(value: unknown, field: string) {
   return value;
 }
 
+function diagnostic(error: unknown, seen = new Set<object>(), depth = 0): Record<string, string> | undefined {
+  if (!error || typeof error !== "object") return undefined;
+  if (seen.has(error) || depth > 3) return undefined;
+  seen.add(error);
+  const read = (key: string) => {
+    const value = Reflect.get(error, key);
+    return typeof value === "string" && value.length > 0 ? value : undefined;
+  };
+  const cause = Reflect.get(error, "cause");
+  const nested = cause ? diagnostic(cause, seen, depth + 1) : undefined;
+  const code = read("code");
+  const schema = read("schema");
+  const table = read("table");
+  const column = read("column");
+  const message = read("message");
+  if (!code && !schema && !table && !column && !message) return nested;
+  return {
+    ...(nested ?? {}),
+    ...(code ? { code } : {}),
+    ...(schema ? { schema } : {}),
+    ...(table ? { table } : {}),
+    ...(column ? { column } : {}),
+    ...(message ? { message } : {}),
+  };
+}
+
 function parseIntakeCommand(value: unknown): IntakeCommand {
   const input = record(value);
   if (input.action !== "save")
@@ -150,40 +176,22 @@ function failure(
     error instanceof IntakeError ||
     error instanceof IntelligenceError
       ? error.code
-      : connectionFailure && persistenceStage
-        ? "PERSISTENCE_UNAVAILABLE"
-        : stage === "target.submit"
-          ? "CONTRACT_SAVE_FAILED"
-          : stage === "file.read"
-            ? "FILE_READ_FAILED"
-            : stage === "intelligence.extract"
-              ? "EXTRACTION_FAILED"
-              : "DOCUMENT_INTAKE_FAILED";
-  const message =
-    known && (status < 500 || stage === "request")
-      ? error.message
-      : stage === "target.submit" || stage === "attempt.complete"
-        ? "採購單保存失敗，保存結果待確認；請保留此頁，使用原命令查詢回執，勿重新建立。"
-        : code === "UNKNOWN_RESULT"
-          ? "解析結果尚未確認；原命令重試只會查詢已保存回執，不會重新解析。"
-          : stage === "intelligence.extract"
-            ? "採購單 AI 解析失敗，請提供追蹤 ID 給管理員查核。"
-            : stage === "file.read"
-              ? "採購單來源檔案讀取失敗。"
-              : "採購單操作失敗，請提供追蹤 ID 給管理員查核。";
+      : undefined;
+  const message = error instanceof Error ? error.message : String(error);
   logServerError(error, {
     service: "repository-document-intake-api",
     operation: stage,
     status,
-    code,
+    ...(code ? { code } : {}),
     traceId,
   });
   return jsonResponse(
     {
       error: message,
-      code,
+      ...(code ? { code } : {}),
       stage,
       traceId,
+      diagnostic: diagnostic(error),
     },
     status,
   );

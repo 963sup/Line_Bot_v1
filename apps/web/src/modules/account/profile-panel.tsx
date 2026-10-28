@@ -77,7 +77,7 @@ export default function ProfilePanel({ liffId }: { liffId: string }) {
     } catch (cause) {
       if (ticket === generation.current) {
         setLoaded(false);
-        setError(cause instanceof Error ? cause.message : "個人資料讀取失敗。");
+        setError(cause instanceof Error ? cause.message : String(cause));
       }
     } finally {
       if (ticket === generation.current) setBusy(false);
@@ -117,7 +117,7 @@ export default function ProfilePanel({ liffId }: { liffId: string }) {
       setNotice("個人資料已保存。");
     } catch (cause) {
       if (ticket === generation.current) {
-        setError(cause instanceof Error ? cause.message : "個人資料保存失敗。");
+        setError(cause instanceof Error ? cause.message : String(cause));
       }
     } finally {
       if (ticket === generation.current) setBusy(false);

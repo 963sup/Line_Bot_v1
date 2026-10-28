@@ -185,7 +185,7 @@ export default function AutoClock({
           saveAttempt(current);
           setAttempt(current);
         }
-        throw new Error(rawReceipt.error || "結果尚未確認，請重試同一筆。");
+        throw new Error(typeof rawReceipt.error === "string" ? rawReceipt.error : JSON.stringify(rawReceipt));
       }
       const receipt = parseAttendanceClockReceipt(rawReceipt);
       if (receipt.version !== current.body.expectedVersion + 1)
@@ -204,7 +204,7 @@ export default function AutoClock({
       close();
     } catch (cause) {
       if (!signal.aborted) {
-        setError(cause instanceof Error ? cause.message : "打卡未完成，請重試。");
+        setError(cause instanceof Error ? cause.message : String(cause));
         setStatus(
           submitted
             ? current?.phase === "started"

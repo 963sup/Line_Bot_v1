@@ -32,7 +32,7 @@ test("shared HTTP responses retain status, error codes and private response head
   const unknown = apiError(new Error("internal-detail"));
   assert.equal(unknown.status, 503);
   assert.deepEqual(await unknown.json(), {
-    error: "會員服務暫不可用（錯誤代碼：unknown）。請稍後重試。",
+    error: "internal-detail",
     code: "service_unavailable",
     retryable: true,
   });
@@ -61,7 +61,7 @@ test("membership failures expose useful diagnostics without leaking raw provider
   const response = apiError(postgres);
   assert.equal(response.status, 503);
   assert.deepEqual(await response.json(), {
-    error: "會員服務暫不可用（錯誤代碼：postgres_42P01）。請稍後重試。",
+    error: "relation private_table does not exist",
     code: "service_unavailable",
     retryable: true,
   });

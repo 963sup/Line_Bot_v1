@@ -106,29 +106,21 @@ export async function createRichMenuBatch(
       let richMenuId = "";
       try {
         ({ richMenuId } = await client.create(config.menu));
-      } catch {
+      } catch (error) {
         unknownCreatePage = config.page;
-        throw new Error(`Rich menu create result is unknown: ${config.page}`);
+        throw error;
       }
       created.push({ page: config.page, richMenuId });
       await client.upload(richMenuId, config.upload);
       await assertRemoteDefinition(client, richMenuId, config.menu, config.page);
     }
     return created;
-  } catch {
+  } catch (error) {
     const cleanupFailures = await deleteCreatedMenus(client, created);
     if (unknownCreatePage || cleanupFailures.length) {
-      const details = [
-        unknownCreatePage ? `unknown create page=${unknownCreatePage}` : "",
-        cleanupFailures.length ? `cleanup failed=${cleanupFailures.join(",")}` : "",
-      ]
-        .filter(Boolean)
-        .join("; ");
-      throw new Error(
-        `Rich menu creation failed; remote reconciliation required${details ? `: ${details}` : ""}.`,
-      );
+      throw error;
     }
-    throw new Error("Rich menu creation failed; newly created menus were removed.");
+    throw error;
   }
 }
 

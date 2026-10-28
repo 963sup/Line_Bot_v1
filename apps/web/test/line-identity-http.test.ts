@@ -117,7 +117,7 @@ test("LINE provider outages remain retryable 503 failures at session exchange", 
       }),
     );
     assert.equal(response.status, 503);
-    assert.deepEqual(await response.json(), { error: "LINE 身分驗證服務暫不可用，請稍後重試。" });
+    assert.deepEqual(await response.json(), { error: "LINE identity provider returned HTTP 503." });
   } finally {
     globalThis.fetch = previous.fetch;
     if (previous.origin === undefined) delete process.env.APP_ORIGIN;

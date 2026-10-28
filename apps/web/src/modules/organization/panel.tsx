@@ -56,7 +56,7 @@ export default function OrganizationPanel({ liffId }: { liffId: string }) {
     const payload = await response.json();
     if (!response.ok) {
       if (response.status === 401 || response.status === 403) clear();
-      throw Object.assign(new Error(payload.error ?? "組織服務暫不可用。"), {
+      throw Object.assign(new Error(payload.error ?? JSON.stringify(payload)), {
         status: response.status,
       });
     }
@@ -79,7 +79,7 @@ export default function OrganizationPanel({ liffId }: { liffId: string }) {
       setList(parseOrganizationList(payload));
       setDetail(null);
     } catch (cause) {
-      if (ticket === epoch.current) setError(cause instanceof Error ? cause.message : "讀取失敗。");
+      if (ticket === epoch.current) setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       if (ticket === epoch.current) setBusy(false);
     }
@@ -110,7 +110,7 @@ export default function OrganizationPanel({ liffId }: { liffId: string }) {
       if (ticket === epoch.current) {
         const status = errorStatus(cause);
         if (status && status < 500 && status !== 429) setPending(null);
-        setError(cause instanceof Error ? cause.message : "操作結果尚待確認，請重試原操作。");
+        setError(cause instanceof Error ? cause.message : String(cause));
       }
     } finally {
       locked.current = false;

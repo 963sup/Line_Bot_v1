@@ -835,6 +835,9 @@ importers:
       '@line_bot_v1/integration-openai':
         specifier: workspace:*
         version: link:../integration-openai
+      '@line_bot_v1/integration-supabase':
+        specifier: workspace:*
+        version: link:../integration-supabase
       '@line_bot_v1/platform':
         specifier: workspace:*
         version: link:../platform

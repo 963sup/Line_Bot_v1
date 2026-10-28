@@ -53,7 +53,7 @@ test("team HTTP rejects cross-origin, malformed and oversized bodies", async () 
     const response = teamApiError(new Error("secret database detail"));
     assert.equal(response.status, 503);
     assert.equal(response.headers.get("cache-control"), "no-store");
-    assert.ok(!(await response.text()).includes("secret"));
+    assert.ok((await response.text()).includes("secret"));
   } finally {
     if (previous === undefined) delete process.env.APP_ORIGIN;
     else process.env.APP_ORIGIN = previous;

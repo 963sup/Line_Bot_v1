@@ -50,5 +50,5 @@ export async function googleLogin() {
       queryParams: { prompt: "select_account" },
     },
   });
-  if (error) throw new Error("Google 登入暫不可用。");
+  if (error) throw error;
 }

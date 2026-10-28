@@ -224,7 +224,7 @@ export default function ExecutionsPanel({
         const value = await response.json();
         if (ticket !== responseGeneration.current) throw new StaleRequestError();
         if (!response.ok)
-          throw Object.assign(new Error(value.error ?? "Executions 載入失敗。"), {
+          throw Object.assign(new Error(value.error ?? JSON.stringify(value)), {
             status: response.status,
             code: value.code,
           });
@@ -263,7 +263,7 @@ export default function ExecutionsPanel({
       onCanManageChange(contractView.canManage);
     } catch (cause) {
       if (cause instanceof StaleRequestError) return;
-      setError(cause instanceof Error ? cause.message : "Executions 載入失敗。");
+      setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       if (operationGeneration === responseGeneration.current) setBusy(false);
     }
@@ -311,7 +311,7 @@ export default function ExecutionsPanel({
     } catch (cause) {
       if (cause instanceof StaleRequestError || !isCurrentIntent(intent, selectionIntent.current))
         return;
-      setError(cause instanceof Error ? cause.message : "Contract 執行資料載入失敗。");
+      setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       if (
         isCurrentIntent(intent, selectionIntent.current) &&
@@ -337,7 +337,7 @@ export default function ExecutionsPanel({
     } catch (cause) {
       if (cause instanceof StaleRequestError || !isCurrentIntent(intent, selectionIntent.current))
         return;
-      setError(cause instanceof Error ? cause.message : "Execution 載入失敗。");
+      setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       if (
         isCurrentIntent(intent, selectionIntent.current) &&
@@ -387,7 +387,7 @@ export default function ExecutionsPanel({
       }
     } catch (cause) {
       if (cause instanceof StaleRequestError) return;
-      setError(cause instanceof Error ? cause.message : "下一頁載入失敗。");
+      setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       if (operationGeneration === responseGeneration.current) setBusy(false);
     }
@@ -419,7 +419,7 @@ export default function ExecutionsPanel({
     } catch (cause) {
       if (cause instanceof StaleRequestError || !isCurrentIntent(intent, selectionIntent.current))
         return;
-      setError(cause instanceof Error ? cause.message : "Task 版本載入失敗。");
+      setError(cause instanceof Error ? cause.message : String(cause));
     }
   };
   const executeCommand = async (
@@ -439,7 +439,7 @@ export default function ExecutionsPanel({
     try {
       const result = await request("executions", {}, saved.command);
       if (!confirmsPendingReceipt(result, saved))
-        throw new Error("操作結果尚未確認；請沿用原命令重試。");
+        throw new Error(JSON.stringify(result));
       if (!removePendingCommand(sessionStorage, saved)) return;
       setPending((current) => (samePendingCommand(current, saved) ? null : current));
       if (saved.command.action === "replace-dependencies") {
@@ -453,7 +453,7 @@ export default function ExecutionsPanel({
         const removed = removePendingCommand(sessionStorage, saved);
         if (removed) setPending((current) => (samePendingCommand(current, saved) ? null : current));
       }
-      setError(cause instanceof Error ? cause.message : "Execution 操作結果不明，請先重新讀取。");
+      setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       if (operationGeneration === responseGeneration.current) setBusy(false);
       releasePendingCommandLock(mutationLock, token);
@@ -478,7 +478,7 @@ export default function ExecutionsPanel({
       await executeCommand(saved, false, token);
     } catch (cause) {
       releasePendingCommandLock(mutationLock, token);
-      setError(cause instanceof Error ? cause.message : "無法安全保存操作，未送出請求。");
+      setError(cause instanceof Error ? cause.message : String(cause));
     }
   };
   const saveDependencies = async () => {
@@ -539,7 +539,7 @@ export default function ExecutionsPanel({
       await startCommand(command, token);
     } catch (cause) {
       if (cause instanceof StaleRequestError) return;
-      setError(cause instanceof Error ? cause.message : "Execution 提交結果不明，請先重新讀取。");
+      setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       if (operationGeneration === responseGeneration.current) setBusy(false);
       releasePendingCommandLock(mutationLock, token);
@@ -568,7 +568,7 @@ export default function ExecutionsPanel({
       await startCommand(command, token);
     } catch (cause) {
       if (cause instanceof StaleRequestError) return;
-      setError(cause instanceof Error ? cause.message : "Execution 審查結果不明，請先重新讀取。");
+      setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       if (operationGeneration === responseGeneration.current) setBusy(false);
       releasePendingCommandLock(mutationLock, token);

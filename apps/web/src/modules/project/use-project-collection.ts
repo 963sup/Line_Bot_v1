@@ -67,7 +67,7 @@ export function useProjectCollection(liffId: string) {
     } catch (cause) {
       if (ticket === generation.current) {
         setItems(null);
-        setError(cause instanceof Error ? cause.message : "Project 列表暫不可用。");
+        setError(cause instanceof Error ? cause.message : String(cause));
       }
     } finally {
       if (ticket === generation.current) setBusy(false);

@@ -52,7 +52,7 @@ export default function ProfileFollowControl({
       (cause: unknown) => {
         if (ticket === generation.current && !controller.signal.aborted) {
           setState("error");
-          setError(cause instanceof Error ? cause.message : "追蹤狀態讀取失敗。");
+          setError(cause instanceof Error ? cause.message : String(cause));
         }
       },
     );
@@ -92,7 +92,7 @@ export default function ProfileFollowControl({
       }
     } catch (cause) {
       if (ticket === generation.current && !controller.signal.aborted) {
-        setError(cause instanceof Error ? cause.message : "追蹤操作失敗。");
+        setError(cause instanceof Error ? cause.message : String(cause));
       }
     } finally {
       if (ticket === generation.current) {
@@ -103,7 +103,7 @@ export default function ProfileFollowControl({
   }
 
   if (state === "loading") return <p role="status">正在讀取追蹤狀態…</p>;
-  if (state === "error") return <p role="status">{error || "追蹤狀態目前不可用。"}</p>;
+  if (state === "error") return <p role="status">{error}</p>;
 
   const following = state === "following";
   return (
