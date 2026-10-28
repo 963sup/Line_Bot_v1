@@ -18,6 +18,6 @@ Download 同樣受 File 授權，外部讀取完成後遵循 Owner 的再次授�
 
 ## 驗證入口
 
-Bucket 狀態使用 pinned Supabase CLI 與對應 workflow readback；本 package 沒有 standalone `storage:remote` command。發布程序見 [File Storage publication boundary](../../../../docs/reference/platform/supabase.md#file-storage-publication-boundary)。
+Bucket 狀態依 [Canonical Supabase rules](../README.md#canonical-supabase-rules) 使用 trusted operator readback；本 package 沒有 standalone `storage:remote` command。
 
 物件驗收：跨 Repository 存取拒絕、重複 upload、checksum 不符、上傳成功但 Finalize 失敗、unknown outcome、撤權、清理與 Finalize 競爭。Database backup 與 object backup 分別驗證，不能互相替代。

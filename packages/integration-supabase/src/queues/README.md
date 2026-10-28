@@ -1,6 +1,6 @@
 # Queues 開發規格
 
-本目錄預置 pgmq 整合設計；尚未建立 queue 或 consumer。先檢查既有 Owner 的 outbox、worker 與 request lifecycle；pgmq 只在確有 durable delivery 缺口時接入。資料與 Release 權威見 [Supabase](../../../../docs/reference/platform/supabase.md)。
+本目錄預置 pgmq 整合設計；尚未建立 queue 或 consumer。先檢查既有 Owner 的 outbox、worker 與 request lifecycle；pgmq 只在確有 durable delivery 缺口時接入。Provider 操作規則見 [Canonical Supabase rules](../README.md#canonical-supabase-rules)，Release ordering 見 [Release](../../../../docs/reference/operations/release.md)。
 
 ## Message / consumer contract
 

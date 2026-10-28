@@ -1,6 +1,6 @@
 # Realtime 開發規格
 
-本目錄預先設計 Broadcast、Presence、Postgres Changes 的使用邊界；目前沒有因此新增 subscription、publication 或 channel policy。啟用狀態以 [Platform](../../../../docs/reference/platform/supabase.md#free-plan-capability-ownership-and-activation) 與真實 consumer 為準。
+本目錄預先設計 Broadcast、Presence、Postgres Changes 的使用邊界；目前沒有因此新增 subscription、publication 或 channel policy。啟用狀態以 [integration-supabase README](../README.md#capability-routing--prepared-layout) 與真實 consumer 為準。
 
 | 能力 | 適合承載 | 不能作為權威 |
 | --- | --- | --- |

@@ -1,6 +1,6 @@
 # Cron 開發規格
 
-排程是觸發機制，業務 command、授權、重播與完成判斷仍由 [對應 Owner](../../../../docs/owners/README.md) 擁有。既有 Attendance scheduler 沿用 [Platform activation](../../../../docs/reference/platform/supabase.md#free-plan-capability-ownership-and-activation) 的入口；本目錄不建立第二個 scheduler 或新的 job。
+排程是觸發機制，業務 command、授權、重播與完成判斷仍由 [對應 Owner](../../../../docs/owners/README.md) 擁有。既有 Attendance scheduler 沿用本 package 的 capability routing；本目錄不建立第二個 scheduler 或新的 job。
 
 ## 新 Job 必填契約
 

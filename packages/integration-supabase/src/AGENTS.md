@@ -1,6 +1,6 @@
 # Supabase 約束
 
-Current schema semantics 見 [Schema model](../../../docs/reference/data/schema.md)；provider reconciliation 見 [Supabase platform](../../../docs/reference/platform/supabase.md)。
+Current schema semantics 見 [Schema model](../../../docs/reference/data/schema.md)；integration-specific provider／reconciliation 規則見 [Canonical Supabase rules](README.md#canonical-supabase-rules)。
 
 ## Governing files
 

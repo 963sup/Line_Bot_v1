@@ -66,9 +66,9 @@ Cross-owner mechanism 只允許：
 | Cross-owner Data Boundary | [Data boundary](../../../../docs/reference/data/boundaries.md) |
 | Owner business semantics | [Domain owners](../../../../docs/owners/README.md) |
 | Scoped number/name authority and cutover | [Numbering](../../../../docs/owners/numbering.md) · [Namespace](../../../../docs/owners/namespace.md) · [migration](../../../../docs/change/migrations/scoped-numbering-namespace.md) |
-| Remote Supabase operation | [Supabase platform](../../../../docs/reference/platform/supabase.md) |
+| Remote Supabase operation | [Canonical Supabase rules](../README.md#canonical-supabase-rules) |
 | Local schema change constraints | [AGENTS](AGENTS.md) |
 
 ## Validation
 
-`pnpm exec biome check architecture` 與適用 package checks 驗證 schema files 與 `registry.json#data` 的 ownership/mapping invariants；`pnpm schema:check` 執行 declarative schema/database contract tests。Production remote mutation 由受信任 operator 依 validated current `main` 執行；provider readback 證明 remote result，不能由 local file 存在推定。
+`pnpm exec biome check architecture` 與適用 package checks 驗證 schema files 與 `registry.json#data` 的 ownership/mapping invariants；`pnpm schema:check` 執行 declarative schema/database contract tests。Production remote mutation 依 [Canonical Supabase rules](../README.md#canonical-supabase-rules) 執行；provider readback 證明 remote result，不能由 local file 存在推定。
