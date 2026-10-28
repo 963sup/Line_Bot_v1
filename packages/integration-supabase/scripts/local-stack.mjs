@@ -40,6 +40,17 @@ for (const key of [
   delete dockerEnv[key];
 
 function run(command, args, options = {}) {
+  if (command === "crane" && !process.env.PATH?.split(":").some((entry) => {
+    try {
+      return existsSync(resolve(entry, command));
+    } catch {
+      return false;
+    }
+  })) {
+    throw new Error(
+      "crane is required for Docker vfs image preparation. Run `bash .codex/bootstrap/install.sh` and execute provider commands through `pnpm provider:supabase`.",
+    );
+  }
   const result = spawnSync(command, args, {
     cwd: root,
     encoding: "utf8",
