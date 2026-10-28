@@ -9,3 +9,12 @@ Business owners: [File](file.md) · [Namespace](namespace.md) · [Numbering](num
 Policy / support / integration owners: [Identity & Access](identity-access.md) · [Audit](audit.md) · [LINE integration](line-integration.md) · [Google Workspace](google-workspace.md) · [Intelligence](intelligence.md) · [Assistant](assistant.md) · [Platform](platform.md).
 
 Load detailed reference only when the owner contract points to a specific flow or mechanism.
+
+Integration owner routing:
+
+- [LINE integration](line-integration.md) → [`packages/line`](../../packages/line/README.md) and `docs/reference/line/` provider references.
+- [Google Workspace](google-workspace.md) → [`packages/google-workspace`](../../packages/google-workspace/README.md).
+- [OpenAI integration](openai-integration.md) → [`packages/integration-openai`](../../packages/integration-openai/README.md).
+- [Supabase integration](supabase-integration.md) → [`packages/integration-supabase/src`](../../packages/integration-supabase/src/README.md).
+- [Vercel integration](vercel-integration.md) → [`packages/integration-vercel/src`](../../packages/integration-vercel/src/README.md).
+- [Platform](platform.md) → [`packages/platform`](../../packages/platform/README.md).

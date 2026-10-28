@@ -13,3 +13,5 @@ Cold-path detail. Do not preload for ordinary tasks.
 - Current route inventory → [runtime routes](runtime/routes.md)
 
 Current owner contracts are under [owners](../owners/README.md). Target/migration/gap/risk/dated evidence are under [change](../change/README.md), not here.
+
+Provider details are indexed here but owned by packages: [Supabase](platform/supabase.md), [OpenAI / AI](platform/ai.md), [Vercel](platform/vercel.md), [Google Workspace](platform/google-workspace.md), [Redis](platform/redis.md), and [LINE](line/). Follow the linked package README before reading cold-path detail.
