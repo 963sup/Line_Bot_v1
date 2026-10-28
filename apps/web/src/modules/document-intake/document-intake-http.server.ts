@@ -175,8 +175,7 @@ function failure(
     error instanceof IntelligenceError
       ? error.code
       : connectionFailure && persistenceStage
-        ? "PERSISTENCE_ERROR"
-        : "INTERNAL_ERROR";
+        : undefined;
   const message = error instanceof Error ? error.message : String(error);
   logServerError(error, {
     service: "repository-document-intake-api",
@@ -188,7 +187,7 @@ function failure(
   return jsonResponse(
     {
       error: message,
-      code,
+      ...(code ? { code } : {}),
       stage,
       traceId,
       diagnostic: diagnostic(error),
