@@ -7,6 +7,7 @@ import { Button } from "../../shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../shared/ui/card";
 import { Input } from "../../shared/ui/input";
 import { Label } from "../../shared/ui/label";
+import CommercialIntakePanel from "./commercial-intake-panel";
 import { createFileRequests } from "./file-requests";
 import {
   errorMessage,
@@ -58,7 +59,6 @@ export default function FilesPanel({
     clearPurchaseOrder,
     intakePurchaseOrder,
     confirmPurchaseOrder,
-    startPurchaseOrderIntake,
   } = usePurchaseOrderIntake({
     view,
     selected,
@@ -88,7 +88,12 @@ export default function FilesPanel({
     onCanManageChange(false);
   }, [onCanManageChange, clearPurchaseOrder]);
 
-  const { file: request, document: requestDocumentIntake } = useMemo(
+  const {
+    file: request,
+    document: requestDocumentIntake,
+    commercialIntake: requestCommercialIntake,
+    commercialDocument: requestCommercialDocument,
+  } = useMemo(
     () =>
       createFileRequests({
         ownerLogin,
@@ -319,7 +324,7 @@ export default function FilesPanel({
           />
           <p className="text-xs text-muted-foreground">
             Web 單檔上限 {view ? (view.uploadMaxBytes / 1_000_000).toFixed(0) : "3"} MB。
-            上傳後請選擇「建立採購單草稿」，才會開始解析。
+            上傳後請選擇檔案，再使用「解析商務文件」開始解析。
           </p>
           <Button disabled={!view?.canEdit || !sourceFile || blocked} onClick={upload}>
             上傳檔案
@@ -374,19 +379,6 @@ export default function FilesPanel({
                   >
                     {file.name} · v{file.version} · {Math.ceil(file.byteLength / 1024)} KB
                   </Button>
-                  {["application/pdf", "image/png", "image/jpeg", "image/webp"].includes(
-                    file.mediaType,
-                  ) && (
-                    <Button
-                      size="sm"
-                      disabled={!view.canEdit || blocked}
-                      onClick={() => startPurchaseOrderIntake(file)}
-                    >
-                      {busy && pendingDocumentIntake?.source.fileId === file.fileId
-                        ? "解析並保存中…"
-                        : "建立採購單草稿"}
-                    </Button>
-                  )}
                 </div>
               ))}
             </div>
@@ -437,15 +429,24 @@ export default function FilesPanel({
       <Card>
         <CardHeader>
           {selected && <CardTitle className="break-all">{selected.name}</CardTitle>}
-          <CardDescription>
-            原始檔保存；由「建立採購單草稿」解析並保存至 Contract，核對原始檔後再確認。
-          </CardDescription>
+          <CardDescription>原始檔保存；商務文件解析會保存為待人工審閱的草稿。</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3">
+          {view && (
+            <CommercialIntakePanel
+              key={`${view.actorUserId}:${view.repository.id}`}
+              actorUserId={view.actorUserId}
+              repositoryId={view.repository.id}
+              selected={selected}
+              canEdit={view.canEdit}
+              blocked={blocked}
+              request={requestCommercialIntake}
+              read={requestCommercialDocument}
+            />
+          )}
           {!selected && !busy && (
             <p className="text-sm text-muted-foreground">
-              請選擇原始檔案查看內容，或使用「建立採購單草稿」開始解析。支援 PDF、JPEG、PNG 與
-              WebP。
+              請選擇原始檔案查看內容，使用「解析商務文件」開始解析。支援 PDF、JPEG、PNG 與 WebP。
             </p>
           )}
           {busy && (

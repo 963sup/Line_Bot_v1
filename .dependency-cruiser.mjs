@@ -190,11 +190,19 @@ export default {
       severity: "error",
       comment:
         "Adapters are package-private implementations and must not be imported from outside the owning package",
-      from: { path: "^(packages|apps)/" },
+      from: { path: "^packages/([^/]+)/" },
       to: {
-        path: "^packages/([^/]+)/src/adapters(?:\\.ts|/)",
+        path: "^packages/[^/]+/src/adapters(?:\\.ts|/)",
         pathNot: "^packages/$1/",
       },
+    },
+    {
+      name: "apps-do-not-import-package-adapters",
+      severity: "error",
+      comment:
+        "Application hosts consume public package capabilities, never package-private adapters",
+      from: { path: "^apps/" },
+      to: { path: "^packages/[^/]+/src/adapters(?:\\.ts|/)" },
     },
     {
       name: "packages-do-not-import-apps",

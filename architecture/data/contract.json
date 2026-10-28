@@ -59,6 +59,30 @@
       "authority": true,
       "semanticOwner": "contract",
       "concept": "contract-document-command-receipt"
+    },
+    {
+      "name": "commercial_documents",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/619_contract_documents.sql",
+      "authority": true,
+      "semanticOwner": "contract",
+      "concept": "commercial-document"
+    },
+    {
+      "name": "commercial_document_revisions",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/619_contract_documents.sql",
+      "authority": true,
+      "semanticOwner": "contract",
+      "concept": "commercial-document-revision"
+    },
+    {
+      "name": "commercial_document_commands",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/619_contract_documents.sql",
+      "authority": true,
+      "semanticOwner": "contract",
+      "concept": "commercial-document-command-receipt"
     }
   ]
 }

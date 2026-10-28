@@ -61,6 +61,18 @@ if (requested.includes("--help")) {
     const cwd = fileURLToPath(new URL("../", import.meta.url));
     for (const stage of requested.length === 0 ? stages : [...new Set(requested)]) {
       console.log(`Check: ${stage}`);
+      if (stage === "dependencies") {
+        const contract = spawnSync(
+          process.execPath,
+          ["--test", "scripts/tooling/adapter-boundaries.test.mjs"],
+          { cwd, stdio: "inherit" },
+        );
+        if (contract.error || contract.signal || contract.status !== 0) {
+          if (contract.error) console.error(contract.error.message);
+          process.exitCode = contract.status || 1;
+          break;
+        }
+      }
       const [command, ...commandArgs] = commands[stage];
       if ((stage === "lint" || stage === "format") && forwarded.length === 0) commandArgs.push(".");
       const result = spawnSync(

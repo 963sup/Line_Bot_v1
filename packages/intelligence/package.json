@@ -19,6 +19,14 @@
     "./composition/bootstrap/document-intake": {
       "types": "./dist/composition/bootstrap/document-intake.d.ts",
       "default": "./dist/composition/bootstrap/document-intake.js"
+    },
+    "./contracts/output/commercial-intake": {
+      "types": "./dist/contracts/output/commercial-intake.d.ts",
+      "default": "./dist/contracts/output/commercial-intake.js"
+    },
+    "./composition/bootstrap/commercial-intake": {
+      "types": "./dist/composition/bootstrap/commercial-intake.d.ts",
+      "default": "./dist/composition/bootstrap/commercial-intake.js"
     }
   },
   "files": [

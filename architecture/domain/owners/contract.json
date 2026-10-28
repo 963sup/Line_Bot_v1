@@ -88,6 +88,36 @@
       "lifecycle": "current",
       "authorityMode": "authoritative",
       "definition": "One formal agreed quantity and frozen exact Content Work/Task plan basis embedded in an immutable Contract revision; distinct from both planned and actual quantity."
+    },
+    {
+      "id": "commercial-document",
+      "canonicalName": "CommercialDocument",
+      "kind": "authoritative",
+      "owner": "contract",
+      "lifecycle": "current",
+      "definition": "Repository-scoped commercial document head with separate draft and verified revision pointers; distinct from the legacy purchase-order head.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "commercial-document-revision",
+      "canonicalName": "CommercialDocumentRevision",
+      "kind": "authoritative",
+      "owner": "contract",
+      "lifecycle": "current",
+      "definition": "Immutable commercial fact snapshot pinned to one File revision and extraction result; current writer creates DRAFT only.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "commercial-document-command-receipt",
+      "canonicalName": "CommercialDocumentCommandReceipt",
+      "kind": "authoritative",
+      "owner": "contract",
+      "lifecycle": "current",
+      "definition": "Actor-scoped command identity and exact transactional commercial draft revision receipt, replayed only after current source authorization.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
     }
   ],
   "relationships": [
@@ -196,16 +226,37 @@
           "packages/contract/src/domain/document-intake-decoder.ts",
           "packages/contract/src/application/use-cases/documents.ts",
           "packages/contract/src/adapters/outbound/persistence/documents.ts",
-          "packages/contract/src/contracts/input/document-intake.ts"
+          "packages/contract/src/contracts/input/document-intake.ts",
+          "packages/contract/src/application/use-cases/commercial-document-review.ts",
+          "packages/contract/src/application/commercial-document-validation.ts",
+          "packages/contract/src/application/use-cases/commercial-documents.ts",
+          "packages/contract/src/adapters/outbound/persistence/commercial-documents.ts",
+          "packages/contract/src/application/normalization/commercial-document.ts",
+          "packages/contract/src/contracts/input/commercial-document.ts"
         ],
-        "publicExports": ["./contracts/input/document-intake", "./composition/bootstrap/documents"],
-        "entrypoints": ["apps/web/src/app/api/repository-document-intake/route.ts"],
+        "publicExports": [
+          "./contracts/input/document-intake",
+          "./composition/bootstrap/documents",
+          "./application/use-cases/commercial-document-review",
+          "./contracts/output/commercial-document-review",
+          "./composition/bootstrap/commercial-documents",
+          "./contracts/output/commercial-documents",
+          "./application/normalization/commercial-document"
+        ],
+        "entrypoints": [
+          "apps/web/src/app/api/repository-document-intake/route.ts",
+          "apps/web/src/app/api/document-intakes/route.ts",
+          "apps/web/src/app/api/commercial-documents/route.ts"
+        ],
         "testPaths": [
           "packages/contract/test/document-intake-domain.test.ts",
           "packages/contract/test/documents-postgres.test.ts",
-          "apps/web/test/document-intake-http.test.ts"
+          "apps/web/test/document-intake-http.test.ts",
+          "packages/contract/test/commercial-document-review.test.ts",
+          "packages/contract/test/commercial-document-validation.test.ts",
+          "packages/contract/test/commercial-documents-postgres.test.ts"
         ],
-        "note": "The candidate is Contract truth only after Contract validation and a transaction-bound File source qualification. Intelligence may submit SAVE; confirmation requires an explicit Contract command. A separate Content capability may read one exact confirmed revision through Contract's public reader and apply its own fixed whole-document expansion; Contract never creates Content or WBS records."
+        "note": "Legacy PO write/read semantics remain unchanged for history and pending-command recovery. New commercial documents normalize untrusted technical observations through Contract boundary codecs and pure Domain policies, then save DRAFT head/revision/receipt atomically. Web composition connects the public Intelligence result reader to the Contract source port; UI exposes draft intake/status/resume. VERIFIED edits and Content/WBS expansion are not provided by this new minimal flow. Hosted provider and production publication require separate evidence."
       }
     }
   ],

@@ -95,6 +95,8 @@ test("the detached modules are excluded from automatic Sentry reporting while ot
     "/api/repository-files",
     "/api/repository-resources",
     "/api/repository-document-intake",
+    "/api/document-intakes",
+    "/api/commercial-documents",
     "/api/repository-wbs/transfer/cancel",
     "/api/project-wbs/governance",
     "/api/repositories/lists",
