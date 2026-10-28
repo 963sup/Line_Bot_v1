@@ -24,6 +24,7 @@
 完整的 Serena CLI、MCP、REPL 與 LSP 操作速查見 [`.serena/README.md`](.serena/README.md)；Serena v2 [Tools 官方文件](https://oraios.github.io/serena/01-about/035_tools.html) 是語義工具的最優先參考，開始 Serena 工作前再以當前 CLI `--help` 與 session `initial_instructions` 核對可用能力。
 
 - Serena MCP 可用時，涉及 TypeScript/JavaScript 符號、跨檔案引用、宣告、實作、診斷、語義重構、safe delete、LSP 或 project memory 的任務，主動優先使用 Serena。
+- Serena v2 + LSP 是本 repository 的首選語義工具鏈；Serena 以 workspace-pinned Python runtime 啟動，並透過 TypeScript LSP 處理本專案的 TS/JS 符號。只有 Serena 未啟動、能力不足或任務屬於一般檔案／shell／Git／驗證操作時，才改用 Codex 原生工具。
 - 每個新的 Serena MCP session 先呼叫一次 `initial_instructions`；不要重複把完整 Serena manual 帶入上下文。
 - 需要了解專案結構、符號關係或跨 package dependency 時，先使用 Serena 的 `serena_repl`、symbol overview、find symbol、find references、diagnostics 或 LSP 操作，再決定是否需要讀取完整檔案。
 - Serena 只負責語義定位、符號操作、診斷、重構、project activation 與 memory routing；一般檔案讀寫、patch、shell、Git、測試與驗證使用 Codex 原生工具。
