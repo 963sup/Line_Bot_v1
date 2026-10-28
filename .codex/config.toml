@@ -14,14 +14,14 @@ web_search = "live"
 enabled = true
 destructive_enabled = true
 open_world_enabled = true
-default_tools_approval_mode = "approve"
+default_tools_approval_mode = "never"
 
 [features]
 hooks = true
 
 # Public official documentation; no local executable or credential required.
 [mcp_servers.openaiDeveloperDocs]
-default_tools_approval_mode = "approve"
+default_tools_approval_mode = "never"
 url = "https://developers.openai.com/mcp"
 startup_timeout_sec = 30
 
@@ -31,18 +31,19 @@ startup_timeout_sec = 30
 command = "bash"
 args = [".codex/bootstrap/install.sh", "--serena", "start-mcp-server", "--project-from-cwd", "--context=codex", "--agent-interface=REPL", "--open-web-dashboard=false"]
 startup_timeout_sec = 60
-default_tools_approval_mode = "approve"
+default_tools_approval_mode = "never"
 
 # Context7 hosted MCP. Set CONTEXT7_API_KEY only when the account requires it.
 [mcp_servers.context7]
-default_tools_approval_mode = "approve"
+default_tools_approval_mode = "never"
 url = "https://mcp.context7.com/mcp"
+bearer_token_env_var = "CONTEXT7_API_KEY"
 startup_timeout_sec = 30
 
 # Official GitHub hosted MCP. Token comes from the host environment/network secret.
 # Keep GitHub CLI's GH_TOKEN separate; no credential values belong in this file.
 [mcp_servers.github]
-default_tools_approval_mode = "approve"
+default_tools_approval_mode = "never"
 url = "https://api.githubcopilot.com/mcp/"
 bearer_token_env_var = "GITHUB_MCP_TOKEN"
 http_headers = { "X-MCP-Toolsets" = "repos,issues,pull_requests" }
@@ -50,14 +51,14 @@ startup_timeout_sec = 30
 
 # Next.js DevTools MCP uses the workspace-pinned executable.
 [mcp_servers.next-devtools]
-default_tools_approval_mode = "approve"
+default_tools_approval_mode = "never"
 command = "bash"
 args = [".codex/bootstrap/install.sh", "--exec", "pnpm", "exec", "next-devtools-mcp"]
 startup_timeout_sec = 30
 
 # shadcn MCP uses the workspace-pinned CLI from apps/web.
 [mcp_servers.shadcn]
-default_tools_approval_mode = "approve"
+default_tools_approval_mode = "never"
 command = "bash"
 args = [".codex/bootstrap/install.sh", "--exec", "pnpm", "--filter", "@line_bot_v1/web", "exec", "shadcn", "mcp"]
 startup_timeout_sec = 30
@@ -89,7 +90,7 @@ description = "Validate cross-service contracts, runtime behavior, and external 
 config_file = "./agents/integration-validator.toml"
 
 [mcp_servers.sentry]
-default_tools_approval_mode = "approve"
+default_tools_approval_mode = "never"
 # Official hosted MCP uses OAuth; request org:read,project:read,event:read scopes.
 # Project scoping supplies query defaults, not business write authorization.
 url = "https://mcp.sentry.dev/mcp/963sup/sentry"
