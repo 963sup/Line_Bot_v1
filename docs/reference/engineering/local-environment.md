@@ -91,7 +91,7 @@ Repository wrapper 只補固定工具路徑及 workspace cache，不安裝任何
 
 官方依據：[Serena Quick Start](https://oraios.github.io/serena/#quick-start) · [Codex client setup](https://oraios.github.io/serena/02-usage/030_clients.html#codex-cli-and-app)。
 
-Serena v2 使用 REPL interface，因此 API 開關由 `.serena/project.yml` 的 `included_apis`／`excluded_apis` 管理；傳統 `included_optional_tools`／`excluded_tools` 不控制 REPL 內的 facade。專案開放標準 `fs`、`edit`、`lsp`、`mem`、安全 config 查詢，以及 line edits、diagnostics、language-server restart、safe delete 等 optional API。只關閉 shell、跨 Serena project 查詢與 dashboard；Git、測試與 provider 操作仍由 Codex 原生工具負責。
+Serena v2 使用 REPL interface，因此 API 開關由 `.serena/project.yml` 的 `included_apis`／`excluded_apis` 管理；傳統 `included_optional_tools`／`excluded_tools` 不控制 REPL 內的 facade。專案啟用目前 LSP backend 下所有 `cfg`、`fs`、`edit`、`mem`、`shell`、`ext`、`lsp` API，並逐項啟用 optional methods；JetBrains API 需要另一個 backend，無法與 LSP 同時使用。工具可用不代表取得額外操作授權；Git、測試與 provider 操作仍由 Codex 原生工具負責。修改後須重新載入 Serena MCP，既有 session 不會自動更新。
 
 Serena 遵守 `.gitignore`，並額外排除 architecture／docs／assets／public 靜態資產、SQL schemas、第三方 skills、Codex／GitHub／Serena metadata、依賴、build、coverage、cache 與暫存目錄。這些資料仍可由 Codex 原生工具按任務讀取；排除只避免 TypeScript LSP／Serena index 為非程式或大量 vendor 內容消耗啟動時間與 token。Tests 沒有整體排除，保留 definition／reference／rename 的回歸範圍。
 
