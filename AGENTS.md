@@ -29,6 +29,7 @@
 - 需要了解專案結構、符號關係或跨 package dependency 時，先使用 Serena 的 `serena_repl`、symbol overview、find symbol、find references、diagnostics 或 LSP 操作，再決定是否需要讀取完整檔案。
 - Serena 只負責語義定位、符號操作、診斷、重構、project activation 與 memory routing；一般檔案讀寫、patch、shell、Git、測試與驗證使用 Codex 原生工具。
 - Serena memory 只作為檢索入口；source、manifest、schema、tests、architecture authority 與 provider readback 才是完成與正確性的證據。
+- 對持久且非顯然的 repository 慣例、工具鏈、架構決策或完成證據，使用 Serena v2 memory API 讀取／新增／更新／重新命名／刪除；先讀 `mem:eme_core` 與 `mem:memory_maintenance`，沿用既有 owner，完成後執行 `serena memories check`。不要把 branch 狀態、聊天紀錄、原始 log、credential 或一次性進度寫入 memory。
 - Serena session 未啟動、工具不可用或結果不足時，明示原因並使用 Codex 原生工具繼續，不得假設 Serena 結果等於完整 repository evidence。
 - 不為一次性文字查找、單檔文件修改、設定檔修改或簡單命令強制呼叫 Serena；主動使用必須能降低符號定位或跨檔案推理成本。
 
