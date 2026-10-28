@@ -123,18 +123,21 @@ export class PostgresCommercialDocuments implements CommercialDocumentStore {
       );
       for (const [table, columns] of Object.entries(expectedColumns)) {
         const found = rows.filter((row) => row.table_name === table);
-        if (
-          columns.some((column) => !found.some((row) => row.column_name === column)) ||
-          found.some(
+        const missing = columns.filter(
+          (column) => !found.some((row) => row.column_name === column),
+        );
+        const unexpectedRequired = found
+          .filter(
             (row) =>
               !columns.includes(String(row.column_name)) &&
               row.is_nullable === "NO" &&
               row.column_default === null,
           )
-        )
+          .map((row) => String(row.column_name));
+        if (missing.length || unexpectedRequired.length)
           throw new ContractError(
             503,
-            "Commercial document storage contract is not ready.",
+            `Commercial document storage contract is not ready: ${table}; missing columns: ${missing.join(",") || "none"}; unexpected required columns: ${unexpectedRequired.join(",") || "none"}.`,
             "DOCUMENT_STORE_NOT_READY",
           );
       }
