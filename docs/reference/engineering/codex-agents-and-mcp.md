@@ -1,40 +1,64 @@
-# Codex agents and MCP
+# Codex routing: agents and MCP
 
-這份文件只提供導覽；實際 agent 設定以 [`.codex/config.toml`](../../../.codex/config.toml) 為準，角色行為以各角色的 TOML 檔為準。不要在此建立第二份 agent catalog 或權限設定。
+Machine routing only. Do not treat this file as a second configuration source.
 
-## Agent roles
+## Sources
 
-目前角色依責任分工如下：
+- Agent registry/config: [`.codex/config.toml`](../../../.codex/config.toml)
+- Agent instructions: [`.codex/agents/`](../../../.codex/agents/)
+- Global constraints: [`AGENTS.md`](../../../AGENTS.md)
+- Serena v2/LSP operation: [`.serena/README.md`](../../../.serena/README.md)
 
-- [architect](../../../.codex/agents/architect.toml)：架構、模組邊界與依賴方向。
-- [debugger](../../../.codex/agents/debugger.toml)：錯誤診斷與最小修正。
-- [integration-validator](../../../.codex/agents/integration-validator.toml)：跨服務整合與驗證證據。
-- [reviewer](../../../.codex/agents/reviewer.toml)：程式正確性、回歸與可維護性審查。
-- [security-auditor](../../../.codex/agents/security-auditor.toml)：認證、授權、秘密與 RLS 審查。
-- [test-engineer](../../../.codex/agents/test-engineer.toml)：行為、邊界與回歸測試缺口。
-- [release-gatekeeper](../../../.codex/agents/release-gatekeeper.toml)：CI、branch protection、PR 與合併證據。
-- [database-steward](../../../.codex/agents/database-steward.toml)：Supabase schema、RLS、migration 與 rollback。
-- [observability-investigator](../../../.codex/agents/observability-investigator.toml)：Sentry、Vercel logs、trace 與 production evidence。
-- [performance-cost-analyst](../../../.codex/agents/performance-cost-analyst.toml)：延遲、token、查詢、bundle 與 provider 成本。
-- [accessibility-ux-auditor](../../../.codex/agents/accessibility-ux-auditor.toml)：UI accessibility、鍵盤流程、表單與錯誤狀態。
-- [documentation-curator](../../../.codex/agents/documentation-curator.toml)：README、AGENTS、Serena README 與 durable memory routing。
-- [contract-steward](../../../.codex/agents/contract-steward.toml)：public API、HTTP、event、provider 與 package contract 相容性。
-- [e2e-journey-engineer](../../../.codex/agents/e2e-journey-engineer.toml)：完整瀏覽器與服務流程。
-- [dependency-steward](../../../.codex/agents/dependency-steward.toml)：workspace dependency、lockfile、升級與供應鏈證據。
-- [lifecycle-owner](../../../.codex/agents/lifecycle-owner.toml)：rollout、flag、backfill、deprecation 與 rollback 計畫。
-- [data-quality-analyst](../../../.codex/agents/data-quality-analyst.toml)：Intelligence、Contract、WBS 資料品質與 provenance。
+## Selection algorithm
 
-所有角色遵守 root [`AGENTS.md`](../../../AGENTS.md) 的 Serena v2 + LSP 優先規則。角色只在自身責任範圍內使用 MCP；未驗證的 hosted handshake、OAuth 或環境變數不可宣稱為可用。
+```text
+1. Read root AGENTS.md and nearest scope AGENTS.md.
+2. Identify owner, contract, consumer, and evidence boundary.
+3. Select exactly one primary role from the index below.
+4. Use Serena v2 + LSP first for TS/JS symbols, references, diagnostics, and refactors.
+5. Load only MCPs required by the selected role and task.
+6. Use hosted MCPs read-only unless the task explicitly authorizes a target write.
+7. Report unavailable handshake, OAuth, token, or provider evidence as unverified.
+```
 
-## MCP usage
+## Role index
 
-MCP 唯一設定來源是 [`.codex/config.toml`](../../../.codex/config.toml)。Serena v2 + LSP 優先用於 TypeScript／JavaScript 語義定位；其他 MCP 依角色與任務需要使用。Hosted MCP 的 Token／OAuth 不寫入 repository，實際可用性要以新 session 的 `/mcp` 與唯讀呼叫確認。
+| Trigger | Primary role | Config |
+| --- | --- | --- |
+| architecture, boundaries, dependency direction | architect | `.codex/agents/architect.toml` |
+| runtime/test/build failure | debugger | `.codex/agents/debugger.toml` |
+| cross-service/provider acceptance | integration-validator | `.codex/agents/integration-validator.toml` |
+| code correctness/regression review | reviewer | `.codex/agents/reviewer.toml` |
+| auth/secrets/RLS/security | security-auditor | `.codex/agents/security-auditor.toml` |
+| test gap/regression design | test-engineer | `.codex/agents/test-engineer.toml` |
+| CI/branch protection/merge evidence | release-gatekeeper | `.codex/agents/release-gatekeeper.toml` |
+| SQL/schema/RLS/migration/rollback | database-steward | `.codex/agents/database-steward.toml` |
+| Sentry/Vercel/trace/production evidence | observability-investigator | `.codex/agents/observability-investigator.toml` |
+| latency/token/query/bundle/provider cost | performance-cost-analyst | `.codex/agents/performance-cost-analyst.toml` |
+| UI accessibility/keyboard/form/error flow | accessibility-ux-auditor | `.codex/agents/accessibility-ux-auditor.toml` |
+| README/AGENTS/Serena/memory routing | documentation-curator | `.codex/agents/documentation-curator.toml` |
+| public API/HTTP/event/provider/package contract | contract-steward | `.codex/agents/contract-steward.toml` |
+| complete browser/service journey | e2e-journey-engineer | `.codex/agents/e2e-journey-engineer.toml` |
+| dependency/lockfile/toolchain/supply chain | dependency-steward | `.codex/agents/dependency-steward.toml` |
+| rollout/flag/backfill/deprecation/rollback plan | lifecycle-owner | `.codex/agents/lifecycle-owner.toml` |
+| extraction/provenance/completeness/data consistency | data-quality-analyst | `.codex/agents/data-quality-analyst.toml` |
 
-驗證設定與 hooks：
+## MCP routing
+
+| MCP | Use only for | Evidence rule |
+| --- | --- | --- |
+| `serena` | TS/JS symbols, LSP, references, diagnostics, semantic edits | v2 + LSP first; call `initial_instructions` once/session |
+| `github` | PR, checks, repository, issue readback | hosted handshake/token must be verified |
+| `context7` | current library/framework docs | `CONTEXT7_API_KEY` may be absent; report unavailable |
+| `openaiDeveloperDocs` | OpenAI official docs | read-only host handshake required |
+| `next-devtools` | local Next runtime diagnostics | use only with the target dev server |
+| `shadcn` | local component registry/tooling | use only for UI component tasks |
+| `sentry` | read-only event/error evidence | OAuth and host handshake required |
+
+## Validation
 
 ```sh
 pnpm check codex:config
 pnpm check hooks
+source .codex/bootstrap/lib/common.sh && serena memories check
 ```
-
-完整 Serena 操作見 [`.serena/README.md`](../../../.serena/README.md)。
