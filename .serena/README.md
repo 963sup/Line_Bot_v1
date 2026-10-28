@@ -2,6 +2,8 @@
 
 本文件是此專案的操作速查，依 [Serena 官方文件](https://oraios.github.io/serena/) 與本機 CLI help 核對。2026-10-28 核對版本為 Serena 2.1.0；升級後以 `serena --version`、各指令的 `--help` 及當次 `initial_instructions` 為準。
 
+Serena v2 的 [Tools 官方文件](https://oraios.github.io/serena/01-about/035_tools.html) 是本專案最優先的工具使用參考；涉及語義定位、符號、引用、LSP、診斷、重構或 safe delete 時，先使用 Serena v2 MCP／LSP tools，再使用其他工具。若本文件、CLI help、session manual 與官方 Tools 文件不一致，以當前 session 的 `initial_instructions`、CLI help 及官方 v2 Tools 文件為準。
+
 專案規則見 [AGENTS.md](AGENTS.md)，實際設定見 [project.yml](project.yml)，Codex 啟動設定見 [config.toml](../.codex/config.toml)。本文件不複製記憶、治理規則或產品實作狀態。
 
 ## 1. 先確認環境與指令

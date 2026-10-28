@@ -21,7 +21,7 @@
 
 ## Serena MCP usage
 
-完整的 Serena CLI、MCP、REPL 與 LSP 操作速查見 [`.serena/README.md`](.serena/README.md)；開始 Serena 工作前先以該文件與當前 CLI `--help` 核對可用指令。
+完整的 Serena CLI、MCP、REPL 與 LSP 操作速查見 [`.serena/README.md`](.serena/README.md)；Serena v2 [Tools 官方文件](https://oraios.github.io/serena/01-about/035_tools.html) 是語義工具的最優先參考，開始 Serena 工作前再以當前 CLI `--help` 與 session `initial_instructions` 核對可用能力。
 
 - Serena MCP 可用時，涉及 TypeScript/JavaScript 符號、跨檔案引用、宣告、實作、診斷、語義重構、safe delete、LSP 或 project memory 的任務，主動優先使用 Serena。
 - 每個新的 Serena MCP session 先呼叫一次 `initial_instructions`；不要重複把完整 Serena manual 帶入上下文。
