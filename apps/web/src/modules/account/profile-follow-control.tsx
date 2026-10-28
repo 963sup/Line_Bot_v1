@@ -92,7 +92,7 @@ export default function ProfileFollowControl({
       }
     } catch (cause) {
       if (ticket === generation.current && !controller.signal.aborted) {
-        setError(cause instanceof Error ? cause.message : "追蹤操作失敗。");
+        setError(cause instanceof Error ? cause.message : String(cause));
       }
     } finally {
       if (ticket === generation.current) {

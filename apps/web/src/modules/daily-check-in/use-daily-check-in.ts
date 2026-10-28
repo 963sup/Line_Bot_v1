@@ -329,7 +329,7 @@ export function useDailyCheckIn(liffId: string) {
       };
     } catch (cause) {
       if (signal.aborted) return null;
-      setError(cause instanceof Error ? cause.message : "簽到操作失敗。");
+        setError(cause instanceof Error ? cause.message : String(cause));
       if (cause instanceof MembershipRequestError && [400, 403, 409].includes(cause.status)) {
         clearUnknownResult();
         return {

@@ -153,7 +153,7 @@ export function useUser(liffId: string) {
       await load(access, signal);
     } catch (cause) {
       if (!signal.aborted)
-        setError(cause instanceof Error ? cause.message : "綁定操作失敗，請重試。");
+        setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       if (!signal.aborted) setBusy(false);
     }
@@ -191,7 +191,7 @@ export function useUser(liffId: string) {
       setPauseConfirmation(false);
     } catch (cause) {
       if (signal.aborted) return;
-      setError(cause instanceof Error ? cause.message : "操作失敗，請重試。");
+        setError(cause instanceof Error ? cause.message : String(cause));
       try {
         const access = token || (await liffClient.ensureSession(liffId));
         if (access && !signal.aborted) {

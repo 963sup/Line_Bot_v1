@@ -239,7 +239,7 @@ export default function UserManagement({ liffId }: { liffId: string }) {
       await load({ id: command.target }, { owner: operation.owner, receipt: result });
     } catch (failure) {
       if (ticket === sequence.current) {
-        setError(failure instanceof Error ? failure.message : "操作失敗。");
+        setError(failure instanceof Error ? failure.message : String(failure));
         if (!submitted) setData(null);
       }
     } finally {
