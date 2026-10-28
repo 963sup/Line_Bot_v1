@@ -16,7 +16,7 @@ No relevant pending source means no remote operation. Rich Menu input classifica
 
 ## File orphan recovery boundary
 
-File-owned `file:reclaim` provides a read-only plan and separately gated quarantine/delete/readback implementation for never-committed Upload Intents. Production execution has **not** been wired into the main-push-only Release workflow; it must not be invoked from an arbitrary branch or by weakening CI trigger governance. Retained authority and recovery are defined by the [File owner](../../owners/file.md) and [Recovery](recovery.md).
+File-owned `file:reclaim` provides a read-only plan and separately gated quarantine/delete/readback implementation for never-committed Upload Intents. Production execution requires an explicitly validated operator context and must not be invoked from an arbitrary branch or unvalidated provider context. Retained authority and recovery are defined by the [File owner](../../owners/file.md) and [Recovery](recovery.md).
 
 
 ## Execution

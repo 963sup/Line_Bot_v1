@@ -17,4 +17,4 @@ AI is never authorization, persistent business truth, or a substitute for determ
 
 ## Retained references
 
-Cost measurement, retention, secrets and current gaps remain cross-cutting concerns owned by the corresponding [engineering rules](../engineering/) and [security references](../security/). Provider-specific details belong in the integration package above.
+Cost measurement, retention and secrets remain cross-cutting concerns owned by the corresponding [engineering rules](../engineering/) and [security references](../security/). Provider-specific details belong in the integration package above.
