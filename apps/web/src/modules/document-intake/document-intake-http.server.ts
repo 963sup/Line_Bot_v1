@@ -183,18 +183,7 @@ function failure(
             : stage === "intelligence.extract"
               ? "EXTRACTION_FAILED"
               : "DOCUMENT_INTAKE_FAILED";
-  const message =
-    known && (status < 500 || stage === "request")
-      ? error.message
-      : stage === "target.submit" || stage === "attempt.complete"
-        ? "採購單保存失敗，保存結果待確認；請保留此頁，使用原命令查詢回執，勿重新建立。"
-        : code === "UNKNOWN_RESULT"
-          ? "解析結果尚未確認；原命令重試只會查詢已保存回執，不會重新解析。"
-          : stage === "intelligence.extract"
-            ? "採購單 AI 解析失敗，請提供追蹤 ID 給管理員查核。"
-            : stage === "file.read"
-              ? "採購單來源檔案讀取失敗。"
-              : "採購單操作失敗，請提供追蹤 ID 給管理員查核。";
+  const message = error instanceof Error ? error.message : String(error);
   logServerError(error, {
     service: "repository-document-intake-api",
     operation: stage,

@@ -199,12 +199,7 @@ export async function commercialIntakeRequest(
     });
     return jsonResponse(
       {
-        error:
-          error instanceof FileError
-            ? "目前無法存取此解析來源，請重新登入或確認檔案授權後重試。"
-            : status < 500 && known
-              ? error.message
-              : "商務文件操作失敗；請保留原命令，查詢狀態或聯絡管理員。",
+        error: error instanceof Error ? error.message : String(error),
         code,
         stage,
         traceId,
