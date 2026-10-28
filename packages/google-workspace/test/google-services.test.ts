@@ -31,7 +31,7 @@ test("all service collections preserve cursors and reject partial failure", asyn
       assert.equal(parsed.searchParams.get("pageToken"), "next");
       return Response.json({ private: "do not leak" }, { status: 403 });
     };
-    await assert.rejects(entry.run(request), { message: "Google request failed (403)" });
+    await assert.rejects(entry.run(request), { message: '{"private":"do not leak"}' });
     assert.equal(calls, 2);
   }
 });
@@ -116,14 +116,14 @@ test("Tasks include completed hidden tasks and encode identifiers", async () => 
   });
 });
 
-test("writes never retry and transport failures redact private URLs", async () => {
+test("writes never retry and transport failures preserve their original message", async () => {
   let calls = 0;
   await assert.rejects(
     createTask({ ...auth, taskListId: "a", title: "t" }, async () => {
       calls++;
       throw new Error("private-url-and-token");
     }),
-    { message: "Google transport or response failure" },
+    { message: "private-url-and-token" },
   );
   assert.equal(calls, 1);
 });

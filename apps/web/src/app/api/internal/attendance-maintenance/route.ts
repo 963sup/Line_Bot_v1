@@ -37,6 +37,6 @@ export async function POST(request: Request) {
       operation: "run",
       status: 503,
     });
-    return jsonResponse({ error: "出勤同步暫時無法完成。" }, 503);
+    return jsonResponse({ error: error instanceof Error ? error.message : String(error) }, 503);
   }
 }

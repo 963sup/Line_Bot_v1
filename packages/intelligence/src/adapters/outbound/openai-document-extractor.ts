@@ -33,7 +33,7 @@ export function createOpenAIDocumentExtractor(model: string): DocumentExtractor 
           );
         throw new IntelligenceError(
           503,
-          "Document extraction is unavailable.",
+          error instanceof Error ? error.message : String(error),
           "EXTRACTION_UNAVAILABLE",
           { cause: error },
         );

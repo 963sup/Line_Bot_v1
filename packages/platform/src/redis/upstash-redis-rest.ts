@@ -39,25 +39,33 @@ export function createUpstashRedisRestTransport(
         },
         body: JSON.stringify(parts),
       });
-    } catch {
-      throw new RedisUnavailableError("transport");
+    } catch (error) {
+      throw new RedisUnavailableError("transport", { cause: error });
     }
+    const failure = async (code: ConstructorParameters<typeof RedisUnavailableError>[0]) => {
+      const message = await response.text();
+      throw new RedisUnavailableError(code, {
+        cause: new Error(message || `${response.status} ${response.statusText}`),
+      });
+    };
     if (response.status === 401 || response.status === 403)
-      throw new RedisUnavailableError("authentication");
-    if (response.status === 429) throw new RedisUnavailableError("provider_rate_limited");
-    if (response.status >= 500) throw new RedisUnavailableError("provider_unavailable");
-    if (!response.ok) throw new RedisUnavailableError("provider_error");
+      await failure("authentication");
+    if (response.status === 429) await failure("provider_rate_limited");
+    if (response.status >= 500) await failure("provider_unavailable");
+    if (!response.ok) await failure("provider_error");
 
     let payload: unknown;
     try {
       payload = await response.json();
-    } catch {
-      throw new RedisUnavailableError("invalid_response");
+    } catch (error) {
+      throw new RedisUnavailableError("invalid_response", { cause: error });
     }
     if (!payload || typeof payload !== "object")
-      throw new RedisUnavailableError("invalid_response");
-    if ("error" in payload && payload.error) throw new RedisUnavailableError("provider_error");
-    if (!("result" in payload)) throw new RedisUnavailableError("invalid_response");
+      throw new RedisUnavailableError("invalid_response", { cause: new Error(JSON.stringify(payload)) });
+    if ("error" in payload && payload.error)
+      throw new RedisUnavailableError("provider_error", { cause: new Error(JSON.stringify(payload.error)) });
+    if (!("result" in payload))
+      throw new RedisUnavailableError("invalid_response", { cause: new Error(JSON.stringify(payload)) });
     return payload.result;
   };
 

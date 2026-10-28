@@ -35,16 +35,17 @@ const storageKey = (repositoryId: string, actorUserId: string) =>
 const cancellationStorageKey = (repositoryId: string, actorUserId: string) =>
   `wbs-transfer-cancel:${repositoryId}:${actorUserId}`;
 
-async function responseBody(response: Response, fallback: string) {
-  let body: unknown;
+async function responseBody(response: Response) {
+  const text = await response.text();
+  let body: unknown = text;
   try {
-    body = await response.json();
+    body = JSON.parse(text);
   } catch {
-    throw new TransferRequestError(fallback, response.status || 503);
+    if (!response.ok) throw new TransferRequestError(text, response.status || 503);
   }
   if (!response.ok)
     throw new TransferRequestError(
-      isRecord(body) && typeof body.error === "string" ? body.error : fallback,
+      isRecord(body) && typeof body.error === "string" ? body.error : text,
       response.status,
     );
   return body;
@@ -56,7 +57,7 @@ async function currentActor(token: string) {
     signal: AbortSignal.timeout(20_000),
     headers: { "X-App-Session-Generation": token },
   });
-  const body = await responseBody(response, "會員資料讀取失敗。");
+  const body = await responseBody(response);
   if (
     !isRecord(body) ||
     !isRecord(body.member) ||
@@ -75,7 +76,7 @@ async function createProject(token: string, command: CreateTransferProjectComman
     headers: { "content-type": "application/json", "X-App-Session-Generation": token },
     body: JSON.stringify(command),
   });
-  const body = await responseBody(response, "目標 Project 建立結果尚待確認。");
+  const body = await responseBody(response);
   try {
     return parseProjectManagementReceipt(body);
   } catch {
@@ -94,7 +95,7 @@ async function requestTransfer(
     headers: { "content-type": "application/json", "X-App-Session-Generation": token },
     body: JSON.stringify(command),
   });
-  return parseWbsScopeTransfer(await responseBody(response, "WBS 移轉請求結果尚待確認。"));
+  return parseWbsScopeTransfer(await responseBody(response));
 }
 
 async function readTransfer(token: string, repositoryId: string) {
@@ -106,7 +107,7 @@ async function readTransfer(token: string, repositoryId: string) {
       headers: { "X-App-Session-Generation": token },
     },
   );
-  const body = await responseBody(response, "WBS 移轉狀態讀取失敗。");
+  const body = await responseBody(response);
   return body === null ? null : parseWbsScopeTransfer(body);
 }
 
@@ -118,7 +119,7 @@ async function cancelTransfer(token: string, command: CancelWbsScopeTransferComm
     headers: { "content-type": "application/json", "X-App-Session-Generation": token },
     body: JSON.stringify(command),
   });
-  return parseWbsScopeTransfer(await responseBody(response, "WBS 移轉撤回結果尚待確認。"));
+  return parseWbsScopeTransfer(await responseBody(response));
 }
 
 export default function WbsTransferPanel({

@@ -1,8 +1,12 @@
 import { PDFDocument } from "pdf-lib";
 
 export class OpenAIOutputError extends Error {
-  constructor(readonly code: "UNAVAILABLE" | "REFUSAL" | "INCOMPLETE" | "INVALID_OUTPUT") {
-    super(`OpenAI structured output: ${code}`);
+  constructor(
+    readonly code: "UNAVAILABLE" | "REFUSAL" | "INCOMPLETE" | "INVALID_OUTPUT",
+    message = `OpenAI structured output: ${code}`,
+    options?: ErrorOptions,
+  ) {
+    super(message, options);
   }
 }
 type StructuredDocumentInput = {
@@ -73,10 +77,20 @@ export function createOpenAIStructuredOutput(config: {
           signal: AbortSignal.timeout(input.timeoutMs),
         },
       );
-    } catch {
-      throw new OpenAIOutputError("UNAVAILABLE");
+    } catch (error) {
+      throw new OpenAIOutputError(
+        "UNAVAILABLE",
+        error instanceof Error ? error.message : String(error),
+        { cause: error },
+      );
     }
-    if (!response.ok) throw new OpenAIOutputError("UNAVAILABLE");
+    if (!response.ok) {
+      const message = await response.text();
+      throw new OpenAIOutputError(
+        "UNAVAILABLE",
+        message || `${response.status} ${response.statusText}`,
+      );
+    }
     return response;
   }
   return {
