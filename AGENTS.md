@@ -21,6 +21,8 @@
 
 ## Serena MCP usage
 
+完整的 Serena CLI、MCP、REPL 與 LSP 操作速查見 [`.serena/README.md`](.serena/README.md)；開始 Serena 工作前先以該文件與當前 CLI `--help` 核對可用指令。
+
 - Serena MCP 可用時，涉及 TypeScript/JavaScript 符號、跨檔案引用、宣告、實作、診斷、語義重構、safe delete、LSP 或 project memory 的任務，主動優先使用 Serena。
 - 每個新的 Serena MCP session 先呼叫一次 `initial_instructions`；不要重複把完整 Serena manual 帶入上下文。
 - 需要了解專案結構、符號關係或跨 package dependency 時，先使用 Serena 的 `serena_repl`、symbol overview、find symbol、find references、diagnostics 或 LSP 操作，再決定是否需要讀取完整檔案。

@@ -4,6 +4,8 @@ This directory owns Serena's project-local configuration and durable memory grap
 
 ## Serena MCP usage
 
+- 操作速查與 LSP／REPL 範例見 [Serena README](README.md)；該文件是使用入口，當前 CLI `--help` 與實際 session 能力優先於速查表中的版本化示例。
+
 - This project uses Serena v2's **REPL** interface as the primary semantic interface. API exposure is configured by `project.yml` together with the global configuration, client context, and active modes; classic tool inclusion lists do not control REPL APIs.
 - Normal operation enables all APIs available with the LSP backend: `cfg`, `fs`, `edit`, `mem`, `shell`, `ext`, and `lsp`, including optional methods. JetBrains APIs require the separate JetBrains backend and are not available in this LSP session. Prefer Serena for semantic navigation, symbol edits, safe deletion, and composed ignore-aware reads; Codex-native operations remain available for ordinary file, shell, Git, test, and validation work.
 - `initial_instructions` is the session manual. If it is exposed, call it once at session start; do not repeatedly inject its full output into context.
