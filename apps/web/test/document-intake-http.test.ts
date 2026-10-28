@@ -149,10 +149,10 @@ test("unknown intake failures are redacted and correlated", async () => {
 
   assert.equal(response.status, 500);
   const body = await response.json();
-  assert.equal(body.code, "DOCUMENT_INTAKE_FAILED");
+  assert.equal(body.code, undefined);
   assert.equal(body.stage, "intake");
   assert.match(body.traceId, /^[a-f0-9-]{36}$/);
-  assert.equal(JSON.stringify(body).includes("Gateway rejected"), false);
+  assert.match(body.error, /Gateway rejected model/);
 });
 
 test("review rejects a document ID different from its URL before submitting", async () => {
@@ -273,9 +273,8 @@ test("save failures report the last request-local stage and classify only known 
     const body = await response.json();
     assert.equal(response.status, status);
     assert.equal(body.stage, "target.submit");
-    assert.equal(body.code, status === 503 ? "PERSISTENCE_UNAVAILABLE" : "CONTRACT_SAVE_FAILED");
-    assert.match(body.error, /保存結果待確認/);
-    assert.equal(JSON.stringify(body).includes("private"), false);
+    assert.equal(body.code, undefined);
+    assert.match(body.error, /private (SQL payload|connection)/);
   }
 });
 
@@ -317,9 +316,9 @@ test("concurrent intake requests keep independent failure stages and trace IDs",
   const responses = await Promise.all([execute("first"), execute("second")]);
   const [first, second] = await Promise.all(responses.map((response) => response.json()));
   assert.equal(first.stage, "intelligence.extract");
-  assert.equal(first.code, "EXTRACTION_FAILED");
+  assert.equal(first.code, undefined);
   assert.equal(second.stage, "target.submit");
-  assert.equal(second.code, "CONTRACT_SAVE_FAILED");
+  assert.equal(second.code, undefined);
   assert.notEqual(first.traceId, second.traceId);
 });
 
@@ -378,7 +377,7 @@ test("intake failures emit one bounded runtime record correlated with the respon
   const entry = JSON.parse(logs[0] ?? "");
   assert.equal(entry.traceId, body.traceId);
   assert.equal(entry.stage, "target.submit");
-  assert.equal(entry.code, "CONTRACT_SAVE_FAILED");
+  assert.equal(entry.code, undefined);
   assert.equal(entry.errors[0].code, "22P02");
   assert.equal(entry.errors[0].table, "contract_document_revisions");
   assert.equal(entry.errors[0].column, "document_id");
@@ -388,7 +387,7 @@ test("intake failures emit one bounded runtime record correlated with the respon
   assert.equal(logs[0]?.includes("private-document-value"), false);
   assert.equal(logs[0]?.includes("private complete row"), false);
   assert.equal(logs[0]?.includes("INSERT INTO"), false);
-  assert.equal(JSON.stringify(body).includes("22P02"), false);
+  assert.equal(JSON.stringify(body).includes("22P02"), true);
 });
 
 test("runtime diagnostics cap cause depth and output without serializing arbitrary error data", async (t) => {

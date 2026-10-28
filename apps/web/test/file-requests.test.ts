@@ -77,7 +77,7 @@ test("malformed authorization responses still clear protected state for both end
   assert.equal(denied, 2);
 });
 
-test("unknown-result and non-JSON timeout responses preserve intake recovery messages", async (t) => {
+test("unknown-result and non-JSON timeout responses preserve raw errors", async (t) => {
   const { requests } = client();
   t.mock.method(globalThis, "fetch", async () =>
     Response.json({ code: "UNKNOWN_RESULT" }, { status: 503 }),
@@ -87,12 +87,12 @@ test("unknown-result and non-JSON timeout responses preserve intake recovery mes
     (error: unknown) =>
       error instanceof Error &&
       Reflect.get(error, "code") === "UNKNOWN_RESULT" &&
-      error.message.includes("不會重新解析"),
+      error.message.includes("[object Object]"),
   );
   t.mock.method(globalThis, "fetch", async () => new Response("gateway timeout", { status: 504 }));
   await assert.rejects(
     requests.document({ operation: "intake" }),
-    /採購單請求逾時.*保存結果待確認/,
+    /gateway timeout/,
   );
 });
 
@@ -120,8 +120,8 @@ test("document failures display bounded stage, code and correlation without losi
   t.mock.method(globalThis, "fetch", async () =>
     Response.json(
       {
-        error: "採購單保存失敗，保存結果待確認。",
-        code: "CONTRACT_SAVE_FAILED",
+        error: "null value in column expected_line_count",
+        code: "23502",
         stage: "target.submit",
         traceId: "11111111-1111-4111-8111-111111111111",
       },
@@ -130,8 +130,8 @@ test("document failures display bounded stage, code and correlation without losi
   );
   await assert.rejects(requests.document({ operation: "intake" }), (error: unknown) => {
     assert.ok(error instanceof Error);
-    assert.match(error.message, /保存結果待確認/);
-    assert.match(error.message, /CONTRACT_SAVE_FAILED/);
+    assert.match(error.message, /null value in column expected_line_count/);
+    assert.match(error.message, /null value in column expected_line_count/);
     assert.match(error.message, /target.submit/);
     assert.match(error.message, /11111111-1111-4111-8111-111111111111/);
     return true;

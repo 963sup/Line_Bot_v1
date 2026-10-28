@@ -84,14 +84,16 @@ function requiredInteger(value: unknown, field: string) {
   return value;
 }
 
-function diagnostic(error: unknown): Record<string, string> | undefined {
+function diagnostic(error: unknown, seen = new Set<object>(), depth = 0): Record<string, string> | undefined {
   if (!error || typeof error !== "object") return undefined;
+  if (seen.has(error) || depth > 3) return undefined;
+  seen.add(error);
   const read = (key: string) => {
     const value = Reflect.get(error, key);
     return typeof value === "string" && value.length > 0 ? value : undefined;
   };
   const cause = Reflect.get(error, "cause");
-  const nested = cause ? diagnostic(cause) : undefined;
+  const nested = cause ? diagnostic(cause, seen, depth + 1) : undefined;
   const code = read("code");
   const schema = read("schema");
   const table = read("table");
@@ -174,8 +176,7 @@ function failure(
     error instanceof IntakeError ||
     error instanceof IntelligenceError
       ? error.code
-      : connectionFailure && persistenceStage
-        : undefined;
+      : undefined;
   const message = error instanceof Error ? error.message : String(error);
   logServerError(error, {
     service: "repository-document-intake-api",
