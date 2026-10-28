@@ -28,7 +28,7 @@ User state 是 current human qualification authority。LINE `destination` 是 In
 
 ## Adjacent owners
 
-- [Account target rules](../change/decisions/account-identity-design.md)
+- Account identity rules are defined by this owner contract, source and tests.
 - [DailyCheckIn rules](daily-check-in.md)
 - [Asset](asset.md) · [Wallet](wallet.md) · [Ledger](ledger.md)
 - [External identity mapping](../reference/data/identity-mapping.md)

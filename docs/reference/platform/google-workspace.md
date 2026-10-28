@@ -4,6 +4,6 @@ Google Workspace provider content is owned by [`packages/google-workspace`](../.
 
 - OAuth token handling and provider adapters：[Google Workspace package](../../../packages/google-workspace/README.md)。
 - Product identity, authorization and resource ownership：[Google Workspace owner](../../owners/google-workspace.md) and the relevant domain owner.
-- Open OAuth／recovery gaps：[Google Workspace gaps](../../change/gaps/google-workspace.md)。
+- OAuth／recovery readiness：以 package tests、owner contract 與實際 provider readback 為準。
 
 Provider capability does not imply an enabled product flow. A first write must use a stable local owner／scope／version, explicit confirmation and an operation contract that can represent an unknown external result.

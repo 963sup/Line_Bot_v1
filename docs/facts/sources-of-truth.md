@@ -16,9 +16,9 @@ Conflicting answers use the authority below; do not load more background first.
 | Scoped Agent constraints | root + nearest `AGENTS.md` |
 | Owner rule not inferable from machine truth | `docs/owners/<owner>.md` |
 | FPT provenance / integrity | `architecture/fpt-source.json` |
-| Target/proposal/migration/gap/risk | `docs/change/` |
+| Current unresolved work | Owning package, issue or PR |
 | Deployment/provider/device reality | dated readback |
-| Historical acceptance/recovery evidence | `docs/change/evidence/` |
+| Validation / provider evidence | CI, provider readback and deployment artifacts |
 
 Markdown explains meaning/constraints/decisions/operations; machine facts are not maintained twice. GitHub-derived domain semantics apply directly from the vendored FPT truth whether or not a capability is implemented locally; `registry.json#domain` may add Line_Bot_v1 ownership/invariants/implementation state but cannot redefine or gate that FPT truth.
 

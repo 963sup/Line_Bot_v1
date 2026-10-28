@@ -22,7 +22,7 @@ LINE Rich Menu 另有外部費用申請 Google Form 入口。開啟／提交外�
 
 - [Rich Menu](line-integration.md)
 - [Security](../rules/system-invariants.md)
-- [External workflow gaps](../change/gaps/external-workflows.md)
+- External workflow readiness follows the owning integration and provider readback.
 
 
 ## Receipt intake from LINE

@@ -92,4 +92,4 @@ Link/unlink不轉移historicalowner、不恢復suspended帳号，不以新provid
 
 HTTPprojection只回usecase必要ID/summary，admin可看帳號不表示能看rawsubject/token。Concurrentregister/link、sameprovidercollision、wrongchannel/issuer、sameemaildifferentperson、expiredcandidate、revokedqualification、same-requestreadback與LINE-only都需tests。
 
-[Target data model](../../change/proposals/data-target.md)、[Schema foundation](../../change/proposals/data-target.md)、[Authorization](../security/permissions.md)、[LINE verification](../line/identity.md) 各保留自己的authority。Current source 的 durable provider mapping 只服務實際 human User identity consumer；remote catalog、deployment 與 device evidence 仍需各自 readback，不能只靠本文件宣稱外部環境已切換。
+Data model、schema foundation、authorization 與 LINE verification 各由自己的 current owner source 擁有。Current source 的 durable provider mapping 只服務實際 human User identity consumer；remote catalog、deployment 與 device evidence 仍需各自 readback，不能只靠本文件宣稱外部環境已切換。

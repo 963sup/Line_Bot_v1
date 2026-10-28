@@ -31,4 +31,4 @@ Required checks include unchanged per-holder/source totals and denomination, mis
 - [Attendance](../../owners/attendance.md): clock reward policy.
 - [Current identity data](../data/boundaries.md)
 - [Transactions](../data/transactions.md)
-- [Migration gates](../../change/migrations/enterprise-organization-workforce-payroll.md)
+- Migration gates follow the current Workforce, Attendance and Payroll owner contracts and schema checks.

@@ -7,20 +7,7 @@ import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const owners = ["file", "intelligence", "contract", "content", "wbs"];
-const retiredNames = [
-  "platform-integration-root-migration-step-start.md",
-  ...Array.from(
-    { length: 8 },
-    (_, index) => `platform-integration-root-migration-step-${index + 1}.md`,
-  ),
-  "platform-integration-root-migration-step-end.md",
-  ...Array.from(
-    { length: 7 },
-    (_, index) => `document-owner-skeleton-reduction-step-${index + 1}.md`,
-  ),
-];
 const retiredPaths = [
-  ...retiredNames.map((name) => `docs/change/proposals/${name}`),
   "architecture/AGENTS.md",
   "architecture/README.md",
   ...["semantic-model", "implementation-topology", "data-topology"].map(
@@ -37,16 +24,6 @@ test("retired proposals and aggregate architecture sources stay removed", () => 
     restored,
     [],
     "Retired sources were restored; use registered architecture fragments.",
-  );
-  const obsoleteSeries = readdirSync(resolve(root, "docs/change/proposals")).filter((name) =>
-    /^(?:platform-integration-root-migration-step-(?:start|end|\d+)|document-owner-skeleton-reduction-step-\d+)\.md$/.test(
-      name,
-    ),
-  );
-  assert.deepEqual(
-    obsoleteSeries,
-    [],
-    "Do not recreate the retired proposal series under another step number.",
   );
 });
 

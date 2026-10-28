@@ -56,7 +56,7 @@ OrganizationPolicy 是本 Organization scope 的 versioned governance constraint
 
 Private operation 由 trusted Principal 解析，按 owner authority、current participation 與 feature capability 重驗。Repository/Project/Team 建立依 Organization viewer capability；目前有效的 Owner 對 Organization-owned 資源另有管理權，不以建立資格推得。Mutation 使用 requestId/fingerprint/expectedVersion/reason 與 audit/receipt；same request 只可 exact replay，撤權後不靠舊 receipt 恢復 access。Membership source mutation、effective membership refresh、role version binding、owner protection 與 invitation cleanup 必須維持同一 transaction boundary。
 
-[Persistence](../../change/proposals/data-target.md) 與 [Audit](../../change/proposals/security-target.md) 擁有 transaction/locking/history 要求；[Public contracts](../../change/proposals/domain-target.md) 限定 consumer 依賴。
+Persistence、Audit transaction/locking/history 與 public consumer contracts 由各 owner package 的 current contracts 定義。
 
 ## Acceptance criteria
 

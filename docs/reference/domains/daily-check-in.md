@@ -26,5 +26,4 @@ Browser cases 使用合成 LINE／API，驗證 server 結果呈現、重整不�
 
 - [Ledger](../../owners/ledger.md)：posting/idempotency。
 - [Account current rules](../../owners/account.md)：User qualification。
-- [Account identity design](../../change/decisions/account-identity-design.md)：未完成 Account/Bot target。
-- [Convergence plan](../../change/migrations/enterprise-organization-workforce-payroll.md)：階段與未完成條件。
+- Account/Bot identity 與跨 owner convergence 以 Account、Organization、Workforce 與 Attendance current contracts 為準。

@@ -26,7 +26,7 @@ PR 只執行 `preview` 與測試。合併到 `main` 後，`rich-menu-release.yml
 
 每次 reconcile 先產生 immutable manifest summary，包含 revision、page、asset hash、definition hash、fingerprint 與 action；不包含 token。未變更的頁面不建立新 Rich Menu。新發布先切換穩定 alias，舊 Rich Menu ID 保留供 reconciliation 與後續人工清理，不在同一個 publish transaction 盲目刪除。LINE remote definition、alias、default readback 才是 provider evidence；這不等於手機顯示或實機驗收。
 
-圖片修改後，PR 會重新執行 `preview`；合併到 `main` 後 release workflow 執行 `reconcile`，只重新 upload fingerprint 有變化的頁面並讀回 remote definition。具日期的 remote publication、手機顯示與實機限制由 [Acceptance evidence](../../change/evidence/acceptance-evidence.md) 保存，不寫回 current contract。
+圖片修改後，PR 執行 `preview`；合併到 `main` 後依現行 provider command 執行 `reconcile`，只重新 upload fingerprint 有變化的頁面並讀回 remote definition。Remote publication、手機顯示與實機限制分開驗證，不寫回 current contract。
 
 完整發布／回復契約見 [Release process](../operations/release.md)。
 ## 安全與導覽

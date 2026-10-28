@@ -75,4 +75,4 @@ Database recovery不自動恢復 LINE Rich Menu、webhook、scheduler、Google/S
 
 ## Validation
 
-Recovery只有在 restore／forward-fix後重新驗證 authorization、isolation、replay、version、停權／撤權與必要 end-to-end flow後才算完成。具日期 evidence歸 [Acceptance](../../change/evidence/README.md)。
+Recovery只有在 restore／forward-fix後重新驗證 authorization、isolation、replay、version、停權／撤權與必要 end-to-end flow後才算完成；證據保留於對應 provider／owner 的執行結果。

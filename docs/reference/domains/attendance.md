@@ -89,7 +89,7 @@ LINE alias、Messaging API retry 技術細節由 LINE integration / operations o
 
 ## Legal boundary
 
-目前保存真實起訖與分鐘級資料，但尚未具備完整排班、休息、例假、加班核定、可稽核更正與 production retention/recovery 證據，因此不能宣稱為完整法定工時／算薪系統。Workforce 方向與缺口見 [Workforce gaps](../../change/gaps/workforce.md)。
+目前保存真實起訖與分鐘級資料，但尚未具備完整排班、休息、例假、加班核定、可稽核更正與 production retention/recovery 證據，因此不能宣稱為完整法定工時／算薪系統。Workforce scope 以 Workforce、Attendance 與 Payroll current contracts 為準。
 
 ## Retained pre-cutover data
 

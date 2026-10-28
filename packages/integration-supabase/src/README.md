@@ -13,7 +13,7 @@
 | Supabase provider / remote reconciliation rules | 本文件的 [Canonical Supabase rules](#canonical-supabase-rules)；跨 package 分類見 [Supabase platform](../../../docs/reference/platform/supabase.md) |
 | Publication ordering | [Release](../../../docs/reference/operations/release.md) |
 | Backup / restore / recovery | [Recovery](../../../docs/reference/operations/recovery.md) |
-| Historical schema extraction | [History extraction](../../../docs/change/evidence/schema-history-extraction.md) |
+| Schema history | 不保留歷史 migration；current SQL 與 schema checks 是唯一 schema source |
 | Object / relationship navigation | [Schema tree](schemas/README.md) |
 
 `packages/integration-supabase/src/migrations/` 不參與 current schema contract 或 remote deployment；不要把 migration history 當成 current schema authority。

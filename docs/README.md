@@ -21,12 +21,12 @@ Task
 → one owner contract
 → one cross-cutting rule when needed
 → exact reference detail only when the decision needs it
-→ change/history evidence only for change-over-time questions
+→ current owner/source only; use provider or CI evidence for verification
 ```
 
-Quick routing: [owners](owners/README.md) · [system facts](facts/system.md) · [sources of truth](facts/sources-of-truth.md) · [glossary](facts/glossary.md) · [reference](reference/README.md) · [change/history](change/README.md).
+Quick routing: [owners](owners/README.md) · [system facts](facts/system.md) · [sources of truth](facts/sources-of-truth.md) · [glossary](facts/glossary.md) · [reference](reference/README.md).
 
-Do not preload `reference/` or `change/`. Machine current facts remain authoritative in `architecture/*.json`, source/tests, package exports and `packages/integration-supabase/src/schemas/`.
+Do not preload `reference/`. Machine current facts remain authoritative in `architecture/*.json`, source/tests, package exports and `packages/integration-supabase/src/schemas/`.
 
 ## Canonical ownership rule
 

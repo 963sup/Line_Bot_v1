@@ -4,7 +4,7 @@
 
 `packages/integration-supabase/src/schemas/` 是 current desired PostgreSQL structure 的唯一 Source of Truth。Schema modules 以數字前綴表達 lexical dependency order；table、constraint、index、RLS、grant、function、trigger 與 role 都由負責的 declarative SQL 定義。
 
-`packages/integration-supabase/src/migrations/` 不屬於 current contract，也不是 remote deployment source。歷史 SQL 的追溯與恢復見 [History extraction](../../change/evidence/schema-history-extraction.md)；current code、fixtures、`schema:check` 與 remote reconciliation 都不 replay、repair 或新增 migration history。
+`packages/integration-supabase/src/migrations/` 不屬於 current contract，也不是 remote deployment source；current code、fixtures、`schema:check` 與 remote reconciliation 都不 replay、repair 或新增 migration history。
 
 ## Schema change
 
@@ -59,4 +59,4 @@ Current repository schema verification只證明 declarative source、clean build
 - Supabase platform：[Supabase](../platform/supabase.md)
 - Release：[Release](../operations/release.md)
 - Recovery：[Recovery](../operations/recovery.md)
-- Acceptance evidence：[Acceptance](../../change/evidence/README.md)
+- Acceptance evidence：由 CI、provider readback 與 deployment evidence 分別保存。

@@ -34,5 +34,4 @@ Tests must retain existing amount/denomination totals, zero-entry versus missing
 - [Asset](../../owners/asset.md): value definition and denomination.
 - [Ledger](../../owners/ledger.md): immutable value facts and posting.
 - [Current human lifecycle](../../owners/account.md)
-- [Account identity design](../../change/decisions/account-identity-design.md)
-- [Migration gates](../../change/migrations/enterprise-organization-workforce-payroll.md)
+- Account identity and migration prerequisites follow the Account, Namespace and Numbering owner contracts.

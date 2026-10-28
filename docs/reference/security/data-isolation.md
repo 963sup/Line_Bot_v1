@@ -15,7 +15,7 @@ Data Boundary 是資料存取與隔離邊界，不等於 Bounded Context 或 Cod
 - Announcement active-human audience + publish permission。
 - Expense owner / stored scope。
 
-Enterprise Team 與 Organization Team 是不同 scope。Enterprise Team assignment 只可指向同 Enterprise 的 active attached Organization，且只建立 `enterprise-team` Organization membership source；不因此取得 Organization Team identity、TeamMaintainer 或 OrganizationOwner。Employment → Attendance/Payroll 的工作 scope 尚未成為 current enforcement；見 [Target scope](../../change/proposals/security-target.md)。
+Enterprise Team 與 Organization Team 是不同 scope。Enterprise Team assignment 只可指向同 Enterprise 的 active attached Organization，且只建立 `enterprise-team` Organization membership source；不因此取得 Organization Team identity、TeamMaintainer 或 OrganizationOwner。Employment → Attendance/Payroll 的工作 scope 仍須由對應 owner contract 明確定義，不能由本文件推導。
 
 ## Rules
 
@@ -53,5 +53,5 @@ Private tables 由受限 server/runtime role 存取；browser role 不因 API �
 - Authentication：`../020-authentication/`
 - Feature permissions：[Feature permissions](permissions.md)
 - Data model：[Core business data](../data/boundaries.md)
-- Target hierarchy isolation：[Target scope](../../change/proposals/security-target.md)
+- Target hierarchy isolation：由 Enterprise、Organization、Team 與 Workforce owner contracts 共同定義。
 - Module-specific authorization：[Domain owners](../../owners/README.md)
