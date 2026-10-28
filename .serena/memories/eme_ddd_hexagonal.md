@@ -14,6 +14,52 @@
 
 DDD Strategic Design 回答「系統應該有哪些業務邊界，以及彼此如何合作？」；DDD Tactical Design 回答「每個邊界內的模型、aggregate、entity、value object、domain service、domain event 與 repository contract 如何表達？」Hexagonal Architecture 回答「如何隔離業務邏輯與資料庫、框架及外部系統？」
 
+## Strategic design sequence
+
+1. Domain Analysis：理解業務問題、核心能力、業務規則與 Domain Vision Statement。
+2. Domain Decomposition：識別 business capabilities、Subdomains 與 Core／Supporting／Generic 分類。
+3. Model Boundaries：以 Ubiquitous Language、Bounded Context、Context Ownership 與模型所有權界定範圍。
+4. Context Integration：建立 Context Map，辨識 upstream/downstream、團隊合作關係與整合模式。
+5. Organizational Alignment & Evolution：對齊 Team Topologies、認知負荷、責任分配，持續調整 Context 邊界與系統演進。
+
+Continuous Integration 在模型層表示持續整合模型與程式碼，讓語言、邊界與 executable contract 保持一致；它不是無條件共享所有模型。
+
+## Context Map patterns
+
+| Pattern | Use when | Repository interpretation |
+| --- | --- | --- |
+| Shared Kernel | 兩個 context 必須共享一小段穩定模型，且可共同治理變更 | 只共享明確 public contract／value vocabulary；先證明共同 ownership 與變更協議。 |
+| Customer–Supplier | 下游需求影響上游供應能力 | 明確記錄 consumer contract 與 upstream responsibility；下游不能直接取得上游 private source。 |
+| Conformist | 下游成本低於自行轉譯，選擇遵循上游模型 | 只在 provider／外部標準不可控且污染風險可接受時使用。 |
+| Anti-Corruption Layer | 外部模型不能污染內部語言、規則或資料邊界 | 使用 adapter／translator／ACL 將 provider DTO、錯誤與 identity 轉成 owner contract。 |
+| Separate Ways | 整合成本高於價值，兩個 context 可獨立演進 | 不建立 facade、shared table 或無必要同步；各自保留 owner truth。 |
+| Open Host Service | 多個 consumer 需要穩定、標準化的整合介面 | 以 package exports、HTTP contract 或明確 provider protocol 提供受控入口。 |
+| Published Language | 跨 context 需要公開、穩定、可解析的交換語言 | 使用 versioned DTO、event schema 或 machine-readable contract，不傳遞 domain entity。 |
+
+## Large-scale structure and core distillation
+
+- Model Integrity：維持模型、語言、程式碼、schema、authorization 與 team ownership 的一致性。
+- Distillation：透過 Domain Vision Statement、Highlighted Core、Segregated Core 與 Abstract Core，讓核心模型從 supporting／generic mechanism 中顯明並保持可投資性。
+- Large-Scale Structure：以 Responsibility Layers、Knowledge Level、Cohesive Mechanisms 與 Pluggable Component Framework 組織大型模型；只有在存在真實 responsibility boundary 時採用，不為形式建立層。
+- Core Domain：聚焦最具競爭優勢的能力；Generic Subdomains 可採用成熟技術，但不能因此移交產品 authorization 或 business truth。
+- Evolving Order：架構持續演進；拆分、合併或調整 context 必須由語言、lifecycle、team ownership、consistency、authorization 或 dependency evidence 驅動。
+- System Metaphor：只有在能穩定改善共同語言時使用；隱喻不能取代 executable contract 或明確 domain rule。
+
+## Discovery and organizational methods
+
+| Method | Purpose |
+| --- | --- |
+| Knowledge Crunching / Domain Expert Collaboration | 與領域專家反覆探索、提煉語言、規則與模型。 |
+| EventStorming | 由 business events 探索流程、規則、聚合候選與邊界。 |
+| Domain Storytelling | 以角色、活動與領域概念描述實際業務故事。 |
+| Example Mapping | 用具體 examples、rules、questions 釐清可驗證行為。 |
+| Business Capability Mapping | 分析企業能力與投資優先級。 |
+| Subdomain Classification | 區分 Core、Supporting、Generic。 |
+| Context Boundary Discovery | 從語言、lifecycle、authority、consistency、authorization 與 team responsibility 找出邊界。 |
+| Context Ownership | 明確定義誰管理模型、變更 contract 與承擔相容性。 |
+| Team Topologies | 將團隊結構、互動模式與認知負荷對齊系統邊界。 |
+| Wardley Mapping | 分析能力演進階段與策略投資方向；不直接取代 repository architecture authority。 |
+
 ## Strategic-to-code mapping
 
 | Strategic concept | Repository location / evidence |
