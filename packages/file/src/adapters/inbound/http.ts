@@ -84,7 +84,7 @@ export function createFileHttpAdapter(deps: FileHttpContext & Pick<FileHttpRunti
       deps.observeError?.(error, status);
       return jsonResponse(
         {
-          error: known && error instanceof Error ? error.message : "File operation failed.",
+          error: known && error instanceof Error ? error.message : String(error),
           ...(error instanceof FileError ? { code: error.code } : {}),
         },
         status,

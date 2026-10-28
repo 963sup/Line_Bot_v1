@@ -102,7 +102,7 @@ export default function PermissionsPanel({
     } catch (e) {
       if (ticket === generation.current) {
         setData(null);
-        setError(e instanceof Error ? e.message : "讀取失敗。");
+        setError(e instanceof Error ? e.message : String(e));
       }
     } finally {
       if (ticket === generation.current) setBusy(false);
@@ -148,7 +148,7 @@ export default function PermissionsPanel({
           setPending(null);
         }
         setData(null);
-        setError(e instanceof Error ? e.message : "結果尚未確認，請重試原操作。");
+        setError(e instanceof Error ? e.message : String(e));
       }
     } finally {
       locked.current = false;

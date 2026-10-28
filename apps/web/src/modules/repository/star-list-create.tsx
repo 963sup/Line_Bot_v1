@@ -48,7 +48,7 @@ export default function RepositoryStarListCreate({ liffId }: { liffId: string })
         setDescription(stored.description);
       }
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "List 建立頁載入失敗。");
+      setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       setBusy(false);
     }
@@ -107,7 +107,7 @@ export default function RepositoryStarListCreate({ liffId }: { liffId: string })
       }
       window.location.assign(repositoryStarListPath(payload.id));
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "List 建立結果尚待確認，請重試原操作。");
+      setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       setBusy(false);
     }

@@ -187,7 +187,7 @@ export default function FilesPanel({
       );
       if (ticket !== epoch.current) return;
       if (response.requestId !== next.command.requestId)
-        throw new Error("File receipt 尚未確認，請使用原命令重試。");
+        throw new Error(JSON.stringify(response));
       setPending(null);
       setSourceFile(null);
       if (fileInput.current) fileInput.current.value = "";

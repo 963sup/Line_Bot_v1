@@ -116,7 +116,7 @@ export default function RepositoryStarListDetail({
       );
     } catch (cause) {
       if (ticket === generation.current) {
-        setError(cause instanceof Error ? cause.message : "List 讀取失敗。");
+        setError(cause instanceof Error ? cause.message : String(cause));
       }
     } finally {
       if (ticket === generation.current) setBusy(false);
@@ -182,7 +182,7 @@ export default function RepositoryStarListDetail({
       await read(current);
       setNotice("List 已更新。");
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "List 操作結果尚待確認，請重試原操作。");
+      setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       setBusy(false);
     }

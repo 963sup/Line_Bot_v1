@@ -36,7 +36,7 @@ async function readJson(path: string, token: string, signal: AbortSignal): Promi
   });
   const value: unknown = await response.json();
   signal.throwIfAborted();
-  if (!response.ok) throw new Error("private profile read failed");
+  if (!response.ok) throw new Error(JSON.stringify(value));
   return value;
 }
 
@@ -118,7 +118,7 @@ export default function ProfileOverview({
     );
     void readJson("/api/profile", token, controller.signal)
       .then((value) => {
-        if (!isRecord(value)) throw new Error("private profile read failed");
+        if (!isRecord(value)) throw new Error(JSON.stringify(value));
         const profile = value.profile == null ? null : readProfile(value.profile);
         if (!controller.signal.aborted) setProfile({ state: "ready", value: profile });
       })

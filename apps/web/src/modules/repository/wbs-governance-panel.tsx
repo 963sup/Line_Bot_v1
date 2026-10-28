@@ -151,9 +151,9 @@ export default function WbsGovernancePanel({
           [401, 403, 404].includes(Number(cause.status))
         ) {
           remember(null);
-          onAccessLost(cause instanceof Error ? cause.message : "WBS 存取已失效。");
+          onAccessLost(cause instanceof Error ? cause.message : String(cause));
         }
-        setError(cause instanceof Error ? cause.message : "WBS 治理資料讀取失敗。");
+        setError(cause instanceof Error ? cause.message : String(cause));
       } finally {
         if (ticket === generation.current) setBusy(false);
       }
@@ -229,7 +229,7 @@ export default function WbsGovernancePanel({
           [401, 403, 404].includes(Number(cause.status))
         ) {
           remember(null);
-          onAccessLost(cause instanceof Error ? cause.message : "WBS 存取已失效。");
+          onAccessLost(cause instanceof Error ? cause.message : String(cause));
         }
         throw cause;
       }
@@ -272,10 +272,10 @@ export default function WbsGovernancePanel({
       if (status >= 400 && status < 500) remember(null);
       if ([401, 403, 404].includes(status)) {
         setView(null);
-        onAccessLost(cause instanceof Error ? cause.message : "WBS 存取已失效。");
+        onAccessLost(cause instanceof Error ? cause.message : String(cause));
         return;
       }
-      setError(cause instanceof Error ? cause.message : "結果未知，請重試原操作。");
+      setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       locked.current = false;
       if (ticket === generation.current) setBusy(false);

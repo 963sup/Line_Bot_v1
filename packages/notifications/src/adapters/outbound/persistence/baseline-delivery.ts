@@ -146,7 +146,7 @@ export class PostgresBaselineDeliveryStore implements BaselineDeliveryStore {
           [key],
         )
       ).rows[0];
-      if (!row) throw new Error("Notification delivery unavailable.");
+      if (!row) throw new Error(`Notification delivery row is missing for key ${key}.`);
       const d = delivery(row);
       if (prior.cancelled) return { result: result(d), claim: null };
       if (d.status === "sent" || d.status === "failed" || d.next === null)

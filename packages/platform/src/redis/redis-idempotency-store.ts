@@ -50,7 +50,7 @@ export class RedisIdempotencyStore {
       [token, String(IDEMPOTENCY_TTL_SECONDS)],
     );
     if (!Array.isArray(reply) || typeof reply[0] !== "string") {
-      throw new Error("Redis temporarily unavailable.");
+      throw new Error(JSON.stringify(reply));
     }
     if (reply[0] === "claimed" && reply[1] === token) return { state: "claimed", token };
     if (reply[0] === "pending") return { state: "pending" };
@@ -61,7 +61,7 @@ export class RedisIdempotencyStore {
     ) {
       return { state: "completed", status: Number(reply[1]) };
     }
-    throw new Error("Redis temporarily unavailable.");
+    throw new Error(JSON.stringify(reply));
   }
 
   async complete(scope: string, eventId: string, token: string, status: number): Promise<boolean> {
@@ -75,7 +75,7 @@ export class RedisIdempotencyStore {
     );
     if (reply === 1 || reply === "1") return true;
     if (reply === 0 || reply === "0") return false;
-    throw new Error("Redis temporarily unavailable.");
+    throw new Error(JSON.stringify(reply));
   }
 
   close() {

@@ -151,7 +151,7 @@ export default function RepositoryAccess({
       if (ticket !== generation.current) return;
       setData(null);
       setPending(null);
-      setError(cause instanceof Error ? cause.message : "Repository access 讀取失敗。");
+      setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       if (ticket === generation.current) setBusy(false);
     }
@@ -194,7 +194,7 @@ export default function RepositoryAccess({
       await load();
     } catch (cause) {
       if (ticket === generation.current) {
-        setError(cause instanceof Error ? cause.message : "結果尚未確認，請重試原 access 操作。");
+        setError(cause instanceof Error ? cause.message : String(cause));
       }
     } finally {
       if (ticket === generation.current) setBusy(false);

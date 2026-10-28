@@ -79,7 +79,7 @@ export default function OrganizationPanel({ liffId }: { liffId: string }) {
       setList(parseOrganizationList(payload));
       setDetail(null);
     } catch (cause) {
-      if (ticket === epoch.current) setError(cause instanceof Error ? cause.message : "讀取失敗。");
+      if (ticket === epoch.current) setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       if (ticket === epoch.current) setBusy(false);
     }
@@ -110,7 +110,7 @@ export default function OrganizationPanel({ liffId }: { liffId: string }) {
       if (ticket === epoch.current) {
         const status = errorStatus(cause);
         if (status && status < 500 && status !== 429) setPending(null);
-        setError(cause instanceof Error ? cause.message : "操作結果尚待確認，請重試原操作。");
+        setError(cause instanceof Error ? cause.message : String(cause));
       }
     } finally {
       locked.current = false;

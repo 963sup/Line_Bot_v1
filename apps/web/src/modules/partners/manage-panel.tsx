@@ -76,7 +76,7 @@ export default function PartnerManagement({ liffId }: { liffId: string }) {
       setData(value);
     } catch (failure) {
       if (ticket === sequence.current)
-        setError(failure instanceof Error ? failure.message : "查詢失敗，請重試。");
+        setError(failure instanceof Error ? failure.message : String(failure));
     } finally {
       if (ticket === sequence.current) setBusy(false);
     }
@@ -131,7 +131,7 @@ export default function PartnerManagement({ liffId }: { liffId: string }) {
             setDraft(null);
           }
         }
-        throw new Error(result.error ?? "保存結果尚未確認，請重試原操作。");
+        throw new Error(typeof result.error === "string" ? result.error : JSON.stringify(result));
       }
       if (
         result.id !== command.id ||
@@ -147,7 +147,7 @@ export default function PartnerManagement({ liffId }: { liffId: string }) {
       await load();
     } catch (failure) {
       if (ticket === sequence.current) {
-        setError(failure instanceof Error ? failure.message : "保存失敗，請重試。");
+        setError(failure instanceof Error ? failure.message : String(failure));
         if (!submitted && validated) {
           setData(null);
           setDraft(null);

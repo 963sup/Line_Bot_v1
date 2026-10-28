@@ -56,7 +56,7 @@ const supplementStatus = {
   REJECTED: "已拒絕",
 } as const;
 
-const message = (e: unknown) => (e instanceof Error ? e.message : "出勤結果尚未確認，請稍後再試。");
+const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 const pendingReviewStorageKey = (viewerId: string) =>
   `attendance:supplement-reviews:v1:${encodeURIComponent(viewerId)}`;
 
@@ -274,7 +274,7 @@ export default function AttendancePanel({ liffId }: { liffId: string }) {
       if (response.status < 500) setPending(null);
       if (response.status === 401 || response.status === 403) clearPrivate();
       if (response.status === 409) setData(null);
-      throw new Error(value.error || "結果尚未確認，請重送同一筆。");
+      throw new Error(typeof value.error === "string" ? value.error : JSON.stringify(value));
     }
     const result = parseAttendanceResult(value);
     const latest = result.replayed ? await read(token) : result;
@@ -336,7 +336,7 @@ export default function AttendancePanel({ liffId }: { liffId: string }) {
       if (!response.ok) {
         if (response.status < 500) setSupplementPending(null);
         if (response.status === 401) clearPrivate();
-        throw new Error(value.error || "補登結果尚未確認，請重送同一筆申請。");
+        throw new Error(typeof value.error === "string" ? value.error : JSON.stringify(value));
       }
       parseAttendanceSupplementReceipt(value);
       setSupplementPending(null);
@@ -434,7 +434,7 @@ export default function AttendancePanel({ liffId }: { liffId: string }) {
           });
         }
         if (response.status === 401) clearPrivate();
-        throw new Error(value.error || "審核結果尚未確認，請重新整理或重送同一筆。");
+        throw new Error(typeof value.error === "string" ? value.error : JSON.stringify(value));
       }
       parseAttendanceSupplementReviewReceipt(value);
       writePendingReview(viewerId, command, true);

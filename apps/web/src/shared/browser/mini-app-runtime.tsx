@@ -33,7 +33,7 @@ export default function MiniAppRuntime({
       }
       await ready.current();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "登入載入失敗。");
+      setError(cause instanceof Error ? cause.message : String(cause));
       wait.current();
     }
   }, [liffId]);

@@ -86,7 +86,7 @@ test("member management HTTP verifies LINE, rejects forged origin/identity and r
     });
     const fail = await GET(request());
     assert.equal(fail.status, 503);
-    assert.doesNotMatch(await fail.text(), /private failure/);
+    assert.match(await fail.text(), /private failure/);
   } finally {
     globalThis.fetch = original;
     mock.restoreAll();

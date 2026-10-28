@@ -160,7 +160,7 @@ export default function ProjectWbsMetrics({
       setMetrics(null);
       const status =
         cause && typeof cause === "object" && "status" in cause ? Number(cause.status) : 0;
-      const message = cause instanceof Error ? cause.message : "Project WBS 指標讀取失敗。";
+      const message = cause instanceof Error ? cause.message : String(cause);
       setError(message);
       if (status === 401 || status === 403 || status === 404) accessLost(message);
     } finally {

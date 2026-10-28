@@ -188,7 +188,7 @@ export function useDailyCheckIn(liffId: string) {
       await load(access, signal);
     } catch (cause) {
       if (!signal.aborted)
-        setError(cause instanceof Error ? cause.message : "每日簽到頁載入失敗。");
+        setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       if (!signal.aborted) setBusy(false);
     }
@@ -201,7 +201,7 @@ export function useDailyCheckIn(liffId: string) {
       await load(token, signal);
     } catch (cause) {
       if (!signal.aborted)
-        setError(cause instanceof Error ? cause.message : "每日簽到資料讀取失敗。");
+        setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       if (!signal.aborted) setBusy(false);
     }
@@ -282,7 +282,7 @@ export function useDailyCheckIn(liffId: string) {
         return await readPending(pendingDay, signal);
       } catch (cause) {
         if (!signal.aborted)
-          setError(cause instanceof Error ? cause.message : "簽到結果讀取失敗。");
+          setError(cause instanceof Error ? cause.message : String(cause));
         return null;
       } finally {
         if (!signal.aborted) setBusy(false);

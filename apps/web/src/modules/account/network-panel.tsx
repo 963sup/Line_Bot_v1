@@ -82,7 +82,7 @@ export default function NetworkPanel({ liffId }: { liffId: string }) {
     } catch (cause) {
       if (ticket === generation.current) {
         setData(null);
-        setError(cause instanceof Error ? cause.message : "追蹤關係讀取失敗。");
+        setError(cause instanceof Error ? cause.message : String(cause));
       }
     } finally {
       if (ticket === generation.current) setBusy(false);

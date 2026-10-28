@@ -27,6 +27,10 @@
     "./composition/bootstrap/commercial-intake": {
       "types": "./dist/composition/bootstrap/commercial-intake.d.ts",
       "default": "./dist/composition/bootstrap/commercial-intake.js"
+    },
+    "./adapters/outbound/persistence/extraction-json-storage": {
+      "types": "./dist/adapters/outbound/persistence/extraction-json-storage.d.ts",
+      "default": "./dist/adapters/outbound/persistence/extraction-json-storage.js"
     }
   },
   "files": [

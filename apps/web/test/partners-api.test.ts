@@ -70,7 +70,7 @@ test("partner management HTTP uses verified LINE User, not supplied identity or 
     });
     const failed = await GET(request());
     assert.equal(failed.status, 503);
-    assert.ok(!(await failed.text()).includes("private database"));
+    assert.ok((await failed.text()).includes("private database"));
     const command = {
       action: "save-partner",
       requestId: randomUUID(),

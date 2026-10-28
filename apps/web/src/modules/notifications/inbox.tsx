@@ -58,7 +58,7 @@ export default function Inbox({
     } catch (cause) {
       if (ticket === generation.current) {
         setPage(null);
-        setError(cause instanceof Error ? cause.message : "通知讀取失敗。");
+        setError(cause instanceof Error ? cause.message : String(cause));
       }
     } finally {
       if (ticket === generation.current) setBusy(false);
@@ -95,7 +95,7 @@ export default function Inbox({
       }
     } catch (cause) {
       if (ticket === generation.current) {
-        setError(cause instanceof Error ? cause.message : "通知狀態更新失敗。");
+        setError(cause instanceof Error ? cause.message : String(cause));
       }
     } finally {
       if (ticket === generation.current) setBusy(false);

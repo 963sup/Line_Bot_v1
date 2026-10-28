@@ -203,7 +203,7 @@ export default function RepositorySettings({
       if (ticket === generation.current) {
         setData(null);
         setPending(null);
-        setError(cause instanceof Error ? cause.message : "Repository 地址讀取失敗。");
+        setError(cause instanceof Error ? cause.message : String(cause));
       }
     } finally {
       if (ticket === generation.current) setBusy(false);
@@ -304,7 +304,7 @@ export default function RepositorySettings({
     } catch (cause) {
       if (ticket === generation.current) {
         setData(null);
-        setError(cause instanceof Error ? cause.message : "結果尚未確認，請重試原操作。");
+        setError(cause instanceof Error ? cause.message : String(cause));
       }
     } finally {
       locked.current = false;

@@ -49,7 +49,7 @@ export default function GoogleLinkPage({ miniAppUrl }: { miniAppUrl: string }) {
       history.replaceState(null, "", "/google-link");
       setDone(true);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Google 登入未完成，請重試。");
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(false);
     }
@@ -68,8 +68,8 @@ export default function GoogleLinkPage({ miniAppUrl }: { miniAppUrl: string }) {
             disabled={busy}
             onClick={() => {
               setBusy(true);
-              void googleLogin().catch(() => {
-                setError("Google 登入暫不可用。");
+              void googleLogin().catch((error: unknown) => {
+                setError(error instanceof Error ? error.message : String(error));
                 setBusy(false);
               });
             }}

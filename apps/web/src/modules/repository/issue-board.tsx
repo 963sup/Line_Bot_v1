@@ -152,7 +152,7 @@ export default function IssueBoard({
     } catch (cause) {
       if (ticket === generation.current) {
         setData(null);
-        setError(cause instanceof Error ? cause.message : "Issue 讀取失敗。");
+        setError(cause instanceof Error ? cause.message : String(cause));
       }
     } finally {
       if (ticket === generation.current) setBusy(false);
@@ -173,7 +173,7 @@ export default function IssueBoard({
       const { response, value } = await postIssueCommand(token, command);
       if (!response.ok) {
         if (response.status < 500 && response.status !== 429) forgetPending(pendingCommand);
-        throw new Error(value.error || "結果尚未確認，請重試原操作。");
+        throw new Error(typeof value.error === "string" ? value.error : JSON.stringify(value));
       }
       forgetPending(pendingCommand);
       if (ticket !== generation.current) return;
@@ -195,7 +195,7 @@ export default function IssueBoard({
       );
     } catch (cause) {
       if (ticket === generation.current) {
-        setError(cause instanceof Error ? cause.message : "結果尚未確認，請重試原操作。");
+        setError(cause instanceof Error ? cause.message : String(cause));
       }
     } finally {
       if (ticket === generation.current) setBusy(false);

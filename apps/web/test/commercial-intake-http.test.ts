@@ -118,7 +118,7 @@ test("scope and Origin mismatches fail before owner commands", async () => {
   );
   assert.deepEqual(calls, []);
 });
-test("unexpected failures expose bounded correlation without raw private content", async () => {
+test("unexpected failures expose the original error with correlation", async () => {
   const rt = runtime();
   rt.intake.status = async () => {
     throw new Error("secret SQL provider source");
@@ -126,7 +126,7 @@ test("unexpected failures expose bounded correlation without raw private content
   const response = await commercialIntakeRequest(request(), rt, async () => "subject");
   assert.equal(response.status, 500);
   const body = await response.text();
-  assert.doesNotMatch(body, /secret SQL provider source/);
+  assert.match(body, /secret SQL provider source/);
   assert.match(body, /traceId/);
 });
 
@@ -211,10 +211,10 @@ test("typed unknown extraction errors preserve failure stage and original comman
   const body = await response.json();
   assert.equal(body.code, "EXTRACTION_OUTCOME_UNKNOWN");
   assert.equal(body.stage, "intelligence.extract");
-  assert.match(body.error, /原命令/);
+  assert.equal(body.error, "EXTRACTION_OUTCOME_UNKNOWN");
 });
 
-test("revoked File authorization preserves safe 401/403 responses so the browser clears private drafts", async () => {
+test("revoked File authorization preserves original 401/403 errors so the browser clears private drafts", async () => {
   for (const status of [401, 403]) {
     const rt = runtime();
     rt.intake.status = async () => {
@@ -224,7 +224,7 @@ test("revoked File authorization preserves safe 401/403 responses so the browser
     assert.equal(response.status, status);
     const body = await response.json();
     assert.equal(body.code, "FORBIDDEN");
-    assert.doesNotMatch(body.error, /private source filename|provider SQL/);
+    assert.equal(body.error, "private source filename provider SQL");
   }
 });
 
@@ -261,7 +261,7 @@ test("saved draft lookup by exact source forwards current actor and URL reposito
     "document",
   );
   assert.equal(denied.status, 403);
-  assert.doesNotMatch(await denied.text(), /private source content/);
+  assert.match(await denied.text(), /private source content/);
 });
 
 test("commercial POST rejects unknown fields before any owner operation", async () => {

@@ -175,7 +175,7 @@ export default function UserManagement({ liffId }: { liffId: string }) {
     } catch (failure) {
       if (ticket === sequence.current) {
         setReceipt(null);
-        setError(failure instanceof Error ? failure.message : "讀取失敗。");
+        setError(failure instanceof Error ? failure.message : String(failure));
       }
     } finally {
       if (ticket === sequence.current) setBusy(false);

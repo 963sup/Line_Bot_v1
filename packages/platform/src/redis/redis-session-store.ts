@@ -49,7 +49,7 @@ export class RedisSessionStore {
     this.validateSessionId(sessionId);
     const value = await this.transport.eval(SESSION_READ_SCRIPT, [this.key(sessionId)], []);
     if (value === null || typeof value === "string") return value;
-    throw new Error("Redis temporarily unavailable.");
+    throw new Error(JSON.stringify(value));
   }
 
   async update(
@@ -92,7 +92,7 @@ export class RedisSessionStore {
     const result = await this.transport.eval(SESSION_DELETE_SCRIPT, [this.key(sessionId)], []);
     if (result === 0 || result === "0") return false;
     if (result === 1 || result === "1") return true;
-    throw new Error("Redis temporarily unavailable.");
+    throw new Error(JSON.stringify(result));
   }
 
   close() {
@@ -119,6 +119,6 @@ export class RedisSessionStore {
   private isOne(result: unknown) {
     if (result === 1 || result === "1") return true;
     if (result === 0 || result === "0") return false;
-    throw new Error("Redis temporarily unavailable.");
+    throw new Error(JSON.stringify(result));
   }
 }

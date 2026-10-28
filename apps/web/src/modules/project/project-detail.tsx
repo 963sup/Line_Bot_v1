@@ -197,7 +197,7 @@ export default function ProjectDetail({
           setActorUserId("");
           setUsers({});
           setPending(null);
-          setError(cause instanceof Error ? cause.message : "Project 讀取失敗。");
+          setError(cause instanceof Error ? cause.message : String(cause));
         }
       } finally {
         if (ticket === generation.current) setBusy(false);
@@ -268,7 +268,7 @@ export default function ProjectDetail({
         setNotice("Project 已有新變更，已重新讀取；請確認目前內容後再操作。");
       }
       setError(
-        cause instanceof Error ? cause.message : "操作結果尚待確認；重試會沿用原 requestId。",
+        cause instanceof Error ? cause.message : String(cause),
       );
     } finally {
       locked.current = false;
@@ -287,7 +287,7 @@ export default function ProjectDetail({
       setPending(operation);
       void execute(operation, successMessage);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "操作尚未送出。");
+      setError(cause instanceof Error ? cause.message : String(cause));
     }
   }
 

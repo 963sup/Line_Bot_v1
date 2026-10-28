@@ -76,7 +76,7 @@ export default function ProjectCollaborators({
       if (cause instanceof ProjectRequestError && (cause.status === 401 || cause.status === 403)) {
         onAccessChanged();
       }
-      setLookupError(cause instanceof Error ? cause.message : "使用者查詢失敗。");
+      setLookupError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       setLookupBusy(false);
     }
