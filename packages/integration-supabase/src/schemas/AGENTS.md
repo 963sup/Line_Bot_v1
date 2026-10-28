@@ -15,7 +15,7 @@ Local code、workflow、schema 或 guard 不得繞過、弱化或重定義這些
 - 搬移或拆檔必須保持 relation/function/trigger/constraint/RLS/grant semantics；若 business model 本身要變，必須同時更新 semantic authority、consumer contract、tests 與 reconciliation evidence，不得靠檔名掩蓋。
 - 新增 relation 前先證明 current semantic concept、owner、consumer 與 persistence necessity；沒有 durable fact 就不新增 table。
 - Future target、reserved namespace、預想 owner/file name 不得建立 `.sql` placeholder 或 `architecture/registry.json#data` entry；未使用的 lexical prefix 直接留空。Target design / migration state 放 `docs/change/` 或 owner docs。
-- Schema change 完成後至少跑 `pnpm schema:check`、`pnpm exec biome check architecture` 與 affected package tests；remote claim 另需官方 Supabase CLI/workflow readback。
+- Schema change 完成後至少跑 `pnpm schema:check`、`pnpm exec biome check architecture` 與 affected package tests；remote claim 另需對 exact environment、target 與 source revision 的 operator readback。
 
 ## Naming
 

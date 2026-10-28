@@ -13,10 +13,10 @@ Schema change 的基本流程只有一個：
 1. 修改負責的 `packages/integration-supabase/src/schemas/*.sql`。
 2. 以 `schema:check` 驗證 clean build 與核心 RLS／role boundary。
 3. 需要完整 local Supabase 時，用 `schema:local` 從 current schemas 重建 local `app_private`。
-4. Remote publication 由受信任 operator 比較 deployed current state 與已核准的 current `main` desired schemas；validated canonical source 授權 exact DDL convergence。
+4. Non-production 可在明確隔離、可重建的 target 驗證 branch canonical schema；Production publication 則由受信任 operator 比較 deployed current state 與已合併、已驗證的 current `main` desired schemas。
 5. Remote write 後必須以 catalog／RLS／grant／function／trigger／role readback與 second diff 證明 deployed state 已收斂。
 
-不得先在 remote Dashboard／SQL Editor 改 application schema 再回填 Git，也不得用 migration history、migration file 或 local success 冒充 remote current state。Supabase MCP 只可執行已存在於 current `main` canonical schema 的 bounded DDL，不能成為第二套 schema authority。
+不得先在 remote Dashboard／SQL Editor 改 application schema 再回填 Git，也不得用 migration history、migration file 或 local／non-production success 冒充 Production current state。Supabase MCP 只能執行 target 對應 canonical source 的 bounded DDL，不能成為第二套 schema authority。
 
 Supabase 官方 `db push`、`db reset --linked`、`migration up` 與 `migration repair` 都不屬於本專案 remote schema path。
 
@@ -26,7 +26,7 @@ Declarative schema只擁有結構與 database-enforceable invariant，不能自�
 
 因此必須分開：
 
-- **Schema DDL**：由 current schemas決定；validated source change可透過 automatic reconciliation直接收斂。
+- **Schema DDL**：由 current schemas 決定；validated source change 可由受信任 operator 收斂到對應 target。
 - **Business data transform / metadata cutover**：需要 owner、mapping、retention、recovery或其他無法由 schema推導的 truth時，使用獨立 data-cutover contract；不得把 fabricated backfill藏進 generic schema sync。
 
 Rename、consolidation、drop、backfill、non-null transition若涉及既有資料，先判斷「DDL本身能否在 current data上成立」與「是否需要額外 business mapping」是兩個不同問題。PostgreSQL constraint/transaction可以拒絕不成立的 DDL；它不能替 business owner決定缺失資料。
@@ -59,7 +59,7 @@ Remote synchronization必須以指定 project的 post-write readback為證據；
 
 Production與development共享同一 schema authority與 reconciliation mechanism；差異在 retained data、consumer compatibility、recovery與 release evidence，不在 schema owner。
 
-Production schema DDL仍由 validated current schemas自動收斂。只有不可由 schema決定的 business data transform／metadata cutover需要獨立 reviewed data-cutover procedure。所有 remote reconciliation都不得新增或修補 Supabase migration history。
+Production schema DDL 由受信任 operator 依 validated current-main schemas 收斂。只有不可由 schema 決定的 business data transform／metadata cutover 需要獨立 reviewed data-cutover procedure。所有 remote reconciliation 都不得新增或修補 Supabase migration history。
 
 Schema與runtime需要協調切換時，由 [Release](../operations/release.md) 擁有 publication ordering；backup／restore責任由 [Recovery](../operations/recovery.md) 擁有；Supabase provider與 remote reconciliation mechanism由 [Supabase](../platform/supabase.md) 擁有。
 

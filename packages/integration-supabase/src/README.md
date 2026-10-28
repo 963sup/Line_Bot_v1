@@ -84,7 +84,7 @@ pnpm exec supabase status
 
 - `schema:check`：驗 declarative schemas 與核心 database boundary。
 - `supabase status`：讀取目前 Docker stack 狀態。
-- Remote application-schema mutation 使用受信任 Supabase MCP 或官方 non-pooling operator connection，且只能收斂已核准的 current `main` canonical schemas；本 package 沒有 `schema:remote` 或 `storage:remote` operator command，也不使用 migration history。
+- Remote application-schema mutation 使用受信任 Supabase MCP 或官方 non-pooling operator connection。隔離且可重建的 non-production target 可跟隨 branch canonical schema；Production 只能收斂已合併、已驗證的 current `main`。本 package 沒有 `schema:remote` 或 `storage:remote` operator command，也不使用 migration history。
 
 ## Change routing
 

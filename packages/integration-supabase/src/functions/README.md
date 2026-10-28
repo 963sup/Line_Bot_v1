@@ -20,6 +20,6 @@
 - 設定 request/body 上限、deadline 與外部呼叫 timeout。輸入錯誤、未授權、衝突、暫時失敗及未知外部結果分開回傳。
 - 外部副作用使用 durable request identity；timeout 先 readback，再決定重試。
 - secrets 僅由受控 runtime 注入；日誌記錄必要 correlation 與錯誤分類，不記錄 token 或 payload。
-- 新 endpoint 必須另接 dependency pin、local runner、CI、current-main Release、exact project readback；現有 schema Release 不會發布本目錄。
+- 新 endpoint 必須另接 dependency pin、local runner、CI、current-main publication procedure 與 exact project readback；schema operator 不會發布本目錄。
 
 驗收：缺少／過期 credential、錯誤 scope、重播、超大輸入、timeout、未知結果恢復，以及發布後以預期身分呼叫真實 endpoint。
