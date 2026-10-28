@@ -15,6 +15,8 @@ export function sanitizeSentryEvent(event: ErrorEvent): ErrorEvent | null {
         "repository-files-api",
         "repository-resources-api",
         "repository-document-intake-api",
+        "document-intakes-api",
+        "commercial-documents-api",
         "repository-api",
         "repository-overview-page",
         "project-wbs-api",
@@ -76,6 +78,8 @@ export function isSentryDetachedPath(value: unknown): boolean {
     if (parts[0] === "api") {
       return (
         parts[1] === "repositories" ||
+        parts[1] === "document-intakes" ||
+        parts[1] === "commercial-documents" ||
         parts[1] === "project-wbs" ||
         /^repository-(?:content|contracts|files|resources|document-intake|wbs|overview|management|access|address|subscription|labels|milestones|wiki|insights)$/.test(
           parts[1] ?? "",

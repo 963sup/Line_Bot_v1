@@ -1,165 +1,120 @@
-# Commercial Document v2 Implementation Plan
+# CommercialDocument 實作計畫
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+狀態：2026-10-28 依新版欄位、函數契約與官方 OpenAI 指南重訂；實作中，最小 DRAFT 流程已在本地接通，尚未完成整體規格與上線驗收。取代舊 v1/v2 hot-path 並行計畫。使用者已授權實施，要求六角形架構、高內聚、低耦合；不代表已授權未審閱的 Production 資料破壞。
 
-**Goal:** 讓不同廠商的採購、報價與估價文件可保存、核對，並經明確選擇建立 Content／WBS 規劃，保留來源與一次計費／安全恢復。
+**規格：** [欄位與資料契約](../specs/2026-10-28-commercial-document-fields.md)、[函數與交易契約](../specs/2026-10-28-commercial-document-functions.md)。兩份詳細規格是本輪實作依據；[整體設計](../specs/2026-10-28-commercial-document-design.md) 的現況證據仍可查閱，舊版命名與遷就舊模型的方案不再執行。
 
-**Architecture:** 延用 File、Intelligence、Contract、Content、WBS 各自 authority。Contract 新增版本化商務文件模型；Intelligence 消費 host 注入的 target schema，不新增對 Contract 的依賴。下游只消費已確認、當下授權的 immutable source，規劃數量與商務事實分開。
+## 架構與不可變條件
 
-**Tech Stack:** 現有 TypeScript、Zod、PostgreSQL declarative SQL、Next.js、固定 structured-output provider、node:test；首版不新增 OCR/native PDF runtime 或新的 database/framework dependency。
+| 責任 | Owner／位置 | 依賴與交易邊界 |
+| --- | --- | --- |
+| 原件、revision、hash | File public capability | 其他 owner 不存第二份原件，不繞過來源授權。 |
+| 解析 job、technical result、dispatch fence | Intelligence domain/application/ports | 不依賴 Contract 私有型別或資料表；technical result 不存 normalized business candidate。 |
+| Responses HTTP／provider 失敗邊界 | integration-openai adapter | 不含商務 prompt、授權、保存或重試策略；Intelligence adapter 組合具體解析設定。 |
+| 商務事實、正規化、核對、receipt | Contract domain/application/ports/adapters | Domain 無 HTTP、SQL、OpenAI 或 host 依賴；自己的 head/revision/receipt 同交易。 |
+| 規劃選擇、數量假設、provenance | Content | 消費最小已核對來源 projection，不承接價格或商務接受。 |
+| Project 工作結構草稿 | WBS | 消費 exact Content snapshot，保留版本／授權／disclosure，不自動發布 Baseline。 |
+| 跨 owner 接線、transport DTO 與 UI | Web composition／inbound adapter | 接線不含領域決策，route 不直接寫業務 SQL；不讓模型調度保存。 |
 
-**Spec:** [多種類、多廠商商務文件設計](../specs/2026-10-28-commercial-document-design.md)。狀態：使用者於 2026-10-28 批准，先合併本計畫再開始執行；規劃中的型別／函式不是現有 exports。
+Port 由需要能力的 use case 所在 owner 定義，adapter 實作該能力；跨 owner 只能用 package exports。共享 DTO 只包含真實 consumer 必要資料，不建立全域商務大物件或轉發 facade。資料 schema 技術檢查留 persistence adapter；金額、來源引用、核對、生命週期留 Domain。每項行為只有一個 owner，不為目錄對稱新增空層或 package。
 
-## Global Constraints
+Contract 與 Intelligence 的單向讀取／保存協調經 host 注入 consumer-owned ports，不新增循環 package 依賴。Intelligence job 狀態不複製 Contract 保存成功事實；只能查權威 receipt。不得在 provider network call 期間持有 DB transaction。
 
-- 原始 FileRevision／hash、actor／Repository scope、expectedVersion、request identity、來源重新授權與交易邊界均保留。
-- `CONFIRMED` 只代表來源核對；不代表商務接受，不啟用 Engineering Contract，不發布 WBS Baseline。
-- 報價／估價 planning-only 匯入與 v2 限制是待審閱建議；未採用時 Task 5 只開放已同意的文件種類。
-- 來源上限 558,512 bytes；PDF 24 頁；每次最多 24,000 output tokens、105,000 ms；沒有隱含計費重試。
-- v2 candidate JSON 最多 393,216 UTF-8 bytes；HTTP body 上限仍為 524,288 bytes。
-- v2 最多 1,000 source rows、64 個文件擴充欄位、每行 16 個擴充欄位、64 個條款；label 128 字元、擴充值 2,048 字元、單一條款 8,000 字元。
-- 超限拒絕，不靜默截斷；原件與真實交易資料不納入公開 fixtures；logs 不包含內容、SQL、provider payload 或憑證。
-- 不新增 migration history。Production DDL 只依 [canonical provider rules](../../../packages/integration-supabase/src/README.md#canonical-supabase-rules) 收斂 validated main；此計畫不是遠端寫入授權。
-- 舊命令缺 pipelineVersion 永遠為 v1；同一 request 跨 pipeline／source／processor 意圖變更須衝突。v1 historical revision、receipt、fingerprint 不重寫。
-- 驗證完整輸出寫 ignored artifact；上下文只保留 scoped 結果、第一個可處理錯誤及必要片段。每個 task 最後留一個可獨立理解的 logical commit。
+新模型使用 commercial-document/1、DRAFT/VERIFIED、新獨立 relations 與明確 command/trace/job/result 身分；不加入 v2 alias、舊 candidate if/else 或自動重解析。舊資料保存及 readback 與新 hot path 分開。所有新路徑保持既定 Sentry exclusion。
 
-## Review Focus
+## 執行與驗證方式
 
-1. 混合種類／缺買方或單價：可存草稿，不補假值；UNKNOWN 與缺必要來源不能確認。由 Task 1 的 profile fixtures 驗證。
-2. 同名欄位、跨頁續行、折扣／小計／替代項：不能覆蓋、重複計價或靜默變工作。由 Task 1、5 驗證。
-3. 舊 pending request 在 v2 發布後重試：必須仍走 v1 回執恢復，不再次計費。由 Task 3、6 驗證。
-4. 含稅／未稅／多 currency／未知數值格式：不猜測、混幣加總或用浮點誤判。由 Task 1 驗證。
-5. 來源／權限／版本變動與跨 Project 匯入：不能憑舊預覽或前端狀態放行；未知提交結果不自動新建 request。由 Task 2、5、6 驗證。
+依下列順序執行，每項先寫失敗測試，再完成最小實作與 affected suite。使用 ignored ledger 記錄完成項目、實際命令、結果與決策；完整日誌留 artifact，後續只讀當前任務片段。新增 public exports／relations 時同步真實 consumer、architecture registry 對應分片及 SQL authority；不可先把未實作規格宣告成 current runtime。
 
----
+### 執行盤點（2026-10-28）
 
-## File Structure / Interfaces Map
+以下是本輪進度，不代表已部署能力；以 source、tests 與實際接線為準。依原完整驗收範圍，8 個工作項尚無整項完成：7 個部分完成、1 個尚未開始，不以測試數或檔案數換算功能完成百分比。
 
-| 責任 | 預定位置 |
-| --- | --- |
-| v2 model、profiles、decoder | 新增 `packages/contract/src/domain/commercial-document.ts`、`commercial-document-decoder.ts`、`commercial-document-profiles.ts`；v1 domain 檔保留原語意。 |
-| 公開 schema／命令／DTO | 修改 `packages/contract/src/contracts/input/document-intake.ts`、`contracts/dto/document-intake.ts`、`contracts/output/document-intake.ts`。必要 exports 仍由 package manifest 擁有。 |
-| reader／writer／source review | 修改 `packages/contract/src/application/use-cases/documents.ts`、`adapters/outbound/persistence/documents.ts` 與 `619_contract_documents.sql`。 |
-| 一次計費與 host pipeline registry | 修改 `packages/intelligence/src/application/use-cases/intake-document.ts`、`adapters/outbound/openai-document-extractor.ts`、`composition/bootstrap/document-intake.ts`；Web 的 `document-intake.server.ts` composition 與 `document-intake-http.server.ts` 共同選定固定 pipeline。 |
-| Review UI | File 現有 intake hook／projection／review container 演進；新增 `apps/web/src/modules/file/commercial-document-review.tsx` 作 v2 editor，v1 editor 保留。 |
-| Content mapper／planning choices | 修改 Content 的 `contracts/output/plans.ts`、`application/commands/plans.ts`、`application/use-cases/contract-document-expansion.ts`、`domain/plan.ts` 及 host `contract-content-expansion.server.ts`。 |
-| 下游 data checks | 核對並修改 `618_content_plans.sql`、`702_project_wbs.sql` 與各自 decoder 中的 mapping/disposition allowlist，不改歷史 v1 定義。 |
-| authority | 依實際語意同步 `architecture/domain/owners/contract.json`、`content.json` 與必要 data owner entries；不預先建新 relation 或放寬 dependency guard。 |
+| 工作項 | 狀態 | 剩餘交付 |
+| --- | --- | --- |
+| Task 0 | 部分完成：本地 owner／consumer 證據、Docker catalog 已查；本地舊表沒有 expected_line_count | Production catalog、資料保留、cutover／rollback 差異；本地結果不代表 Production 漂移已修復。 |
+| Task 1 | 部分完成：欄位／行模型、純 Domain 規則、邊界 codecs、文頭／ITEM 正規化、草稿驗證；未知觀察保留來源 extensions | 完整 first-class parties／sections／terms／CHARGE／SUBTOTAL／totals 映射與核對分類。 |
+| Task 2 | 部分完成：嚴格 observations/hints schema、實際 PDF inspection、固定 profile、正式 token counter 的64k admission、超限不 dispatch | 真實模型／代表性文件驗收與實際 provider usage 蒐集。 |
+| Task 3 | 部分完成：durable job/result、單一 dispatch fence、原命令狀態與恢復；Docker PG 驗證 READY 後重送不重跑模型 | 完整技術 metadata／運維生命週期與線上執行驗收。 |
+| Task 4 | 部分完成：C1 草稿交易、readiness、讀回／回執與完整意圖重送；具體來源接線已完成 | 編輯／核對／重開／歸檔交易與完整 readers。 |
+| Task 5 | 部分完成：新 HTTP／composition、File UI 解析商務草稿、來源 pin、唯讀欄位／extensions、原命令 reload/status/resume 與 Sentry exclusions | 完整編輯／核對介面及真實登入瀏覽器驗收。 |
+| Task 6 | 尚未開始 | 新來源的 Content 規劃與 WBS 接線。 |
+| Task 7 | 部分完成：Docker 跨 owner 保存失敗恢復測試、各 owner suite、獨立審查、本地 schema readback、Web build | Production 部署／readback；全庫既有依賴違規與 expense probe 缺檔仍阻擋全綠 gate。 |
 
-### 預定 v2 型別決策
+目前沿用的舊 PO 入口不是新流程完成證據。Domain coverage 報告只是核對前置條件；不授權、不自動 VERIFIED，亦不取代未知來源項目的明確分類。遠端結構漂移、真實模型／文件驗收及部署驗證仍是上線 gate。輸入 token admission 已定案為正式 counter，無法計數時 fail closed；不以 bytes 換算 token。
 
-- `CommercialDocumentCandidateV2` 固定包含 schemaVersion=2、documentKind、header、parties、sections、rows、totals、terms、extensionFields、evidence；provider schema 的所有屬性明確定義，缺值用 null，不使用任意 JSON。
-- `CommercialDocumentRowV2` 是以 kind 區分的 union，共通 sourceRowId、kind、parentRowId、sourceFragments、extensionFields。ITEM／ALTERNATIVE 的 facts 包含可空的 itemNumber、category、materialCode、description、quantity、unit、unitPrice、grossAmount、netAmount、deliveryDate；ALTERNATIVE 另帶 alternativeGroupId。category 沿用 material/service/freight/other，可為 null。SECTION／NOTE 只帶 text；SUBTOTAL 帶 amount；ADJUSTMENT 帶 signedAmount、adjustmentType 與 scope=ROW/SECTION/DOCUMENT，不重複完整品項 null 欄位。
-- `SourceReviewAttestationV2`：verifiedItemCount、reviewedSourcePages、reviewedSourceRowIds、confirmedFromOriginal=true；verifiedItemCount 對 ITEM 與 ALTERNATIVE 計數，reviewedSourceRowIds 覆蓋所有 row kinds。不接受模型自稱人工核對。
-- `CommercialDocumentDiagnostic`：code、severity=BLOCKER/REVIEW、fieldPath、sourceRowIds；顯示訊息由固定 code 產生。
-- `CommercialDocumentPlanningChoices`：planningIntent=PLANNING_ONLY、逐 sourceRowId 的 disposition/reason，以及可空的 planningQuantity={value, measureId, reason}。它屬 Content 命令，不修改 Contract source。
+## Task 0 — 邊界與現有保存故障證據
 
-## Task 0 — 現有保存故障：遠端 catalog preflight 與修復決策
+- [ ] 由 public exports、source、owner/module/data authority 與 consumers 確認實際依賴，建立最小修改清單；Serena 可用時用符號／reference 操作，未註冊則明示並用 bounded 原生定位。
+- [ ] 唯讀核對 exact Supabase target 的 expected_line_count 與相依 catalog，對照 canonical 619 SQL／writer；不查私人文件內容、不補假數量。
+- [ ] 將舊資料保留、未完成命令 drain/readback、新表部署及 rollback reader 的具體處置寫成可審閱差異。遠端 DDL 另依 repository 寫入規則執行。
 
-**Files / evidence:** 只讀 [619_contract_documents.sql](../../../packages/integration-supabase/src/schemas/619_contract_documents.sql)、[writer](../../../packages/contract/src/adapters/outbound/persistence/documents.ts)、[provider rules](../../../packages/integration-supabase/src/README.md#canonical-supabase-rules)。遠端原始證據留 ignored artifact；公開文件只保存無內容的結論。
+**完成條件：** 分開記錄已證實 drift 與未知 catalog；本地 Task 1 不受遠端修復阻塞，但不得宣稱線上保存已修好。
 
-**Interfaces:** Consumes exact validated main 與 authorized operator target；produces catalog diff、資料保留／相依物件／回滾評估及可審閱 reconciliation SQL。沒有假定的 `schema:remote` script。
+## Task 1 — Contract Domain 與 provider 邊界資料契約
 
-- [ ] 依 provider 規則唯讀確認 exact project，以及 expected_line_count 的 type/default/nullability、相關 constraints/functions/triggers/views 和資料用途；不得讀回文件資料列或憑證。
-- [ ] 比對 canonical schema 與 writer，確認 drift 的完整範圍；不得假設移除一個 NOT NULL 就已對齊。
-- [ ] 若欄位仍有業務用途，先決定 canonical owner／資料保留；否則提出最小 reconciliation。禁止補 0、補 54 或以 extracted count 假造 expected count。
-- [ ] 在隔離環境重現舊 catalog 的 `23502` 與交易 rollback，再驗修復後的保存、原 request replay、確認及拒絕路徑。
-- [ ] 產出可 review 的 SQL／preflight／readback 計畫。Production mutation 另依規則取得具體授權並 read back；未完成此 gate，不宣稱線上保存已修好。
+**介面：** 函數規格 P1–P6、欄位字典 CommercialDocumentContent／Evidence／revision；Intelligence 擁有 ProviderObservationPayload，Contract 消費自己的最小 technical evidence port，由 host 做真實結構映射。
 
-**完成條件：** 能說明修復如何保留既有資料與解除現有故障；Task 1 可做純模型工作，但 v2 production rollout 必須等此項收斂。
+- [ ] 合成 fixtures 覆蓋五種文件、缺值、typed extensions、同名 label、跨頁 continuation、ITEM/CHARGE/SUBTOTAL/NOTE、selection groups、人工補漏行與非法 references。
+- [ ] 實作 decimal/date decoder、封閉 row union、budgets、deterministic normalizer、draft/verify validation、coverage 與金額 reconciliation；不猜幣別、不補零／一、不把 AI count 當獨立完整性證據。
+- [ ] 驗 strict schema 全 required/nullable、nested anyOf、非空 evidence array，以及 schema/type/decoder 不漂移。輸出仍是不可信 input，不宣稱 schema 保證辨識正確。
+- [ ] 跑 Contract／Intelligence 最小受影響 tests、typecheck、lint；consumer 僅透過新增的必要 public export 接入。
 
-## Task 1 — Contract v2 與文件種類驗證
+## Task 2 — Technical extraction 與固定成本邊界
 
-**Files:** 新增上述三個 domain 檔及 `packages/contract/test/commercial-document.test.ts`、`commercial-document-schema.test.ts`；修改 public intake contract。執行時先依 LSP 查明真正 public consumers，不匯入他包私有路徑。
+**介面：** S1/S2/S6；Responses strict text.format、SourceManifest、ExtractionProfileSnapshot、ProviderObservationPayload。
 
-**Interfaces:**
+- [ ] 測來源損壞、hash/page bounds、unsupported model/profile/schema、token admission failure；驗未 dispatch 即拒絕。
+- [ ] 實作 inspection、固定 profile、schema 支援子集檢查與保守輸入預算。量測代表性 PDF 的文字、影像、schema 與輸出 usage，固定 inputTokenBudget／estimatorVersion；未定案不得啟用 profile。
+- [ ] 測 HTTP 200 refusal、incomplete reason、空輸出、錯誤 references、network unknown；關閉 client 隱含 retries，不 repair／fallback／自動分批。
+- [ ] 首版不 streaming；只接受完整 terminal response 後的有效 payload。跑 integration-openai 與 Intelligence tests/typecheck。
 
-- Produces `parseCommercialDocumentCandidateV2(value: unknown): CommercialDocumentCandidateV2`。
-- Produces `validateCommercialDocumentCandidateV2(candidate, purpose: "SAVE" | "CONFIRM", review?: SourceReviewAttestationV2): readonly CommercialDocumentDiagnostic[]`。
-- Produces `commercialDocumentExtractionSchemaId = "commercial-document/v2"`、version=2 與 `commercialDocumentExtractionSchema`；不改 v1 schema ID。
+## Task 3 — Intelligence durable job/result 與恢復
 
-- [ ] 寫合成 fixtures 與 failing tests：五種 documentKind、無買方／單價的草稿、UNKNOWN 確認拒絕、同名欄位以不同 fieldId 並存、重複 row ID／循環 parent 拒絕；替代群組未核對不能確認，已核對但尚未選方案的報價可以確認來源。
-- [ ] 為跨頁 fragments、SUBTOTAL 不重複加總、signed discount 不雙重取負、tax mode unknown、多幣分組與未知日期／小數格式補測試；不可把樣本 54 行寫成通則。
-- [ ] 執行 `pnpm check test -- --filter=@line_bot_v1/contract`，確認新增測試因尚缺 v2 行為而失敗。
-- [ ] 實作 parser、profiles、decimal 驗證、欄位／row／candidate byte budgets；SAVE 接受可表達的缺值，CONFIRM 依 profile 及 review evidence 決定 blocker。
-- [ ] 用相同 fixtures 驗證 provider JSON Schema 與 domain decoder 接受／拒絕一致；特別驗證 evidence 可非空且不是自由 JSON。
-- [ ] 重跑 Contract tests/typecheck，保留 v1 domain tests 綠燈；同步 Contract owner 的商務文件語意，提交 logical commit。
+**介面：** S3–S11；consumer-owned extraction store/target/source ports 與對應 persistence adapters。
 
-## Task 2 — v1/v2 持久化與不可變歷史
+- [ ] 測同 command 同時 10 次只 dispatch 一次、意圖衝突、RESERVED lease CAS、已 dispatch 不可續派、遲到結果、權限撤銷。
+- [ ] 新增 job/result canonical relations；先寫 job fence，再外部呼叫；result insert 與 READY 同交易。保存只有 technical result，不存 raw body／business candidate 重複副本。
+- [ ] 測 commit response lost 後 fingerprint readback；payload 尚在時只重送 result write，遺失且未 durable 則誠實 UNKNOWN。
+- [ ] S9 唯讀；S10 READY 只重送原 target command；FAILED/UNKNOWN 不暗中再次計費。
+- [ ] 跑 isolated PostgreSQL 競爭／交易測試、schema checks 與 Intelligence suite。
 
-**Files:** Contract DTO/output ports、documents use case、documents persistence；`619_contract_documents.sql`；`packages/contract/test/documents-postgres.test.ts` 與新 v2 postgres fixtures。
+## Task 4 — Contract 保存、核對與不可變歷史
 
-**Interfaces:** Consumes Task 1 types；produces revision discriminated union `{schemaVersion: 1, candidate: PurchaseOrderCandidate} | {schemaVersion: 2, candidate: CommercialDocumentCandidateV2}`，其餘 revision/source/receipt identity 不變。`ContractDocumentIntake.read/receipt/submit` 的路由與命令角色保留。
+**介面：** C0–C8；自己的 transactions/source evidence ports，head/revision/command receipt relations。
 
-- [ ] 先寫 failing tests：v1 歷史仍可讀、v2 round trip、version/candidate 不一致拒絕、extra fields 保留、未授權來源拒絕、競爭保存／確認、失敗回執完全 rollback。
-- [ ] SQL reader-first 允許 v1/v2 並分別驗 candidate shape／source-review shape；不能把 version=1 的舊 candidate 解讀成 v2 或批次改寫舊 revision。
-- [ ] 修改 decoder、DTO、writer 與 use case 的 version dispatch；確認時驗現有來源 pin 與完整 review，建立新 immutable revision。
-- [ ] 驗 current-authorized receipt readback、舊 v1 expectedVersion/replay fingerprint；舊草稿只走 v1 editor／validator。
-- [ ] 跑 `pnpm check schema:check`、Contract tests/typecheck 與隔離 PostgreSQL 競爭測試；新 persisted semantics 同步相關 authority，提交 commit。新 writer 尚不對使用者開啟。
+- [ ] 測 schema readiness（含未知 NOT NULL/no-default drift）、來源資格、command replay/CAS、current authorization、draft/verified pointers、reopen/archive。
+- [ ] 實作 C0 readiness，不插假資料；實作 C1–C5 的 owner transaction 與 C6–C8 readers。replay 先於首次操作版本檢查，receipt 不與 revision 分開 commit。
+- [ ] 模擬 target 23502，technical result 保持 READY；修正 storage 後以同 draftCommandId 保存，provider count 不變。
+- [ ] verified 只表示來源已核對；reopen 保留舊 verified；人工 evidence 由 server 固定 actor/time/source bounds。
+- [ ] 跑 Contract domain/application/persistence suites、schema checks 與隔離 DB 原子性測試。
 
-## Task 3 — 固定 pipeline registry、一次解析與升級恢復
+## Task 5 — Web 接線與可恢復的使用流程
 
-**Files:** Intelligence intake use case/extractor/composition；Web `apps/web/src/app/api/_composition/document-intake.server.ts`、`apps/web/src/modules/document-intake/document-intake-http.server.ts`；Intelligence intake tests、OpenAI transport tests、Web intake HTTP tests。
+**介面：** 新 document-intakes/status/resume、commercial-documents transport，S/C ports 由 host 接線。
 
-**Interfaces:**
+- [ ] 測封閉 request decode、scope spoofing、未知 keys、body budgets、錯誤 stage/code/traceId/retryAction；不回 SQL／provider raw body。
+- [ ] UI 固定 command identity，展示真正解析／保存狀態、原件及 typed 欄位、缺值／evidence／核對 blockers；refusal／incomplete 不顯示為保存失敗。
+- [ ] result READY 後失敗可重送保存；receipt unknown 先查詢，不另建文件。狀態輪詢無 side effect，關頁不視為取消。
+- [ ] 新路徑納入 Sentry exclusion 與 runtime bounded logging 整合測試；舊未完成命令維持 readback，不轉送新模型。
+- [ ] 跑 Web 受影響 tests/typecheck/build，驗 route→use case→port→adapter 完整接線。
 
-- Consumes Task 1 target schema 與 Task 2 target port，由 host composition 注入；Intelligence 的 `IntakeSchema`／`IntakeTarget` 仍為 generic。
-- Web accepts `pipelineVersion?: "purchase-order-v1" | "commercial-document-v2"`；缺少時固定 v1。host 用 closed registry 選擇固定 schema／processor；browser 不指定 model/prompt/schema。
-- Web runtime 由單一 intake binding 演進為 `intakes: Readonly<Record<"purchase-order-v1" | "commercial-document-v2", Intake | null>>`；同步所有真正 consumers，不留第二個兼容 wrapper。
-- `IntakeReceipt`／Contract receipt source pin 不變；stage／trace ID 與 safe runtime logging 保留。
+## Task 6 — Content → WBS 規劃
 
-- [ ] 先寫 failing tests：新文件一次 provider call；v2 開啟後，缺 pipelineVersion 的舊 pending request 仍走 v1；同一 request 改版本是衝突；receipt readback 不需 provider key。
-- [ ] 補 provider incomplete/refusal、超過 byte/page/output/time budget、target 保存失敗、completion unknown、併發同 request、scope 變更的呼叫次數測試；所有恢復路徑不得再計費。
-- [ ] host 登錄固定的 v1/v2 配置與 schema。保留 v1 processor 版本，直到未完成 request 有明確退場／readback 方案。
-- [ ] extractor 同一次輸出文件種類與候選欄位。驗證超限與格式失敗，不隱含重試／自我修復；candidate 不寫入 attempt table。
-- [ ] usage／processor／pipeline／attempt 次數可觀測，資料／PDF／raw provider response 不進 logs。儲存失敗無回執維持 UNKNOWN_RESULT，不宣稱 candidate 可無成本恢復。
-- [ ] 跑 Intelligence／integration-openai／Web intake tests 與受影響 typecheck，提交 commit；此時舊 UI 仍可走 v1。
+**介面：** W1/W2/P7/W3；Contract 最小 planning projection、Content immutable provenance 與 WBS snapshot consumer。
 
-## Task 4 — 通用 review UI 與人工核對
+- [ ] 測 current VERIFIED、current scope、來源 pin、所有 rows 恰好一次處置、選項與 measure qualification、Content/Project CAS/replay。
+- [ ] 缺來源數量只接受有 reason 的 USER_PLANNED；來源 null 不變。CHARGE/SUBTOTAL/NOTE 不成為工作；不傳價格、付款或聯絡資料。
+- [ ] 同交易建立 Content revision/provenance/receipt；WBS 只消費 exact Content revision，跨 scope disclosure 保留。
+- [ ] 更新實際 consumer 與 SQL checks；舊 snapshots 僅保留原有歷史語意。跑 Content/WBS tests/typecheck/schema checks。
 
-**Files:** 修改 `apps/web/src/modules/file/files-panel.tsx`、現有 intake hook/view/container 與 `apps/web/src/modules/document-intake/document-intake-http.server.ts`；新增 `commercial-document-review.tsx`。使用 Serena LSP 先定位再將 hook/view/container 改成 `use-document-intake.ts`、`document-intake-view.ts`、`document-intake-review.tsx`；v1 `purchase-order-review.tsx` 保留。測試沿用 `apps/web/test/purchase-order-review.test.ts` 並新增 `commercial-document-review.test.ts`。
+## Task 7 — 整合、架構審查與 release gate
 
-**Interfaces:** Consumes Task 2 discriminated DTO 與 Task 3 registry；produces使用者明確送出的 v2 save/confirm commands 及 SourceReviewAttestationV2。新解析命令帶 v2 pipelineVersion；現有 pending command 不被改版本或 request ID。
+- [ ] 用合成 PO／報價／估價／無法分類文件驗全流程、跨頁折扣／小計、缺值、所有 commit 前後中斷與 provider call count。
+- [ ] 檢查 Domain 無 provider/DB/host import、Application 僅用 ports、跨包 private import 為零、無循環依賴；不以新 wrapper 或放寬 guard 消除違規。
+- [ ] 執行 affected lint/typecheck/test/build、check:repository、dependency/knip/schema guards；既有 baseline failure 分開報告。
+- [ ] 完成獨立整體 review、修正重要 findings、驗 current head；以具體 readback 證據確認部署。
+- [ ] reader-ready 後才開 writer；rollback release 必須能讀取新 result/revision/receipt 並恢復保存。禁止回退到只懂舊表的 binary 或刪新資料。
+- [ ] Task 0 catalog／資料處置未收斂、token profile 未量測、必要 DB／整合測試未通過時，不開 production intake；本地測試不能冒充線上修復。
 
-- [ ] 先寫 failing tests：依 revision 版本呈現正確 editor；未知欄位／重名 label 不遺失；分類修正與欄位修正不呼叫模型。
-- [ ] 原件與欄位對照、分類、缺值、原始欄名、row fragments、調整 scope 與 blocker 可檢視；人工 confidence 不標成自動正確率。
-- [ ] v2 confirm 明確要求核對 source pages/rows/item count；不能直接用 UI 已解析行數填作「已核對」。保留未知、拒絕、衝突與保存結果不明的區別。
-- [ ] 保留 identity loss／Repository 切換／pagehide 清除私有 state、stale response 防護與原 request 重試；重新解析另建明確操作並提示計費。
-- [ ] 欄位超限拒絕而不靜默截斷；v1 歷史與 v1 草稿可用。來源金額空值不能用補 0 的方式解開確認。
-- [ ] 跑受影響 Web tests、lint/typecheck/build；用合成不同版面做人工 review 驗收，提交 commit。
-
-## Task 5 — 明確的 Content 規劃轉換與 WBS 相容
-
-**Files:** Content source/expansion port、plans command/use case/domain、host `apps/web/src/app/api/_composition/contract-content-expansion.server.ts`、`618_content_plans.sql`；WBS decoder／`702_project_wbs.sql` 中 source coverage allowlist；Content/WBS tests。SQL／public contract 變動同時更新相應 authority。
-
-**Interfaces:**
-
-- Content produces `CommercialDocumentPlanningChoices` 與 `expandCommercialDocumentIntoPlan(source, choices, context): ContentPlanRevision`；同一 snapshot 包含 mapping version、來源 pin、每行 disposition、USER_PLANNED 假設。
-- Content 的 source port 接受 v1/v2 的最小 planning projection，不接收價格／付款資料。Contract 仍透過現有 public reader 提供版本；host 在兩個公開契約間接線，不新增 package private imports。
-- New v2 mappingVersion=`commercial-document-content-v2`。既有 v1 reader/mapping 保留；WBS 的 Content reader 與 `import-content-document` wire identity 不變。
-
-- [ ] 先寫 failing tests：CONFIRMED 與當下 scope 必須重驗；DRAFT／UNKNOWN 拒絕；報價不會自動成為承諾；所有 sourceRowIds 必須恰好被處置一次。
-- [ ] 為替代方案未選／多選、折扣／稅／小計不變工作、重複匯入、缺描述／數量／measure、來源版本漂移補測試。
-- [ ] v2 匯入要求 planningIntent 及完整 row dispositions。缺來源數量時只允許使用者提供有 reason 的 Content planningQuantity，origin 記為 USER_PLANNED，Contract source null 不變。
-- [ ] Content domain 實作 v2 conversion；計畫數量與 measure 依 Content owner 規則驗證。不能用 acknowledgement 繞過缺失／未處置的 source rows。
-- [ ] 更新 Content/WBS 的 mapping/disposition decoder 與 SQL 檢查以讀取新 provenance；確定 v1 snapshots 仍保持原語意。WBS 不新增價格／商務接受，也不自動發布 Baseline。
-- [ ] 驗 WBS current Project authorization、跨 scope disclosure、open-state、expected version、source pins 與 idempotent replay；跑 Content/WBS tests、schema checks、相關 typecheck/build，提交 commit。
-
-## Task 6 — 整合、rollout 與交付證據
-
-**Files:** 各 owner 的整合 tests、Web profile fixtures、必要 provider/runbook 與 public contract 說明。原件只作獲授權的本地人工驗收。
-
-**Interfaces:** Consumes Tasks 0–5；produces exact-head 的驗證證據與 operator 可執行、已 review 的 release/readback 步驟。不新增平行 release workflow。
-
-- [ ] 用合成 PO、報價、估價、未知類型各跑 File → extraction → draft → confirm；再按已批准政策跑 explicit Content → WBS draft。
-- [ ] 驗來源缺數量而另填計畫數量、跨頁續行、逐項折扣與多 currency；比較檢視的是來源事實，不能在測試中偷加報價接受／匯率轉換功能。
-- [ ] 模擬 reader-first 滾動升級：舊 v1 UI／pending command、新 v2 UI／pending command、模型設定不可用、確認競爭、Contract commit 成功但 response/completion 中斷。驗每條路徑的 provider count 與 exact receipt。
-- [ ] 驗 token/page/bytes/output caps 及輸出不完整時的明確拒絕；使用至少 54 個 logical items 並含逐項調整／小計的合成文件量測 provider usage，確認 compact row union 的成本。若不符合現有預算，先回報容量／成本決策，不提高上限或省略行；不以 bytes/page cap 宣稱精確 input token 或費用上限。
-- [ ] 依 affected scope 跑 `pnpm check lint`、`pnpm check typecheck -- --filter=@line_bot_v1/contract --filter=@line_bot_v1/intelligence --filter=@line_bot_v1/content --filter=@line_bot_v1/wbs --filter=@line_bot_v1/web`、對應 test/build、schema checks 與必要全域 guards；已知 baseline failures 與新失敗分開記錄，不弱化規則。
-- [ ] 完成 independent technical review，保留所有 findings 的處理結果；以 current head 的必要 CI 與最新 main 為 merge gate。
-- [ ] Production 只收斂 validated main；Task 0 的 reconciliation 完成後 read back version constraints/RLS/grants/dependencies，再開新 UI。若 writer 需回退，只停止新的 v2 intake；v2 reader/receipt/review 保留，不能部署無法讀取已寫入 v2 的舊 binary。
-- [ ] 用獲授權的小型樣本人工驗收並以 runtime trace 核對實際部署與保存；不得用 mock 或本地成功宣稱 Production 已修復。
-
-## 本輪完成與執行前審閱
-
-使用者已審閱方向並授權先合併文件、再開始實施。Builder check 已收斂重要歧義；不以 review 結論取代實作與外部驗證。實作採 reader-first／writer-second，保留可讀取 v2 的 rollback deployment 與 exact request receipt recovery。未取得具體 Production mutation 授權前，不執行遠端 DDL／資料處置。
+**整體完成條件：** 新欄位、持久化、HTTP/UI、Content/WBS 及恢復實際接通，必要檢查與 deployment/readback 證據到位；只完成 Domain 或文件不算功能交付。

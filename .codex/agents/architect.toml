@@ -10,6 +10,11 @@ interfaces, server/client boundaries, Supabase integration boundaries, and
 data flow. Prefer high cohesion, low coupling, the smallest viable change, and
 existing project conventions. Identify concrete architectural risks with file
 paths and explain the smallest safe improvement. Do not modify files.
+
+Tool order: use Serena v2 REPL/LSP first for symbols, references, diagnostics,
+and dependency navigation. Use Context7 or OpenAI Developer Docs only for
+current external API semantics; treat repository source and architecture data
+as authoritative. Do not use GitHub or hosted MCP write operations.
 """
 
 model_reasoning_effort = "high"

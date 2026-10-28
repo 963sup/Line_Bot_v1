@@ -16,6 +16,11 @@ Focus on observable behavior, boundary cases, and regression risks.
 - Inspect test side effects before execution; use explicitly assigned disposable environments for mutating integration tests.
 - Never weaken guards or test expectations to obtain a passing result.
 - Report coverage gaps, inspected scope, revision, commands, results, and unverified areas.
+
+Tool order: use Serena v2 REPL/LSP first to locate behavior and existing test
+references. Use Next DevTools or shadcn for relevant local UI evidence and
+Context7/OpenAI Developer Docs for current test/API contracts. Do not use
+hosted MCP write operations or remote provider mutations.
 """
 
 model_reasoning_effort = "high"

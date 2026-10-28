@@ -9,7 +9,7 @@ export function createFileRequests(context: {
   onDenied(message: string): void;
 }) {
   async function send(
-    target: "file" | "document",
+    target: "file" | "document" | "commercialIntake" | "commercialDocument",
     query: Record<string, string>,
     command?: object,
   ) {
@@ -25,7 +25,12 @@ export function createFileRequests(context: {
       owner: context.ownerLogin,
       name: context.repositoryName,
     });
-    const endpoint = target === "file" ? "repository-files" : "repository-document-intake";
+    const endpoint = {
+      file: "repository-files",
+      document: "repository-document-intake",
+      commercialIntake: "document-intakes",
+      commercialDocument: "commercial-documents",
+    }[target];
     const response = await fetch(`/api/${endpoint}?${search}`, {
       method: command ? "POST" : "GET",
       headers: {
@@ -59,11 +64,13 @@ export function createFileRequests(context: {
         ? serverMessage
         : target === "file"
           ? "File 請求失敗。"
-          : response.status === 504
-            ? "採購單請求逾時，保存結果待確認；請保留此頁，使用原命令查詢回執，勿重新建立。"
-            : query.operation === "read"
-              ? "ContractDocument 讀取失敗。"
-              : "採購單操作失敗。";
+          : target === "commercialIntake" || target === "commercialDocument"
+            ? "商務文件操作失敗；請保留原命令並查詢狀態。"
+            : response.status === 504
+              ? "採購單請求逾時，保存結果待確認；請保留此頁，使用原命令查詢回執，勿重新建立。"
+              : query.operation === "read"
+                ? "ContractDocument 讀取失敗。"
+                : "採購單操作失敗。";
     if (response.status === 401 || response.status === 403) {
       context.onDenied(message);
       throw new StaleRequest();
@@ -71,7 +78,7 @@ export function createFileRequests(context: {
     const traceId: unknown = Reflect.get(fields, "traceId");
     const stage: unknown = Reflect.get(fields, "stage");
     const diagnostic =
-      target === "document"
+      target !== "file"
         ? [
             typeof stage === "string" && /^[a-z.]{1,40}$/.test(stage) ? `階段：${stage}` : "",
             typeof code === "string" && /^[A-Z_]{1,64}$/.test(code) ? `錯誤碼：${code}` : "",
@@ -83,7 +90,7 @@ export function createFileRequests(context: {
             .join(" · ")
         : "";
     const failureMessage =
-      target === "document" && code === "UNKNOWN_RESULT"
+      target !== "file" && code === "UNKNOWN_RESULT"
         ? "解析結果尚未確認；原命令重試只會查詢已保存回執，不會重新解析。請保留此頁並聯絡管理員查核。"
         : message;
     throw Object.assign(new Error([failureMessage, diagnostic].filter(Boolean).join("\n")), {
@@ -97,5 +104,8 @@ export function createFileRequests(context: {
     file: (query: Record<string, string> = {}, mutation?: FileMutation) =>
       send("file", query, mutation),
     document: (query: Record<string, string>, command?: object) => send("document", query, command),
+    commercialIntake: (query: Record<string, string>, command?: object) =>
+      send("commercialIntake", query, command),
+    commercialDocument: (query: Record<string, string>) => send("commercialDocument", query),
   };
 }

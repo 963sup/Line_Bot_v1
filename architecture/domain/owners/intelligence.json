@@ -73,6 +73,26 @@
       "definition": "Immutable operator marker proving one File-to-Intelligence processing-history copy by exact release revision, counts and canonical SHA-256 readback.",
       "authorityMode": "reference-only",
       "persistenceExpectation": "relation"
+    },
+    {
+      "id": "intelligence-document-extraction-job",
+      "canonicalName": "DocumentExtractionJob",
+      "kind": "authoritative",
+      "owner": "intelligence",
+      "lifecycle": "current",
+      "definition": "Durable technical analysis command, source/profile snapshot and fenced dispatch state; one external extraction dispatch per actor command. Contract receipt alone proves business persistence.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
+    },
+    {
+      "id": "intelligence-document-extraction-result",
+      "canonicalName": "DocumentExtractionResult",
+      "kind": "authoritative",
+      "owner": "intelligence",
+      "lifecycle": "current",
+      "definition": "Immutable source-pinned technical observations and semantic hints committed atomically with job READY; contains no normalized Contract business candidate. Reused for draft save recovery without provider rerun.",
+      "authorityMode": "authoritative",
+      "persistenceExpectation": "relation"
     }
   ],
   "relationships": [
@@ -233,6 +253,45 @@
           "apps/web/test/document-intake-http.test.ts"
         ],
         "note": "A single durable provider attempt may produce only an untrusted SAVE candidate. Its technical state preserves source/intent identity and target receipt reference, never the candidate. Provider failure, response loss and live extraction accuracy remain distinct evidence boundaries."
+      }
+    },
+    {
+      "id": "intake-commercial-document",
+      "owner": "intelligence",
+      "kind": "leaf",
+      "intent": "Persist source-qualified technical observations before submitting an idempotent commercial draft command; resume business persistence without another extraction.",
+      "preserves": ["K1", "K2", "K3", "K4", "K5", "K6", "INTELLIGENCE1", "INTELLIGENCE2"],
+      "consumes": [
+        "intelligence-file-source",
+        "intelligence-contract-document-intake",
+        "intelligence-platform-persistence"
+      ],
+      "validationProfiles": [
+        "semantic-architecture",
+        "architecture-tests",
+        "schema",
+        "tests",
+        "fast-repository"
+      ],
+      "runtimeExpectation": "required",
+      "implementation": {
+        "status": "implemented",
+        "scope": "Fixed-profile commercial extraction with fenced dispatch, durable results, authorized status/read/resume and injected target draft capability.",
+        "sourcePaths": [
+          "packages/intelligence/src/application/use-cases/commercial-intake.ts",
+          "packages/intelligence/src/adapters/outbound/persistence/commercial-intake.ts",
+          "packages/intelligence/src/adapters/outbound/commercial-extractor.ts"
+        ],
+        "publicExports": [
+          "./composition/bootstrap/commercial-intake",
+          "./contracts/output/commercial-intake"
+        ],
+        "entrypoints": ["apps/web/src/app/api/document-intakes/route.ts"],
+        "testPaths": [
+          "packages/intelligence/test/commercial-intake-postgres.test.ts",
+          "apps/web/test/commercial-intake-postgres.test.ts"
+        ],
+        "note": "Source/test availability is separate from actual hosted provider billing or production publication. No model retry for unknown dispatch; Contract command receipt is the sole business-save evidence."
       }
     }
   ],

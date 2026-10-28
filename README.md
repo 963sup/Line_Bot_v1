@@ -78,7 +78,7 @@ architecture/
     ├── shared.json             # 無單一業務 owner 的跨 owner 機制
     └── <owner>.json            # owner 的資料關係與 SQL 位置
 
-packages/<package>/
+packages/*/
 ├── package.json                # 真實 exports、依賴與 scripts
 ├── src/                        # 實作與契約
 ├── test/                       # 行為證據（實際配置以 package 為準）
@@ -113,7 +113,7 @@ Source-of-truth 分工見 [sources of truth](docs/facts/sources-of-truth.md)；A
 
 依 [官方 hooks 文件](https://learn.chatgpt.com/docs/hooks)，專案 hooks 需由支援該功能的 host 載入及信任；CLI 可用 `/hooks` 檢視與信任設定。設定變更後需重新檢視信任。Cloud orchestration 有模式限制；模擬事件測試成功不代表當前 Cloud／桌面 session 已觸發 hooks。請以新 session 的實際事件確認，無法載入時仍手動執行適用的 `pnpm check`。
 
-專用子代理由 [`.codex/config.toml`](.codex/config.toml) 註冊：[`test-engineer`](.codex/agents/test-engineer.toml) 分析測試缺口，僅在指定路徑修改測試；[`integration-validator`](.codex/agents/integration-validator.toml) 以唯讀方式核對整合契約與驗證證據。依任務呼叫，不在每次修改時自動執行；設定需由支援自訂 agent 的 Codex session 載入。
+專用子代理與 MCP 使用方式見 [Codex agents and MCP](docs/reference/engineering/codex-agents-and-mcp.md)；實際設定以 [`.codex/config.toml`](.codex/config.toml) 與 `.codex/agents/*.toml` 為準。依任務呼叫，不在每次修改時自動執行；設定需由支援自訂 agent 的 Codex session 載入。
 
 ## Codex Cloud bootstrap
 

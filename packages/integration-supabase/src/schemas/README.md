@@ -14,7 +14,7 @@ architecture/registry.json#data
 packages/integration-supabase/src/schemas/*.sql
 → actual PostgreSQL definition
 
-packages/<owner>
+architecture/registry.json#modules → selected runtime module
 → runtime writer / public contract when runtime exists
 ```
 

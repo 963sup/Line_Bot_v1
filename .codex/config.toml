@@ -14,14 +14,14 @@ web_search = "live"
 enabled = true
 destructive_enabled = true
 open_world_enabled = true
-default_tools_approval_mode = "approve"
+default_tools_approval_mode = "never"
 
 [features]
 hooks = true
 
 # Public official documentation; no local executable or credential required.
 [mcp_servers.openaiDeveloperDocs]
-default_tools_approval_mode = "approve"
+default_tools_approval_mode = "never"
 url = "https://developers.openai.com/mcp"
 startup_timeout_sec = 30
 
@@ -31,18 +31,19 @@ startup_timeout_sec = 30
 command = "bash"
 args = [".codex/bootstrap/install.sh", "--serena", "start-mcp-server", "--project-from-cwd", "--context=codex", "--agent-interface=REPL", "--open-web-dashboard=false"]
 startup_timeout_sec = 60
-default_tools_approval_mode = "approve"
+default_tools_approval_mode = "never"
 
 # Context7 hosted MCP. Set CONTEXT7_API_KEY only when the account requires it.
 [mcp_servers.context7]
-default_tools_approval_mode = "approve"
+default_tools_approval_mode = "never"
 url = "https://mcp.context7.com/mcp"
+bearer_token_env_var = "CONTEXT7_API_KEY"
 startup_timeout_sec = 30
 
 # Official GitHub hosted MCP. Token comes from the host environment/network secret.
 # Keep GitHub CLI's GH_TOKEN separate; no credential values belong in this file.
 [mcp_servers.github]
-default_tools_approval_mode = "approve"
+default_tools_approval_mode = "never"
 url = "https://api.githubcopilot.com/mcp/"
 bearer_token_env_var = "GITHUB_MCP_TOKEN"
 http_headers = { "X-MCP-Toolsets" = "repos,issues,pull_requests" }
@@ -50,14 +51,14 @@ startup_timeout_sec = 30
 
 # Next.js DevTools MCP uses the workspace-pinned executable.
 [mcp_servers.next-devtools]
-default_tools_approval_mode = "approve"
+default_tools_approval_mode = "never"
 command = "bash"
 args = [".codex/bootstrap/install.sh", "--exec", "pnpm", "exec", "next-devtools-mcp"]
 startup_timeout_sec = 30
 
 # shadcn MCP uses the workspace-pinned CLI from apps/web.
 [mcp_servers.shadcn]
-default_tools_approval_mode = "approve"
+default_tools_approval_mode = "never"
 command = "bash"
 args = [".codex/bootstrap/install.sh", "--exec", "pnpm", "--filter", "@line_bot_v1/web", "exec", "shadcn", "mcp"]
 startup_timeout_sec = 30
@@ -84,12 +85,56 @@ config_file = "./agents/architect.toml"
 description = "Analyze test coverage, design regression cases, and identify untested behavior."
 config_file = "./agents/test-engineer.toml"
 
+[agents.release-gatekeeper]
+description = "Evaluate release readiness, branch protection, CI evidence, and merge gates."
+config_file = "./agents/release-gatekeeper.toml"
+
+[agents.database-steward]
+description = "Review Supabase migrations, schema drift, RLS, rollback, and data compatibility."
+config_file = "./agents/database-steward.toml"
+
+[agents.observability-investigator]
+description = "Investigate Sentry, Vercel logs, trace IDs, and production error evidence."
+config_file = "./agents/observability-investigator.toml"
+
+[agents.performance-cost-analyst]
+description = "Analyze latency, token usage, database query cost, bundle size, and provider cost."
+config_file = "./agents/performance-cost-analyst.toml"
+
+[agents.accessibility-ux-auditor]
+description = "Audit UI accessibility, keyboard flows, forms, errors, responsive behavior, and UX friction."
+config_file = "./agents/accessibility-ux-auditor.toml"
+
+[agents.documentation-curator]
+description = "Maintain repository documentation, AGENTS guidance, Serena README, and durable memory routing."
+config_file = "./agents/documentation-curator.toml"
+
+[agents.contract-steward]
+description = "Maintain public API, event, HTTP, provider, and package contract compatibility."
+config_file = "./agents/contract-steward.toml"
+
+[agents.e2e-journey-engineer]
+description = "Validate complete browser and service journeys across upload, analysis, persistence, and recovery."
+config_file = "./agents/e2e-journey-engineer.toml"
+
+[agents.dependency-steward]
+description = "Maintain workspace dependencies, lockfile integrity, upgrades, and supply-chain evidence."
+config_file = "./agents/dependency-steward.toml"
+
+[agents.lifecycle-owner]
+description = "Plan feature rollout, flags, backfills, deprecation, migration sequencing, and rollback."
+config_file = "./agents/lifecycle-owner.toml"
+
+[agents.data-quality-analyst]
+description = "Validate extraction quality, provenance, completeness, unknown fields, and cross-document consistency."
+config_file = "./agents/data-quality-analyst.toml"
+
 [agents.integration-validator]
 description = "Validate cross-service contracts, runtime behavior, and external integration evidence."
 config_file = "./agents/integration-validator.toml"
 
 [mcp_servers.sentry]
-default_tools_approval_mode = "approve"
+default_tools_approval_mode = "never"
 # Official hosted MCP uses OAuth; request org:read,project:read,event:read scopes.
 # Project scoping supplies query defaults, not business write authorization.
 url = "https://mcp.sentry.dev/mcp/963sup/sentry"

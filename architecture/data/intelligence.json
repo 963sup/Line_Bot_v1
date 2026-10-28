@@ -75,6 +75,22 @@
       "authority": true,
       "semanticOwner": "intelligence",
       "concept": "intelligence-processing-history-cutover"
+    },
+    {
+      "name": "document_extraction_jobs",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/619_intelligence_intakes.sql",
+      "authority": true,
+      "semanticOwner": "intelligence",
+      "concept": "intelligence-document-extraction-job"
+    },
+    {
+      "name": "document_extraction_results",
+      "kind": "table",
+      "path": "packages/integration-supabase/src/schemas/619_intelligence_intakes.sql",
+      "authority": true,
+      "semanticOwner": "intelligence",
+      "concept": "intelligence-document-extraction-result"
     }
   ]
 }

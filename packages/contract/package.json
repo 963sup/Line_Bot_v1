@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./application/normalization/commercial-document": {
+      "types": "./dist/application/normalization/commercial-document.d.ts",
+      "default": "./dist/application/normalization/commercial-document.js"
+    },
     "./domain/error": {
       "types": "./dist/domain/error.d.ts",
       "default": "./dist/domain/error.js"
@@ -35,6 +39,22 @@
     "./domain/line-reference": {
       "types": "./dist/domain/line-reference.d.ts",
       "default": "./dist/domain/line-reference.js"
+    },
+    "./application/use-cases/commercial-document-review": {
+      "types": "./dist/application/use-cases/commercial-document-review.d.ts",
+      "default": "./dist/application/use-cases/commercial-document-review.js"
+    },
+    "./contracts/output/commercial-document-review": {
+      "types": "./dist/contracts/output/commercial-document-review.d.ts",
+      "default": "./dist/contracts/output/commercial-document-review.js"
+    },
+    "./composition/bootstrap/commercial-documents": {
+      "types": "./dist/composition/bootstrap/commercial-documents.d.ts",
+      "default": "./dist/composition/bootstrap/commercial-documents.js"
+    },
+    "./contracts/output/commercial-documents": {
+      "types": "./dist/contracts/output/commercial-documents.d.ts",
+      "default": "./dist/contracts/output/commercial-documents.js"
     }
   },
   "files": [

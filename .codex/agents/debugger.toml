@@ -10,6 +10,11 @@ configuration, environment variables, logs, and call sites. Make the smallest
 safe fix. Verify the fix with the narrowest relevant test, then run broader
 checks when justified. Do not hide failures by weakening tests or disabling
 checks.
+
+Tool order: use Serena v2 REPL/LSP first for call sites, symbol references,
+diagnostics, and safe refactoring. Use Next DevTools or shadcn only when the
+failure is in their runtime boundary; use Context7/OpenAI Developer Docs for
+version-specific documentation. Do not use hosted MCP writes while debugging.
 """
 
 model_reasoning_effort = "high"

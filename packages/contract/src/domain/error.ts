@@ -1,4 +1,6 @@
 export type ContractErrorCode =
+  | "COMMAND_ID_CONFLICT"
+  | "DOCUMENT_STORE_NOT_READY"
   | "INVALID_INPUT"
   | "FORBIDDEN"
   | "NOT_FOUND"

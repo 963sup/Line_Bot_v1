@@ -21,13 +21,33 @@
 
 ## Serena MCP usage
 
+完整的 Serena CLI、MCP、REPL 與 LSP 操作速查見 [`.serena/README.md`](.serena/README.md)；Serena v2 [Tools 官方文件](https://oraios.github.io/serena/01-about/035_tools.html) 是語義工具的最優先參考，開始 Serena 工作前再以當前 CLI `--help` 與 session `initial_instructions` 核對可用能力。
+
 - Serena MCP 可用時，涉及 TypeScript/JavaScript 符號、跨檔案引用、宣告、實作、診斷、語義重構、safe delete、LSP 或 project memory 的任務，主動優先使用 Serena。
+- Serena v2 + LSP 是本 repository 的首選語義工具鏈；Serena 以 workspace-pinned Python runtime 啟動，並透過 TypeScript LSP 處理本專案的 TS/JS 符號。只有 Serena 未啟動、能力不足或任務屬於一般檔案／shell／Git／驗證操作時，才改用 Codex 原生工具。
 - 每個新的 Serena MCP session 先呼叫一次 `initial_instructions`；不要重複把完整 Serena manual 帶入上下文。
 - 需要了解專案結構、符號關係或跨 package dependency 時，先使用 Serena 的 `serena_repl`、symbol overview、find symbol、find references、diagnostics 或 LSP 操作，再決定是否需要讀取完整檔案。
 - Serena 只負責語義定位、符號操作、診斷、重構、project activation 與 memory routing；一般檔案讀寫、patch、shell、Git、測試與驗證使用 Codex 原生工具。
 - Serena memory 只作為檢索入口；source、manifest、schema、tests、architecture authority 與 provider readback 才是完成與正確性的證據。
+- 對持久且非顯然的 repository 慣例、工具鏈、架構決策或完成證據，使用 Serena v2 memory API 讀取／新增／更新／重新命名／刪除；先讀 `mem:eme_core` 與 `mem:memory_maintenance`，沿用既有 owner，完成後執行 `serena memories check`。不要把 branch 狀態、聊天紀錄、原始 log、credential 或一次性進度寫入 memory。
 - Serena session 未啟動、工具不可用或結果不足時，明示原因並使用 Codex 原生工具繼續，不得假設 Serena 結果等於完整 repository evidence。
 - 不為一次性文字查找、單檔文件修改、設定檔修改或簡單命令強制呼叫 Serena；主動使用必須能降低符號定位或跨檔案推理成本。
+
+### Available MCP status
+
+目前以 [`.codex/config.toml`](.codex/config.toml) 為 MCP 設定來源；以下是最近一次本地 bootstrap 核對結果，不代表每個 Codex host session 都已完成登入或連線：
+
+| MCP | 狀態 | 使用規則 |
+| --- | --- | --- |
+| `serena` | 已核對可用：Serena 2.1.0、Python 3.13、LSP、REPL | 語義定位、符號、引用、診斷、重構優先使用 |
+| `next-devtools` | 已核對本地 launcher 可用 | Next.js runtime／診斷需要時使用 |
+| `shadcn` | 已核對本地 launcher 可用 | 元件庫查詢／操作需要時使用 |
+| `github` | Token binding 已核對；實際 hosted handshake 仍需當前 host 驗證 | repository、PR、issue 操作使用；不把 Token 寫入 repository |
+| `context7` | 已配置 `CONTEXT7_API_KEY` 引用；本地 shell 未提供該值時不可用 | 文件查詢需要時使用；缺少 key 要明示，不猜測結果 |
+| `openaiDeveloperDocs` | 端點已配置；host handshake 未核對 | OpenAI 官方文件查詢需要時使用 |
+| `sentry` | 端點已配置；OAuth／host handshake 未核對 | 只有當前 host 完成 OAuth 後使用 |
+
+若 MCP 實際呼叫失敗，先回報具體 server、工具與授權／連線原因，再使用已核對的 Serena 或 Codex 原生工具；不得把「設定存在」宣稱為「服務可用」。
 
 ## Mandatory governing set
 

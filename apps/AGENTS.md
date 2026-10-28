@@ -1,6 +1,6 @@
 # Application delivery boundary
 
-`apps/` 擁有 application host、delivery 與 composition；business authority 仍在 `packages/<owner>`。頁面、API、route group、Bottom Navigation 或 provider session 都不建立新的 Domain owner。
+`apps/` 擁有 application host、delivery 與 composition；business authority 仍由 `architecture/registry.json#domain` 的 semantic Owner 擁有，實作 consumer 再由 `#modules` 映射。頁面、API、route group、Bottom Navigation 或 provider session 都不建立新的 Domain owner。
 
 ## Governing files
 

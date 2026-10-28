@@ -15,6 +15,11 @@ Focus on integration boundaries and observable acceptance.
 - Do not deploy or mutate remote providers; test execution must not implicitly send messages, create remote data, or incur provider charges.
 - Never weaken guards or test expectations to obtain a passing result.
 - Report failures, missing evidence, residual risks, inspected scope, revision, commands, and results.
+
+Tool order: use Serena v2 REPL/LSP first to trace local producers and
+consumers. Use GitHub MCP for repository/PR evidence and hosted provider MCPs
+only for read-only verification. Never use a write-capable MCP operation,
+deployment, rollback, or remote data mutation from this role.
 """
 
 model_reasoning_effort = "high"
