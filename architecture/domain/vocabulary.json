@@ -13,7 +13,7 @@
     "businessOwnerDocs": "docs/owners/",
     "runtimeBehavior": "source-code-and-tests",
     "persistenceCurrentState": "packages/integration-supabase/src/schemas/",
-    "historicalChange": "docs/change/",
+    "unresolvedWork": "owning-package-issue-or-pr",
     "dataTopology": "architecture/registry.json#data",
     "githubFptDomainTruth": "architecture/fpt/*.json",
     "githubFptProvenance": "architecture/fpt-source.json"
@@ -326,9 +326,9 @@
       "scope": "canonical repository commands"
     },
     {
-      "id": "historical-change",
-      "authority": "docs/change/",
-      "scope": "proposal/migration/history/acceptance evidence"
+      "id": "current-unresolved-work",
+      "authority": "owning-package-issue-or-pr",
+      "scope": "unresolved implementation work and validation evidence"
     },
     {
       "id": "external-current-state",

@@ -5,6 +5,8 @@
 - Module kind: integration-adapter
 - Architecture: [registry.json#modules](../../architecture/registry.json#modules)
 
+Canonical provider, gateway and deployment content: [src/README.md](src/README.md#canonical-provider-boundary).
+
 Vercel AI Gateway adapter for Assistant responses, receipt parsing, Intelligence observations, and Contract-schema-driven document candidates. No business confirmations or persistent data.
 
 Public runtime entries and private provider transport:

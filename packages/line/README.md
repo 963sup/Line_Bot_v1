@@ -17,3 +17,5 @@ Routing and module overview for `@line_bot_v1/line`.
 - `./provider` — stable provider namespace used for Account binding.
 
 The package is already the LINE integration adapter. Internal source is grouped by provider capability; there is no nested generic `adapters/` layer.
+
+Provider reference routing: `docs/reference/line/` contains the detailed identity, webhook, messaging, MINI App and Rich Menu reference pages; executable provider behavior remains in this package, and product authorization remains with the consuming owner.

@@ -1,6 +1,6 @@
 # Testing strategy
 
-Testing 的責任是選擇最能直接證明 claim、定位 failure 與排除替代解釋的測試層級。Command 入口與完整驗證順序由 [Validation](validation-pipeline.md) 擁有；具日期的實際結果由 `docs/change/evidence/` 保存。
+Testing 的責任是選擇最能直接證明 claim、定位 failure 與排除替代解釋的測試層級。Command 入口與完整驗證順序由 [Validation](validation-pipeline.md) 擁有；具日期的實際結果由 CI／provider evidence 保存。
 
 ## Evidence layers
 
@@ -50,4 +50,4 @@ Test 通過不等於 TypeScript contract、production build、deployment 或 rem
 
 - Validation commands：[Validation](validation-pipeline.md)
 - Architecture guards：[Architecture guards](architecture-guards.md)
-- Acceptance evidence：[Acceptance evidence](../../change/evidence/)
+- Acceptance evidence：由對應 CI、provider 與 deployment readback 保存。

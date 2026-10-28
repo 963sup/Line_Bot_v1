@@ -13,6 +13,18 @@
 | 查所有 current modules 與 selected targets | 直接讀取 `architecture/registry.json#modules` |
 | 查驗證與證據邊界 | [Validation rules](../docs/rules/validation-evidence.md) |
 
+## Owner-first batch workflow
+
+每次跨檔案整理固定沿同一條路徑，讓語意工具可以按 owner 限定範圍：
+
+1. 從 `architecture/registry.json#modules` 取得 target module 的 `semanticOwner`；owner ID 不直接由資料夾名稱推導。
+2. 讀該 owner 的 `docs/owners/<owner>.md`、package `README.md`、nearest `AGENTS.md` 與 `package.json#exports`。
+3. 由 exports、references 與實際 consumers 決定批次範圍；provider／database 技術內容回到 integration package，business rule 回到 owner package。
+4. 只修改 canonical source 與必要的 cross-package index；不在 `docs/reference`、owner docs、README 之間複製同一規則。
+5. 以 owner tests、affected typecheck/lint、`check:repository`、`patch` 與 diff/reference 搜尋完成驗收。
+
+批次修改不以「所有 package 都有相同目錄」為完成條件；只有真實 consumer、獨立責任或可驗證的 dependency boundary 才建立新檔案或新 abstraction。沒有對應 owner、source 或 consumer 的文件／task 歸為 stale candidate，先確認引用後才刪除。
+
 ## Authority routing
 
 | 真相 | Canonical owner |

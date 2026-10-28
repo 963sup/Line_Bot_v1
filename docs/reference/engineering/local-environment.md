@@ -27,7 +27,7 @@ pnpm test
 ## Configuration responsibility
 
 - LINE Messaging channel secret/access token：deployment secret；單一 LINE integration provider namespace 與 MINI App Developing / Review / Published public identity 由 source 擁有，不以 env 重複設定：[LINE integrations](../line/identity.md)
-- Supabase public/runtime/operator configuration：[Supabase platform contract](../platform/supabase.md)
+- Supabase public/runtime/operator configuration：[integration-supabase Canonical Supabase rules](../../../packages/integration-supabase/src/README.md#canonical-supabase-rules)；跨 package 分類見 [Supabase platform index](../platform/supabase.md)
 - Redis：Vercel Marketplace resource 的 `KV_REST_API_URL` / `KV_REST_API_TOKEN` 是唯一 application connection contract；environment namespace 由 runtime environment 推導：[Redis coordination](../platform/redis.md)
 - Current AI runtime credential / model setting：[AI integration](../platform/ai.md)
 - Workplace / allowed Members：business data，由 Attendance/permission 流程管理，不用 env 授權。

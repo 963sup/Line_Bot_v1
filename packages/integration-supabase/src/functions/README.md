@@ -1,6 +1,6 @@
 # Edge Functions 開發規格
 
-本目錄預先定義 Edge runtime 的接線方式；目前未建立或發布 Edge endpoint。平台與發布權威見 [Supabase](../../../../docs/reference/platform/supabase.md) 與 [Release](../../../../docs/reference/operations/release.md)。
+本目錄預先定義 Edge runtime 的接線方式；目前未建立或發布 Edge endpoint。Provider 規則見 [Canonical Supabase rules](../README.md#canonical-supabase-rules)，發布 ordering 見 [Release](../../../../docs/reference/operations/release.md)。
 
 ## Runtime boundary
 

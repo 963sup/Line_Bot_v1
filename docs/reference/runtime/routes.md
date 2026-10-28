@@ -85,7 +85,7 @@ Admin partition 已移除。Account 使用者管理位於 `/settings/users`；Id
 
 Google Places／Geocoding 回傳地址只作當次設定草稿並允許使用者修改；使用者按儲存本身不構成 Google Maps Content 長期保存權的法律或契約豁免。Production 啟用前仍須依實際 billing region／agreement 核對 Google Maps Platform 的 attribution、Terms／Privacy Policy 與 caching/storage 限制。
 
-Current / target capability status 回 [Ownership facts](../../facts/ownership.md) 與 [Governance](../../change/README.md)；permission contract 見 [Authorization](../security/permissions.md)。
+Current capability status 回 [Ownership facts](../../facts/ownership.md) 與 owner/package source；permission contract 見 [Authorization](../security/permissions.md)。
 
 ## API
 

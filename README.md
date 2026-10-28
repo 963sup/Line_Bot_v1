@@ -50,7 +50,7 @@ source packages/integration-supabase/.temp/local.env
 pnpm supabase:stop
 ```
 
-預設提供 Database、Auth、REST、Storage 與 Gateway；需要 Studio、Realtime 等額外服務時明確執行 `pnpm provider:supabase start --full`，並預留額外磁碟。`status`／`verify` 不安裝或啟動服務；`stop` 保留本機 volumes。環境檔只含本地 stack 憑證、被 Git 忽略且不輸出到日誌。首次啟動從 [`current schemas`](packages/integration-supabase/src/schemas/) 在單一 transaction 建立應用結構，不建立或重播 migration history；既有資料不自動重設，schema 變動要求明確 reconcile。這些指令不代表 hosted Supabase 已同步；remote publication 仍依 [Supabase platform contract](docs/reference/platform/supabase.md) 執行。
+預設提供 Database、Auth、REST、Storage 與 Gateway；需要 Studio、Realtime 等額外服務時明確執行 `pnpm provider:supabase start --full`，並預留額外磁碟。`status`／`verify` 不安裝或啟動服務；`stop` 保留本機 volumes。環境檔只含本地 stack 憑證、被 Git 忽略且不輸出到日誌。首次啟動從 [`current schemas`](packages/integration-supabase/src/schemas/) 在單一 transaction 建立應用結構，不建立或重播 migration history；既有資料不自動重設，schema 變動要求明確 reconcile。這些指令不代表 hosted Supabase 已同步；remote publication 規則見 [integration-supabase Canonical Supabase rules](packages/integration-supabase/src/README.md#canonical-supabase-rules)。
 
 ## 找資訊
 

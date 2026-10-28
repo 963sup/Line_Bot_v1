@@ -5,6 +5,8 @@
 - Module kind: integration-adapter
 - Architecture: [registry.json#modules](../../architecture/registry.json#modules)
 
+Canonical provider, schema and operator content: [src/README.md](src/README.md#canonical-supabase-rules).
+
 This integration owns Supabase SDK bootstrap and local Docker stack tooling. File owns hashes, write/readback semantics, authority and errors. The sole application declarative schema root is [src/schemas/](src/schemas/).
 
 Public runtime entry:

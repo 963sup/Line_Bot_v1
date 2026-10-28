@@ -16,13 +16,13 @@ No relevant pending source means no remote operation. Rich Menu input classifica
 
 ## File orphan recovery boundary
 
-File-owned `file:reclaim` provides a read-only plan and separately gated quarantine/delete/readback implementation for never-committed Upload Intents. Production execution has **not** been wired into the main-push-only Release workflow; it must not be invoked from an arbitrary branch or by weakening CI trigger governance. Retained authority and recovery are defined by the [File owner](../../owners/file.md) and [Recovery](recovery.md).
+File-owned `file:reclaim` provides a read-only plan and separately gated quarantine/delete/readback implementation for never-committed Upload Intents. Production execution requires an explicitly validated operator context and must not be invoked from an arbitrary branch or unvalidated provider context. Retained authority and recovery are defined by the [File owner](../../owners/file.md) and [Recovery](recovery.md).
 
 
 ## Execution
 
 - Validate workflow 對 PR 與 `main` 執行 repository validation；merge candidate 必須以 current head 的成功結果為準。Local build evidence 不等於 provider deployment evidence。
-- Repository 目前沒有自動 Supabase Schema、Storage 或 Scheduler Release workflow。Production schema 只能由受信任 operator 依已合併、已驗證的 current `main` canonical source 執行 exact bounded DDL，並保存 target／revision preflight、post-write readback 與 migration-history unchanged evidence。需要 runtime 協調、recovery 或 business data transform 的變更，必須在執行前另有對應 owner procedure。
+- Supabase schema、environment、operator 與 migration-history 規則集中於 [integration-supabase Canonical Supabase rules](../../../packages/integration-supabase/src/README.md#canonical-supabase-rules)；本文件只定義 publication ordering 與 release evidence。
 - Rich Menu has one independent GitHub release job. It triggers only when Rich Menu executable inputs change and verifies the exact `main` SHA. The job runs `pnpm line:rich-menu reconcile all` with a per-channel concurrency lock; the command performs preflight, fingerprint comparison, create/upload/activate and readback in one process. Web deployment and LINE publication remain separate evidence; a menu URI change must include its Web deployment gate in the owning release change before publication. Failed reconciliation leaves the revision pending for a later retry and does not claim publication success.
 - Vercel、Supabase 與 LINE publication 是彼此獨立的 provider evidence；涉及相依順序的 change 必須在 owning procedure 明確等待前置 readback，不能假設不存在的通用 Release workflow 會代為排序。
 

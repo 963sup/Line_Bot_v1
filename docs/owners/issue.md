@@ -72,7 +72,7 @@ Runtime mapping does not invent facts that did not exist before parity:
 
 On the first business mutation of a legacy row, the same transaction locks the Issue, materializes the exact legacy assignee into `issue_assignees`, populates canonical state/body/workflow fields, clears the compatibility columns, applies the requested business mutation, increments the aggregate version exactly once and appends exactly one event for that business mutation. The technical representation change is not presented as a historical business event.
 
-Physical removal of the legacy columns is a later contract stage and is forbidden until the pending Issue core cutover has provider recovery evidence plus a readback proving zero legacy rows. See [Issue core parity cutover](../change/migrations/issue-core-parity.md).
+Physical removal of legacy columns requires the current Issue contract, provider readback and proof that no legacy rows remain; do not infer permission from a historical plan.
 
 ## IssueType parity
 

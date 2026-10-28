@@ -1,6 +1,6 @@
 # Supabase 開發入口
 
-本 README 只提供導航；不維護第二套 schema、release、recovery 或 remote reconciliation truth。
+本 README 是 integration-supabase 的 schema、environment 與 remote reconciliation 操作規則唯一入口；其他文件只描述概念責任並連結回此處，不維護副本。
 
 ## Source of Truth
 
@@ -10,13 +10,25 @@
 | Private File Bucket desired state | [`config.toml`](config.toml) (`[storage.buckets.repository-files]`) |
 | Schema semantics / DDL vs data transform | [Schema model](../../../docs/reference/data/schema.md) |
 | Persisted relation ownership | [Data topology](../../../architecture/registry.json#data) |
-| Supabase provider / remote reconciliation | [Supabase platform](../../../docs/reference/platform/supabase.md) |
+| Supabase provider / remote reconciliation rules | 本文件的 [Canonical Supabase rules](#canonical-supabase-rules)；跨 package 分類見 [Supabase platform](../../../docs/reference/platform/supabase.md) |
 | Publication ordering | [Release](../../../docs/reference/operations/release.md) |
 | Backup / restore / recovery | [Recovery](../../../docs/reference/operations/recovery.md) |
-| Historical schema extraction | [History extraction](../../../docs/change/evidence/schema-history-extraction.md) |
+| Schema history | 不保留歷史 migration；current SQL 與 schema checks 是唯一 schema source |
 | Object / relationship navigation | [Schema tree](schemas/README.md) |
 
 `packages/integration-supabase/src/migrations/` 不參與 current schema contract 或 remote deployment；不要把 migration history 當成 current schema authority。
+
+## Canonical Supabase rules
+
+`packages/integration-supabase/src/schemas/*.sql` 是 application PostgreSQL structure 的唯一 DDL authority；`config.toml` 的 `[storage.buckets.repository-files]` 是 File private Bucket 的唯一 desired state。`architecture/registry.json#data` 只記錄 persisted relation 的 owner／role／physical file mapping，不取代 SQL authority。
+
+所有環境都以對應的 canonical schema 驗證，且不新增、replay 或 repair Supabase migration history。`apply_migration`、migration files、`supabase_migrations` 寫入，以及沒有 canonical diff 的 Dashboard／SQL Editor 手改都禁止。Supabase MCP 或 operator connection 是執行端，不是第二套 schema authority。
+
+Local stack 與明確隔離、可重建且不承載 Production data 的 non-production project 可以跟隨 branch canonical schema 做整合驗證；其結果不能當作 Production evidence。Production application-schema DDL 只能收斂已合併且已驗證的 current `main` canonical schema。
+
+Remote write 前必須確認 environment、exact project、target、source revision 與資料安全；執行後必須 read back catalog、RLS、grants、functions、triggers 與受影響 invariant，並保存 preflight／readback evidence。Production remote mutation 使用 trusted Supabase MCP 或官方 non-pooling operator connection；本 package 沒有 `schema:remote` 或 `storage:remote` command，也沒有自動 Supabase schema Release workflow。
+
+Schema change 的最小流程是：修改 `schemas/*.sql` → `pnpm schema:check` → affected package checks → non-production readback（需要時）→ merge 到 validated `main` → Production operator reconciliation + readback。需要 business data transform、metadata cutover 或 recovery 的變更，另走 owning procedure，不能藏進 declarative DDL。
 
 ## Capability routing / prepared layout
 
@@ -56,13 +68,13 @@ supabase/
 | 路徑 | 後續實作資產的加入條件與責任邊界 | Canonical authority |
 | --- | --- | --- |
 | `schemas/` | 真實 persisted relation；DDL、index、application grants/RLS 跟隨 relation owner，不按 capability 複製 SQL | [Schema tree](schemas/README.md) |
-| `functions/` | 已證明需要 Edge runtime 的實際 endpoint；entrypoint 只作 adapter，不複製 Next.js／Owner use case。建立前補齊依賴、測試、secrets 與獨立發布／readback contract | [Platform capability activation](../../../docs/reference/platform/supabase.md#free-plan-capability-ownership-and-activation) |
+| `functions/` | 已證明需要 Edge runtime 的實際 endpoint；entrypoint 只作 adapter，不複製 Next.js／Owner use case。建立前補齊依賴、測試、secrets 與獨立發布／readback contract | [Functions](functions/README.md) |
 | `storage/` | 有可重現的 upload/download/rollback 驗證資產時建立；Bucket desired state 仍只在 `config.toml`，File lifecycle 由 File 擁有 | [File](../../../docs/owners/file.md) |
 | `auth/` | 有 provider proof、callback、失效／重播測試資產時建立；不取代 Account-owned User identity mapping 與 business authorization | [Account](../../../docs/owners/account.md) |
-| `realtime/` | 有真實 private subscription consumer，並定義 scope、撤權、斷線補讀與事件可見性後加入驗證資產 | [Platform capability activation](../../../docs/reference/platform/supabase.md#free-plan-capability-ownership-and-activation) |
-| `cron/` | 既有 scheduler 需要 diagnostics／fixtures 時建立；排程定義沿用既有 owner 與部署入口，不增加第二個 scheduler | [Platform capability activation](../../../docs/reference/platform/supabase.md#free-plan-capability-ownership-and-activation) |
-| `queues/` | 真實 durable consumer 需要 claim、lease、retry、dead-letter／recovery 驗證時建立 | [Platform capability activation](../../../docs/reference/platform/supabase.md#free-plan-capability-ownership-and-activation) |
-| `vector/` | 已確定 embedding owner、來源、版本、重建及資料隔離契約，再加入檢索驗證資產；實際 application SQL 仍在 `schemas/` | [Platform capability activation](../../../docs/reference/platform/supabase.md#free-plan-capability-ownership-and-activation) |
+| `realtime/` | 有真實 private subscription consumer，並定義 scope、撤權、斷線補讀與事件可見性後加入驗證資產 | [Realtime](realtime/README.md) |
+| `cron/` | 既有 scheduler 需要 diagnostics／fixtures 時建立；排程定義沿用既有 owner 與部署入口，不增加第二個 scheduler | [Cron](cron/README.md) |
+| `queues/` | 真實 durable consumer 需要 claim、lease、retry、dead-letter／recovery 驗證時建立 | [Queues](queues/README.md) |
+| `vector/` | 已確定 embedding owner、來源、版本、重建及資料隔離契約，再加入檢索驗證資產；實際 application SQL 仍在 `schemas/` | [Vector](vector/README.md) |
 | `webhooks/` | 真實 provider webhook 需要 signature、duplicate、順序與重試驗證資產時建立；接收／處理程式留在實際 runtime 與 owner | [Owner routing](../../../docs/owners/README.md) |
 | `tests/` | 真實跨 Supabase capability 整合情境無法由既有 owner tests 表達時建立；先明定 runner、fixture 清理與 CI 接線，不搬移現有測試 | [Validation evidence](../../../docs/rules/validation-evidence.md) |
 
@@ -70,7 +82,7 @@ supabase/
 
 先使用已存在的 PostgreSQL、必要 Auth proof 與 File private Bucket contract。其他能力依上表逐項啟用；Free 可用不代表需要啟用，也不會因目錄預置而取得授權。
 
-Free 容量、休眠、上傳與備份限制集中查 [Platform Free plan](../../../docs/reference/platform/supabase.md#free-plan-capability-ownership-and-activation) 及 [官方價格與配額](https://supabase.com/pricing)。發布前重新確認目標 Organization／project 的實際方案與用量；local `config.toml` 不宣告 hosted plan，也不代表所有 remote settings 已同步。
+Free 容量、休眠、上傳與備份限制以 provider 官方文件為準；發布前重新確認目標 Organization／project 的實際方案與用量。local `config.toml` 不宣告 hosted plan，也不代表所有 remote settings 已同步。
 
 新增 capability 的最小交付：實際 consumer／Owner → public contract 與安全／失敗條件 → 必要資產及 runner → local 驗證 → 對應 Release 與 provider readback。單一 Owner 測試仍留在其 package；共用目錄不取得業務決策權。
 
@@ -84,7 +96,7 @@ pnpm exec supabase status
 
 - `schema:check`：驗 declarative schemas 與核心 database boundary。
 - `supabase status`：讀取目前 Docker stack 狀態。
-- Remote application-schema mutation 使用受信任 Supabase MCP 或官方 non-pooling operator connection。隔離且可重建的 non-production target 可跟隨 branch canonical schema；Production 只能收斂已合併、已驗證的 current `main`。本 package 沒有 `schema:remote` 或 `storage:remote` operator command，也不使用 migration history。
+- Remote application-schema mutation 的環境與 operator 規則見上方 [Canonical Supabase rules](#canonical-supabase-rules)；本 package 沒有 `schema:remote` 或 `storage:remote` operator command，也不使用 migration history。
 
 ## Change routing
 

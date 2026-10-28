@@ -36,7 +36,7 @@ Runtime 與 source dependency 先確認真正 owner、consumer need 與 failure 
 
 ## 7. Explicit technical debt
 
-暫時性 drift 若會影響後續判斷，放到 [gaps](../../change/gaps/) 或 [risks](../../change/risks/) 並寫 completion condition / mitigation；不要讓 TODO、過期 README 或註解成為第二份架構 roadmap。已完成 gap 應蒸餾回 canonical owner 後刪除。
+暫時性 drift 若會影響後續判斷，直接在 owning package／issue／PR 留下 completion condition；不要讓 TODO、過期 README 或註解成為第二份架構 roadmap。已完成缺口應蒸餾回 canonical owner 後刪除。
 
 ## 8. Evidence-based cleanup
 
@@ -59,4 +59,4 @@ Unused code / dependency finding 由 `deadcode` 等工具提供證據，但刪�
 - Architecture quality：[Quality attributes](../architecture/quality-tradeoffs.md)
 - Dependency rules：[Dependency rules](../../rules/dependency-boundaries.md)
 - Validation：[Validation](validation-pipeline.md)
-- Gaps / risks：[Governance](../../change/)
+- Gaps / risks：由 owning package、issue 與 PR 管理，不建立第二套文件資料庫。

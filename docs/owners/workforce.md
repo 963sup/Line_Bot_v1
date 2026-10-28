@@ -56,5 +56,4 @@ Machine owner / status：
 [`architecture/registry.json#domain`](../../architecture/registry.json#domain) ·
 [`architecture/registry.json#modules`](../../architecture/registry.json#modules)
 
-Migration sequencing：
-[Workforce / Attendance / Payroll slices](../change/migrations/enterprise-organization-workforce-payroll.md#workforce--attendance--payroll-implementation-slices)
+Migration sequencing follows the current Workforce, Attendance and Payroll owner contracts and schema checks.

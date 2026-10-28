@@ -4,21 +4,11 @@
 
 `packages/integration-supabase/src/schemas/` 是 current desired PostgreSQL structure 的唯一 Source of Truth。Schema modules 以數字前綴表達 lexical dependency order；table、constraint、index、RLS、grant、function、trigger 與 role 都由負責的 declarative SQL 定義。
 
-`packages/integration-supabase/src/migrations/` 不屬於 current contract，也不是 remote deployment source。歷史 SQL 的追溯與恢復見 [History extraction](../../change/evidence/schema-history-extraction.md)；current code、fixtures、`schema:check` 與 remote reconciliation 都不 replay、repair 或新增 migration history。
+`packages/integration-supabase/src/migrations/` 不屬於 current contract，也不是 remote deployment source；current code、fixtures、`schema:check` 與 remote reconciliation 都不 replay、repair 或新增 migration history。
 
 ## Schema change
 
-Schema change 的基本流程只有一個：
-
-1. 修改負責的 `packages/integration-supabase/src/schemas/*.sql`。
-2. 以 `schema:check` 驗證 clean build 與核心 RLS／role boundary。
-3. 需要完整 local Supabase 時，用 `schema:local` 從 current schemas 重建 local `app_private`。
-4. Non-production 可在明確隔離、可重建的 target 驗證 branch canonical schema；Production publication 則由受信任 operator 比較 deployed current state 與已合併、已驗證的 current `main` desired schemas。
-5. Remote write 後必須以 catalog／RLS／grant／function／trigger／role readback與 second diff 證明 deployed state 已收斂。
-
-不得先在 remote Dashboard／SQL Editor 改 application schema 再回填 Git，也不得用 migration history、migration file 或 local／non-production success 冒充 Production current state。Supabase MCP 只能執行 target 對應 canonical source 的 bounded DDL，不能成為第二套 schema authority。
-
-Supabase 官方 `db push`、`db reset --linked`、`migration up` 與 `migration repair` 都不屬於本專案 remote schema path。
+完整的 environment、operator、readback、branch 與 migration-history 規則集中在 [integration-supabase Canonical Supabase rules](../../../packages/integration-supabase/src/README.md#canonical-supabase-rules)。本文件只定義 schema 的資料語意與 DDL／data transform 分界。
 
 ## Schema change vs data transform
 
@@ -59,9 +49,7 @@ Remote synchronization必須以指定 project的 post-write readback為證據；
 
 Production與development共享同一 schema authority與 reconciliation mechanism；差異在 retained data、consumer compatibility、recovery與 release evidence，不在 schema owner。
 
-Production schema DDL 由受信任 operator 依 validated current-main schemas 收斂。只有不可由 schema 決定的 business data transform／metadata cutover 需要獨立 reviewed data-cutover procedure。所有 remote reconciliation 都不得新增或修補 Supabase migration history。
-
-Schema與runtime需要協調切換時，由 [Release](../operations/release.md) 擁有 publication ordering；backup／restore責任由 [Recovery](../operations/recovery.md) 擁有；Supabase provider與 remote reconciliation mechanism由 [Supabase](../platform/supabase.md) 擁有。
+Production 與 development 的 schema authority 及 operator 規則集中在 [integration-supabase Canonical Supabase rules](../../../packages/integration-supabase/src/README.md#canonical-supabase-rules)。本文件只保留資料保留、consumer compatibility 與 DDL／business transform 的語意；publication ordering 由 [Release](../operations/release.md) 擁有，recovery 由 [Recovery](../operations/recovery.md) 擁有。
 
 ## Verification
 
@@ -71,4 +59,4 @@ Current repository schema verification只證明 declarative source、clean build
 - Supabase platform：[Supabase](../platform/supabase.md)
 - Release：[Release](../operations/release.md)
 - Recovery：[Recovery](../operations/recovery.md)
-- Acceptance evidence：[Acceptance](../../change/evidence/README.md)
+- Acceptance evidence：由 CI、provider readback 與 deployment evidence 分別保存。

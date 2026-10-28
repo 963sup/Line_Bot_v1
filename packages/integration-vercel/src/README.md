@@ -10,7 +10,7 @@
 | Native deployment configuration | [apps/web/vercel.json](../../../apps/web/vercel.json) |
 | Framework / build configuration | [next.config.ts](../../../apps/web/next.config.ts)、[package.json](../../../apps/web/package.json) |
 | Deployment upload boundary | [.vercelignore](../../../.vercelignore) |
-| Platform / production readback | [Vercel platform](../../../docs/reference/platform/vercel.md) |
+| Platform / production readback | 本文件的 [Canonical provider boundary](#canonical-provider-boundary)；跨 package 分類見 [Vercel platform](../../../docs/reference/platform/vercel.md) |
 | Publication / recovery | [Release](../../../docs/reference/operations/release.md)、[Recovery](../../../docs/reference/operations/recovery.md) |
 | Application configuration names | [.env.example](../../../.env.example)；不在本目錄保存值 |
 
@@ -45,3 +45,11 @@ Vercel Free 對應官方 Hobby plan。此處是開發分類，不是目標帳戶
 Hobby 限個人、非商業用途；本結構不代表產品的商業部署已符合 Hobby 使用範圍。後續啟用前另核對方案資格、資源用量與所需權益。
 
 文件驗證使用 local link check 與適用 static checks；其他 runtime、provider 與裝置證據見 [Tests](tests/README.md)。
+
+## Canonical provider boundary
+
+本 package 擁有 Vercel AI Gateway／provider integration 的 credential、model、timeout、retry 與 provider error boundary，以及 Vercel-specific capability routing。它不擁有產品 authorization、business state、persistent data 或 domain use case；呼叫端只注入最窄的 model／text／file Port。
+
+`AI_GATEWAY_MODEL` 是 server-side model ID；`AI_GATEWAY_API_KEY` 與 `VERCEL_OIDC_TOKEN` 是 server-only credentials，至少一項必須存在才可呼叫 Gateway。不可使用 `NEXT_PUBLIC_` 變體、在 log 暴露 credential、或因 quota／provider failure 自動切換到未核准的付費 fallback。Gateway limits、Preview／Production environment 與 deployment readback 以本 package 的 capability docs 和實際 Vercel project readback 為準。
+
+Web deployment 的 executable source 仍是 `apps/web/vercel.json`、Next.js config、`.vercelignore` 與 Vercel project readback；跨 package 的 publication ordering 由 Release 文件負責。

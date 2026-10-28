@@ -84,6 +84,4 @@ Repository schemas describe desired current application structure. They do not p
 
 Current source includes Account/User, Enterprise/Organization/Team governance, Repository/Issue/Discussion, Project data authority, Attendance/Workplace, value facts, Expense, Notifications and Partner Directory. Workforce module ownership exists, but Employment/Calendar/Schedule runtime remains selected target; formal Payroll flow also remains gated.
 
-Target design and cutover sequencing live in
-[Governance](../../change/README.md). Dated remote evidence stays in
-[Acceptance evidence](../../change/evidence/acceptance-evidence.md) and never becomes current truth.
+Target design and cutover sequencing live in the relevant owner/package contract. Remote evidence never becomes current truth; verify it through the relevant provider and owner readback.

@@ -14,8 +14,7 @@
 code / schema / tests
 → owner contract
 → selected decision（why）
-→ proposal / migration（future only）
-→ historical evidence
+→ current owner contract / issue only when unresolved
 ```
 
 若 docs與implementation衝突，先判斷 docs stale還是 code違反已選 contract；不要自動「以文件為準」或「以程式為準」。

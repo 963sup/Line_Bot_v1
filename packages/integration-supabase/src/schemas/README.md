@@ -53,7 +53,7 @@ Cross-owner mechanism 只允許：
 
 ## Future targets stay outside the schema SSOT
 
-沒有 current executable database object，就不建立 `.sql` placeholder，也不在 `architecture/registry.json#data` 預留 future filename。未使用的 lexical prefix 直接留空；Workforce、Payroll、Audit 等 target rationale / migration state 留在 `docs/change/` 與 owner docs。
+沒有 current executable database object，就不建立 `.sql` placeholder，也不在 `architecture/registry.json#data` 預留 future filename。未使用的 lexical prefix 直接留空；Workforce、Payroll、Audit 等 unresolved rationale 只留在對應 owner contract 或 issue，不建立第二套 target/migration 文件。
 
 啟用新的 persisted fact 時，同一 changeset 才建立 actual SQL、relation mapping、current owner contract、consumer、authorization / transaction semantics、tests 與適用 evidence。這讓 `packages/integration-supabase/src/schemas/*.sql` 永遠只回答「現在的 database desired state 是什麼」。
 
@@ -65,10 +65,10 @@ Cross-owner mechanism 只允許：
 | DDL / schema design semantics | [Schema model](../../../../docs/reference/data/schema.md) |
 | Cross-owner Data Boundary | [Data boundary](../../../../docs/reference/data/boundaries.md) |
 | Owner business semantics | [Domain owners](../../../../docs/owners/README.md) |
-| Scoped number/name authority and cutover | [Numbering](../../../../docs/owners/numbering.md) · [Namespace](../../../../docs/owners/namespace.md) · [migration](../../../../docs/change/migrations/scoped-numbering-namespace.md) |
-| Remote Supabase operation | [Supabase platform](../../../../docs/reference/platform/supabase.md) |
+| Scoped number/name authority and cutover | [Numbering](../../../../docs/owners/numbering.md) · [Namespace](../../../../docs/owners/namespace.md) |
+| Remote Supabase operation | [Canonical Supabase rules](../README.md#canonical-supabase-rules) |
 | Local schema change constraints | [AGENTS](AGENTS.md) |
 
 ## Validation
 
-`pnpm exec biome check architecture` 與適用 package checks 驗證 schema files 與 `registry.json#data` 的 ownership/mapping invariants；`pnpm schema:check` 執行 declarative schema/database contract tests。Production remote mutation 由受信任 operator 依 validated current `main` 執行；provider readback 證明 remote result，不能由 local file 存在推定。
+`pnpm exec biome check architecture` 與適用 package checks 驗證 schema files 與 `registry.json#data` 的 ownership/mapping invariants；`pnpm schema:check` 執行 declarative schema/database contract tests。Production remote mutation 依 [Canonical Supabase rules](../README.md#canonical-supabase-rules) 執行；provider readback 證明 remote result，不能由 local file 存在推定。

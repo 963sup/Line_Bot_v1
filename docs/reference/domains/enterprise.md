@@ -55,7 +55,7 @@ Enterprise inactive 拒絕一般新 invitation/attach/Team/owner mutation；歷�
 
 Repository source、declarative schema、Supabase remote catalog/data、repository validation、Vercel deployment 與 LINE mobile acceptance 是不同證據。Current source 已包含 Enterprise Team + provenance vertical slice；remote project 的 catalog/readback 需由 acceptance evidence 或本次變更紀錄獨立證明，不能用 source existence 代替 deployment evidence。
 
-Target rationale 見 [Enterprise target design](../../change/decisions/enterprise-target-design.md)；Identity/Access 見 [Target authorization](../../change/proposals/security-target.md)。
+Enterprise target rationale 與 Identity/Access 由 Enterprise、Organization、Workforce 與 Identity Access owner contracts 定義。
 
 ## Locator
 
