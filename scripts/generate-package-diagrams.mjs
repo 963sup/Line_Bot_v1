@@ -20,15 +20,21 @@ for (const entry of readdirSync(packagesDir, { withFileTypes: true }).filter((it
     .sort();
   const exports = Object.keys(manifest.exports ?? {}).sort();
   const edges = deps.length ? deps.map((dep) => `  ${name} --> ${dep}`).join("\n") : `  ${name} --> none`;
+  const kind = topology.moduleKind ?? "unknown";
+  const architecture = kind === "domain-module"
+    ? ["## Domain boundary", "", `${fence}mermaid`, "flowchart TD", "  Domain[Domain invariants] --> Application[Application use cases]", "  Application --> Ports[Contracts / ports]", "  Composition[Composition] --> Application", "  Adapters[Adapters] --> Ports", "  Composition --> Adapters", fence]
+    : kind === "integration-adapter"
+      ? ["## Integration boundary", "", `${fence}mermaid`, "flowchart LR", "  Application[Owner application] --> Port[Port / DTO]", "  Port --> Adapter[Integration adapter]", "  Adapter --> Provider[External provider]", fence]
+      : kind === "application-module"
+        ? ["## Application boundary", "", `${fence}mermaid`, "flowchart TD", "  Consumer[Consumer] --> Application[Application orchestration]", "  Application --> Ports[Ports / contracts]", "  Application --> Dependencies[Owner dependencies]", fence]
+        : ["## Module boundary", "", `${fence}mermaid`, "flowchart LR", "  Consumer[Consumer] --> Module[Module]", "  Module --> Dependencies[Dependencies]", fence];
   const lines = [
     `# ${name} Owner Architecture`, "",
     "<!-- Generated from package.json and architecture/modules/*.json. -->", "",
     "| Field | Value |", "| --- | --- |", `| Package module | ${manifest.name} |`,
     `| semanticOwner | ${topology.semanticOwner ?? "unregistered"} |`, `| moduleKind | ${topology.moduleKind ?? "unknown"} |`, "",
     "## Boundary and dependencies", "", `${fence}mermaid`, "flowchart LR", edges, fence, "",
-    "## Hexagonal placement", "", `${fence}mermaid`, "flowchart TD",
-    "Domain[Domain] --> Application[Application]", "Application --> Contracts[Contracts / Ports]",
-    "Composition[Composition] --> Application", "Adapters[Adapters] --> Contracts", "Composition --> Adapters", fence, "",
+    ...architecture, "",
     "## Public surface", "", ...(exports.length ? exports.map((item) => `- ${item}`) : ["- No public exports declared."]), "",
     "## Evidence", "", "- [Manifest](./package.json)", "- [Source](./src/)", "- [Tests](./test/)",
     `- [Module topology](../../architecture/modules/${name}.json)`, "",

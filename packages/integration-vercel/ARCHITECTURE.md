@@ -15,15 +15,13 @@ flowchart LR
   integration-vercel --> intelligence
 ```
 
-## Hexagonal placement
+## Integration boundary
 
 ```mermaid
-flowchart TD
-Domain[Domain] --> Application[Application]
-Application --> Contracts[Contracts / Ports]
-Composition[Composition] --> Application
-Adapters[Adapters] --> Contracts
-Composition --> Adapters
+flowchart LR
+  Application[Owner application] --> Port[Port / DTO]
+  Port --> Adapter[Integration adapter]
+  Adapter --> Provider[External provider]
 ```
 
 ## Public surface

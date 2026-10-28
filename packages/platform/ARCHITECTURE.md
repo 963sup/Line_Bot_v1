@@ -15,15 +15,12 @@ flowchart LR
   platform --> none
 ```
 
-## Hexagonal placement
+## Module boundary
 
 ```mermaid
-flowchart TD
-Domain[Domain] --> Application[Application]
-Application --> Contracts[Contracts / Ports]
-Composition[Composition] --> Application
-Adapters[Adapters] --> Contracts
-Composition --> Adapters
+flowchart LR
+  Consumer[Consumer] --> Module[Module]
+  Module --> Dependencies[Dependencies]
 ```
 
 ## Public surface

@@ -15,15 +15,13 @@ flowchart LR
   explore --> repository
 ```
 
-## Hexagonal placement
+## Application boundary
 
 ```mermaid
 flowchart TD
-Domain[Domain] --> Application[Application]
-Application --> Contracts[Contracts / Ports]
-Composition[Composition] --> Application
-Adapters[Adapters] --> Contracts
-Composition --> Adapters
+  Consumer[Consumer] --> Application[Application orchestration]
+  Application --> Ports[Ports / contracts]
+  Application --> Dependencies[Owner dependencies]
 ```
 
 ## Public surface

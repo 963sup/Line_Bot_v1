@@ -20,15 +20,15 @@ flowchart LR
   enterprise --> repository
 ```
 
-## Hexagonal placement
+## Domain boundary
 
 ```mermaid
 flowchart TD
-Domain[Domain] --> Application[Application]
-Application --> Contracts[Contracts / Ports]
-Composition[Composition] --> Application
-Adapters[Adapters] --> Contracts
-Composition --> Adapters
+  Domain[Domain invariants] --> Application[Application use cases]
+  Application --> Ports[Contracts / ports]
+  Composition[Composition] --> Application
+  Adapters[Adapters] --> Ports
+  Composition --> Adapters
 ```
 
 ## Public surface
