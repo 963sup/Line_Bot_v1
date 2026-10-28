@@ -1,13 +1,20 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { PDFDocument } from "pdf-lib";
 import { createOpenAIStructuredOutput, OpenAIOutputError } from "../src/structured-output.js";
+
+const document = await PDFDocument.create();
+document.addPage();
+const pdfBytes = await document.save();
 
 const input = {
   schema: { type: "object", additionalProperties: false, properties: {}, required: [] },
   system: "extract",
   text: "source",
-  bytes: new Uint8Array([1, 2]),
+  bytes: pdfBytes,
   mediaType: "application/pdf",
+  maxInputBytes: 558_512,
+  maxPdfPages: 24,
   maxOutputTokens: 100,
   timeoutMs: 1000,
 };
@@ -93,9 +100,32 @@ test("images use input_image while invalid budgets never dispatch", async () => 
       });
     },
   });
-  await provider.generate({ ...input, mediaType: "image/png" });
+  await provider.generate({ ...input, bytes: new Uint8Array([1, 2]), mediaType: "image/png" });
   await assert.rejects(provider.generate({ ...input, maxOutputTokens: 24001 }), RangeError);
   assert.equal(calls, 1);
+});
+
+test("oversized inputs and PDFs over 24 pages never dispatch", async () => {
+  let calls = 0;
+  const provider = createOpenAIStructuredOutput({
+    model: "gpt-4.1",
+    apiKey: () => "test-key",
+    fetch: async () => {
+      calls++;
+      return Response.json({});
+    },
+  });
+  await assert.rejects(
+    provider.generate({ ...input, bytes: new Uint8Array(558_513) }),
+    /input byte budget/,
+  );
+  const longDocument = await PDFDocument.create();
+  for (let page = 0; page < 25; page++) longDocument.addPage();
+  await assert.rejects(
+    provider.generate({ ...input, bytes: await longDocument.save() }),
+    /page budget/,
+  );
+  assert.equal(calls, 0);
 });
 
 test("network failure is redacted without retry", async () => {

@@ -12,6 +12,8 @@ import type {
   IntakeTarget,
 } from "../../contracts/output/document-intake.js";
 
+const maxOpenAIDocumentBytes = 558_512;
+
 export function createPostgresOpenAIDocumentIntake(config: {
   target: IntakeTarget<IntakeReceipt>;
   schema: IntakeSchema;
@@ -25,6 +27,7 @@ export function createPostgresOpenAIDocumentIntake(config: {
     attempts: createPostgresDocumentAttempts(createPostgresFileRevisionQualifier, config.db),
     extractor: createOpenAIDocumentExtractor("gpt-4.1"),
     schema: config.schema,
+    maxSourceBytes: maxOpenAIDocumentBytes,
     ...(config.onTargetSubmit ? { onTargetSubmit: config.onTargetSubmit } : {}),
   });
 }

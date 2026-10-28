@@ -7,8 +7,13 @@ export class IntakeError extends Error {
   override readonly name = "IntakeError";
 
   constructor(
-    readonly code: "SOURCE_MISMATCH" | "REPLAY_CONFLICT" | "INVALID_INPUT" | "UNKNOWN_RESULT",
-    readonly status: 409 | 422 | 503,
+    readonly code:
+      | "SOURCE_MISMATCH"
+      | "SOURCE_TOO_LARGE"
+      | "REPLAY_CONFLICT"
+      | "INVALID_INPUT"
+      | "UNKNOWN_RESULT",
+    readonly status: 409 | 413 | 422 | 503,
     options?: ErrorOptions,
   ) {
     super(code, options);

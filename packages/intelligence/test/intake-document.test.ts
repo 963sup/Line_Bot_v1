@@ -95,6 +95,7 @@ function harness(
     prior?: TestReceipt;
     hash?: string;
     rejectCandidate?: boolean;
+    sourceTooLarge?: boolean;
   } = {},
 ) {
   const calls: {
@@ -116,7 +117,7 @@ function harness(
   };
   const intake = createDocumentIntake({
     reader: {
-      async read(actor, repositoryId, source) {
+      async read(actor, repositoryId, source, maxBytes) {
         calls.reads++;
         calls.actors.push(actor);
         assert.equal(repositoryId, command.repositoryId);
@@ -124,6 +125,9 @@ function harness(
           fileId: command.source.fileId,
           fileRevisionId: command.source.fileRevisionId,
         });
+        assert.equal(maxBytes, 558_512);
+        if (options.sourceTooLarge)
+          throw Object.assign(new Error("File is too large for this transport."), { status: 413 });
         return {
           revision: {
             id: command.source.fileRevisionId,
@@ -189,6 +193,7 @@ function harness(
       },
     },
     schema,
+    maxSourceBytes: 558_512,
   });
   return { calls, intake };
 }
@@ -213,6 +218,18 @@ test("authorized intake reads exact bytes once and submits the complete 54-line 
       "verified-actor",
     ],
   });
+});
+
+test("oversized source files fail before extraction or Contract submission", async () => {
+  const { intake, calls } = harness({ sourceTooLarge: true });
+  await assert.rejects(
+    intake("verified-actor", command),
+    (error) =>
+      error instanceof IntakeError && error.code === "SOURCE_TOO_LARGE" && error.status === 413,
+  );
+  assert.equal(calls.reads, 1);
+  assert.equal(calls.extracts, 0);
+  assert.equal(calls.submits, 0);
 });
 
 test("matching receipt readback recovers without rereading or rerunning provider; changed intent conflicts", async () => {

@@ -2,6 +2,7 @@ export type IntelligenceErrorCode =
   | "FORBIDDEN"
   | "NOT_FOUND"
   | "UNSUPPORTED_MEDIA"
+  | "INPUT_LIMIT"
   | "EXTRACTION_UNAVAILABLE";
 
 export class IntelligenceError extends Error {
