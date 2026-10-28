@@ -1,6 +1,6 @@
 # vercel-integration
 
-Integration owner for external platform protocol only.
+Integration owner for external platform protocol only. Canonical Vercel AI Gateway, credential, model and deployment content lives in [`packages/integration-vercel/src/README.md`](../../packages/integration-vercel/src/README.md); this owner document only states the ownership boundary.
 
 Vercel AI SDK and AI Gateway protocol adapter for Assistant and Intelligence. No business ownership or approvals.
 

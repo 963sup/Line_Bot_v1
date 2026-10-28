@@ -1,3 +1,3 @@
 # OpenAI integration
 
-[Direct Responses transport](../../packages/integration-openai/src/structured-output.ts) implements strict Structured Outputs. [Intelligence adapter](../../packages/intelligence/src/adapters/outbound/openai-document-extractor.ts) owns extraction instructions; Contract owns the candidate schema and formal validation.
+Provider-specific transport, environment, limits and adapter boundary are canonical in [`packages/integration-openai`](../../packages/integration-openai/README.md). The Direct Responses transport implements strict Structured Outputs; Intelligence owns extraction instructions and Contract owns candidate schema and formal validation.
