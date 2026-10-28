@@ -194,7 +194,7 @@ export async function commercialIntakeRequest(
       service: resource === "intake" ? "document-intakes-api" : "commercial-documents-api",
       operation: stage,
       status,
-      code,
+      ...(code ? { code } : {}),
       traceId,
     });
     return jsonResponse(

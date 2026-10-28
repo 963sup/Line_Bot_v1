@@ -90,9 +90,7 @@ async function notificationRequest(request: Request) {
       operation: "request",
       status,
     });
-    return known
-      ? jsonResponse({ error: error.message }, status)
-      : jsonResponse({ error: "通知服務暫不可用，請稍後重試。" }, status);
+    return jsonResponse({ error: error instanceof Error ? error.message : String(error) }, status);
   }
 }
 

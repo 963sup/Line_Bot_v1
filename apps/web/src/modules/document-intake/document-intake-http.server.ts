@@ -182,7 +182,7 @@ function failure(
     service: "repository-document-intake-api",
     operation: stage,
     status,
-    code,
+    ...(code ? { code } : {}),
     traceId,
   });
   return jsonResponse(

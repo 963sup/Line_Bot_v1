@@ -56,8 +56,6 @@ export async function partnerRequest(
       operation: "request",
       status,
     });
-    return known
-      ? jsonResponse({ error: error.message }, status)
-      : jsonResponse({ error: "夥伴服務暫不可用，請稍後重試。" }, status);
+    return jsonResponse({ error: error instanceof Error ? error.message : String(error) }, status);
   }
 }
