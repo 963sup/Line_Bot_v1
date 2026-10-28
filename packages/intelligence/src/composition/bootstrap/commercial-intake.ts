@@ -44,7 +44,7 @@ export function createPostgresCommercialIntake(config: {
         })
       : undefined;
   return createCommercialIntake({
-    persistExtractionResult: extractionJsonStore,
+    ...(extractionJsonStore ? { persistExtractionResult: extractionJsonStore } : {}),
     async assertProviderReady() {
       if (!config.extractor && !process.env.OPENAI_API_KEY)
         throw new CommercialIntakeError("EXTRACTION_NOT_CONFIGURED", 503, "extraction.preflight");

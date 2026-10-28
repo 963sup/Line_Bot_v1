@@ -1,5 +1,5 @@
 import { createPrivateStorageClient } from "@line_bot_v1/integration-supabase/storage-client";
-import type { CommercialExtractionResult } from "../../contracts/output/commercial-intake.js";
+import type { CommercialExtractionResult } from "../../../contracts/output/commercial-intake.js";
 
 const bucketName = "repository-files";
 
