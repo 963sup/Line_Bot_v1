@@ -106,7 +106,8 @@ function sessionStore(): SessionStore {
     globalThis.redisSessions ??= new RedisSessionStore(redisNamespace(), transport);
     return globalThis.redisSessions;
   }
-  if (process.env.VERCEL_ENV) throw new RequestIdentityError(503, "登入服務暫不可用，請稍後重試。");
+  if (process.env.VERCEL_ENV)
+    throw new RequestIdentityError(503, "Request-protection transport is not configured.");
   globalThis.developmentSessions ??= new DevelopmentSessionStore();
   return globalThis.developmentSessions;
 }
@@ -201,7 +202,7 @@ export async function createLineSession(lineToken: string, request: Request) {
           cookie: lineSessionCookie(id),
         };
     }
-    throw new RequestIdentityError(503, "登入服務暫不可用，請稍後重試。");
+    throw new RequestIdentityError(503, "Session store did not create a session after three attempts.");
   } catch (error) {
     if (error instanceof RequestIdentityError) throw error;
     if (error instanceof RedisUnavailableError) {
