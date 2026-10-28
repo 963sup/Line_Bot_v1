@@ -8,7 +8,24 @@
 | semanticOwner | line-integration |
 | moduleKind | integration-adapter |
 
-## Boundary and dependencies
+## Owner boundary
+
+```mermaid
+flowchart LR
+  Owner[line-integration Owner] --> Module[line module]
+  Module --> Consumer[Real consumer]
+  Module --> Evidence[Source / tests / schema]
+```
+
+## Ubiquitous language
+
+| Term | Meaning |
+| --- | --- |
+| Owner | line-integration |
+| Module kind | integration-adapter |
+| Package role | implementation module mapped through registry topology |
+
+## Dependencies
 
 ```mermaid
 flowchart LR
@@ -24,7 +41,21 @@ flowchart LR
   Adapter --> Provider[External provider]
 ```
 
-## Public surface
+## Invariants
+
+- Provider protocol details remain behind the adapter boundary.
+- External errors are normalized without inventing business truth.
+
+## State and data flow
+
+```mermaid
+flowchart LR
+  Input[Input / command] --> UseCase[Use case]
+  UseCase --> Result[Result / state]
+  Result --> Persistence[Persistence / evidence]
+```
+
+## Public functions
 
 - ./identity
 - ./liff

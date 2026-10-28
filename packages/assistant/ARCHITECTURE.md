@@ -8,7 +8,24 @@
 | semanticOwner | assistant |
 | moduleKind | application-module |
 
-## Boundary and dependencies
+## Owner boundary
+
+```mermaid
+flowchart LR
+  Owner[assistant Owner] --> Module[assistant module]
+  Module --> Consumer[Real consumer]
+  Module --> Evidence[Source / tests / schema]
+```
+
+## Ubiquitous language
+
+| Term | Meaning |
+| --- | --- |
+| Owner | assistant |
+| Module kind | application-module |
+| Package role | implementation module mapped through registry topology |
+
+## Dependencies
 
 ```mermaid
 flowchart LR
@@ -24,7 +41,21 @@ flowchart TD
   Application --> Dependencies[Owner dependencies]
 ```
 
-## Public surface
+## Invariants
+
+- Orchestration does not acquire another Owner's business authority.
+- Public contracts and evidence remain the compatibility boundary.
+
+## State and data flow
+
+```mermaid
+flowchart LR
+  Input[Input / command] --> UseCase[Use case]
+  UseCase --> Result[Result / state]
+  Result --> Persistence[Persistence / evidence]
+```
+
+## Public functions
 
 - ./agents/intake
 - ./application/answer-question

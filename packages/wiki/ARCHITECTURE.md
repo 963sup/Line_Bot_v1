@@ -8,7 +8,24 @@
 | semanticOwner | wiki |
 | moduleKind | domain-module |
 
-## Boundary and dependencies
+## Owner boundary
+
+```mermaid
+flowchart LR
+  Owner[wiki Owner] --> Module[wiki module]
+  Module --> Consumer[Real consumer]
+  Module --> Evidence[Source / tests / schema]
+```
+
+## Ubiquitous language
+
+| Term | Meaning |
+| --- | --- |
+| Owner | wiki |
+| Module kind | domain-module |
+| Package role | implementation module mapped through registry topology |
+
+## Dependencies
 
 ```mermaid
 flowchart LR
@@ -27,7 +44,21 @@ flowchart TD
   Composition --> Adapters
 ```
 
-## Public surface
+## Invariants
+
+- Domain invariants remain in this Owner.
+- Authorization, isolation, replay, and expected-version rules fail closed.
+
+## State and data flow
+
+```mermaid
+flowchart LR
+  Input[Input / command] --> UseCase[Use case]
+  UseCase --> Result[Result / state]
+  Result --> Persistence[Persistence / evidence]
+```
+
+## Public functions
 
 - ./application/commands/pages
 - ./application/use-cases/history

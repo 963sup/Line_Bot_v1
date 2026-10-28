@@ -21,6 +21,16 @@ for (const entry of readdirSync(packagesDir, { withFileTypes: true }).filter((it
   const exports = Object.keys(manifest.exports ?? {}).sort();
   const edges = deps.length ? deps.map((dep) => `  ${name} --> ${dep}`).join("\n") : `  ${name} --> none`;
   const kind = topology.moduleKind ?? "unknown";
+  const language = [
+    `| Owner | ${topology.semanticOwner ?? "unregistered"} |`,
+    `| Module kind | ${topology.moduleKind ?? "unknown"} |`,
+    "| Package role | implementation module mapped through registry topology |",
+  ];
+  const invariants = kind === "domain-module"
+    ? ["- Domain invariants remain in this Owner.", "- Authorization, isolation, replay, and expected-version rules fail closed."]
+    : kind === "integration-adapter"
+      ? ["- Provider protocol details remain behind the adapter boundary.", "- External errors are normalized without inventing business truth."]
+      : ["- Orchestration does not acquire another Owner's business authority.", "- Public contracts and evidence remain the compatibility boundary."];
   const architecture = kind === "domain-module"
     ? ["## Domain boundary", "", `${fence}mermaid`, "flowchart TD", "  Domain[Domain invariants] --> Application[Application use cases]", "  Application --> Ports[Contracts / ports]", "  Composition[Composition] --> Application", "  Adapters[Adapters] --> Ports", "  Composition --> Adapters", fence]
     : kind === "integration-adapter"
@@ -33,9 +43,13 @@ for (const entry of readdirSync(packagesDir, { withFileTypes: true }).filter((it
     "<!-- Generated from package.json and architecture/modules/*.json. -->", "",
     "| Field | Value |", "| --- | --- |", `| Package module | ${manifest.name} |`,
     `| semanticOwner | ${topology.semanticOwner ?? "unregistered"} |`, `| moduleKind | ${topology.moduleKind ?? "unknown"} |`, "",
-    "## Boundary and dependencies", "", `${fence}mermaid`, "flowchart LR", edges, fence, "",
+    "## Owner boundary", "", `${fence}mermaid`, "flowchart LR", `  Owner[${topology.semanticOwner ?? "unregistered"} Owner] --> Module[${name} module]`, "  Module --> Consumer[Real consumer]", "  Module --> Evidence[Source / tests / schema]", fence, "",
+    "## Ubiquitous language", "", "| Term | Meaning |", "| --- | --- |", ...language, "",
+    "## Dependencies", "", `${fence}mermaid`, "flowchart LR", edges, fence, "",
     ...architecture, "",
-    "## Public surface", "", ...(exports.length ? exports.map((item) => `- ${item}`) : ["- No public exports declared."]), "",
+    "## Invariants", "", ...invariants, "",
+    "## State and data flow", "", `${fence}mermaid`, "flowchart LR", "  Input[Input / command] --> UseCase[Use case]", "  UseCase --> Result[Result / state]", "  Result --> Persistence[Persistence / evidence]", fence, "",
+    "## Public functions", "", ...(exports.length ? exports.map((item) => `- ${item}`) : ["- No public functions exported."]), "",
     "## Evidence", "", "- [Manifest](./package.json)", "- [Source](./src/)", "- [Tests](./test/)",
     `- [Module topology](../../architecture/modules/${name}.json)`, "",
   ];
