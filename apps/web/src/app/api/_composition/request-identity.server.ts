@@ -205,9 +205,9 @@ export async function createLineSession(lineToken: string, request: Request) {
   } catch (error) {
     if (error instanceof RequestIdentityError) throw error;
     if (error instanceof RedisUnavailableError) {
-      throw new RequestIdentityError(503, "登入服務暫不可用，請稍後重試。", { cause: error });
+      throw new RequestIdentityError(503, error.message, { cause: error });
     }
-    throw new RequestIdentityError(503, "登入服務暫不可用，請稍後重試。", { cause: error });
+    throw new RequestIdentityError(503, error instanceof Error ? error.message : String(error), { cause: error });
   }
 }
 
@@ -226,7 +226,7 @@ async function sessionFromCookie(request: Request): Promise<StoredSession> {
     return { id, raw, record };
   } catch (error) {
     if (error instanceof RequestIdentityError) throw error;
-    throw new RequestIdentityError(503, "登入服務暫不可用，請稍後重試。", { cause: error });
+    throw new RequestIdentityError(503, error instanceof Error ? error.message : String(error), { cause: error });
   }
 }
 
@@ -276,7 +276,7 @@ async function renewStoredSession(current: StoredSession) {
     };
   } catch (error) {
     if (error instanceof RequestIdentityError) throw error;
-    throw new RequestIdentityError(503, "登入服務暫不可用，請稍後重試。", { cause: error });
+    throw new RequestIdentityError(503, error instanceof Error ? error.message : String(error), { cause: error });
   }
 }
 
@@ -291,7 +291,7 @@ export async function revokeLineSession(request: Request) {
     return { cookie: clearLineSessionCookie() };
   } catch (error) {
     if (error instanceof RequestIdentityError) throw error;
-    throw new RequestIdentityError(503, "登出暫不可用，請稍後重試。", { cause: error });
+    throw new RequestIdentityError(503, error instanceof Error ? error.message : String(error), { cause: error });
   }
 }
 
