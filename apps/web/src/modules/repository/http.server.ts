@@ -4,7 +4,7 @@ import { IssueError } from "@line_bot_v1/issue/domain";
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
 import { RepositoryError } from "@line_bot_v1/repository/contracts/errors/repository-error";
 import { normalizeRepositoryName } from "@line_bot_v1/repository/domain/repository/value-objects/repository-name";
-import { captureHandledServerError } from "../../shared/observability/server-error";
+import { logServerError } from "../../shared/observability/runtime-error.server";
 import { BodyTooLargeError, jsonResponse, readBodyText } from "../../shared/server/http";
 import { RequestIdentityError } from "../../shared/server/request-identity-error";
 
@@ -85,7 +85,7 @@ export function issueFailure(error: unknown) {
     error instanceof UserError ||
     error instanceof RequestIdentityError;
   const status = known ? error.status : 503;
-  captureHandledServerError(error, {
+  logServerError(error, {
     service: "issues-api",
     operation: "request",
     status,
@@ -104,7 +104,7 @@ export function repositoryFailure(error: unknown) {
     error instanceof UserError ||
     error instanceof RequestIdentityError;
   const status = known ? error.status : 503;
-  captureHandledServerError(error, {
+  logServerError(error, {
     service: "repository-api",
     operation: "request",
     status,

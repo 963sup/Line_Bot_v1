@@ -87,3 +87,48 @@ test("server Sentry activation has one Vercel + DSN gate", () => {
     true,
   );
 });
+
+test("the detached modules are excluded from automatic Sentry reporting while other modules remain", () => {
+  const detached = [
+    "/api/repository-content",
+    "/api/repository-contracts",
+    "/api/repository-files",
+    "/api/repository-resources",
+    "/api/repository-document-intake",
+    "/api/repository-wbs/transfer/cancel",
+    "/api/project-wbs/governance",
+    "/api/repositories/lists",
+    "/api/repository-overview",
+    "/owner/repo",
+    "/owner/repo/files",
+    "/owner/repo/content",
+    "/owner/repo/contracts",
+    "/owner/repo/resources",
+    "/owner/repo/wbs",
+    "/projects/project-1/wbs",
+    "/repositories/lists",
+  ];
+  for (const path of detached) {
+    assert.equal(
+      sanitizeSentryEvent({
+        type: undefined,
+        request: { url: `https://app.example${path}?private=secret` },
+      }),
+      null,
+      path,
+    );
+  }
+  for (const path of [
+    "/api/attendance",
+    "/profile/edit",
+    "/projects/project-1",
+    "/api/repository-executions",
+    "/owner/repo/executions",
+  ]) {
+    assert.notEqual(
+      sanitizeSentryEvent({ type: undefined, request: { url: `https://app.example${path}` } }),
+      null,
+      path,
+    );
+  }
+});

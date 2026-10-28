@@ -1,6 +1,6 @@
 import { UserError } from "@line_bot_v1/account/domain/user";
 import { RepositoryError } from "@line_bot_v1/repository/contracts/errors/repository-error";
-import { captureHandledServerError } from "../../../shared/observability/server-error";
+import { logServerError } from "../../../shared/observability/runtime-error.server";
 import { RequestIdentityError } from "../../../shared/server/request-identity-error";
 import { repositoryOwnerScope } from "./repository-owner-scope.server";
 import { requestLineIdentity } from "./request-identity.server";
@@ -13,6 +13,6 @@ export function repositoryRequestContext(service: string) {
     origin: () => process.env.APP_ORIGIN,
     knownErrors: [UserError, RepositoryError, RequestIdentityError],
     observeError: (error: unknown, status: number) =>
-      captureHandledServerError(error, { service, operation: "request", status }),
+      logServerError(error, { service, operation: "request", status }),
   };
 }

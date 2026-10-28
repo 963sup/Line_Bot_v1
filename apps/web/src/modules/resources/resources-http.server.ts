@@ -4,7 +4,7 @@ import { RepositoryError } from "@line_bot_v1/repository/contracts/errors/reposi
 import { normalizeRepositoryName } from "@line_bot_v1/repository/domain/repository/value-objects/repository-name";
 import type { createResources } from "@line_bot_v1/resources/application/use-cases/resources";
 import { ResourceError } from "@line_bot_v1/resources/domain/resource-error";
-import { captureHandledServerError } from "../../shared/observability/server-error";
+import { logServerError } from "../../shared/observability/runtime-error.server";
 import { BodyTooLargeError, jsonResponse, readBodyText } from "../../shared/server/http";
 import { RequestIdentityError } from "../../shared/server/request-identity-error";
 
@@ -59,7 +59,7 @@ function failure(error: unknown) {
     error instanceof UserError ||
     error instanceof RequestIdentityError;
   const status = known ? error.status : 503;
-  captureHandledServerError(error, {
+  logServerError(error, {
     service: "repository-resources-api",
     operation: "request",
     status,

@@ -11,7 +11,7 @@ import { IntelligenceError } from "@line_bot_v1/intelligence/domain/error";
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
 import { RepositoryError } from "@line_bot_v1/repository/contracts/errors/repository-error";
 import { normalizeRepositoryName } from "@line_bot_v1/repository/domain/repository/value-objects/repository-name";
-import { captureHandledServerError } from "../../shared/observability/server-error";
+import { logServerError } from "../../shared/observability/runtime-error.server";
 import { BodyTooLargeError, jsonResponse, readBodyText } from "../../shared/server/http";
 import { RequestIdentityError } from "../../shared/server/request-identity-error";
 
@@ -171,10 +171,11 @@ function failure(
             : stage === "file.read"
               ? "採購單來源檔案讀取失敗。"
               : "採購單操作失敗，請提供追蹤 ID 給管理員查核。";
-  captureHandledServerError(error, {
+  logServerError(error, {
     service: "repository-document-intake-api",
     operation: stage,
     status,
+    code,
     traceId,
   });
   return jsonResponse(

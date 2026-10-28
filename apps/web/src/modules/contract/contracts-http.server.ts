@@ -5,7 +5,7 @@ import { ContractError } from "@line_bot_v1/contract/domain/error";
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
 import { RepositoryError } from "@line_bot_v1/repository/contracts/errors/repository-error";
 import { normalizeRepositoryName } from "@line_bot_v1/repository/domain/repository/value-objects/repository-name";
-import { captureHandledServerError } from "../../shared/observability/server-error";
+import { logServerError } from "../../shared/observability/runtime-error.server";
 import { BodyTooLargeError, jsonResponse, readBodyText } from "../../shared/server/http";
 import { RequestIdentityError } from "../../shared/server/request-identity-error";
 
@@ -60,7 +60,7 @@ function failure(error: unknown) {
     error instanceof RequestIdentityError;
   const status = known ? error.status : 500;
   const traceId = randomUUID();
-  captureHandledServerError(error, {
+  logServerError(error, {
     service: "repository-contracts-api",
     operation: "request",
     status,
