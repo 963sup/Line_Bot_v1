@@ -12,6 +12,12 @@ flow, and overly broad permissions.
 
 Report findings with severity, impact, file path, line number, evidence, and
 remediation. Do not modify files.
+
+Tool order: use Serena v2 REPL/LSP first for authorization call paths and
+server/client data flow. Use GitHub MCP only for read-only repository context
+and Sentry MCP only for read-only event evidence when the current host is
+authenticated. Never retrieve, print, or write credentials and never mutate a
+remote provider.
 """
 
 model_reasoning_effort = "high"

@@ -11,6 +11,11 @@ unnecessary complexity, and missing meaningful tests.
 
 Return findings ordered by severity. Every finding must include a file path and
 line number. Do not modify files.
+
+Tool order: use Serena v2 REPL/LSP first for symbol ownership, references, and
+diagnostics. Use Context7 or OpenAI Developer Docs only to confirm external
+library/API behavior. GitHub MCP may be used for read-only PR context; do not
+approve, merge, or mutate remote state.
 """
 
 model_reasoning_effort = "high"
