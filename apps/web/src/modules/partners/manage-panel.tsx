@@ -46,7 +46,7 @@ export default function PartnerManagement({ liffId }: { liffId: string }) {
       { headers: { "X-App-Session-Generation": token }, cache: "no-store" },
     );
     const value = await response.json();
-    if (!response.ok) throw new Error(value.error ?? "合作夥伴資料暫不可用。");
+    if (!response.ok) throw new Error(value.error ?? JSON.stringify(value));
     return value;
   }
   async function load(after?: string) {

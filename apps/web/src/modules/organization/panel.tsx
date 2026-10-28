@@ -56,7 +56,7 @@ export default function OrganizationPanel({ liffId }: { liffId: string }) {
     const payload = await response.json();
     if (!response.ok) {
       if (response.status === 401 || response.status === 403) clear();
-      throw Object.assign(new Error(payload.error ?? "組織服務暫不可用。"), {
+      throw Object.assign(new Error(payload.error ?? JSON.stringify(payload)), {
         status: response.status,
       });
     }

@@ -83,7 +83,7 @@ export default function EnterprisePanel({
     const payload = await response.json();
     if (!response.ok) {
       if (response.status === 401 || response.status === 403) clear();
-      throw Object.assign(new Error(payload.error ?? "企業服務暫不可用。"), {
+      throw Object.assign(new Error(payload.error ?? JSON.stringify(payload)), {
         status: response.status,
       });
     }
