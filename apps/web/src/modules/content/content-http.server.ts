@@ -4,7 +4,7 @@ import { ContentError } from "@line_bot_v1/content/domain/error";
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
 import { RepositoryError } from "@line_bot_v1/repository/contracts/errors/repository-error";
 import { normalizeRepositoryName } from "@line_bot_v1/repository/domain/repository/value-objects/repository-name";
-import { captureHandledServerError } from "../../shared/observability/server-error";
+import { logServerError } from "../../shared/observability/runtime-error.server";
 import { BodyTooLargeError, jsonResponse, readBodyText } from "../../shared/server/http";
 import { RequestIdentityError } from "../../shared/server/request-identity-error";
 
@@ -61,7 +61,7 @@ function failure(error: unknown) {
     error instanceof UserError ||
     error instanceof RequestIdentityError;
   const status = known ? error.status : 500;
-  captureHandledServerError(error, {
+  logServerError(error, {
     service: "repository-content-api",
     operation: "request",
     status,

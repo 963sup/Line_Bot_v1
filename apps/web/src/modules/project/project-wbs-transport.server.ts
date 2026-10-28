@@ -2,7 +2,7 @@ import { UserError } from "@line_bot_v1/account/domain/user";
 import { isRecord } from "@line_bot_v1/platform/validation";
 import { ProjectError } from "@line_bot_v1/project/domain";
 import { WbsError } from "@line_bot_v1/wbs/domain/document";
-import { captureHandledServerError } from "../../shared/observability/server-error";
+import { logServerError } from "../../shared/observability/runtime-error.server";
 import { BodyTooLargeError, jsonResponse, readBodyText } from "../../shared/server/http";
 import { RequestIdentityError } from "../../shared/server/request-identity-error";
 
@@ -50,6 +50,6 @@ export function projectWbsFailure(error: unknown) {
     error instanceof UserError ||
     error instanceof RequestIdentityError;
   const status = known ? error.status : 500;
-  captureHandledServerError(error, { service: "project-wbs-api", operation: "request", status });
+  logServerError(error, { service: "project-wbs-api", operation: "request", status });
   return jsonResponse({ error: error instanceof Error ? error.message : String(error) }, status);
 }

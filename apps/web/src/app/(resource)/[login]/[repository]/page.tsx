@@ -3,7 +3,7 @@ import { normalizeAccountLogin } from "@line_bot_v1/namespace";
 import type { PublicRepository } from "@line_bot_v1/repository/contracts/output/public";
 import { notFound } from "next/navigation";
 import RepositoryOverviewPanel from "../../../../modules/repository/repository-overview-panel";
-import { captureHandledServerError } from "../../../../shared/observability/server-error";
+import { logServerError } from "../../../../shared/observability/runtime-error.server";
 import { publicRepositories } from "../../_composition/repository.server";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +26,7 @@ export default async function Page({
     publicRepository = await publicRepositories().byOwnerAndName(ownerLogin, repository);
   } catch (error) {
     publicLookupUnavailable = true;
-    captureHandledServerError(error, {
+    logServerError(error, {
       service: "repository-overview-page",
       operation: "public-lookup",
       status: 503,

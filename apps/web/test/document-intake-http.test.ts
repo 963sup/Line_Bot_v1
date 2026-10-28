@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { DocumentReceipt } from "@line_bot_v1/contract/contracts/input/document-intake";
+import { ContractError } from "@line_bot_v1/contract/domain/error";
 import type { DocumentIntakeWebRuntime } from "../src/modules/document-intake/document-intake-http.server";
 import { documentIntakeRequest } from "../src/modules/document-intake/document-intake-http.server";
 
@@ -320,4 +321,142 @@ test("concurrent intake requests keep independent failure stages and trace IDs",
   assert.equal(second.stage, "target.submit");
   assert.equal(second.code, "CONTRACT_SAVE_FAILED");
   assert.notEqual(first.traceId, second.traceId);
+});
+
+async function failedIntake(cause: unknown) {
+  const configured = runtime(async () => {
+    throw new Error("unused");
+  });
+  configured.intake = async (_actor, _command, onStage) => {
+    onStage?.("target.submit");
+    throw cause;
+  };
+  return documentIntakeRequest(
+    new Request(
+      "https://app.example/api/repository-document-intake?owner=owner&name=repo&operation=intake",
+      {
+        method: "POST",
+        headers: { origin: "https://app.example", "content-type": "application/json" },
+        body: JSON.stringify({
+          action: "save",
+          repositoryId: repository.id,
+          documentId: "doc",
+          requestId: "request",
+          expectedVersion: 0,
+          source: { fileId: "file", fileRevisionId: "revision", fileSha256: "a".repeat(64) },
+        }),
+      },
+    ),
+    configured,
+    async () => "user-1",
+  );
+}
+
+test("intake failures emit one bounded runtime record correlated with the response without Sentry", async (t) => {
+  const logs: string[] = [];
+  t.mock.method(console, "error", (line: string) => {
+    logs.push(line);
+  });
+  const cause = Object.assign(
+    new Error('invalid input syntax for type uuid: "private-document-value"'),
+    {
+      code: "22P02",
+      table: "contract_document_revisions",
+      column: "document_id",
+      routine: "string_to_uuid",
+      detail: "private complete row",
+      query: "INSERT INTO private VALUES ('private-document-value')",
+      parameters: ["private-document-value"],
+    },
+  );
+  cause.stack =
+    "Error: private-document-value\n    at write (/var/task/.next/server/chunks/contract.js:12:34)";
+  const response = await failedIntake(cause);
+  const body = await response.json();
+  assert.equal(response.status, 500);
+  assert.equal(logs.length, 1);
+  const entry = JSON.parse(logs[0] ?? "");
+  assert.equal(entry.traceId, body.traceId);
+  assert.equal(entry.stage, "target.submit");
+  assert.equal(entry.code, "CONTRACT_SAVE_FAILED");
+  assert.equal(entry.errors[0].code, "22P02");
+  assert.equal(entry.errors[0].table, "contract_document_revisions");
+  assert.equal(entry.errors[0].column, "document_id");
+  assert.equal(entry.errors[0].routine, "string_to_uuid");
+  assert.match(entry.errors[0].message, /invalid input syntax/);
+  assert.match(entry.errors[0].frames[0], /contract.js:12:34/);
+  assert.equal(logs[0]?.includes("private-document-value"), false);
+  assert.equal(logs[0]?.includes("private complete row"), false);
+  assert.equal(logs[0]?.includes("INSERT INTO"), false);
+  assert.equal(JSON.stringify(body).includes("22P02"), false);
+});
+
+test("runtime diagnostics cap cause depth and output without serializing arbitrary error data", async (t) => {
+  const logs: string[] = [];
+  t.mock.method(console, "error", (line: string) => {
+    logs.push(line);
+  });
+  const cause = new Error("private unstructured document text ".repeat(10000));
+  const outer = new Error("private candidate", { cause });
+  Object.assign(cause, { cause: outer, payload: { secret: "private-document" } });
+  const response = await failedIntake(outer);
+  assert.equal(response.status, 500);
+  assert.equal(logs.length, 1);
+  assert.ok((logs[0]?.length ?? 0) < 6000);
+  const record = JSON.parse(logs[0] ?? "");
+  assert.equal(record.errors.length, 2);
+  assert.equal(logs[0]?.includes("private"), false);
+});
+
+test("runtime diagnostics redact truncated database values and stop after three causes", async (t) => {
+  const logs: string[] = [];
+  t.mock.method(console, "error", (line: string) => {
+    logs.push(line);
+  });
+  const inner = Object.assign(
+    new Error('invalid input syntax for type uuid: "' + "sensitive".repeat(1000)),
+    { code: "22P02" },
+  );
+  const cause = new Error("private", {
+    cause: new Error("private", { cause: new Error("private", { cause: inner }) }),
+  });
+  await failedIntake(inner);
+  await failedIntake(cause);
+  assert.equal(logs.length, 2);
+  assert.equal(logs[0]?.includes("sensitive"), false);
+  assert.match(JSON.parse(logs[0] ?? "").errors[0].message, /redacted/);
+  assert.equal(JSON.parse(logs[1] ?? "").errors.length, 3);
+});
+
+test("expected authorization rejection does not emit a runtime failure", async (t) => {
+  const logs: string[] = [];
+  t.mock.method(console, "error", (line: string) => {
+    logs.push(line);
+  });
+  const response = await failedIntake(new ContractError(403, "forbidden", "FORBIDDEN"));
+  assert.equal(response.status, 403);
+  assert.equal(logs.length, 0);
+});
+
+test("runtime diagnostics discard the whole PostgreSQL value even when it embeds quotes", async (t) => {
+  const logs: string[] = [];
+  t.mock.method(console, "error", (line: string) => {
+    logs.push(line);
+  });
+  for (const value of [
+    'a"customer@example.com',
+    "a'customer@example.com",
+    "a`customer@example.com",
+  ]) {
+    await failedIntake(
+      Object.assign(new Error(`invalid input syntax for type uuid: "${value}"`), { code: "22P02" }),
+    );
+  }
+  assert.equal(logs.length, 3);
+  for (const line of logs) {
+    const entry = JSON.parse(line);
+    assert.equal(entry.errors[0].code, "22P02");
+    assert.match(entry.errors[0].message, /invalid input syntax/);
+    assert.equal(line.includes("customer@example.com"), false);
+  }
 });
