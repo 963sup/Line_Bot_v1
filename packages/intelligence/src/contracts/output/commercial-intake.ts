@@ -41,6 +41,13 @@ export type CommercialObservationPayload = Readonly<{
     target: string;
     rowKey: string | null;
   }>[];
+  wbsDraft?: Readonly<{
+    workRows: readonly Readonly<{
+      rowKey: string;
+      eligible: boolean;
+      blockers: readonly string[];
+    }>[];
+  }>;
 }>;
 export type CommercialExtractionResult = Readonly<{
   extractionResultId: string;
@@ -51,6 +58,7 @@ export type CommercialExtractionResult = Readonly<{
     observationId: string;
   })[];
   semanticHints: CommercialObservationPayload["semanticHints"];
+  wbsDraft: NonNullable<CommercialObservationPayload["wbsDraft"]>;
 }>;
 export type CommercialIntakeStatus = Readonly<{
   state: "WAITING" | "ANALYZING" | "RESULT_READY" | "DRAFT_SAVED" | "FAILED" | "OUTCOME_UNKNOWN";

@@ -254,6 +254,7 @@ export function createPostgresCommercialIntakeStore(
               return { pageNumber: o.pageNumber, rawLabel: o.rawLabel, rawValue: o.rawValue };
             }),
             semanticHints: stored.semanticHints,
+            ...(stored.wbsDraft === undefined ? {} : { wbsDraft: stored.wbsDraft }),
           },
           job.pageCount,
         );
@@ -267,6 +268,7 @@ export function createPostgresCommercialIntakeStore(
             observationId: stableCommercialId(resultId, `observation:${index}`),
           })),
           semanticHints: payload.semanticHints,
+          wbsDraft: payload.wbsDraft ?? { workRows: [] },
         };
         if (
           job.state !== "READY" ||

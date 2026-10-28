@@ -308,6 +308,7 @@ export function createCommercialIntake(deps: {
           observationId: stableCommercialId(extractionResultId, `observation:${index}`),
         })),
         semanticHints: observations.semanticHints,
+        wbsDraft: observations.wbsDraft ?? { workRows: [] },
       };
       if (new TextEncoder().encode(JSON.stringify(result)).byteLength > 393_216)
         throw new CommercialIntakeError("EXTRACTION_OUTPUT_INVALID", 422, "extraction.validate");

@@ -4,7 +4,7 @@
 
 使用者已認可「共同業務欄位＋可擴充欄位＋原始來源證據」方向。本文件中的具體模型、限制與流程是設計建議；尚未把這些建議寫成現行能力。
 
-本文件以下的 v2／CONFIRMED／舊表並行細節已由後續詳細設計取代，不可作為本輪實作依據。目標契約以 [欄位字典](2026-10-28-commercial-document-fields.md)、[函數契約](2026-10-28-commercial-document-functions.md) 為準，執行順序見 [重訂計畫](../plans/2026-10-28-commercial-document-plan.md)。此處保留原始問題與當時的來源證據供追溯；不是新能力宣告。
+本文件保留原始問題與當時的來源證據供追溯；不是新能力宣告。實際實作以目前 source、schema 與 tests 為準，執行順序見 [計畫](../plans/2026-10-28-commercial-document-plan.md)。
 
 ## 1. 問題與成功條件
 

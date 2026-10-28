@@ -2,7 +2,7 @@
 
 狀態：2026-10-28 依新版欄位、函數契約與官方 OpenAI 指南重訂；實作中，最小 DRAFT 流程已在本地接通，尚未完成整體規格與上線驗收。取代舊 v1/v2 hot-path 並行計畫。使用者已授權實施，要求六角形架構、高內聚、低耦合；不代表已授權未審閱的 Production 資料破壞。
 
-**規格：** [欄位與資料契約](../specs/2026-10-28-commercial-document-fields.md)、[函數與交易契約](../specs/2026-10-28-commercial-document-functions.md)。兩份詳細規格是本輪實作依據；[整體設計](../specs/2026-10-28-commercial-document-design.md) 的現況證據仍可查閱，舊版命名與遷就舊模型的方案不再執行。
+**依據：** 目前 source、schema 與 tests；[整體設計](../specs/2026-10-28-commercial-document-design.md) 僅保留當時的問題與證據供追溯。
 
 ## 架構與不可變條件
 

@@ -30,7 +30,7 @@ export function validateCommercialObservations(
   pageCount: number,
 ): CommercialObservationPayload {
   if (
-    !object(value, ["observations", "semanticHints"]) ||
+    !object(value, Object.hasOwn(value as object, "wbsDraft") ? ["observations", "semanticHints", "wbsDraft"] : ["observations", "semanticHints"]) ||
     !Array.isArray(value.observations) ||
     !Array.isArray(value.semanticHints) ||
     value.observations.length < 1 ||
@@ -82,5 +82,25 @@ export function validateCommercialObservations(
       rowKey: hint.rowKey,
     };
   });
-  return { observations, semanticHints };
+  const rawWbsDraft = Reflect.get(value, "wbsDraft");
+  if (rawWbsDraft === undefined) return { observations, semanticHints, wbsDraft: { workRows: [] } };
+  if (!object(rawWbsDraft, ["workRows"]) || !Array.isArray(rawWbsDraft.workRows)) return invalid();
+  const itemKeys = new Set(
+    semanticHints.filter((hint) => hint.target.startsWith("item.")).map((hint) => hint.rowKey),
+  );
+  const seen = new Set<string>();
+  const workRows = rawWbsDraft.workRows.map((row) => {
+    if (
+      !object(row, ["rowKey", "eligible", "blockers"]) ||
+      typeof row.rowKey !== "string" ||
+      !itemKeys.has(row.rowKey) ||
+      seen.has(row.rowKey) ||
+      typeof row.eligible !== "boolean" ||
+      !Array.isArray(row.blockers) ||
+      row.blockers.some((blocker) => typeof blocker !== "string" || !blocker.trim() || blocker.length > 256)
+    ) return invalid();
+    seen.add(row.rowKey);
+    return { rowKey: row.rowKey, eligible: row.eligible, blockers: row.blockers };
+  });
+  return { observations, semanticHints, wbsDraft: { workRows } };
 }
