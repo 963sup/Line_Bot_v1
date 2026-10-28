@@ -10,6 +10,17 @@
 | Module | @line_bot_v1/numbering |
 | Kind | domain-module |
 
+## Implementation Status
+
+| Area | Status |
+| --- | --- |
+| domain | present |
+| application | required-but-missing |
+| contracts | required-but-missing |
+| adapters | not-applicable |
+| composition | not-applicable |
+| test | present |
+
 ## Context Boundary
 
 ```mermaid

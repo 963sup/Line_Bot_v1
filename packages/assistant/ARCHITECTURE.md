@@ -10,6 +10,17 @@
 | Module | @line_bot_v1/assistant |
 | Kind | application-module |
 
+## Implementation Status
+
+| Area | Status |
+| --- | --- |
+| domain | not-applicable |
+| application | present |
+| contracts | present |
+| adapters | present |
+| composition | present |
+| test | present |
+
 ## Context Boundary
 
 ```mermaid

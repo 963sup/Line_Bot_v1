@@ -10,6 +10,17 @@
 | Module | @line_bot_v1/team |
 | Kind | domain-module |
 
+## Implementation Status
+
+| Area | Status |
+| --- | --- |
+| domain | present |
+| application | present |
+| contracts | present |
+| adapters | present |
+| composition | present |
+| test | present |
+
 ## Context Boundary
 
 ```mermaid

@@ -10,6 +10,17 @@
 | Module | @line_bot_v1/ledger |
 | Kind | domain-module |
 
+## Implementation Status
+
+| Area | Status |
+| --- | --- |
+| domain | present |
+| application | required-but-missing |
+| contracts | required-but-missing |
+| adapters | present |
+| composition | not-applicable |
+| test | required-but-missing |
+
 ## Context Boundary
 
 ```mermaid

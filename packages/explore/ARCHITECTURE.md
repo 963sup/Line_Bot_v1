@@ -10,6 +10,17 @@
 | Module | @line_bot_v1/explore |
 | Kind | application-module |
 
+## Implementation Status
+
+| Area | Status |
+| --- | --- |
+| domain | not-applicable |
+| application | present |
+| contracts | required-but-missing |
+| adapters | not-applicable |
+| composition | not-applicable |
+| test | present |
+
 ## Context Boundary
 
 ```mermaid

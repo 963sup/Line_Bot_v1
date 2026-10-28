@@ -10,6 +10,17 @@
 | Module | @line_bot_v1/integration-vercel |
 | Kind | integration-adapter |
 
+## Implementation Status
+
+| Area | Status |
+| --- | --- |
+| domain | not-applicable |
+| application | not-applicable |
+| contracts | not-applicable |
+| adapters | present |
+| composition | not-applicable |
+| test | present |
+
 ## Context Boundary
 
 ```mermaid

@@ -10,6 +10,17 @@
 | Module | @line_bot_v1/payroll |
 | Kind | domain-module |
 
+## Implementation Status
+
+| Area | Status |
+| --- | --- |
+| domain | present |
+| application | present |
+| contracts | present |
+| adapters | not-applicable |
+| composition | not-applicable |
+| test | present |
+
 ## Context Boundary
 
 ```mermaid

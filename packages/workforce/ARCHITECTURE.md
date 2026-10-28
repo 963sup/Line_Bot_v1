@@ -10,6 +10,17 @@
 | Module | @line_bot_v1/workforce |
 | Kind | domain-module |
 
+## Implementation Status
+
+| Area | Status |
+| --- | --- |
+| domain | required-but-missing |
+| application | required-but-missing |
+| contracts | required-but-missing |
+| adapters | not-applicable |
+| composition | not-applicable |
+| test | required-but-missing |
+
 ## Context Boundary
 
 ```mermaid

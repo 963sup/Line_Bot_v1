@@ -10,6 +10,17 @@
 | Module | @line_bot_v1/discussion |
 | Kind | domain-module |
 
+## Implementation Status
+
+| Area | Status |
+| --- | --- |
+| domain | present |
+| application | present |
+| contracts | present |
+| adapters | present |
+| composition | not-applicable |
+| test | present |
+
 ## Context Boundary
 
 ```mermaid

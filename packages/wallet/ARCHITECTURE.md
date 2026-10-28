@@ -10,6 +10,17 @@
 | Module | @line_bot_v1/wallet |
 | Kind | domain-module |
 
+## Implementation Status
+
+| Area | Status |
+| --- | --- |
+| domain | present |
+| application | required-but-missing |
+| contracts | present |
+| adapters | not-applicable |
+| composition | not-applicable |
+| test | required-but-missing |
+
 ## Context Boundary
 
 ```mermaid

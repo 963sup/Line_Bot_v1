@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const root = process.cwd();
@@ -20,6 +20,13 @@ for (const entry of readdirSync(packagesDir, { withFileTypes: true }).filter((it
     .map((item) => item.replace("@line_bot_v1/", ""))
     .sort();
   const exports = Object.keys(manifest.exports ?? {}).sort();
+  const layers = ["domain", "application", "contracts", "adapters", "composition"];
+  const requiredLayers = kind === "domain-module" ? ["domain", "application", "contracts"] : kind === "application-module" ? ["application", "contracts"] : kind === "integration-adapter" ? ["adapters"] : [];
+  const layerStatus = layers.map((layer) => {
+    const present = existsSync(resolve(packagesDir, name, "src", layer));
+    return `| ${layer} | ${present ? "present" : requiredLayers.includes(layer) ? "required-but-missing" : "not-applicable"} |`;
+  });
+  const testsStatus = existsSync(resolve(packagesDir, name, "test")) ? "present" : ["domain-module", "application-module"].includes(kind) ? "required-but-missing" : "absent";
   const edges = deps.length ? deps.map((dep) => `  ${name} --> ${dep}`).join("\n") : `  ${name} --> none`;
   const model = kind === "domain-module"
     ? ["  Aggregate[Aggregate Root] --> Entity[Entities]", "  Aggregate --> ValueObject[Value Objects]", "  Aggregate --> Invariant[Business invariants]"]
@@ -35,6 +42,7 @@ for (const entry of readdirSync(packagesDir, { withFileTypes: true }).filter((it
   const lines = [
     `# ${name} Owner Architecture`, "", "<!-- Generated from package.json and architecture/modules/*.json. -->", "",
     "## Context Card", "", "| Field | Value |", "| --- | --- |", `| Owner | ${topology.semanticOwner ?? "unregistered"} |`, `| Module | ${manifest.name} |`, `| Kind | ${kind} |`, "",
+    "## Implementation Status", "", "| Area | Status |", "| --- | --- |", ...layerStatus, `| test | ${testsStatus} |`, "",
     "## Context Boundary", "", `${fence}mermaid`, "flowchart LR", `  Owner[${topology.semanticOwner ?? "unregistered"} Owner] --> Module[${name} module]`, "  Module --> Consumer[Real consumer]", "  Module --> Evidence[Source / tests / schema]", fence, "",
     "## Domain Model", "", `${fence}mermaid`, "flowchart TD", ...model, fence, "",
     "## Boundary and Dependencies", "", `${fence}mermaid`, "flowchart LR", ...boundary, edges, fence, "",
