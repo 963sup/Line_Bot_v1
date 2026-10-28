@@ -175,14 +175,8 @@ function failure(
     error instanceof IntelligenceError
       ? error.code
       : connectionFailure && persistenceStage
-        ? "PERSISTENCE_UNAVAILABLE"
-        : stage === "target.submit"
-          ? "CONTRACT_SAVE_FAILED"
-          : stage === "file.read"
-            ? "FILE_READ_FAILED"
-            : stage === "intelligence.extract"
-              ? "EXTRACTION_FAILED"
-              : "DOCUMENT_INTAKE_FAILED";
+        ? "PERSISTENCE_ERROR"
+        : "INTERNAL_ERROR";
   const message = error instanceof Error ? error.message : String(error);
   logServerError(error, {
     service: "repository-document-intake-api",

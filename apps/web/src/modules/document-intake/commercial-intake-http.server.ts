@@ -189,7 +189,7 @@ export async function commercialIntakeRequest(
       error instanceof UserError;
     const stage = error instanceof CommercialIntakeError ? error.stage : operation;
     const status = known ? error.status : 500;
-    const code = known && "code" in error ? String(error.code) : "COMMERCIAL_REQUEST_FAILED";
+    const code = known && "code" in error ? String(error.code) : "INTERNAL_ERROR";
     logServerError(error, {
       service: resource === "intake" ? "document-intakes-api" : "commercial-documents-api",
       operation: stage,

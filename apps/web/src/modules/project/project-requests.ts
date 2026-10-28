@@ -181,7 +181,7 @@ export async function postProjectCommand(
     },
     body: JSON.stringify(command),
   });
-  const value = await payload(response, "Project 操作失敗。");
+  const value = await payload(response, "Project request failed without a response body.");
   try {
     return parseProjectManagementReceipt(value);
   } catch {

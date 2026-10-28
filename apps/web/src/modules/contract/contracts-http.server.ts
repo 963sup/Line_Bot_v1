@@ -69,7 +69,7 @@ function failure(error: unknown) {
   return jsonResponse(
     {
       error: error instanceof Error ? error.message : String(error),
-      ...(!known ? { code: "CONTRACT_OPERATION_FAILED" } : {}),
+      ...(!known ? { code: "INTERNAL_ERROR" } : {}),
       ...(status >= 500 ? { traceId } : {}),
       ...(error instanceof ContractError ? { code: error.code } : {}),
     },

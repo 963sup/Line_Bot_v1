@@ -59,18 +59,7 @@ export function createFileRequests(context: {
     const fields = value && typeof value === "object" ? value : {};
     const code: unknown = Reflect.get(fields, "code");
     const serverMessage: unknown = Reflect.get(fields, "error");
-    const message =
-      typeof serverMessage === "string"
-        ? serverMessage
-        : target === "file"
-          ? "File 請求失敗。"
-          : target === "commercialIntake" || target === "commercialDocument"
-            ? "商務文件操作失敗；請保留原命令並查詢狀態。"
-            : response.status === 504
-              ? "採購單請求逾時，保存結果待確認；請保留此頁，使用原命令查詢回執，勿重新建立。"
-              : query.operation === "read"
-                ? "ContractDocument 讀取失敗。"
-                : "採購單操作失敗。";
+    const message = typeof serverMessage === "string" ? serverMessage : String(value);
     if (response.status === 401 || response.status === 403) {
       context.onDenied(message);
       throw new StaleRequest();
@@ -89,10 +78,7 @@ export function createFileRequests(context: {
             .filter(Boolean)
             .join(" · ")
         : "";
-    const failureMessage =
-      target !== "file" && code === "UNKNOWN_RESULT"
-        ? "解析結果尚未確認；原命令重試只會查詢已保存回執，不會重新解析。請保留此頁並聯絡管理員查核。"
-        : message;
+    const failureMessage = message;
     throw Object.assign(new Error([failureMessage, diagnostic].filter(Boolean).join("\n")), {
       status: response.status,
       code,
