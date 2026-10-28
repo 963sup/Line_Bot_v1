@@ -13,12 +13,23 @@ test("technical evidence enforces page bounds, references, item grouping and str
       { observationIndex: 0, target: "future.extension", rowKey: null },
     ],
   };
-  assert.deepEqual(validateCommercialObservations(valid, 1), valid);
+  assert.deepEqual(validateCommercialObservations(valid, 1), {
+    ...valid,
+    wbsDraft: { workRows: [] },
+  });
+  assert.deepEqual(
+    validateCommercialObservations(
+      { ...valid, wbsDraft: { workRows: [{ rowKey: "row1", eligible: true, blockers: [] }] } },
+      1,
+    ).wbsDraft,
+    { workRows: [{ rowKey: "row1", eligible: true, blockers: [] }] },
+  );
   for (const value of [
     { ...valid, extra: true },
     { ...valid, observations: [{ pageNumber: 2, rawLabel: null, rawValue: "2" }] },
     { ...valid, semanticHints: [{ observationIndex: 1, target: "item.quantity", rowKey: "r" }] },
     { ...valid, semanticHints: [{ observationIndex: 0, target: "item.quantity", rowKey: null }] },
+    { ...valid, wbsDraft: { workRows: [{ rowKey: "missing", eligible: true, blockers: [] }] } },
   ])
     assert.throws(() => validateCommercialObservations(value, 1));
   assert.equal(stableCommercialId("job", "result"), stableCommercialId("job", "result"));
