@@ -138,7 +138,7 @@ test("saved commercial draft renders generic document kind, readable header and 
   assert.match(html, /Construction material/);
   assert.match(html, /2.50/);
   assert.match(html, /100.00 TWD/);
-  assert.doesNotMatch(html, /<script>/);
+  assert.doesNotMatch(html, /<script>/i);
   assert.match(html, /&lt;script&gt;/);
 });
 
@@ -250,7 +250,7 @@ test("draft review preserves arbitrary typed document, row and party extensions 
     "未提供",
   ])
     assert.ok(html.includes(value), value);
-  assert.doesNotMatch(html, /<script>|<img/);
+  assert.doesNotMatch(html, /<script>|<img/i);
 });
 
 test("crash states retain explicit recovery and abandonment without claiming a saved extraction", async () => {
