@@ -78,7 +78,7 @@ architecture/
     ├── shared.json             # 無單一業務 owner 的跨 owner 機制
     └── <owner>.json            # owner 的資料關係與 SQL 位置
 
-packages/<package>/
+packages/*/
 ├── package.json                # 真實 exports、依賴與 scripts
 ├── src/                        # 實作與契約
 ├── test/                       # 行為證據（實際配置以 package 為準）
