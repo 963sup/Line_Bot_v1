@@ -18,6 +18,15 @@ import { stableCommercialId, validateCommercialObservations } from "../commercia
 import { commercialFingerprint, commercialProfile } from "../commercial-profile.js";
 
 const uuid = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
+const canonicalUuid = (value: string) => value.toLowerCase();
+function canonicalCommand(command: CommercialIntakeCommand): CommercialIntakeCommand {
+  return {
+    ...command,
+    commandId: canonicalUuid(command.commandId),
+    source: { ...command.source, fileId: canonicalUuid(command.source.fileId), fileRevisionId: canonicalUuid(command.source.fileRevisionId) },
+    target: { ...command.target, documentId: canonicalUuid(command.target.documentId), draftCommandId: canonicalUuid(command.target.draftCommandId) },
+  };
+}
 function validate(command: CommercialIntakeCommand): void {
   if (
     !command ||
@@ -100,8 +109,8 @@ export function createCommercialIntake(deps: {
     );
     if (
       receipt &&
-      (receipt.commandId !== job.command.target.draftCommandId ||
-        receipt.documentId !== job.command.target.documentId ||
+      (receipt.commandId.toLowerCase() !== job.command.target.draftCommandId.toLowerCase() ||
+        receipt.documentId.toLowerCase() !== job.command.target.documentId.toLowerCase() ||
         receipt.documentVersion !== job.command.target.expectedDocumentVersion + 1 ||
         receipt.operation !== "CREATE_DRAFT")
     )
@@ -325,6 +334,7 @@ export function createCommercialIntake(deps: {
     async start(ctx, command) {
       context(ctx);
       validate(command);
+      command = canonicalCommand(command);
       const prior = await store.find(ctx.actorUserId, command.repositoryId, command.commandId);
       if (prior) {
         if (prior.intent !== commercialFingerprint(command))
