@@ -84,6 +84,30 @@ function requiredInteger(value: unknown, field: string) {
   return value;
 }
 
+function diagnostic(error: unknown): Record<string, string> | undefined {
+  if (!error || typeof error !== "object") return undefined;
+  const read = (key: string) => {
+    const value = Reflect.get(error, key);
+    return typeof value === "string" && value.length > 0 ? value : undefined;
+  };
+  const cause = Reflect.get(error, "cause");
+  const nested = cause ? diagnostic(cause) : undefined;
+  const code = read("code");
+  const schema = read("schema");
+  const table = read("table");
+  const column = read("column");
+  const message = read("message");
+  if (!code && !schema && !table && !column && !message) return nested;
+  return {
+    ...(nested ?? {}),
+    ...(code ? { code } : {}),
+    ...(schema ? { schema } : {}),
+    ...(table ? { table } : {}),
+    ...(column ? { column } : {}),
+    ...(message ? { message } : {}),
+  };
+}
+
 function parseIntakeCommand(value: unknown): IntakeCommand {
   const input = record(value);
   if (input.action !== "save")
@@ -184,6 +208,7 @@ function failure(
       code,
       stage,
       traceId,
+      diagnostic: diagnostic(error),
     },
     status,
   );
