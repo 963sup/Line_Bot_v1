@@ -25,10 +25,17 @@ source "$BOOTSTRAP_DIR/lib/install.sh"
 validate_mcp_selection
 tools="$(selected_tools)"
 prepare_install
+source "$BOOTSTRAP_DIR/mcp/servers/serena/install.sh"
 for tool in $tools; do
   case "$tool" in supabase | vercel) continue ;; esac
   source "$BOOTSTRAP_DIR/modules/$tool/install.sh"
   "install_$tool"
+  # Serena is needed by the Codex host and must not wait for the slower
+  # Docker/Supabase and workspace installation stages below. uv is installed
+  # before this hook and owns Serena's isolated Python environment.
+  if [[ "$tool" == uv && " $BOOTSTRAP_MCP_SERVERS " == *" serena "* ]]; then
+    install_mcp_serena
+  fi
 done
 run_stage workspace-install env CI=true pnpm install --frozen-lockfile --prefer-offline
 for tool in $tools; do
