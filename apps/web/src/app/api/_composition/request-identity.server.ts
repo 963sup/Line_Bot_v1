@@ -94,7 +94,7 @@ export async function limitRequest(scope: "member-api", token: string) {
         code: redisUnavailableCode(error),
       }),
     );
-    throw new RequestIdentityError(503, "請求保護服務暫不可用，請稍後再試。", {
+    throw new RequestIdentityError(503, error instanceof Error ? error.message : String(error), {
       cause: error,
     });
   }
