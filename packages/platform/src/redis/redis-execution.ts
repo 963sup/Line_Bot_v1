@@ -13,8 +13,8 @@ export type RedisUnavailableCode =
   | "transport";
 
 export class RedisUnavailableError extends Error {
-  constructor(readonly code: RedisUnavailableCode) {
-    super("Redis temporarily unavailable.");
+  constructor(readonly code: RedisUnavailableCode, options?: ErrorOptions) {
+    super(options?.cause instanceof Error ? options.cause.message : "Redis temporarily unavailable.", options);
     this.name = "RedisUnavailableError";
   }
 }
@@ -48,7 +48,7 @@ export function createRedisExecution(transport: RedisTransport): Required<RedisT
       } catch (error) {
         retryAt = Date.now() + RETRY_COOLDOWN_MS;
         if (error instanceof RedisUnavailableError) throw error;
-        throw new RedisUnavailableError("transport");
+        throw new RedisUnavailableError("transport", { cause: error });
       } finally {
         if (timer) clearTimeout(timer);
       }

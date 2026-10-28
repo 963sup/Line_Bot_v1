@@ -33,7 +33,7 @@ test("reads all pages preserving all-day and cancelled instances", async () => {
   assert.equal(result[1]?.status, "cancelled");
 });
 
-test("failed later page does not return partial data or expose provider body", async () => {
+test("failed later page does not return partial data and preserves provider body", async () => {
   let calls = 0;
   await assert.rejects(
     readCalendarEvents(input, async () => {
@@ -45,7 +45,7 @@ test("failed later page does not return partial data or expose provider body", a
     (error: unknown) =>
       error instanceof GoogleCalendarError &&
       error.status === 403 &&
-      !error.message.includes("private"),
+      error.message.includes("private"),
   );
 });
 

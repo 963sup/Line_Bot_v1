@@ -80,7 +80,7 @@ test("provider error is not retried", async () => {
       return new Response("secret", { status: 429 });
     },
   });
-  await assert.rejects(provider.generate(input), /UNAVAILABLE/);
+  await assert.rejects(provider.generate(input), /secret/);
   assert.equal(calls, 1);
 });
 
@@ -128,7 +128,7 @@ test("oversized inputs and PDFs over 24 pages never dispatch", async () => {
   assert.equal(calls, 0);
 });
 
-test("network failure is redacted without retry", async () => {
+test("network failure preserves its original message without retry", async () => {
   let calls = 0;
   const provider = createOpenAIStructuredOutput({
     model: "gpt-4.1",
@@ -143,7 +143,7 @@ test("network failure is redacted without retry", async () => {
     (error) =>
       error instanceof OpenAIOutputError &&
       error.code === "UNAVAILABLE" &&
-      !error.message.includes("sensitive"),
+      error.message.includes("sensitive"),
   );
   assert.equal(calls, 1);
 });

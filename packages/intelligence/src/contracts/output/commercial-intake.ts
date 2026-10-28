@@ -68,7 +68,7 @@ export class CommercialIntakeError extends Error {
     readonly stage: string,
     options?: ErrorOptions,
   ) {
-    super(code, options);
+    super(options?.cause instanceof Error ? options.cause.message : code, options);
   }
 }
 export interface CommercialIntake {

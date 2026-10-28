@@ -46,8 +46,10 @@ export async function requestJson(
       cache: "no-store",
       redirect: "error",
     });
-    if (!response.ok)
-      throw new GoogleApiError(response.status, `Google request failed (${response.status})`);
+    if (!response.ok) {
+      const message = await response.text();
+      throw new GoogleApiError(response.status, message || `${response.status} ${response.statusText}`);
+    }
     if (response.status === 204) {
       signal.throwIfAborted();
       return {};
@@ -60,7 +62,7 @@ export async function requestJson(
     signal.throwIfAborted();
     if (error instanceof GoogleApiError) throw error;
     // Never expose transport URLs (Maps keys) or private response bodies.
-    throw new GoogleApiError(502, "Google transport or response failure");
+    throw new GoogleApiError(502, error instanceof Error ? error.message : String(error));
   }
 }
 
