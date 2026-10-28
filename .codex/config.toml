@@ -109,6 +109,26 @@ config_file = "./agents/accessibility-ux-auditor.toml"
 description = "Maintain repository documentation, AGENTS guidance, Serena README, and durable memory routing."
 config_file = "./agents/documentation-curator.toml"
 
+[agents.contract-steward]
+description = "Maintain public API, event, HTTP, provider, and package contract compatibility."
+config_file = "./agents/contract-steward.toml"
+
+[agents.e2e-journey-engineer]
+description = "Validate complete browser and service journeys across upload, analysis, persistence, and recovery."
+config_file = "./agents/e2e-journey-engineer.toml"
+
+[agents.dependency-steward]
+description = "Maintain workspace dependencies, lockfile integrity, upgrades, and supply-chain evidence."
+config_file = "./agents/dependency-steward.toml"
+
+[agents.lifecycle-owner]
+description = "Plan feature rollout, flags, backfills, deprecation, migration sequencing, and rollback."
+config_file = "./agents/lifecycle-owner.toml"
+
+[agents.data-quality-analyst]
+description = "Validate extraction quality, provenance, completeness, unknown fields, and cross-document consistency."
+config_file = "./agents/data-quality-analyst.toml"
+
 [agents.integration-validator]
 description = "Validate cross-service contracts, runtime behavior, and external integration evidence."
 config_file = "./agents/integration-validator.toml"
