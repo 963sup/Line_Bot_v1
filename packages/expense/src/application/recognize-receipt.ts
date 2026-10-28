@@ -75,7 +75,7 @@ export function createRecognizeReceipt(deps: ReceiptRecognitionDependencies) {
             ? error
             : new ExpenseOperationError(
                 "recognition-unavailable",
-                "辨識暫不可用，請稍後重試；尚未入帳。",
+                error instanceof Error ? error.message : String(error),
               ),
         );
       } finally {
