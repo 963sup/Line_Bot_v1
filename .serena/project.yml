@@ -111,18 +111,23 @@ added_modes:
 # that would otherwise be disabled (particularly optional methods, which are disabled by default).
 # This extends the existing inclusions (e.g. from the global configuration).
 included_apis:
+- cfg
+- fs
+- edit
+- mem
+- shell
+- ext
+- lsp
 - edit.delete_lines
 - edit.insert_at_line
 - edit.replace_lines
 - lsp.get_diagnostics_for_symbol
 - lsp.restart_language_server
+- ext.project_context
 
 # list of APIs (facades or facade methods, e.g. "lsp" or "lsp.find_symbol") to exclude from the REPL.
 # This extends the existing exclusions (e.g. from the global configuration).
-excluded_apis:
-- shell
-- ext
-- cfg.open_dashboard
+excluded_apis: []
 
 # list of tool names to exclude.
 # This extends the existing exclusions (e.g. from the global configuration)
