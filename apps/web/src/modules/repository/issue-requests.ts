@@ -78,7 +78,9 @@ function isIssueSnapshot(value: unknown): value is IssueSnapshot {
 }
 
 function errorMessage(value: unknown, fallback: string) {
-  return isRecord(value) && typeof value.error === "string" ? value.error : fallback;
+  if (isRecord(value) && typeof value.error === "string") return value.error;
+  if (typeof value === "string") return value;
+  try { return JSON.stringify(value); } catch { return String(value); }
 }
 
 export async function requestIssueSnapshot({

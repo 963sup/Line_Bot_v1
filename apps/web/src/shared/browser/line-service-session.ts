@@ -158,7 +158,7 @@ async function responseError(response: Response) {
   } catch {
     // Keep a bounded user-facing fallback for non-JSON failures.
   }
-  return new Error("登入服務暫不可用，請稍後重試。");
+  return new Error(`HTTP ${response.status} ${response.statusText}`);
 }
 
 async function readSessionGeneration(renew = false) {

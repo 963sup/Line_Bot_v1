@@ -20,7 +20,9 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 export function errorMessage(value: unknown, fallback: string) {
-  return isRecord(value) && typeof value.error === "string" ? value.error : fallback;
+  if (isRecord(value) && typeof value.error === "string") return value.error;
+  if (typeof value === "string") return value;
+  try { return JSON.stringify(value); } catch { return String(value); }
 }
 
 const permissions = new Set(["read", "triage", "triage_plus", "write", "maintain", "admin"]);
