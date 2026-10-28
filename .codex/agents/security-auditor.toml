@@ -15,5 +15,3 @@ remediation. Do not modify files.
 """
 
 model_reasoning_effort = "high"
-approval_policy = "never"
-sandbox_mode = "read-only"

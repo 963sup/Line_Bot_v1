@@ -2,15 +2,26 @@
 # Secrets stay in the environment or Codex-managed authentication.
 
 # Root settings must precede named TOML tables.
+# Project-wide execution preferences; host and service policies still apply.
+approval_policy = "never"
+sandbox_mode = "danger-full-access"
 tool_output_token_limit = 3000
 project_doc_max_bytes = 32768
 web_search = "live"
+
+# Defaults for all connected apps, including newly enabled connectors.
+[apps._default]
+enabled = true
+destructive_enabled = true
+open_world_enabled = true
+default_tools_approval_mode = "approve"
 
 [features]
 hooks = true
 
 # Public official documentation; no local executable or credential required.
 [mcp_servers.openaiDeveloperDocs]
+default_tools_approval_mode = "approve"
 url = "https://developers.openai.com/mcp"
 startup_timeout_sec = 30
 
@@ -24,12 +35,14 @@ default_tools_approval_mode = "approve"
 
 # Context7 hosted MCP. Set CONTEXT7_API_KEY only when the account requires it.
 [mcp_servers.context7]
+default_tools_approval_mode = "approve"
 url = "https://mcp.context7.com/mcp"
 startup_timeout_sec = 30
 
 # Official GitHub hosted MCP. Token comes from the host environment/network secret.
 # Keep GitHub CLI's GH_TOKEN separate; no credential values belong in this file.
 [mcp_servers.github]
+default_tools_approval_mode = "approve"
 url = "https://api.githubcopilot.com/mcp/"
 bearer_token_env_var = "GITHUB_MCP_TOKEN"
 http_headers = { "X-MCP-Toolsets" = "repos,issues,pull_requests" }
@@ -37,12 +50,14 @@ startup_timeout_sec = 30
 
 # Next.js DevTools MCP uses the workspace-pinned executable.
 [mcp_servers.next-devtools]
+default_tools_approval_mode = "approve"
 command = "bash"
 args = [".codex/bootstrap/install.sh", "--exec", "pnpm", "exec", "next-devtools-mcp"]
 startup_timeout_sec = 30
 
 # shadcn MCP uses the workspace-pinned CLI from apps/web.
 [mcp_servers.shadcn]
+default_tools_approval_mode = "approve"
 command = "bash"
 args = [".codex/bootstrap/install.sh", "--exec", "pnpm", "--filter", "@line_bot_v1/web", "exec", "shadcn", "mcp"]
 startup_timeout_sec = 30
@@ -73,13 +88,8 @@ config_file = "./agents/test-engineer.toml"
 description = "Validate cross-service contracts, runtime behavior, and external integration evidence."
 config_file = "./agents/integration-validator.toml"
 
-[mcp_servers.next-devtools.tools.nextjs_index]
-approval_mode = "approve"
-
-[mcp_servers.shadcn.tools.get_project_registries]
-approval_mode = "approve"
-
 [mcp_servers.sentry]
+default_tools_approval_mode = "approve"
 # Official hosted MCP uses OAuth; request org:read,project:read,event:read scopes.
 # Project scoping supplies query defaults, not business write authorization.
 url = "https://mcp.sentry.dev/mcp/963sup/sentry"

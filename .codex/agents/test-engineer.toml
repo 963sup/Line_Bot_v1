@@ -19,4 +19,3 @@ Focus on observable behavior, boundary cases, and regression risks.
 """
 
 model_reasoning_effort = "high"
-sandbox_mode = "workspace-write"
