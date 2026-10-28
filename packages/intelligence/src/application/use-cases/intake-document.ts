@@ -6,6 +6,7 @@ import type {
   IntakeCommand,
   IntakeReceipt,
   IntakeSchema,
+  IntakeStage,
   IntakeTarget,
 } from "../../contracts/output/document-intake.js";
 import { IntakeError } from "../../contracts/output/document-intake.js";
@@ -84,7 +85,11 @@ export function createDocumentIntake<Receipt extends IntakeReceipt>(dependencies
   maxSourceBytes: number;
   onTargetSubmit?: () => void;
 }) {
-  return async function intake(actor: string, rawCommand: IntakeCommand): Promise<Receipt> {
+  return async function intake(
+    actor: string,
+    rawCommand: IntakeCommand,
+    onStage?: (stage: IntakeStage) => void,
+  ): Promise<Receipt> {
     const command = canonicalCommand(rawCommand);
     const intentFingerprint = intakeIntentFingerprint({
       command,
@@ -98,12 +103,14 @@ export function createDocumentIntake<Receipt extends IntakeReceipt>(dependencies
       source: command.source,
       intentFingerprint,
     };
+    onStage?.("attempt.reserve");
     const attempt = await dependencies.attempts.reserve(actor, attemptInput);
     const scope = {
       repositoryId: command.repositoryId,
       documentId: command.documentId,
       requestId: command.requestId,
     };
+    onStage?.("target.receipt");
     const prior = await dependencies.target.receipt(actor, scope);
     if (prior) {
       if (
@@ -116,6 +123,7 @@ export function createDocumentIntake<Receipt extends IntakeReceipt>(dependencies
         prior.source.fileSha256 !== command.source.fileSha256
       )
         throw new IntakeError("REPLAY_CONFLICT", 409);
+      onStage?.("attempt.complete");
       await dependencies.attempts.complete(
         actor,
         { ...attemptInput, id: attempt.id },
@@ -128,6 +136,7 @@ export function createDocumentIntake<Receipt extends IntakeReceipt>(dependencies
     }
     if (!attempt.fresh) throw new IntakeError("UNKNOWN_RESULT", 503);
     try {
+      onStage?.("file.read");
       let source: Awaited<ReturnType<DocumentIntakeSource["read"]>>;
       try {
         source = await dependencies.reader.read(
@@ -150,17 +159,20 @@ export function createDocumentIntake<Receipt extends IntakeReceipt>(dependencies
         revision.sha256 !== command.source.fileSha256
       )
         throw new IntakeError("SOURCE_MISMATCH", 409);
+      onStage?.("intelligence.extract");
       const candidate = await dependencies.extractor.extract({
         bytes,
         mediaType: revision.mediaType,
         schema: dependencies.schema,
       });
+      onStage?.("target.submit");
       dependencies.onTargetSubmit?.();
       const receipt = await dependencies.target.submit(actor, {
         ...command,
         intentFingerprint,
         candidate,
       });
+      onStage?.("attempt.complete");
       try {
         await dependencies.attempts.complete(
           actor,

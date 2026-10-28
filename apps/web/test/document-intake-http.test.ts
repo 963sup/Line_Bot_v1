@@ -101,13 +101,14 @@ test("missing intake runtime is reported as an unavailable service, not invalid 
   );
 
   assert.equal(response.status, 503);
-  assert.deepEqual(await response.json(), {
-    error: "採購單 AI 服務尚未設定，請聯絡系統管理員。",
-    code: "UNAVAILABLE",
-  });
+  const body = await response.json();
+  assert.equal(body.error, "採購單 AI 服務尚未設定，請聯絡系統管理員。");
+  assert.equal(body.code, "UNAVAILABLE");
+  assert.equal(body.stage, "request");
+  assert.match(body.traceId, /^[a-f0-9-]{36}$/);
 });
 
-test("AI extraction failures return the original error message", async () => {
+test("unknown intake failures are redacted and correlated", async () => {
   const request = new Request(
     "https://app.example/api/repository-document-intake?owner=owner&name=repo&operation=intake",
     {
@@ -146,9 +147,11 @@ test("AI extraction failures return the original error message", async () => {
   );
 
   assert.equal(response.status, 500);
-  assert.deepEqual(await response.json(), {
-    error: "Gateway rejected model openai/gpt-5.2: unsupported file input",
-  });
+  const body = await response.json();
+  assert.equal(body.code, "DOCUMENT_INTAKE_FAILED");
+  assert.equal(body.stage, "intake");
+  assert.match(body.traceId, /^[a-f0-9-]{36}$/);
+  assert.equal(JSON.stringify(body).includes("Gateway rejected"), false);
 });
 
 test("review rejects a document ID different from its URL before submitting", async () => {
@@ -233,4 +236,88 @@ test("archived repositories reject intake before invoking extraction", async () 
   );
   assert.equal(response.status, 403);
   assert.equal(extracted, false);
+});
+
+test("save failures report the last request-local stage and classify only known connection failures", async () => {
+  for (const [cause, status] of [
+    [new TypeError("private SQL payload"), 500],
+    [Object.assign(new Error("private connection"), { code: "08006" }), 503],
+  ] as const) {
+    const configured = runtime(async () => {
+      throw new Error("unused");
+    });
+    configured.intake = async (_actor, _command, onStage) => {
+      onStage?.("target.submit");
+      throw cause;
+    };
+    const response = await documentIntakeRequest(
+      new Request(
+        "https://app.example/api/repository-document-intake?owner=owner&name=repo&operation=intake",
+        {
+          method: "POST",
+          headers: { origin: "https://app.example", "content-type": "application/json" },
+          body: JSON.stringify({
+            action: "save",
+            repositoryId: repository.id,
+            documentId: "doc",
+            requestId: "request",
+            expectedVersion: 0,
+            source: { fileId: "file", fileRevisionId: "revision", fileSha256: "a".repeat(64) },
+          }),
+        },
+      ),
+      configured,
+      async () => "user-1",
+    );
+    const body = await response.json();
+    assert.equal(response.status, status);
+    assert.equal(body.stage, "target.submit");
+    assert.equal(body.code, status === 503 ? "PERSISTENCE_UNAVAILABLE" : "CONTRACT_SAVE_FAILED");
+    assert.match(body.error, /保存結果待確認/);
+    assert.equal(JSON.stringify(body).includes("private"), false);
+  }
+});
+
+test("concurrent intake requests keep independent failure stages and trace IDs", async () => {
+  const release = Promise.withResolvers<void>();
+  const configured = runtime(async () => {
+    throw new Error("unused");
+  });
+  configured.intake = async (_actor, command, onStage) => {
+    if (command.requestId === "first") {
+      onStage?.("intelligence.extract");
+      await release.promise;
+    } else {
+      onStage?.("target.submit");
+      release.resolve();
+    }
+    throw new Error("private failure");
+  };
+  const execute = (requestId: string) =>
+    documentIntakeRequest(
+      new Request(
+        "https://app.example/api/repository-document-intake?owner=owner&name=repo&operation=intake",
+        {
+          method: "POST",
+          headers: { origin: "https://app.example", "content-type": "application/json" },
+          body: JSON.stringify({
+            action: "save",
+            repositoryId: repository.id,
+            documentId: "doc",
+            requestId,
+            expectedVersion: 0,
+            source: { fileId: "file", fileRevisionId: "revision", fileSha256: "a".repeat(64) },
+          }),
+        },
+      ),
+      configured,
+      async () => "user-1",
+    );
+  const responses = await Promise.all([execute("first"), execute("second")]);
+  const [first, second] = await Promise.all(responses.map((response) => response.json()));
+  assert.equal(first.stage, "intelligence.extract");
+  assert.equal(first.code, "EXTRACTION_FAILED");
+  assert.equal(second.stage, "target.submit");
+  assert.equal(second.code, "CONTRACT_SAVE_FAILED");
+  assert.notEqual(first.traceId, second.traceId);
 });

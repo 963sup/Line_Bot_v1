@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { UserError } from "@line_bot_v1/account/domain/user";
 import type { createContracts } from "@line_bot_v1/contract/application/use-cases/contracts";
 import { ContractError } from "@line_bot_v1/contract/domain/error";
@@ -58,14 +59,18 @@ function failure(error: unknown) {
     error instanceof UserError ||
     error instanceof RequestIdentityError;
   const status = known ? error.status : 500;
+  const traceId = randomUUID();
   captureHandledServerError(error, {
     service: "repository-contracts-api",
     operation: "request",
     status,
+    traceId,
   });
   return jsonResponse(
     {
-      error: error instanceof Error ? error.message : String(error),
+      error: known ? error.message : "合約操作失敗，請提供追蹤 ID 給管理員查核。",
+      ...(!known ? { code: "CONTRACT_OPERATION_FAILED" } : {}),
+      ...(status >= 500 ? { traceId } : {}),
       ...(error instanceof ContractError ? { code: error.code } : {}),
     },
     status,

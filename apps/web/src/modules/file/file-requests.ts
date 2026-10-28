@@ -60,7 +60,7 @@ export function createFileRequests(context: {
         : target === "file"
           ? "File 請求失敗。"
           : response.status === 504
-            ? "採購單 AI 解析逾時，請稍後重試。"
+            ? "採購單請求逾時，保存結果待確認；請保留此頁，使用原命令查詢回執，勿重新建立。"
             : query.operation === "read"
               ? "ContractDocument 讀取失敗。"
               : "採購單操作失敗。";
@@ -68,14 +68,30 @@ export function createFileRequests(context: {
       context.onDenied(message);
       throw new StaleRequest();
     }
-    throw Object.assign(
-      new Error(
-        target === "document" && code === "UNKNOWN_RESULT"
-          ? "解析結果尚未確認；原命令重試只會查詢已保存回執，不會重新解析。請保留此頁並聯絡管理員查核。"
-          : message,
-      ),
-      { status: response.status, code },
-    );
+    const traceId: unknown = Reflect.get(fields, "traceId");
+    const stage: unknown = Reflect.get(fields, "stage");
+    const diagnostic =
+      target === "document"
+        ? [
+            typeof stage === "string" && /^[a-z.]{1,40}$/.test(stage) ? `階段：${stage}` : "",
+            typeof code === "string" && /^[A-Z_]{1,64}$/.test(code) ? `錯誤碼：${code}` : "",
+            typeof traceId === "string" && /^[a-f0-9-]{36}$/.test(traceId)
+              ? `追蹤 ID：${traceId}`
+              : "",
+          ]
+            .filter(Boolean)
+            .join(" · ")
+        : "";
+    const failureMessage =
+      target === "document" && code === "UNKNOWN_RESULT"
+        ? "解析結果尚未確認；原命令重試只會查詢已保存回執，不會重新解析。請保留此頁並聯絡管理員查核。"
+        : message;
+    throw Object.assign(new Error([failureMessage, diagnostic].filter(Boolean).join("\n")), {
+      status: response.status,
+      code,
+      stage,
+      traceId,
+    });
   }
   return {
     file: (query: Record<string, string> = {}, mutation?: FileMutation) =>
