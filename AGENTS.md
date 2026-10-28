@@ -32,6 +32,22 @@
 - Serena session 未啟動、工具不可用或結果不足時，明示原因並使用 Codex 原生工具繼續，不得假設 Serena 結果等於完整 repository evidence。
 - 不為一次性文字查找、單檔文件修改、設定檔修改或簡單命令強制呼叫 Serena；主動使用必須能降低符號定位或跨檔案推理成本。
 
+### Available MCP status
+
+目前以 [`.codex/config.toml`](.codex/config.toml) 為 MCP 設定來源；以下是最近一次本地 bootstrap 核對結果，不代表每個 Codex host session 都已完成登入或連線：
+
+| MCP | 狀態 | 使用規則 |
+| --- | --- | --- |
+| `serena` | 已核對可用：Serena 2.1.0、Python 3.13、LSP、REPL | 語義定位、符號、引用、診斷、重構優先使用 |
+| `next-devtools` | 已核對本地 launcher 可用 | Next.js runtime／診斷需要時使用 |
+| `shadcn` | 已核對本地 launcher 可用 | 元件庫查詢／操作需要時使用 |
+| `github` | Token binding 已核對；實際 hosted handshake 仍需當前 host 驗證 | repository、PR、issue 操作使用；不把 Token 寫入 repository |
+| `context7` | 已配置 `CONTEXT7_API_KEY` 引用；本地 shell 未提供該值時不可用 | 文件查詢需要時使用；缺少 key 要明示，不猜測結果 |
+| `openaiDeveloperDocs` | 端點已配置；host handshake 未核對 | OpenAI 官方文件查詢需要時使用 |
+| `sentry` | 端點已配置；OAuth／host handshake 未核對 | 只有當前 host 完成 OAuth 後使用 |
+
+若 MCP 實際呼叫失敗，先回報具體 server、工具與授權／連線原因，再使用已核對的 Serena 或 Codex 原生工具；不得把「設定存在」宣稱為「服務可用」。
+
 ## Mandatory governing set
 
 以下是完整 governing authority，所有 repository 任務一律遵守。具體讀取依下方 Effective context contract 選取 target ref 的 current file／section／symbol；不要求每次將無關檔案全文預載進 context：
