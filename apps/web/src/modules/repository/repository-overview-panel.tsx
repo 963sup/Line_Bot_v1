@@ -1,6 +1,7 @@
 "use client";
 
 import type { PublicRepository } from "@line_bot_v1/repository/contracts/output/public";
+import { hasRepositoryPermission } from "@line_bot_v1/repository/domain/repository/value-objects/repository-capability";
 import Link from "next/link";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
@@ -61,7 +62,9 @@ export default function RepositoryOverviewPanel({
   const canonicalOwner =
     overview?.repository.ownerLogin ?? publicRepository?.ownerLogin ?? ownerLogin;
   const canonicalName = overview?.repository.name ?? publicRepository?.name ?? repositoryName;
-  const canManage = overview?.repository.permissions.includes("admin") ?? false;
+  const canManage = overview?.repository.permissions
+    ? hasRepositoryPermission(overview.repository.permissions, "admin")
+    : false;
 
   const clear = useCallback(() => {
     generation.current += 1;

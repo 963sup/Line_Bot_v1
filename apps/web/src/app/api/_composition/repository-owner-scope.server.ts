@@ -1,4 +1,5 @@
 import { businessDatabase } from "@line_bot_v1/platform/postgres";
+import { hasRepositoryPermission } from "@line_bot_v1/repository/domain/repository/value-objects/repository-capability";
 import { repositoryContentScope } from "@line_bot_v1/repository/postgres/content-scope";
 import { activeLineUser } from "./account.server";
 
@@ -16,9 +17,9 @@ export async function repositoryOwnerScope(
     archived,
     canEdit:
       !archived &&
-      repository.permissions.some((permission) =>
-        ["write", "maintain", "admin"].includes(permission),
-      ),
-    canManage: !archived && repository.permissions.includes("admin"),
+      (hasRepositoryPermission(repository.permissions, "write") ||
+        hasRepositoryPermission(repository.permissions, "maintain") ||
+        hasRepositoryPermission(repository.permissions, "admin")),
+    canManage: !archived && hasRepositoryPermission(repository.permissions, "admin"),
   };
 }

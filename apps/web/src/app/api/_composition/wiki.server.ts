@@ -1,4 +1,5 @@
 import { businessDatabase } from "@line_bot_v1/platform/postgres";
+import { hasRepositoryPermission } from "@line_bot_v1/repository/domain/repository/value-objects/repository-capability";
 import { repositoryContentScope } from "@line_bot_v1/repository/postgres/content-scope";
 import { createWikiHistory } from "@line_bot_v1/wiki/application/use-cases/history";
 import { createWiki } from "@line_bot_v1/wiki/application/use-cases/pages";
@@ -20,7 +21,7 @@ export const wiki: WikiWebRuntime = {
       repository: { id: repository.id, ownerLogin: selector.ownerLogin, name: repository.name },
       archived,
       canEdit: !archived && canEditWiki(repository.permissions),
-      canManageRepository: repository.permissions.includes("admin"),
+      canManageRepository: hasRepositoryPermission(repository.permissions, "admin"),
     };
   },
   pages: () => createWiki({ ...wikiStore(), now: Date.now }),
