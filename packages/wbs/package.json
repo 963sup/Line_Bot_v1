@@ -167,6 +167,10 @@
     "./composition/bootstrap/scope-boundary": {
       "types": "./dist/composition/bootstrap/scope-boundary.d.ts",
       "default": "./dist/composition/bootstrap/scope-boundary.js"
+    },
+    "./contracts/parse-content-response": {
+      "types": "./dist/contracts/parse-content-response.d.ts",
+      "default": "./dist/contracts/parse-content-response.js"
     }
   },
   "files": [
