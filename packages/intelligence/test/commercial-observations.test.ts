@@ -44,6 +44,8 @@ test("commercial profile pins provider schema, model, prompt, normalization and 
     commercialFingerprint,
   } = await import("../src/application/commercial-profile.js");
   assert.equal(commercialProfile.model, "gpt-4.1");
+  assert.match(commercialExtractionPrompt, /Return observations, semanticHints and wbsDraft/);
+  assert.doesNotMatch(commercialExtractionPrompt, /Return observations and semanticHints only/);
   assert.equal(
     commercialProfile.schemaFingerprint,
     commercialFingerprint(commercialObservationSchema),

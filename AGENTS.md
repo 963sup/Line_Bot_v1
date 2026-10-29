@@ -33,7 +33,15 @@
 - Serena session 未啟動、工具不可用或結果不足時，明示原因並使用 Codex 原生工具繼續，不得假設 Serena 結果等於完整 repository evidence。
 - 不為一次性文字查找、單檔文件修改、設定檔修改或簡單命令強制呼叫 Serena；主動使用必須能降低符號定位或跨檔案推理成本。
 
-### Available MCP status
+### Serena context budget
+
+- 同一存活 session 已成功呼叫的能力直接重用；不每輪重讀 manual、README、help、完整工具清單或重跑 health-check。只有 session／runtime／設定改變或實際呼叫失敗時，針對失效層重新檢查；CLI 與 hosted MCP 的證據分開。
+- `project index` 僅在使用者要求、首次缺索引、大量來源新增／搬移／刪除或分支切換後查詢證實快取失效時執行。一般修改使用自動同步；單檔問題先用 `index-file`，不以索引解決權限或 MCP 通訊錯誤。
+- 批量重構先用限定 path/symbol 的 overview/reference 建立完整清單，再依當前 v2 API 說明使用可用批量工具；只回傳必要差異、數量及失敗項，完成後 reference／diagnostics 回掃並跑受影響驗證。
+- Memory 按任務讀相關節點；`eme_core` 與 `memory_maintenance` 在本 session 首次 memory mutation 前讀一次，未變更時重用。只在持久知識改變時更新，變更後 check；不把每輪工具可用狀態寫入 memory。
+- Hook 只注入短入口提醒，不啟動 index、安裝、help、全庫查詢或另一個模型。完整 log 留 ignored artifact，不作下一輪預設 context。
+
+### MCP availability evidence
 
 目前以 [`.codex/config.toml`](.codex/config.toml) 為 MCP 設定來源；以下是最近一次本地 bootstrap 核對結果，不代表每個 Codex host session 都已完成登入或連線：
 
@@ -121,6 +129,14 @@
 Source-of-truth：[facts/sources-of-truth.md](docs/facts/sources-of-truth.md)。子 AGENTS 只增加 local constraints。
 
 ## Completeness and root-cause delivery
+
+### Primary agent requirement preflight
+
+- 每次接收新需求或範圍變更，主 agent 在修改前先核對：目標與完整範圍、已驗證事實／假設、Owner／consumer、新增／修改／移除清單、驗收與執行順序。簡單變更直接精簡說明，不強制新增文件。
+- 跨 Owner、多步驟、需求歧義或批量重構時，使用 `.codex/agents/requirement-architect.toml` 的唯讀角色協助釐清；目前 host 無該角色或無法委派時，由主 agent 執行同一檢查並明示工具限制，不阻塞已授權工作。
+- 大型任務先更新唯一既有總體計畫，列出總段數、各段產物／驗收、目前狀態與完整刪碼候選；不得邊做邊自行縮小交付範圍。續作先讀計畫與實際 diff，不重建平行規格。
+- 主 agent 整合角色結果並負責執行到底；需求規畫不替代架構審查、測試或使用者驗收，也不增加已授權實作的確認輪次。
+- SessionStart hook 提供此規則的提醒，無法證明每個需求都已檢查；hook 未觸發時上述規則仍適用。
 
 - 先把使用者要求轉成明確 scope、完成條件、不可改變條件與受影響檔案清單；「全部」、「完整」、「全面」表示必須處理該 scope 內的所有項目。
 - 先找根因，再處理所有由根因影響的 consumer、配置、文件、測試、驗證與部署入口；不得只修第一個失敗點或只完成代表性樣本。

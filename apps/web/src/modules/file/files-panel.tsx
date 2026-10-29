@@ -91,7 +91,7 @@ export default function FilesPanel({
   const {
     file: request,
     document: requestDocumentIntake,
-    commercialIntake: requestCommercialIntake,
+    commercialTask: requestCommercialIntake,
     commercialDocument: requestCommercialDocument,
   } = useMemo(
     () =>

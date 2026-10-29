@@ -81,6 +81,10 @@ config_file = "./agents/debugger.toml"
 description = "Review architecture, module boundaries, dependency direction, and data flow."
 config_file = "./agents/architect.toml"
 
+[agents.requirement-architect]
+description = "Define evidence-based scope, removal candidates, acceptance criteria and complete implementation plans."
+config_file = "./agents/requirement-architect.toml"
+
 [agents.test-engineer]
 description = "Analyze test coverage, design regression cases, and identify untested behavior."
 config_file = "./agents/test-engineer.toml"

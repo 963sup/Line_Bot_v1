@@ -8,6 +8,10 @@ Serena v2 的 [Tools 官方文件](https://oraios.github.io/serena/01-about/035_
 
 ## 1. 先確認環境與指令
 
+以下預檢每個新 session 按需執行一次；已成功的能力直接重用，只有 runtime／設定改變或呼叫失敗才重驗該層。不要每輪讀完整手冊、列工具、health-check 或重建 index。觸發規則見根 AGENTS.md 的 Serena context budget。
+
+`serena download-ls-dependencies python typescript` 用於預先下載指定語言伺服器依賴，適合新環境、離線準備或確認缺依賴時執行，不是日常啟動指令。Serena 的 Python launcher runtime 與 Python 語言伺服器是不同需求；本專案 `project.yml` 只啟用 TypeScript，且使用已安裝的 workspace `typescript-language-server`，兩者已工作時不必執行此下載。只有要分析 Python source 並啟用對應 server 時才需要評估 Python LSP。
+
 在 repository 根目錄執行；此專案的 Bash 環境先載入既有工具路徑，不需要重新安裝：
 
 ```bash

@@ -9,7 +9,7 @@ export function createFileRequests(context: {
   onDenied(message: string): void;
 }) {
   async function send(
-    target: "file" | "document" | "commercialIntake" | "commercialDocument",
+    target: "file" | "document" | "commercialIntake" | "commercialDocument" | "commercialTask",
     query: Record<string, string>,
     command?: object,
   ) {
@@ -30,6 +30,7 @@ export function createFileRequests(context: {
       document: "repository-document-intake",
       commercialIntake: "document-intakes",
       commercialDocument: "commercial-documents",
+      commercialTask: "commercial-tasks",
     }[target];
     const response = await fetch(`/api/${endpoint}?${search}`, {
       method: command ? "POST" : "GET",
@@ -93,5 +94,7 @@ export function createFileRequests(context: {
     commercialIntake: (query: Record<string, string>, command?: object) =>
       send("commercialIntake", query, command),
     commercialDocument: (query: Record<string, string>) => send("commercialDocument", query),
+    commercialTask: (query: Record<string, string>, command?: object) =>
+      send("commercialTask", query, command),
   };
 }
