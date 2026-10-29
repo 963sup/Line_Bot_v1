@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "../../shared/ui/button";
 import CommercialDraftReview, { CommercialIntakeSource } from "./commercial-draft-review";
 import {
+  commercialDocumentId,
   commercialRecoveryActions,
   commercialStatus,
   isMissingCommercialIntake,
@@ -20,6 +21,7 @@ type Props = {
   canEdit: boolean;
   blocked: boolean;
   request(query: Record<string, string>, command?: object): Promise<unknown>;
+  legacyRequest(query: Record<string, string>, command?: object): Promise<unknown>;
   read(query: Record<string, string>): Promise<unknown>;
 };
 export default function CommercialIntakePanel(props: Props) {
@@ -52,28 +54,40 @@ export default function CommercialIntakePanel(props: Props) {
         setState("OUTCOME_UNKNOWN");
       }
       try {
-        const response = await props.request(
-          operation === "status" ? { taskId: command.commandId } : {},
-          operation === "status"
-            ? undefined
-            : operation === "start"
-              ? {
-                  operation,
-                  taskId: command.commandId,
-                  repositoryId: command.repositoryId,
-                  source: command.source,
-                }
-              : { operation, taskId: command.commandId, repositoryId: command.repositoryId },
-        );
+        const response = "taskId" in command
+          ? await props.request(
+              operation === "status" ? { taskId: command.taskId } : {},
+              operation === "status"
+                ? undefined
+                : operation === "start"
+                  ? { operation, taskId: command.taskId, repositoryId: command.repositoryId, source: command.source }
+                  : { operation, taskId: command.taskId, repositoryId: command.repositoryId },
+            )
+          : await props.legacyRequest(
+              operation === "status" ? { commandId: command.commandId } : {},
+              operation === "status"
+                ? undefined
+                : operation === "start"
+                  ? { operation, ...command }
+                  : { operation, repositoryId: command.repositoryId, commandId: command.commandId },
+            );
         if (ticket !== current.current) return;
         const observed = commercialStatus(response, command);
         setState(observed);
         setMissingIntake(false);
         if (observed === "DRAFT_SAVED") {
-          const response = record(await props.read({ documentId: command.target.documentId }));
+          const documentId = commercialDocumentId(response, command);
+          const draftResponse = record(await props.read({ documentId }));
           if (ticket !== current.current) return;
-          if (!response.revision) throw new Error("草稿讀取尚未完成，請以原命令查詢狀態。");
-          setRevision(response.revision);
+          if (!draftResponse.revision) throw new Error("草稿讀取尚未完成，請以原命令查詢狀態。");
+          const draft = record(draftResponse.revision);
+          const source = record(draft.source);
+          if (draft.documentId !== documentId ||
+              source.fileId !== command.source.fileId ||
+              source.fileRevisionId !== command.source.fileRevisionId ||
+              source.sha256 !== command.source.sha256)
+            throw new Error("已保存商務草稿與原始來源不符。");
+          setRevision(draftResponse.revision);
         }
       } catch (cause) {
         if (ticket !== current.current || cause instanceof StaleRequest) return;
@@ -86,7 +100,7 @@ export default function CommercialIntakePanel(props: Props) {
         }
       }
     },
-    [props.request, props.read],
+    [props.request, props.legacyRequest, props.read],
   );
   useEffect(() => {
     const ticket = ++current.current;
@@ -206,7 +220,7 @@ export default function CommercialIntakePanel(props: Props) {
             selected={props.selected}
           />
           <p role="status">{labels[state] ?? state}</p>
-          <p className="break-all text-xs">原命令：{pending.commandId}</p>
+          <p className="break-all text-xs">任務：{"taskId" in pending ? pending.taskId : pending.commandId}</p>
           <Button
             variant="outline"
             disabled={busy || props.blocked}
