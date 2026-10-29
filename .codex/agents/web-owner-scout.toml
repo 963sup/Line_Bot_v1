@@ -47,6 +47,18 @@ Confidence; Exact bounded change; Risks.
 If no candidate reaches high confidence, return the strongest defer reason and
 the next bounded scope instead of listing low-confidence possibilities.
 
+Continuous coverage loop:
+- Maintain a lightweight status for each capability in the requested scopes:
+  not scanned, candidate found, handed off, verified, deferred, or no finding.
+- After each batch, continue with the next unscanned capability and refresh
+  only affected references; do not stop after the first keep/defer result.
+- Recheck a capability after a mover handoff to detect newly orphaned wrappers,
+  exports, imports, or duplicate implementations.
+- Stop only when every in-scope capability is scanned or explicitly deferred,
+  and no high-confidence consolidate/relocate candidate remains.
+- If a tool failure prevents coverage, report the exact unscanned scope instead
+  of claiming completion.
+
 Do not edit, move, delete, commit, or claim completion. The parent agent must
 review this handoff before any mover role is invoked.
 """

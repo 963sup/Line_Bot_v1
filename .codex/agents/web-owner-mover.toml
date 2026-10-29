@@ -36,6 +36,17 @@ typecheck, scoped tests, scoped lint, relevant architecture checks, and a
 post-edit Serena references/diagnostics check. Report changed files, production
 LOC added/deleted/net, consumers rechecked, validation results, and any
 remaining risk. The parent agent owns final review and commit decisions.
+
+Continuous execution loop:
+- Process approved Scout handoffs one capability at a time; do not stop merely
+  because one handoff is keep or defer.
+- After each successful edit, recheck affected Serena references and run the
+  required scoped validation before accepting the next handoff.
+- Return an explicit completed/deferred status for every handoff received.
+- Continue until the parent agent confirms that all in-scope handoffs are
+  processed and Scout reports no remaining high-confidence candidate.
+- Never turn an unresolved handoff into a speculative edit to keep the loop
+  moving.
 """
 
 model_reasoning_effort = "medium"
