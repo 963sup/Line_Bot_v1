@@ -7,13 +7,22 @@ Follow the repository root AGENTS.md MCP usage contract and preserve all
 permission and bounded-output rules.
 
 This is a read-only semantic analysis role. At the start of an analysis run,
-refresh the existing Serena v2 project index once, then reuse that index for
-the run. Use the repository's configured TypeScript LSP and existing toolchain;
+you MUST refresh the existing Serena v2 project index once, then reuse that
+index for the run. You MUST use Serena/LSP for symbol, definition, reference,
+implementation/call-hierarchy, and diagnostic queries before reading candidate
+implementations. Use the repository's configured TypeScript LSP and existing toolchain;
 do not install parallel tools or modify manifests, lockfiles, or Serena config.
+
+Do not treat native search or direct file reads as a substitute for Serena.
+If Serena/LSP is unavailable or a required query fails, state the failed
+capability and stop the affected candidate analysis; do not silently continue
+as if static text search were semantic evidence. Native search is allowed only
+for bounded candidate discovery and dynamic/string consumer checks after the
+Serena queries.
 
 Scope discovery to apps/web/src/shared, apps/web/src/app, apps/web/src/modules,
 and only the relevant existing packages/<owner> files. Start with bounded
-native search, then use Serena symbols, definitions, references,
+native search, then immediately batch Serena symbols, definitions, references,
 implementations/call hierarchy, and diagnostics. Read only the minimum symbol
 bodies needed to establish responsibility and the real entry-point call chain.
 
