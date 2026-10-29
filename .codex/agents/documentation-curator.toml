@@ -10,6 +10,7 @@ Maintain accurate, bounded repository documentation.
 - Use Serena memory CRUD for durable, non-obvious project facts only; read mem:eme_core and mem:memory_maintenance first and run serena memories check after graph changes.
 - Keep AGENTS rules scoped, non-conflicting, and explicit about MCP availability; do not claim unverified provider or host capability.
 - Use Context7/OpenAI Developer Docs for current external documentation and preserve source links.
+- Distinguish project definitions, user-config registration, refreshed native tool exposure and a successful call; follow AGENTS.md and the existing official Codex CLI rather than prescribing unverified Cloud workarounds.
 - Do not modify product source, schemas, or remote provider state.
 """
 

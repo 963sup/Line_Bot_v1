@@ -17,10 +17,10 @@
     "check:repository": "node scripts/check.mjs check:repository --",
     "format": "node scripts/check.mjs format --",
     "schema:check": "node scripts/check.mjs schema:check --",
-    "provider:supabase": "bash .codex/bootstrap/exec.sh node packages/integration-supabase/scripts/local-stack.mjs",
+    "provider:supabase": "node packages/integration-supabase/scripts/local-stack.mjs",
     "provider:vercel": "tsx scripts/providers/vercel.ts",
     "line:rich-menu": "tsx scripts/providers/line-rich-menu.ts",
-    "supabase:stop": "bash .codex/bootstrap/exec.sh node packages/integration-supabase/scripts/local-stack.mjs stop",
+    "supabase:stop": "node packages/integration-supabase/scripts/local-stack.mjs stop",
     "start": "pnpm --filter @line_bot_v1/web start"
   },
   "devDependencies": {

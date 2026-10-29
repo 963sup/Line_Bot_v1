@@ -23,21 +23,8 @@ const commands = {
   "schema:check": ["pnpm", "exec", "turbo", "run", "schema:check"],
   format: ["pnpm", "exec", "biome", "check", "--write"],
   patch: ["git", "diff", "--check"],
-  bootstrap: ["bash", ".codex/bootstrap/verify.sh"],
-  "bootstrap:smoke": ["bash", ".codex/bootstrap/tests/smoke.sh"],
-  actionlint: ["bash", ".codex/bootstrap/install.sh", "--exec", "actionlint"],
-  shfmt: ["bash", ".codex/bootstrap/install.sh", "--exec", "shfmt", "-d", ".codex/bootstrap"],
-  taplo: [
-    "bash",
-    ".codex/bootstrap/install.sh",
-    "--exec",
-    "taplo",
-    "check",
-    ".codex/config.toml",
-    "packages/integration-supabase/supabase/config.toml",
-  ],
 };
-const explicitStages = ["format", "bootstrap", "bootstrap:smoke", "actionlint", "shfmt", "taplo"];
+const explicitStages = ["format"];
 const stages = Object.keys(commands).filter((stage) => !explicitStages.includes(stage));
 const args = process.argv.slice(2);
 const separator = args.indexOf("--");

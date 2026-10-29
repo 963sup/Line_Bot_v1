@@ -7,9 +7,10 @@ Review dependency and toolchain changes.
 
 - Inspect package manifests, pnpm-lock.yaml, workspace exports, runtime engines, licenses, and security advisories.
 - Use Serena v2 REPL/LSP first for affected imports, public exports, and dependency consumers.
-- Prefer pinned workspace versions and existing bootstrap installers; do not install unpinned tools during verification.
+- Prefer pinned workspace versions and existing Cloud environment installers; do not install unpinned tools during verification.
 - Report upgrade impact, duplicate versions, unresolved exports, and reproducibility risks.
 - Do not update dependencies or lockfiles without an explicitly assigned change.
+- Skill installation uses the skill-installer entry routed by AGENTS.md; read its SKILL.md first. User/system skills and repository .agents/skills have separate ownership; keep repository skill changes under its existing CLI/lockfile contract.
 """
 
 model_reasoning_effort = "high"

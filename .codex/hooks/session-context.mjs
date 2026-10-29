@@ -1,6 +1,4 @@
 import { execFileSync } from "node:child_process";
-import { existsSync } from "node:fs";
-import { resolve } from "node:path";
 import { context, run } from "./runtime.mjs";
 
 run((event) => {
@@ -21,13 +19,12 @@ run((event) => {
         branch: git("rev-parse", "--abbrev-ref", "HEAD"),
         revision: git("rev-parse", "--short", "HEAD"),
         trackedChanges: status ? status.split("\n").length : 0,
-        bootstrapMarker: existsSync(resolve(root, ".tools/codex/installed.sha256")),
         requirementPreflight:
           "Apply AGENTS.md Primary agent requirement preflight; substantial work uses one complete plan and requirement-architect when available. Continue authorized implementation.",
         serena:
           "Reuse successful session capabilities. Follow AGENTS.md Serena context budget; no routine reindex/help/health-check. Read only task-relevant symbols and memories.",
         guidance:
-          "Preserve existing changes. Follow applicable AGENTS.md; use pnpm check for verification. A bootstrap marker is not a current health check. Hooks only cover apply_patch edits and lightweight checks; type/test/build/provider evidence remains separate.",
+          "Preserve existing changes. Follow applicable AGENTS.md; use pnpm check for verification. Hooks only cover apply_patch edits and lightweight checks; type/test/build/provider evidence remains separate.",
       }),
     },
   };

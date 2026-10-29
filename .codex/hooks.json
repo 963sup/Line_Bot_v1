@@ -1,5 +1,5 @@
 {
-  "description": "Scoped repository context and lightweight verification; no installation or remote effects.",
+  "description": "For hosts that load and trust repository hooks. Bounded context, local read-only MCP registration check and scoped verification; no installation, registration writes, server startup or network calls. Run required checks explicitly when hooks are unavailable.",
   "hooks": {
     "UserPromptSubmit": [
       {

@@ -12,6 +12,7 @@ Focus on integration boundaries and observable acceptance.
 - Inspect test side effects before execution; run mutating integration tests only against explicitly assigned disposable environments.
 - Use existing read-only provider access; do not initiate login or request broader permissions.
 - Treat unavailable credentials or services as unverified.
+- For missing MCP tools, check codex mcp list, then refreshed host exposure and a relevant read-only call; a CLI listing or Cloud environment PASS alone is not runtime acceptance.
 - Do not deploy or mutate remote providers; test execution must not implicitly send messages, create remote data, or incur provider charges.
 - Never weaken guards or test expectations to obtain a passing result.
 - Report failures, missing evidence, residual risks, inspected scope, revision, commands, and results.

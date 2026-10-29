@@ -40,40 +40,17 @@ CLI / probe / deployment tools 可能讀 environment 或進行外部寫入。Sup
 
 Validation scope 見 [Validation and tooling entry points](validation-pipeline.md)。
 
-## Codex Cloud bootstrap
+## Codex Cloud environment
 
-[Bootstrap](../../../.codex/bootstrap/) 是環境準備的程式來源，Cloud 設定只呼叫入口；devcontainer 本身不是 Cloud 已執行 setup 的證據。
-
-| 路徑 | 唯一責任 |
-| --- | --- |
-| `install.sh` | 順序安裝已選模組、一次 frozen workspace install、準備 MCP 本地需求與檢查 |
-| `verify.sh` | 檢查本地前置條件，分別回報失敗與仍待 host 驗證的項目 |
-| `update.sh` | 比對忽略目錄中的安裝指紋；輸入未變且檢查通過就重用，否則重新對齊固定版本 |
-| `config/tools.env` | 工具選擇；可由 Cloud 非秘密環境變數 `BOOTSTRAP_TOOLS` 覆寫 |
-| `config/mcp.env` | MCP 本地準備／檢查範圍；可由 `BOOTSTRAP_MCP_SERVERS` 覆寫，不改變 host 啟用狀態，不保存 endpoint 或 credential 副本 |
-| `config/versions.env` | Python、uv、GitHub CLI、Wrangler、Serena 的 exact pin，以及 Postgres client major |
-| `lib/` | 共用環境、偵測、下載／完整性驗證、鎖與結果輸出；不擁有工具專屬決策 |
-| `modules/<tool>/{install,verify}.sh` | 各工具自己的行為，供入口載入；Supabase／Vercel 重用 workspace 安裝，不建立 global 副本 |
-| `mcp/{install,verify}.sh`、`mcp/servers/` | 調度與各 MCP server 本地前置條件；連接定義仍由 `.codex/config.toml` 擁有 |
-| `tests/smoke.sh` | 明確選用的 shell 語法、本地前置條件及 launcher 路徑檢查；不驗收 MCP handshake |
-
-Bootstrap 支援 Linux x86_64／arm64。基礎 image 需有 Bash、curl、tar、sha256sum、awk、install 與 flock。下載保留 TLS 與 checksum 驗證，workspace 安裝使用 frozen lockfile；安裝鎖防止同 checkout 並行寫入。Node／pnpm 版本沿用 `.node-version`／manifest，workspace CLI 版本沿用 manifests／catalog／lockfile，不在 env 檔重複固定。
-
-Docker 不由 task 內另起 daemon；選用時必須有 host 提供的 executable、daemon 與 socket 權限。Postgres 模組只透過具簽章的 distro repository 安裝指定 major 的 client，需要 apt 權限及對應套件來源，不會建立資料庫。兩者預設不啟用；Cloudflare 只準備固定版本 Wrangler，不登入或修改遠端資源。
-
-Cloud 安裝腳本從該設定綁定的 repo root 執行 `bash .codex/bootstrap/install.sh`。恢復快取／更新 checkout 的階段使用 `bash .codex/bootstrap/update.sh`；平台若沒有獨立 maintenance hook，就在任務 startup instructions 呼叫 update。安裝指紋是可丟棄的快取，不是第二份設定來源。必須先讓該 checkout 包含 bootstrap 檔案；草稿保存不代表 main 已更新或環境已發布。
-
-`.codex/config.toml` 只有在實際 host 支援並載入 project MCP 設定時才生效。Context7／Sentry 的連線、OAuth、網路允許清單及 session 的工具登錄要在 host 驗證；container shell 無法替另一個 session 完成連接。`verify.sh` 的 exit 0 只代表本地檢查通過，摘要中的 pending 與 `mcpSession: unverified` 不能被解讀為 MCP 全部完成。
-
-技能沿用既有 [.agents/skills/](../../../.agents/skills/) 與受管理的 lockfile；這次 bootstrap 不複製或搬動第三方技能。
+安裝與啟動由 Cloud 環境設定管理。
 
 ### OpenAI Developer Docs MCP
 
-OpenAI Developer Docs 另以官方 hosted MCP 提供文件查詢，不需本地安裝或 credential；連接位置只由 `.codex/config.toml` 擁有，Cloud 網路需允許 `developers.openai.com`，實際工具註冊與唯讀查詢仍由 host 驗證。
+OpenAI Developer Docs 另以官方 hosted MCP 提供文件查詢，不需本地安裝或 credential；repository 的連接位置由 `.codex/config.toml` 擁有。Cloud 網路需允許 `developers.openai.com`，但允許網路不會自動登錄聊天工具；依 [Fresh Cloud MCP registration](codex-agents-and-mcp.md#fresh-cloud-mcp-registration) 同步使用者層登錄並檢查更新後的原生工具，並實際執行 search/fetch 驗收。直接 HTTPS JSON-RPC 可查文件，不能當作已完成 host 登錄。
 
 ### Local Supabase stack
 
-Default bootstrap checks the image-provided Docker daemon and starts the package-owned [local stack lifecycle](../../../packages/integration-supabase/README.md). Docker endpoint/context/TLS selectors are cleared for the local-socket check; bootstrap never installs or starts a competing daemon. Supabase uses its canonical package workdir and the official `ghcr.io` image registry by default, preserving proxy and registry credentials. Set `SUPABASE_INTERNAL_IMAGE_REGISTRY` only when the environment requires another supported registry.
+Default Cloud environment checks the image-provided Docker daemon and starts the package-owned [local stack lifecycle](../../../packages/integration-supabase/README.md). Docker endpoint/context/TLS selectors are cleared for the local-socket check; Cloud environment never installs or starts a competing daemon. Supabase uses its canonical package workdir and the official `ghcr.io` image registry by default, preserving proxy and registry credentials. Set `SUPABASE_INTERNAL_IMAGE_REGISTRY` only when the environment requires another supported registry.
 
 The default service set and local environment-file instructions live in the package README. Stack setup checks free disk before downloading, waits for CLI health checks, initializes current application SQL without migration history, and verifies PostgreSQL and Storage. `verify.sh` only probes existing services; it does not start them. CLI output may contain local credentials and stays in ignored mode-0600 files. pnpm data directories also live under the workspace, and install runs noninteractively without changing HOME.
 
@@ -105,35 +82,4 @@ TypeScript LSP 直接重用 workspace 固定的 `typescript-language-server` 5.1
 
 ### Cloud development tools
 
-| 模組 | 準備內容 | 預設 |
-| --- | --- | --- |
-| `ripgrep` | `rg`，有範圍的文字／檔案定位 | 啟用 |
-| `jq` | JSON 欄位投影、CLI 結果篩選 | 啟用 |
-| `shellcheck` | Bash 靜態分析；修改 Bash 且需要靜態檢查時選用 | 選用 |
-| `actionlint` | 固定版本 GitHub Actions 檢查器；`pnpm check actionlint` | 選用 |
-| `shfmt` | 固定版本 Bash 格式檢查器；`pnpm check shfmt` | 選用 |
-| `taplo` | 固定版本 TOML 語法檢查器；`pnpm check taplo` | 選用 |
-| `build` | make、GCC／G++、pkg-config；Python 沿用 runtime 模組 | 選用 |
-| `browser` | 固定版本 Playwright、Chromium 與所需系統函式庫 | 選用 |
-
-ripgrep、jq 與 native build 工具使用具簽章驗證的 distro 套件來源，沿用 image 的套件版本，不複製進 workspace dependency。缺少套件時需要 root 或非互動 sudo，以及 apt repository 存取；已有工具時跳過安裝。同一次 bootstrap 只更新一次 apt index。ShellCheck、actionlint、shfmt、taplo 使用固定版本的 GitHub release，驗證 checksum 後安裝至 `.tools/codex/bin/`，不需 sudo；各自模組擁有 install／verify，版本由 `config/versions.env` 擁有。ShellCheck／shfmt 的 upstream digest 與 Taplo 的下載 archive hash 固定在各自 installer，升版時同步更新；Taplo release 未提供獨立 upstream checksum。
-
-在目前工具選擇上加入 Web／native 開發能力：
-
-```sh
-source .codex/bootstrap/config/tools.env
-export BOOTSTRAP_TOOLS="$BOOTSTRAP_TOOLS build browser"
-bash .codex/bootstrap/update.sh
-```
-
-要讓此選擇跨 Cloud 任務保留，在 Cloud 的一般環境變數設定完整的 `BOOTSTRAP_TOOLS` 清單，或修改 repo 的 `config/tools.env`；它不是機密。Playwright exact pin 在 `config/versions.env`，對應 Chromium revision 由 Playwright 管理，獨立工具安裝在 `.tools/codex/`，瀏覽器快取在 `.cache/ms-playwright/`，不新增第二份 application Playwright dependency。只有缺少 binary 或系統函式庫時才補齊。
-
-瀏覽器下載需要 `cdn.playwright.dev`、`playwright.download.prss.microsoft.com`、`cdn.playwright.download.prss.microsoft.com`。系統函式庫安裝需要 root 或非互動 sudo；bootstrap 不關閉 TLS 驗證，也不繞過平台 proxy／權限。`verify.sh` 只檢查版本、binary 與共享函式庫；選用 browser 後明確執行 `tests/smoke.sh` 才會啟動 Chromium，載入本地測試頁，且不代表 application UI 已驗收。
-
-有 Web 任務時再啟動 dev server，使用相同工具路徑擷取對應頁面，例如：
-
-```sh
-bash .codex/bootstrap/install.sh --exec playwright screenshot --browser chromium http://127.0.0.1:3000/ .artifacts/ui/page.png
-```
-
-Port 以 dev server 的實際輸出為準；登入狀態與受影響互動仍需按任務驗收。Bootstrap 預設準備 Supabase 本地 stack；Web 與 Redis 依任務啟動，Docker daemon 由 Cloud host 提供。
+開發工具由 Cloud 環境安裝指令碼提供。依任務使用已安裝的 rg、jq、Playwright 等工具。

@@ -1,11 +1,13 @@
 # Official Codex project configuration.
 # Secrets stay in the environment or Codex-managed authentication.
+# Project config remains the versioned source; it does not contain credentials.
 
 # Root settings must precede named TOML tables.
 # Project-wide execution preferences; host and service policies still apply.
 approval_policy = "never"
 sandbox_mode = "danger-full-access"
 tool_output_token_limit = 3000
+# Keep root + nested guidance within the default budget on fresh hosts.
 project_doc_max_bytes = 32768
 web_search = "live"
 
@@ -14,28 +16,29 @@ web_search = "live"
 enabled = true
 destructive_enabled = true
 open_world_enabled = true
-default_tools_approval_mode = "never"
+default_tools_approval_mode = "auto"
 
 [features]
 hooks = true
 
 # Public official documentation; no local executable or credential required.
 [mcp_servers.openaiDeveloperDocs]
-default_tools_approval_mode = "never"
+default_tools_approval_mode = "auto"
 url = "https://developers.openai.com/mcp"
 startup_timeout_sec = 30
 
-# Bootstrap installs pinned Serena v2 with `uv tool install`; the launcher only
-# selects that prepared executable and never resolves/downloads at MCP startup.
+# Serena is prepared by Cloud environment installation.
 [mcp_servers.serena]
-command = "bash"
-args = [".codex/bootstrap/install.sh", "--serena", "start-mcp-server", "--project-from-cwd", "--context=codex", "--agent-interface=REPL", "--open-web-dashboard=false"]
+experimental_environment = "remote"
+env_vars = [{ name = "HTTP_PROXY", source = "remote" }, { name = "HTTPS_PROXY", source = "remote" }, { name = "NO_PROXY", source = "remote" }, { name = "SSL_CERT_FILE", source = "remote" }, { name = "REQUESTS_CA_BUNDLE", source = "remote" }, { name = "NODE_EXTRA_CA_CERTS", source = "remote" }]
+command = "serena"
+args = [ "start-mcp-server", "--project-from-cwd", "--context=codex", "--agent-interface=REPL", "--open-web-dashboard=false"]
 startup_timeout_sec = 60
-default_tools_approval_mode = "never"
+default_tools_approval_mode = "auto"
 
 # Context7 hosted MCP. Set CONTEXT7_API_KEY only when the account requires it.
 [mcp_servers.context7]
-default_tools_approval_mode = "never"
+default_tools_approval_mode = "auto"
 url = "https://mcp.context7.com/mcp"
 bearer_token_env_var = "CONTEXT7_API_KEY"
 startup_timeout_sec = 30
@@ -43,7 +46,7 @@ startup_timeout_sec = 30
 # Official GitHub hosted MCP. Token comes from the host environment/network secret.
 # Keep GitHub CLI's GH_TOKEN separate; no credential values belong in this file.
 [mcp_servers.github]
-default_tools_approval_mode = "never"
+default_tools_approval_mode = "auto"
 url = "https://api.githubcopilot.com/mcp/"
 bearer_token_env_var = "GITHUB_MCP_TOKEN"
 http_headers = { "X-MCP-Toolsets" = "repos,issues,pull_requests" }
@@ -51,16 +54,20 @@ startup_timeout_sec = 30
 
 # Next.js DevTools MCP uses the workspace-pinned executable.
 [mcp_servers.next-devtools]
-default_tools_approval_mode = "never"
-command = "bash"
-args = [".codex/bootstrap/install.sh", "--exec", "pnpm", "exec", "next-devtools-mcp"]
+experimental_environment = "remote"
+env_vars = [{ name = "HTTP_PROXY", source = "remote" }, { name = "HTTPS_PROXY", source = "remote" }, { name = "NO_PROXY", source = "remote" }, { name = "SSL_CERT_FILE", source = "remote" }, { name = "REQUESTS_CA_BUNDLE", source = "remote" }, { name = "NODE_EXTRA_CA_CERTS", source = "remote" }]
+default_tools_approval_mode = "auto"
+command = "pnpm"
+args = [ "exec", "next-devtools-mcp"]
 startup_timeout_sec = 30
 
 # shadcn MCP uses the workspace-pinned CLI from apps/web.
 [mcp_servers.shadcn]
-default_tools_approval_mode = "never"
-command = "bash"
-args = [".codex/bootstrap/install.sh", "--exec", "pnpm", "--filter", "@line_bot_v1/web", "exec", "shadcn", "mcp"]
+experimental_environment = "remote"
+env_vars = [{ name = "HTTP_PROXY", source = "remote" }, { name = "HTTPS_PROXY", source = "remote" }, { name = "NO_PROXY", source = "remote" }, { name = "SSL_CERT_FILE", source = "remote" }, { name = "REQUESTS_CA_BUNDLE", source = "remote" }, { name = "NODE_EXTRA_CA_CERTS", source = "remote" }]
+default_tools_approval_mode = "auto"
+command = "pnpm"
+args = [ "--filter", "@line_bot_v1/web", "exec", "shadcn", "mcp"]
 startup_timeout_sec = 30
 
 [agents]
@@ -84,6 +91,10 @@ config_file = "./agents/architect.toml"
 [agents.requirement-architect]
 description = "Define evidence-based scope, removal candidates, acceptance criteria and complete implementation plans."
 config_file = "./agents/requirement-architect.toml"
+
+[agents.mcp-maintainer]
+description = "Diagnose MCP registration, host refresh, credentials and real tool-call readiness using the official Codex CLI."
+config_file = "./agents/mcp-maintainer.toml"
 
 [agents.test-engineer]
 description = "Analyze test coverage, design regression cases, and identify untested behavior."
@@ -138,7 +149,7 @@ description = "Validate cross-service contracts, runtime behavior, and external 
 config_file = "./agents/integration-validator.toml"
 
 [mcp_servers.sentry]
-default_tools_approval_mode = "never"
+default_tools_approval_mode = "auto"
 # Official hosted MCP uses OAuth; request org:read,project:read,event:read scopes.
 # Project scoping supplies query defaults, not business write authorization.
 url = "https://mcp.sentry.dev/mcp/963sup/sentry"
