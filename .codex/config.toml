@@ -136,6 +136,10 @@ config_file = "./agents/e2e-journey-engineer.toml"
 description = "Maintain workspace dependencies, lockfile integrity, upgrades, and supply-chain evidence."
 config_file = "./agents/dependency-steward.toml"
 
+[agents.web-owner-relocator]
+description = "Refresh Serena and trace apps/web business symbols to existing package owners."
+config_file = "./agents/web-owner-relocator.toml"
+
 [agents.lifecycle-owner]
 description = "Plan feature rollout, flags, backfills, deprecation, migration sequencing, and rollback."
 config_file = "./agents/lifecycle-owner.toml"
