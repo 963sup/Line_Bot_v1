@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { test } from "node:test";
-import type { Database } from "@line_bot_v1/platform/postgres";
 import { createPostgresContentWbsExpansionReader } from "@line_bot_v1/content/composition/bootstrap/wbs-expansion";
+import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { createProjectWbs } from "../src/application/use-cases/project-content.js";
 import { createProjectWbsGovernance } from "../src/application/use-cases/project-governance.js";
@@ -34,10 +34,11 @@ test("Project WBS preserves role, replay, review, publication and scope isolatio
 
   const content = createProjectWbs({
     activeUser: async (subject) => ({ id: subject }),
-    store: () => createPostgresProjectWbsStore({
-      db,
-      contentReader: createPostgresContentWbsExpansionReader,
-    }),
+    store: () =>
+      createPostgresProjectWbsStore({
+        db,
+        contentReader: createPostgresContentWbsExpansionReader,
+      }),
     now: () => 10,
   });
   const governance = createProjectWbsGovernance({

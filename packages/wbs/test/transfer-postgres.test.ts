@@ -2,9 +2,9 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { test } from "node:test";
 import { setTimeout as delay } from "node:timers/promises";
+import { createPostgresContentWbsExpansionReader } from "@line_bot_v1/content/composition/bootstrap/wbs-expansion";
 import type { Database, Sql, SqlRow } from "@line_bot_v1/platform/postgres";
 import { createSql } from "@line_bot_v1/platform/postgres";
-import { createPostgresContentWbsExpansionReader } from "@line_bot_v1/content/composition/bootstrap/wbs-expansion";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { postgresSessions } from "@line_bot_v1/platform/testing/postgres-sessions";
 import { createProjectManagement } from "@line_bot_v1/project/application/management";
@@ -299,9 +299,9 @@ test("PGlite transfers exact history and receipts, then enforces the one-way aut
   );
 
   const projectContent = createPostgresProjectWbsStore({
-      db,
-      contentReader: createPostgresContentWbsExpansionReader,
-    });
+    db,
+    contentReader: createPostgresContentWbsExpansionReader,
+  });
   await assert.rejects(
     executeProjectWbsCommand(
       projectContent,
