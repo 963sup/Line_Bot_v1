@@ -97,9 +97,6 @@ class StaleRequestError extends Error {}
 export function isCurrentIntent(expected: number, current: number) {
   return expected === current;
 }
-function executionSubmissionAllowed(state: ContractState | undefined) {
-  return state === "ACTIVE";
-}
 export function eligibleTasks(document: ContentDocument, line: ContractLine | undefined) {
   if (!line?.content) return [];
   const byId = new Map(document.nodes.map((node) => [node.id, node]));
@@ -499,7 +496,7 @@ export default function ExecutionsPanel({
     if (
       !scope ||
       !contract ||
-      !executionSubmissionAllowed(contract.state) ||
+      contract.state !== "ACTIVE" ||
       !taskId ||
       !lineId ||
       pending
@@ -860,7 +857,7 @@ export default function ExecutionsPanel({
                   busy ||
                   pending !== null ||
                   !contract ||
-                  !executionSubmissionAllowed(contract.state) ||
+                  contract.state !== "ACTIVE" ||
                   !lineId ||
                   !taskId ||
                   !quantity

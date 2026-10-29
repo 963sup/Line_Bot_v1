@@ -168,7 +168,7 @@ test("corrected owner panels preserve closed history and legal review actions wi
     executionSource,
     /\.filter\(\(item\) => item\.state === "ACTIVE" \|\| item\.state === "CLOSED"\)/,
   );
-  assert.equal(executionSource.match(/!executionSubmissionAllowed\(contract\.state\)/g)?.length, 2);
+  assert.equal(executionSource.match(/contract\.state !== "ACTIVE"/g)?.length, 2);
   assert.match(executionSource, /selected\.state !== "ACCEPTED"/);
   assert.doesNotMatch(contractSource, /legacyReplacementStarted|hasLegacyLines/);
   assert.match(
