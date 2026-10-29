@@ -1,0 +1,44 @@
+{
+  "$schema": "https://repomix.com/config-schema.json",
+  "include": [
+    "README.md",
+    "AGENTS.md",
+    "architecture/registry.json",
+    "architecture/domain/**/*.json",
+    "architecture/modules/**/*.json",
+    "architecture/data/**/*.json",
+    "apps/web/src/**/*.{ts,tsx}",
+    "apps/web/package.json",
+    "packages/*/src/**/*.{ts,tsx}",
+    "packages/*/package.json",
+    "scripts/**/*.mjs",
+    "package.json",
+    "pnpm-workspace.yaml",
+    "tsconfig*.json",
+    "biome.json",
+    "knip.jsonc",
+    ".dependency-cruiser.mjs"
+  ],
+  "output": {
+    "filePath": ".repomix/01-repository-overview.xml",
+    "style": "xml"
+  },
+  "compress": true,
+  "ignore": {
+    "customPatterns": [
+      ".repomix/**",
+      "architecture/fpt/**",
+      "node_modules/**",
+      ".git/**",
+      ".cache/**",
+      ".tools/**",
+      ".agents/**",
+      ".codex/**",
+      "dist/**",
+      ".next/**",
+      "coverage/**",
+      "**/*.lock",
+      "**/*.{env,sqlite,db,pem,key}"
+    ]
+  }
+}

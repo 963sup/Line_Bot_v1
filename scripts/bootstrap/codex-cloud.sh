@@ -34,6 +34,8 @@ export XDG_DATA_HOME="$PWD/.cache/xdg-data"
 export XDG_CONFIG_HOME="$PWD/.cache/xdg-config"
 export XDG_STATE_HOME="$PWD/.cache/xdg-state"
 export CODEX_HOME="$PWD/.cache/codex"
+export SERENA_HOME="$PWD/.cache/serena-home"
+export HOME="$PWD/.cache/home"
 
 mkdir -p \
   "$PNPM_HOME" \
@@ -42,7 +44,9 @@ mkdir -p \
   "$XDG_DATA_HOME" \
   "$XDG_CONFIG_HOME" \
   "$XDG_STATE_HOME" \
-  "$CODEX_HOME"
+  "$CODEX_HOME" \
+  "$SERENA_HOME" \
+  "$HOME"
 
 export PATH="$HOME/.local/bin:$PNPM_HOME:$PWD/.tools/codex/bin:$PWD/node_modules/.bin:$PATH"
 
@@ -76,7 +80,8 @@ if (process.versions.node !== expected) {
 }
 '
 
-corepack enable
+# Cloud already provides pnpm on PATH; enabling Corepack would try to write
+# shims beside the read-only Node installation.
 corepack install
 
 command -v pnpm >/dev/null || {
@@ -95,12 +100,20 @@ test -x apps/web/node_modules/.bin/shadcn
 pnpm exec typescript-language-server --version
 pnpm exec supabase --version
 
-# 使用 npx 確認 Repomix 可直接執行。
+# 使用 Repomix 產出三份固定用途的分析 context。
 npx --yes repomix --version
+mkdir -p .repomix
+npx --yes repomix --config repomix.overview.config.json
+npx --yes repomix --config repomix.docs.config.json
+npx --yes repomix --config repomix.source.config.json
 
-# Serena 設定與 memories 放在 workspace 可寫入的位置。
-export SERENA_HOME="$PWD/.cache/serena-home"
-mkdir -p "$SERENA_HOME"
+for output in \
+  .repomix/01-repository-overview.xml \
+  .repomix/02-docs-full.xml \
+  .repomix/03-source-context.xml
+do
+  test -s "$output"
+done
 
 "$SERENA_EXECUTABLE" init
 
@@ -202,7 +215,6 @@ for server in \
   openaiDeveloperDocs \
   context7 \
   github \
-  sentry \
   serena \
   repomix \
   next-devtools \
@@ -224,10 +236,6 @@ codex mcp add \
   github \
   --url https://api.githubcopilot.com/mcp/ \
   --bearer-token-env-var GITHUB_MCP_TOKEN
-
-codex mcp add \
-  sentry \
-  --url https://mcp.sentry.dev/mcp/963sup/sentry
 
 # MCP subprocess 使用相同的 Serena_HOME。
 codex mcp add \
