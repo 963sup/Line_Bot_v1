@@ -106,11 +106,15 @@ mkdir -p .repomix
 npx --yes repomix --config repomix.overview.config.json
 npx --yes repomix --config repomix.docs.config.json
 npx --yes repomix --config repomix.source.config.json
+npx --yes repomix --config repomix.json.config.json
+npx --yes repomix --config repomix.sql.config.json
 
 for output in \
   .repomix/01-repository-overview.xml \
   .repomix/02-docs-full.xml \
-  .repomix/03-source-context.xml
+  .repomix/03-source-context.xml \
+  .repomix/04-json-context.json \
+  .repomix/05-sql-context.sql
 do
   test -s "$output"
 done

@@ -56,7 +56,7 @@ Default Cloud environment checks the image-provided Docker daemon and starts the
 
 ### Serena v2 MCP
 
-Serena 依官方安裝模型由 `uv tool install` 建立隔離工具環境；目前固定 `serena-agent==2.1.0`，並使用 Serena 官方建議的 Python 3.13。這不改變專案一般 Python runtime 的 3.12.14。`uvx` 適合臨時執行，但 MCP 每次啟動不應重新解析或下載套件，因此 Codex launcher 使用已安裝的 `$UV_TOOL_BIN_DIR/serena`。
+Serena 依官方安裝模型由 `uv tool install` 建立隔離工具環境；目前固定 `serena-agent==2.1.0`，並使用 Serena 官方建議的 Python 3.13。這不改變專案一般 Python runtime 的 3.12.14。`uvx` 適合臨時執行，但 MCP 每次啟動不應重新解析或下載套件，因此 Cloud bootstrap 使用已安裝的 Serena executable。
 
 `.codex/config.toml` 最終啟動語意與官方 Codex 範例一致：
 
