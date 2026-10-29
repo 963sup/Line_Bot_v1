@@ -142,7 +142,7 @@ test("prompt preflight delivers bounded guidance and records delivery without pr
     prompt: "private requirement content",
   });
   assert.equal(result.hookSpecificOutput.hookEventName, "UserPromptSubmit");
-  assert.match(result.hookSpecificOutput.additionalContext, /requirement-architect/);
+  assert.match(result.hookSpecificOutput.additionalContext, /Apply AGENTS\.md preflight/);
   assert.ok(result.hookSpecificOutput.additionalContext.length < 1000);
   assert.equal(JSON.stringify(result).includes("private requirement content"), false);
   const { base, turn } = context(event);
