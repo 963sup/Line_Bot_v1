@@ -24,6 +24,13 @@ rules from [`AGENTS.md`](../AGENTS.md) remain applicable.
 
 ## Placement
 
+Owner packages are the implementation home for business behavior. Do not leave
+use cases, query policies, business authorization, transactions or recovery in
+apps pages, API handlers or Web composition modules. Expose the smallest public
+capability needed by real consumers; keep domain independent of Next.js and
+concrete providers. Use Serena v2/LSP according to the inherited root workflow
+to trace declarations and consumers before moving or deleting behavior.
+
 Use the smallest existing placement that matches the responsibility:
 
 - Domain rules and state transitions stay with the owning package.

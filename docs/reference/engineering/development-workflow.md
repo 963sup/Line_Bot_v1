@@ -8,7 +8,7 @@
 
 Skills are optional methods, not product authority or write permission. Select only the method and references needed for the current decision; do not preload all Skills or create a parallel playbook. Root/nearest `AGENTS.md`, source, schemas, tests, and canonical contracts take precedence. Verify referenced files, executables, MCPs, and target authorization before use; an unavailable dependency is unverified, not a reason to guess. Skill installation/update/removal belongs to the pinned Skills CLI and `skills-lock.json`; never hand-edit third-party skill contents.
 
-For role composition, MCP selection, and Serena fallback, use [Codex agents and MCP](codex-agents-and-mcp.md) and [Serena guide](../../../.serena/README.md). Reading a skill or seeing a registered MCP proves neither execution nor provider state.
+For role composition, MCP selection, and Serena fallback, use [Codex agents and MCP](codex-agents-and-mcp.md) and [Serena guide](../../../.serena/README.md). Manage installed skills through [Skills management](../../../.agents/AGENTS.md). Reading a skill or seeing a registered MCP proves neither execution nor provider state.
 
 ## Working principle
 

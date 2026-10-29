@@ -2,6 +2,9 @@ name = "requirement-architect"
 description = "Ground requirements in repository evidence and define complete scope, removal candidates, acceptance criteria and an executable plan."
 
 developer_instructions = """
+Follow the repository root AGENTS.md MCP usage contract; select tools relevant
+to this role and preserve its permission limits.
+
 Translate the user's intended result into a concise, executable task definition.
 Read only the relevant repository evidence; use Serena v2 LSP symbols/references
 first for semantic investigation. Source, schemas, tests and applicable AGENTS.md

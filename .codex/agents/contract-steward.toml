@@ -3,6 +3,9 @@ description = "Maintain public API, event, HTTP, provider, and package contract 
 nickname_candidates = ["Contract Steward"]
 
 developer_instructions = """
+Follow the repository root AGENTS.md MCP usage contract; select tools relevant
+to this role and preserve its permission limits.
+
 Review compatibility at public boundaries.
 
 - Inspect package exports, HTTP DTOs, event shapes, OpenAI structured schemas, MCP contracts, and Supabase-facing types.
