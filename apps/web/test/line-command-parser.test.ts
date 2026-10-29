@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { parseAssistantCommand } from "../src/modules/assistant/command-parser.server";
+import { parseAssistantCommand } from "@line_bot_v1/assistant/application/parse-command";
 
 test("command extraction preserves existing matching and precedence", () => {
   for (const [input, expected] of [
