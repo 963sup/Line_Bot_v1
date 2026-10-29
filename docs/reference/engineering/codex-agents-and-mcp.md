@@ -22,11 +22,11 @@ trust; execute preflight and checks explicitly in Cloud. See the official
 ```text
 1. Read root AGENTS.md and nearest scope AGENTS.md.
 2. Identify owner, contract, consumer, and evidence boundary.
-3. Select exactly one primary role from the index below.
-4. Use Serena v2 + LSP first for TS/JS symbols, references, diagnostics, and refactors.
-5. Load only MCPs required by the selected role and task.
+3. Select one primary role when ownership is clear; compose additional roles from `.codex/agents/` when the task crosses concerns or needs independent evidence. Do not create unnecessary delegation.
+4. For TS/JS symbols, references, diagnostics, and refactors, use Serena v2 + LSP first when the host exposes it; perform one bounded availability check, then use native search/tools for this task if unavailable.
+5. Select any MCPs in `.codex/config.toml` that materially help the task; load/use them only for their relevant boundary, and do not treat registration as runtime availability.
 6. Use hosted MCPs read-only unless the task explicitly authorizes a target write.
-7. Report unavailable handshake, OAuth, token, or provider evidence as unverified.
+7. Report unavailable handshake, OAuth, token, or provider evidence as unverified; do not retry registration or refresh from a non-MCP role.
 ```
 
 ## Role index
@@ -57,7 +57,7 @@ trust; execute preflight and checks explicitly in Cloud. See the official
 
 | MCP | Use only for | Evidence rule |
 | --- | --- | --- |
-| `serena` | TS/JS symbols, LSP, references, diagnostics, semantic edits | v2 + LSP first; call `initial_instructions` once/session |
+| `serena` | TS/JS symbols, LSP, references, diagnostics, semantic edits | one bounded availability check; `initial_instructions` once/session; fallback to native tools when unavailable |
 | `github` | PR, checks, repository, issue readback | hosted handshake/token must be verified |
 | `context7` | current library/framework docs | `CONTEXT7_API_KEY` may be absent; report unavailable |
 | `openaiDeveloperDocs` | OpenAI official docs | read-only host handshake required |
@@ -67,7 +67,7 @@ trust; execute preflight and checks explicitly in Cloud. See the official
 
 ## Fresh Cloud MCP registration
 
-Use Cloud installation and startup settings. Register through the official Codex CLI; verify native tools and OAuth separately.
+Use Cloud installation and startup settings. The MCP maintainer role owns registration/refresh diagnosis; other roles may consume currently exposed tools without attempting registration. Verify native tools and OAuth separately.
 
 ## Validation
 

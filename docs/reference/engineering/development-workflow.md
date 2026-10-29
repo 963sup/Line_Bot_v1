@@ -4,14 +4,11 @@
 
 共用工作契約由 repository AGENTS 維護，本文件擁有其操作程序；Codex 使用官方 OpenAI 設定與目前 session 可用的工具，不把 repository 內的自製 config、rules 或 agent catalog 當成產品契約。
 
-## Skill selection and compatibility
+## Skills and tools
 
-Repository-installed third-party Skills are optional task methods, not product authority or executable permission. Read only the chosen `.agents/skills/<name>/SKILL.md` plus references needed for the current decision. Selection is `Task → Owner/Truth/Boundary → one applicable method → authorized tool → evidence`; do not preload all Skills, duplicate project invariants inside an external Skill, or install another Skill merely because its title resembles a project responsibility.
+Skills are optional methods, not product authority or write permission. Select only the method and references needed for the current decision; do not preload all Skills or create a parallel playbook. Root/nearest `AGENTS.md`, source, schemas, tests, and canonical contracts take precedence. Verify referenced files, executables, MCPs, and target authorization before use; an unavailable dependency is unverified, not a reason to guess. Skill installation/update/removal belongs to the pinned Skills CLI and `skills-lock.json`; never hand-edit third-party skill contents.
 
-- **Instruction priority:** root and nearest `AGENTS.md`, canonical contracts and current source take precedence over third-party Skill examples. In particular, generic `npx skills add/update` advice from `find-skills` is *not* permission to bypass [Skills management](../../../.agents/AGENTS.md). Only the project's pinned/trusted Skills CLI may install, update or remove an entry, and it must keep `skills-lock.json` synchronized; do not hand-edit `.agents/skills/` or its lockfile.
-- **Compatibility gate:** before using an external Skill, verify that its referenced local files exist, any required executables/subagents/browser or provider connection are actually available in this session, and all proposed writes fit the task/target authorization. Missing references or unsupported execution steps are an incomplete capability, not instructions to guess a replacement or claim execution; report the precise gap, and switch to an independently verified existing method when possible.
-- **Overlap resolution:** keep `AGENTS.md` as the change-policy owner, `docs/` as human-readable routing/why, `architecture/` and source as product authorities, `.agents/skills/` as externally managed methods, and connected Plugins as actual provider capabilities. For overlapping methods (for example First Principles, DDD, debugging or validation), select by the specific decision to make and actual prerequisites; do not create a second project playbook, duplicate source of truth, or add a new Skill without an uncovered consumer.
-- **Evidence boundary:** reading a `SKILL.md` proves only that its instructions were inspected. Command output, tests, GitHub CI, provider readback and device acceptance must each be independently verified. If a Skill demands a tool unavailable here, mark that step unverified rather than implying it ran.
+For role composition, MCP selection, and Serena fallback, use [Codex agents and MCP](codex-agents-and-mcp.md) and [Serena guide](../../../.serena/README.md). Reading a skill or seeing a registered MCP proves neither execution nor provider state.
 
 ## Working principle
 

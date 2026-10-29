@@ -34,3 +34,7 @@ service-account*.json
 
 .vercel
 .env*
+
+# Repomix outputs are derived local artifacts; regenerate from source when needed.
+repomix-*.xml
+repomix-output.xml
