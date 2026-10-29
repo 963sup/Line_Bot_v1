@@ -13,7 +13,7 @@ run((event) => {
     hookSpecificOutput: {
       hookEventName: "UserPromptSubmit",
       additionalContext:
-        "Before edits, apply AGENTS.md Primary agent requirement preflight. For substantial cross-owner or ambiguous work, delegate read-only requirement-architect review when available; otherwise perform it and disclose the limitation. Reuse one plan; define scope, evidence, owners, additions/changes/removals and acceptance. Continue authorized execution. Reuse working Serena capabilities; do not routinely reindex or reload manuals. This reminder is not evidence the review ran.",
+        "Before edits, apply AGENTS.md Primary agent requirement preflight. For substantial work use requirement-architect when available; otherwise perform it and disclose the limitation. Reuse one plan and working Serena sessions. Prefer native MCP tools; missing tools require checking user registration and host refresh before reinstalling or assuming incompatibility. Continue authorized execution. This reminder is not evidence review or MCP acceptance ran.",
     },
   };
 });

@@ -11,6 +11,14 @@ Machine routing only. Do not treat this file as a second configuration source.
 
 ## Selection algorithm
 
+Cloud tools are registered by the active host. Project-local config and standalone
+agent files configure compatible local Codex hosts; their presence does not prove
+Cloud loaded them. Repository command hooks require a supported local host and
+trust; execute preflight and checks explicitly in Cloud. See the official
+[configuration reference](https://developers.openai.com/codex/config-reference),
+[custom agents](https://learn.chatgpt.com/docs/agent-configuration/subagents), and
+[hooks support](https://learn.chatgpt.com/docs/hooks).
+
 ```text
 1. Read root AGENTS.md and nearest scope AGENTS.md.
 2. Identify owner, contract, consumer, and evidence boundary.
@@ -25,6 +33,8 @@ Machine routing only. Do not treat this file as a second configuration source.
 
 | Trigger | Primary role | Config |
 | --- | --- | --- |
+| MCP registration, host refresh, authentication/runtime diagnosis | mcp-maintainer | `.codex/agents/mcp-maintainer.toml` |
+| substantial requirements, scope, acceptance planning | requirement-architect | `.codex/agents/requirement-architect.toml` |
 | architecture, boundaries, dependency direction | architect | `.codex/agents/architect.toml` |
 | runtime/test/build failure | debugger | `.codex/agents/debugger.toml` |
 | cross-service/provider acceptance | integration-validator | `.codex/agents/integration-validator.toml` |
@@ -55,10 +65,22 @@ Machine routing only. Do not treat this file as a second configuration source.
 | `shadcn` | local component registry/tooling | use only for UI component tasks |
 | `sentry` | read-only event/error evidence | OAuth and host handshake required |
 
+## Fresh Cloud MCP registration
+
+Use Cloud installation and startup settings. Register through the official Codex CLI; verify native tools and OAuth separately.
+
 ## Validation
+
+`codex:config` checks every registered role and instruction-chain budgets for
+repository work directories. Vendored `.agents/skills/` guidance is loaded as
+skill content rather than used as a project working directory.
+
+The instruction budget remains the default 32 KiB, with a separate root budget
+to preserve space for nested guidance. All tracked project instruction chains
+are measured; raising the host limit is not an accepted fix for growth.
 
 ```sh
 pnpm check codex:config
 pnpm check hooks
-source .codex/bootstrap/lib/common.sh && serena memories check
+serena memories check
 ```

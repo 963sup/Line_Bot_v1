@@ -6,6 +6,8 @@ Serena v2 的 [Tools 官方文件](https://oraios.github.io/serena/01-about/035_
 
 專案規則見 [AGENTS.md](AGENTS.md)，實際設定見 [project.yml](project.yml)，Codex 啟動設定見 [config.toml](../.codex/config.toml)。本文件不複製記憶、治理規則或產品實作狀態。
 
+根目錄共通契約見 [repository AGENTS.md](../AGENTS.md)，記憶操作另依 [memories/AGENTS.md](memories/AGENTS.md)。以下操作說明不增加工具或寫入授權。
+
 ## 1. 先確認環境與指令
 
 以下預檢每個新 session 按需執行一次；已成功的能力直接重用，只有 runtime／設定改變或呼叫失敗才重驗該層。不要每輪讀完整手冊、列工具、health-check 或重建 index。觸發規則見根 AGENTS.md 的 Serena context budget。
@@ -15,12 +17,27 @@ Serena v2 的 [Tools 官方文件](https://oraios.github.io/serena/01-about/035_
 在 repository 根目錄執行；此專案的 Bash 環境先載入既有工具路徑，不需要重新安裝：
 
 ```bash
-source .codex/bootstrap/lib/common.sh
+export PATH="$HOME/.local/bin:$PWD/node_modules/.bin:$PATH"
 serena --version
 serena --help
 ```
 
 `serena --help` 列出最上層 CLI 指令；下一層用 `serena project --help`，具體參數用 `serena project index --help`。不要憑記憶猜參數，也不要把 CLI、MCP tools 與 REPL APIs 混用。
+
+### 專案設定與信任
+
+以下設定的唯一來源是 [project.yml](project.yml)；排查時讀取當前值，不把本表當作 runtime 已採用的證據：
+
+| 設定 | 本專案用途 |
+| --- | --- |
+| `language_backend`、`language_servers` | LSP backend，啟用 TypeScript；Serena 的 Python runtime 不等於 Python LSP。 |
+| `agent_interface` | REPL；在 `serena_repl` 中執行 Python。 |
+| `default_modes` | interactive/editing；實際 API 還受 context、全域設定與 session 影響。 |
+| `ls_workspace_folders` | workspace 範圍；仍受 ignore 與 TypeScript project graph 限制。 |
+| `ls_specific_settings.typescript.ls_path` | 選用 workspace-pinned `node_modules/.bin/typescript-language-server`。 |
+| `read_only` | Serena API 的編輯限制，不是 host sandbox 或任務寫入授權。 |
+
+Serena 的全域 `trusted_project_path_patterns` 決定是否套用專案的 `ls_specific_settings`。未信任時，包括 `ls_path` 的專案覆寫會被忽略；應核對當前設定與 LSP 啟動日誌，不能只看到 YAML 就宣稱使用 workspace server。這是 Serena 自身的信任判斷，與 Codex 是否信任並載入 `.codex/config.toml` 是不同層級。參考 [Trusted Projects](https://oraios.github.io/serena/02-usage/070_security.html#trusted-projects)。
 
 ## 2. 常用 CLI 指令
 
@@ -71,6 +88,10 @@ serena project health-check
 
 索引是 LSP 的預先快取；正常使用時 Serena 會自動更新變更檔案，不必每次對話全庫重建。JetBrains backend 的索引由 IDE 處理。不要直接編輯或提交 `.serena/cache/`。
 
+本專案另忽略 `docs/`、`architecture/`、`.serena/`、`.codex/` 等路徑，完整範圍以 `project.yml` 為準。Serena 搜尋不到不等於檔案不存在；治理／設定檔改用原生工具讀取，不為查一次檔案就放寬 ignores。
+
+跨 package 引用取決於 TypeScript project graph；必要時查 consumer 的 tsconfig references、library 的 composite/declaration/source mapping 與真實 imports。空 references 不能證明沒有 consumer；public API rename 或 safe delete 須以明確範圍的 exports、原生搜尋及 tests 交叉核對。相關說明見 [TypeScript configuration](https://oraios.github.io/serena/02-usage/050_configuration.html#typescript)。
+
 CLI 成功不等於當前 MCP session 已連通。索引後仍須在實際 session 查詢一個已知檔案的符號；跨 package 查引用亦須確認 TypeScript project graph。索引不能證明所有引用都已找齊。
 
 ## 4. 自動啟動與 Codex 接線
@@ -93,7 +114,9 @@ serena start-mcp-server \
   --open-web-dashboard false
 ```
 
-實際啟動沿用 `.codex/config.toml` 的 bootstrap launcher；不要另開無人連線的 stdio server，或在 launcher 裡重新下載工具。一般由 Codex host 啟動 server、連接 stdin/stdout。手動執行命令本身不會把 tools 註冊進現有對話。
+實際啟動使用環境已安裝的 `serena`，設定見 `.codex/config.toml`。登錄後確認 host 工具清單更新並做原生呼叫驗收。
+
+連線驗收在實際目標 host 依序確認：Serena 已 connected（支援時用 `/mcp`）→ 正確專案／worktree → 本 session 的 `initial_instructions` → 一個已知 TypeScript 檔案的符號查詢。跨 package 任務還須核對引用完整性。CLI 版本、索引或 stdio 程序成功均不能代替 host 工具登錄；Cloud 未暴露 Serena 工具時，應先處理 host 接線。
 
 context 與 agent interface 在 session 啟動時決定；切換後需重建 session。mode 用於調整任務行為，`--mode` 覆寫 default modes，`--add-mode` 額外加入。設定細節以當前 CLI help 與官方 configuration 為準。
 
@@ -111,6 +134,20 @@ context 與 agent interface 在 session 啟動時決定；切換後需重建 ses
 ```
 
 `code` 是 Python；以下是 REPL 內的程式碼，不是 shell 命令：
+
+先查相關 facade 或單一方法的當前簽名，不要把 classic tools 參數直接套入：
+
+```python
+s.info("lsp.find_symbol")
+```
+
+同一 session 需要比較少量方法時，可一次查詢：
+
+```python
+s.info("lsp.get_symbols_overview", "lsp.find_referencing_symbols")
+```
+
+確認簽名後再呼叫：
 
 ```python
 # 讓最後一個表達式成為結果，由 Serena renderer 輸出
@@ -135,15 +172,23 @@ s.lsp.get_symbols_overview(
 
 REPL 的可用能力由 `included_apis`／`excluded_apis` 決定；classic tool interface 才使用 `included_optional_tools`／`excluded_tools` 等設定。`serena tools list --all` 不是 REPL session 的即時 API 清單；JetBrains API 亦不能當作 LSP 能力使用。
 
+頂層變數可在同一 REPL session 保留；需要時以 `s.vars()` 查看、`s.clear()` 清除。先限制 path/symbol/depth 與回傳大小，再在 REPL 彙總結果，不長期保留大型結果或把 facade 存入變數。REPL 是 Python 執行環境；`read_only` 與 API inclusion 不能取代 host/container 的檔案權限隔離。
+
+### Memories 與 onboarding
+
+本專案已有 memories；按任務讀取相關節點，不為補文件或啟動新 session 重跑 onboarding。`no-onboarding` 只略過 onboarding，`no-memories` 停用 memories 及依賴它的 onboarding。`serena memories initialize` 建立保留的維護記憶，不代替專案 onboarding。寫入、rename、delete 與引用檢查均遵循 [memory contract](memories/AGENTS.md)，不在 README 重述整套授權規則。
+
 ## 6. 故障排查
 
 | 現象 | 檢查與處理 |
 | --- | --- |
-| `serena` 找不到 | 在 repo 根目錄 source bootstrap common.sh，再確認安裝路徑與版本；不要直接安裝另一份最新版。 |
+| `serena` 找不到 | 在 repo 根目錄 確認 PATH 包含 uv tool bin directory，再確認安裝路徑與版本；不要直接安裝另一份最新版。 |
 | 缺少符號／首次查詢慢 | 查工作目錄、source path、ignore、語言設定及 workspace LSP；必要時 index-file 或 project index。 |
 | 語言伺服器失效 | 先看有界 log／health-check，再視情況用當次 `s.lsp.restart_language_server` API 或重建 session。 |
 | host 沒有 Serena tools | 查 client MCP 設定與啟動結果；本機 binary 存在不代表 host 已載入。 |
-| 寫入全域目錄失敗 | 使用專案 bootstrap 設定的 `SERENA_HOME`；自建 stdio bridge 要傳遞該環境，不要重設使用者 HOME。 |
+| 已設定 `ls_path`，runtime 卻使用其他 LSP | 核對 Serena 全域 trusted project patterns、session 設定與 LSP 啟動紀錄；不要與 Codex project trust 混為一談。 |
+| references 為空或跨 package consumer 遺漏 | 查 TypeScript project graph、exports 與實際 imports，使用限定範圍的原生搜尋交叉驗證。 |
+| 寫入全域目錄失敗 | 使用專案 Cloud environment 設定的 `SERENA_HOME`；自建 stdio bridge 要傳遞該環境，不要重設使用者 HOME。 |
 | `Failed to parse JSONRPC`，內容是 Python 物件 repr | 檢查 bridge／REPL 是否把非協定文字寫入 MCP stdout；改以最後一個表達式回傳結果。重建 index 無法修復此通訊問題。 |
 | index 完成但 shutdown timeout | 分開確認索引 exit status／完成數與後續 session 查詢；保存 cleanup 警告，不直接宣稱所有功能正常。 |
 
@@ -154,10 +199,16 @@ REPL 的可用能力由 `included_apis`／`excluded_apis` 決定；classic tool 
 ## 7. 官方來源與更新方式
 
 - [官方文件首頁](https://oraios.github.io/serena/)
+- [Tools 與 REPL API](https://oraios.github.io/serena/01-about/035_tools.html)
 - [Running Serena：CLI、MCP 啟動](https://oraios.github.io/serena/02-usage/020_running.html)
+- [Connecting MCP Clients](https://oraios.github.io/serena/02-usage/030_clients.html)
 - [Project Workflow：建立、索引、啟用](https://oraios.github.io/serena/02-usage/040_workflow.html)
+- [Memories & Onboarding](https://oraios.github.io/serena/02-usage/045_memories.html)
 - [Configuration：REPL、contexts、modes](https://oraios.github.io/serena/02-usage/050_configuration.html)
+- [Security Considerations](https://oraios.github.io/serena/02-usage/070_security.html)
 - [Additional Usage：worktrees](https://oraios.github.io/serena/02-usage/999_additional-usage.html)
 - [官方文件原始碼](https://github.com/oraios/serena/tree/main/docs/02-usage)
 
-本次官方站直連受限，透過官方 GitHub repository 讀取上述 running、workflow、configuration、additional usage 原始碼；本機參數另以 CLI help 核對。網站主線可能超前已安裝版本。更新本文件時只讀相關章節，核對 CLI help 與實際 session API；不要把此速查表當作新的治理規則或無條件授權。
+官方網站與 GitHub main 可能超前已安裝版本。更新本文件時只讀相關章節，核對已安裝版本、CLI help 與實際 session API；不要把此速查表當作新的治理規則或無條件授權。
+
+2026-10-29 整合補充資料時，以本機 Serena 2.1.0 的 CLI help 與安裝來源核對 `s.info` 及 trusted-project 對 LS 設定的判斷；沒有因此宣稱已驗收 Cloud MCP 登錄或 LSP session。

@@ -132,7 +132,6 @@ test("session context reports tracked changes without filenames or file contents
   const summary = JSON.parse(result.hookSpecificOutput.additionalContext);
   assert.equal(summary.trackedChanges, 1);
   assert.equal(JSON.stringify(result).includes("private-content"), false);
-  assert.equal(summary.bootstrapMarker, false);
 });
 
 test("prompt preflight delivers bounded guidance and records delivery without private prompt", () => {
@@ -150,7 +149,10 @@ test("prompt preflight delivers bounded guidance and records delivery without pr
   const record = readFileSync(resolve(turn ?? base, "requirement-preflight.json"), "utf8");
   assert.equal(JSON.parse(record).event, "UserPromptSubmit");
   assert.equal(record.includes("private requirement content"), false);
-  assert.equal(spawnSync("git", ["status", "--porcelain"], { cwd: root, encoding: "utf8" }).stdout, "");
+  assert.equal(
+    spawnSync("git", ["status", "--porcelain"], { cwd: root, encoding: "utf8" }).stdout,
+    "",
+  );
 });
 
 test("prompt preflight reports failed delivery when session identity is missing", () => {

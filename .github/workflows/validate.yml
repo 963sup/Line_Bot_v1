@@ -31,12 +31,7 @@ jobs:
         run: pnpm check check:repository
       - name: Validate lifecycle hooks
         run: pnpm check codex:config hooks
-      - name: Prepare optional configuration checkers
-        env:
-          BOOTSTRAP_TOOLS: actionlint shfmt taplo
-          BOOTSTRAP_MCP_SERVERS: ""
-        run: bash .codex/bootstrap/install.sh
-      - name: Validate workflows, bootstrap formatting and TOML
-        run: pnpm check actionlint shfmt taplo
+      - name: Validate workflows
+        uses: docker://rhysd/actionlint:1.7.12
       - name: Validate patch
         run: pnpm check patch
