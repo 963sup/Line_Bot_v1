@@ -100,7 +100,7 @@ test -x apps/web/node_modules/.bin/shadcn
 pnpm exec typescript-language-server --version
 pnpm exec supabase --version
 
-# 使用 Repomix 產出三份固定用途的分析 context。
+# 使用 Repomix 產出固定用途的分析 context。
 npx --yes repomix --version
 mkdir -p .repomix
 npx --yes repomix --config repomix.overview.config.json
@@ -108,13 +108,19 @@ npx --yes repomix --config repomix.docs.config.json
 npx --yes repomix --config repomix.source.config.json
 npx --yes repomix --config repomix.json.config.json
 npx --yes repomix --config repomix.sql.config.json
+npx --yes repomix --config repomix.tests.config.json
+npx --yes repomix --config repomix.mjs.config.json
+npx --yes repomix --config repomix.sh.config.json
 
 for output in \
   .repomix/01-repository-overview.xml \
   .repomix/02-docs-full.xml \
   .repomix/03-source-context.xml \
   .repomix/04-json-context.json \
-  .repomix/05-sql-context.sql
+  .repomix/05-sql-context.sql \
+  repomix-tests.xml \
+  .repomix/06-mjs-context.xml \
+  .repomix/07-shell-context.xml
 do
   test -s "$output"
 done

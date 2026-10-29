@@ -1,0 +1,6 @@
+{
+  "$schema": "https://repomix.com/config-schema.json",
+  "include": ["**/*.mjs"],
+  "output": { "filePath": ".repomix/06-mjs-context.xml", "style": "xml" },
+  "ignore": { "customPatterns": [".repomix/**", "node_modules/**", ".cache/**", ".tools/**", ".agents/**", ".codex/**", "**/*.lock", "**/*.{png,jpg,jpeg,gif,webp,svg,ico,pdf}"] }
+}
