@@ -46,6 +46,30 @@ done
 
 docker info >/dev/null
 
+# Docker vfs 的 Supabase 映像準備需要 crane；使用固定版本的官方 binary。
+if ! command -v crane >/dev/null; then
+  CRANE_VERSION="0.20.3"
+  case "$(uname -m)" in
+    x86_64) CRANE_ARCH="x86_64" ;;
+    aarch64 | arm64) CRANE_ARCH="arm64" ;;
+    *) echo "Unsupported crane architecture: $(uname -m)" >&2; exit 1 ;;
+  esac
+  CRANE_ASSET="go-containerregistry_Linux_${CRANE_ARCH}.tar.gz"
+  CRANE_CACHE="$PWD/.cache/crane/$CRANE_VERSION"
+  CRANE_RELEASE="https://github.com/google/go-containerregistry/releases/download/v${CRANE_VERSION}"
+  mkdir -p "$CRANE_CACHE" "$PWD/.tools/codex/bin"
+  curl -fLsS "$CRANE_RELEASE/$CRANE_ASSET" -o "$CRANE_CACHE/$CRANE_ASSET"
+  curl -fLsS "$CRANE_RELEASE/checksums.txt" -o "$CRANE_CACHE/checksums.txt"
+  (
+    cd "$CRANE_CACHE"
+    awk -v asset="$CRANE_ASSET" '$2 == asset { print; found = 1 } END { if (!found) exit 1 }' checksums.txt > crane.sha256
+    sha256sum --check crane.sha256
+  )
+  tar -xzf "$CRANE_CACHE/$CRANE_ASSET" -C "$PWD/.tools/codex/bin" crane
+fi
+
+crane version
+
 if ! command -v uv >/dev/null || ! command -v uvx >/dev/null; then
   curl -LsSf https://astral.sh/uv/install.sh | sh
 fi
