@@ -29,14 +29,14 @@ startup_timeout_sec = 30
 
 # Serena is prepared by Cloud environment installation.
 [mcp_servers.serena]
+startup_timeout_sec = 15
+command = "serena"
+args = ["start-mcp-server", "--project-from-cwd", "--context=codex"]
+cwd = "/workspace/Line_Bot_v1"
 experimental_environment = "remote"
-env_vars = [{ name = "HTTP_PROXY", source = "remote" }, { name = "HTTPS_PROXY", source = "remote" }, { name = "NO_PROXY", source = "remote" }, { name = "SSL_CERT_FILE", source = "remote" }, { name = "REQUESTS_CA_BUNDLE", source = "remote" }, { name = "NODE_EXTRA_CA_CERTS", source = "remote" }]
-command = "bash"
-args = [ "/workspace/Line_Bot_v1/scripts/bootstrap/serena-mcp.sh", "start-mcp-server", "--project-from-cwd", "--context=codex", "--agent-interface=REPL", "--open-web-dashboard=false"]
-startup_timeout_sec = 60
 default_tools_approval_mode = "auto"
+env = { PATH = "/workspace/Line_Bot_v1/.cache/uv/bin:/workspace/Line_Bot_v1/node_modules/.bin:/home/agent/.local/bin:/opt/codex/runtimes/codex-primary-runtime/dependencies/bin/override:/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin:/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin:/opt/codex/runtimes/codex-primary-runtime/dependencies/bin:/opt/codex/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/agent/.local/bin:/opt/codex/runtimes/codex-primary-runtime/dependencies/bin/fallback", SERENA_HOME = "/workspace/Line_Bot_v1/.cache/serena-home", SUPABASE_HOME = "/workspace/Line_Bot_v1/.cache/supabase", XDG_CACHE_HOME = "/workspace/Line_Bot_v1/.cache/xdg-cache", XDG_DATA_HOME = "/workspace/Line_Bot_v1/.cache/xdg-data", XDG_CONFIG_HOME = "/workspace/Line_Bot_v1/.cache/xdg-config" }
 
-# Context7 hosted MCP. Set CONTEXT7_API_KEY only when the account requires it.
 [mcp_servers.context7]
 default_tools_approval_mode = "auto"
 url = "https://mcp.context7.com/mcp"

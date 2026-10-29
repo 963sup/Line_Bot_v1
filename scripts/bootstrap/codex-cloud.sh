@@ -253,15 +253,14 @@ codex mcp add \
   --url https://api.githubcopilot.com/mcp/ \
   --bearer-token-env-var GITHUB_MCP_TOKEN
 
-# MCP subprocess 使用與 .codex/config.toml 相同的固定版本 uv 啟動方式。
-codex mcp add \
-  serena \
-  -- bash "$PWD/scripts/bootstrap/serena-mcp.sh" \
-  start-mcp-server \
-  --project-from-cwd \
-  --context=codex \
-  --agent-interface=REPL \
-  --open-web-dashboard=false
+# Match the project Serena command; explicitly pass writable runtime paths.
+codex mcp add serena \
+  --env "PATH=$PATH" \
+  --env "SERENA_HOME=$SERENA_HOME" \
+  --env "XDG_CACHE_HOME=$XDG_CACHE_HOME" \
+  --env "XDG_DATA_HOME=$XDG_DATA_HOME" \
+  --env "XDG_CONFIG_HOME=$XDG_CONFIG_HOME" \
+  -- serena start-mcp-server --project-from-cwd --context=codex
 
 # MCP subprocess 明確沿用 workspace npm cache。
 codex mcp add \
