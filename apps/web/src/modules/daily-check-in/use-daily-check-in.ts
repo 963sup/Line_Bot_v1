@@ -2,7 +2,11 @@
 
 import type { UserUseCases } from "@line_bot_v1/account/application/user";
 import { parseAccountView } from "@line_bot_v1/account/application/user";
-import type { DailyCheckIn } from "@line_bot_v1/daily-check-in/application/daily-check-in";
+import {
+  DAILY_CHECK_IN_POLICY,
+  type DailyCheckIn,
+  type DailyCheckInPrizeCode,
+} from "@line_bot_v1/daily-check-in/application/daily-check-in";
 import { isRecord } from "@line_bot_v1/platform/validation";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
@@ -10,15 +14,6 @@ import { errorMessage } from "../../shared/presentation/unknown-value";
 
 type AccountView = NonNullable<Awaited<ReturnType<UserUseCases["getUser"]>>>;
 type DailyCheckInView = Awaited<ReturnType<DailyCheckIn["currentView"]>>;
-const DAILY_CHECK_IN_POLICY: DailyCheckInView["policy"] = {
-  version: "wheel-v1",
-  totalWeight: 100,
-  prizes: [
-    { code: "coin-half", amount: 0.5, weight: 60 },
-    { code: "coin-one", amount: 1, weight: 30 },
-    { code: "coin-four", amount: 4, weight: 10 },
-  ],
-};
 export type CoinView = DailyCheckInView & { balance: number };
 type CoinProjection = CoinView | { unavailable: true };
 export type DailyCheckInClaim = NonNullable<Awaited<ReturnType<DailyCheckIn["readClaim"]>>>;
@@ -52,14 +47,14 @@ class MembershipRequestError extends Error {
 
 function readClaim(value: unknown): DailyCheckInClaim | null {
   if (value === null) return null;
+  const isPrizeCode = (code: unknown): code is DailyCheckInPrizeCode =>
+    typeof code === "string" && DAILY_CHECK_IN_POLICY.prizes.some((prize) => prize.code === code);
   if (
     !isRecord(value) ||
     typeof value.day !== "string" ||
-    (value.prizeCode !== "coin-half" &&
-      value.prizeCode !== "coin-one" &&
-      value.prizeCode !== "coin-four") ||
+    !isPrizeCode(value.prizeCode) ||
     typeof value.reward !== "number" ||
-    value.policyVersion !== "wheel-v1" ||
+    value.policyVersion !== DAILY_CHECK_IN_POLICY.version ||
     typeof value.decidedAt !== "number"
   )
     throw new Error("簽到回應格式不完整。");
