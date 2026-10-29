@@ -68,6 +68,30 @@ export type CommercialIntakeStatus = Readonly<{
   receipt: CommercialDraftReceipt | null;
   failure: { code: string; stage: string } | null;
 }>;
+
+/** Validate the owner status identity before a caller may treat it as the requested command. */
+export function parseCommercialIntakeStatusIdentity(
+  value: unknown,
+  expected: Pick<CommercialIntakeCommand, "commandId"> & { documentId: string },
+): CommercialIntakeStatus["state"] {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("商務文件回應不符合原命令。");
+  }
+  const state = Reflect.get(value, "state");
+  if (
+    (state !== "WAITING" &&
+      state !== "ANALYZING" &&
+      state !== "RESULT_READY" &&
+      state !== "DRAFT_SAVED" &&
+      state !== "FAILED" &&
+      state !== "OUTCOME_UNKNOWN") ||
+    Reflect.get(value, "commandId") !== expected.commandId ||
+    Reflect.get(value, "documentId") !== expected.documentId
+  ) {
+    throw new Error("商務文件回應不符合原命令。");
+  }
+  return state;
+}
 export class CommercialIntakeError extends Error {
   override readonly name = "CommercialIntakeError";
   constructor(

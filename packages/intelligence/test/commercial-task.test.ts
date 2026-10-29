@@ -4,6 +4,7 @@ import {
   commercialTaskCommand,
   commercialTaskCommandId,
 } from "../src/application/commands/commercial-task.js";
+import { parseCommercialIntakeStatusIdentity } from "../src/contracts/output/commercial-intake.js";
 
 const taskId = "12345678-1234-4123-8123-123456789abc";
 
@@ -42,4 +43,21 @@ test("commercial task rejects malformed identity and unsupported intent without 
     /operation is invalid/,
   );
   assert.throws(() => commercialTaskCommandId(` ${taskId}`), /ID is invalid/);
+});
+
+test("commercial status identity stays bound to the requested command and document", () => {
+  const expected = { commandId: "command", documentId: "document" };
+  assert.equal(
+    parseCommercialIntakeStatusIdentity(
+      { state: "OUTCOME_UNKNOWN", commandId: "command", documentId: "document" },
+      expected,
+    ),
+    "OUTCOME_UNKNOWN",
+  );
+  assert.throws(() =>
+    parseCommercialIntakeStatusIdentity(
+      { state: "DRAFT_SAVED", commandId: "other", documentId: "document" },
+      expected,
+    ),
+  );
 });

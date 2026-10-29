@@ -4,7 +4,11 @@ import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { createRepositoryStarLists } from "../src/application/star-lists.js";
 import { RepositoryError } from "../src/contracts/errors/repository-error.js";
-import type { RepositoryStarListStore } from "../src/contracts/repositories/star-lists.js";
+import {
+  isRepositoryStarListCommandBody,
+  isRepositoryStarListCreateCommand,
+  type RepositoryStarListStore,
+} from "../src/contracts/repositories/star-lists.js";
 import { PostgresRepositoryStarListStore } from "../src/postgres/star-lists.js";
 import { PostgresRepositoryStarStore } from "../src/postgres/stars.js";
 
@@ -17,6 +21,31 @@ async function activeUser(db: Database, id: string, login: string) {
     await sql.query("select app_private.claim_account_login($1,'USER',$2,1)", [id, login]);
   });
 }
+
+test("Repository Star List contracts identify retryable command bodies", () => {
+  assert.equal(
+    isRepositoryStarListCreateCommand({ requestId: "request", name: "List", description: "" }),
+    true,
+  );
+  assert.equal(isRepositoryStarListCreateCommand({ requestId: "request", name: "List" }), false);
+  assert.equal(
+    isRepositoryStarListCommandBody({
+      requestId: "request",
+      action: "add",
+      expectedVersion: 1,
+      repositoryId: "repo",
+    }),
+    true,
+  );
+  assert.equal(
+    isRepositoryStarListCommandBody({
+      requestId: "request",
+      action: "publish",
+      expectedVersion: 0,
+    }),
+    false,
+  );
+});
 
 test("Repository Star List application canonicalizes commands before persistence", async () => {
   const calls: (

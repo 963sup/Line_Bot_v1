@@ -25,7 +25,7 @@ type Props = {
 };
 export default function CommercialIntakePanel(props: Props) {
   const [pending, setPending] = useState<PendingCommercialIntake | null>(null),
-    [state, setState] = useState(""),
+    [state, setState] = useState<ReturnType<typeof commercialStatus> | "">(""),
     [revision, setRevision] = useState<unknown>(null),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),

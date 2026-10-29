@@ -1,4 +1,8 @@
 import { type FileInfo } from "@line_bot_v1/file/contracts/parse-files";
+import {
+  type CommercialIntakeStatus,
+  parseCommercialIntakeStatusIdentity,
+} from "@line_bot_v1/intelligence/contracts/output/commercial-intake";
 import { record, stringValue } from "./files-projection";
 export type PendingCommercialIntake = {
   commandId: string;
@@ -51,17 +55,10 @@ export function restoreCommercialIntake(
   }
 }
 export function commercialStatus(value: unknown, command: PendingCommercialIntake) {
-  const p = record(value);
-  const state = stringValue(p.state);
-  if (
-    !["WAITING", "ANALYZING", "RESULT_READY", "DRAFT_SAVED", "FAILED", "OUTCOME_UNKNOWN"].includes(
-      state,
-    ) ||
-    p.commandId !== command.commandId ||
-    p.documentId !== command.target.documentId
-  )
-    throw new Error("商務文件回應不符合原命令。");
-  return state;
+  return parseCommercialIntakeStatusIdentity(value, {
+    commandId: command.commandId,
+    documentId: command.target.documentId,
+  });
 }
 
 /** Only the owner's explicit absent-command response makes the original start safe to offer again. */
@@ -75,7 +72,10 @@ export function isMissingCommercialIntake(error: unknown): boolean {
 }
 
 /** Recovery controls express user intent; they never cancel or dispatch work themselves. */
-export function commercialRecoveryActions(state: string, missingIntake: boolean) {
+export function commercialRecoveryActions(
+  state: CommercialIntakeStatus["state"] | "",
+  missingIntake: boolean,
+) {
   return {
     resumeLabel:
       !missingIntake &&
