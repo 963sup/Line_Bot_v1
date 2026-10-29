@@ -42,6 +42,13 @@ export default {
       to: { path: "^packages/content/src/composition/bootstrap/" },
     },
     {
+      name: "discussion-read-does-not-compose-repository-postgres",
+      severity: "error",
+      comment: "Discussion read access is injected by the application host",
+      from: { path: "^packages/discussion/src/adapters/postgres\\.ts$" },
+      to: { path: "^packages/repository/src/postgres/" },
+    },
+    {
       name: "features-do-not-import-routes",
       severity: "error",
       from: { path: "^apps/[^/]+/src/(modules|features|components|shared)/" },

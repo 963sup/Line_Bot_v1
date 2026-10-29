@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
+import { authorizedRepository } from "@line_bot_v1/repository/postgres/access";
 import { PostgresDiscussionReadStore } from "../src/adapters/postgres.js";
 import { createDiscussions } from "../src/application/discussions.js";
 import type { DiscussionReadStore } from "../src/contracts/output/discussion-read.js";
@@ -160,13 +161,21 @@ test("Discussion reads require current Repository access and never expose public
     "insert into app_private.repository_access(repository_id,principal_id,capability,version) values('repo-a','writer','read',1)",
   );
 
-  const store = new PostgresDiscussionReadStore(db);
+  let authorizationCalls = 0;
+  const store = new PostgresDiscussionReadStore(
+    async (sql, who, selector) => {
+      authorizationCalls += 1;
+      return authorizedRepository(sql, who, selector);
+    },
+    db,
+  );
   const readable = await store.detail(
     { userId: "reader" },
     { ownerLogin: "owner-a", repositoryName: "alpha" },
     "discussion-a",
   );
   assert.equal(readable.repository.id, "repo-a");
+  assert.equal(authorizationCalls, 1);
   assert.equal(readable.discussion.body, "Private body");
 
   await pg.query(
@@ -211,7 +220,7 @@ test("Discussion list omits body and paginates stable same-time rows by id", asy
     );
   }
 
-  const store = new PostgresDiscussionReadStore(db);
+  const store = new PostgresDiscussionReadStore(authorizedRepository, db);
   const first = await store.list({ userId: "reader" }, { repositoryId: "repo-a" });
   assert.equal(first.discussions.length, 20);
   const firstDiscussion = first.discussions[0];
@@ -261,7 +270,7 @@ test("Discussion detail and comment pagination stay inside one Repository scope"
     "insert into app_private.discussion_comments(id,discussion_id,author,body,version,created_at) values('comment-other','discussion-b','author','Other',1,200)",
   );
 
-  const store = new PostgresDiscussionReadStore(db);
+  const store = new PostgresDiscussionReadStore(authorizedRepository, db);
   await assert.rejects(
     store.detail({ userId: "reader" }, { repositoryId: "repo-a" }, "discussion-b"),
     (error) => error instanceof DiscussionError && error.status === 404,

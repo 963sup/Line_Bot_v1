@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { rmSync, writeFileSync } from "node:fs";
+import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, relative, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -52,4 +52,46 @@ test("canonical adapter boundary permits own composition but rejects foreign pac
   } finally {
     for (const file of files) rmSync(resolve(root, file), { force: true });
   }
+});
+
+test("Contract and WBS cannot import Content bootstrap outside host composition", () => {
+  const suffix = `__boundary_${randomUUID().replaceAll("-", "")}.mjs`;
+  const target = `packages/content/src/composition/bootstrap/${suffix}`;
+  const contract = `packages/contract/src/composition/${suffix}`;
+  const wbs = `packages/wbs/src/composition/${suffix}`;
+  const host = `apps/web/src/app/api/_composition/${suffix}`;
+  const fixtures = [target, contract, wbs, host];
+  const sourceImport = (from) => {
+    let specifier = relative(dirname(from), target).replaceAll("\\", "/");
+    if (!specifier.startsWith(".")) specifier = `./${specifier}`;
+    return `import ${JSON.stringify(specifier)};\n`;
+  };
+  try {
+    writeFileSync(resolve(root, target), "export const fixture = true;\n");
+    for (const from of [contract, wbs, host])
+      writeFileSync(resolve(root, from), sourceImport(from));
+    const result = spawnSync(
+      resolve(root, "node_modules/.bin/depcruise"),
+      ["--config", ".dependency-cruiser.mjs", "--output-type", "json", contract, wbs, host],
+      { cwd: root, encoding: "utf8", maxBuffer: 1024 * 1024 },
+    );
+    assert.ok([0, 3].includes(result.status), result.stderr);
+    const violations = JSON.parse(result.stdout).summary.violations;
+    const forbidden = (from) =>
+      violations.some(
+        (item) =>
+          item.from === from &&
+          item.rule.name === "contract-and-wbs-do-not-compose-content-internally",
+      );
+    assert.ok(forbidden(contract), "Contract must delegate Content wiring to the Host.");
+    assert.ok(forbidden(wbs), "WBS must delegate Content wiring to the Host.");
+    assert.equal(forbidden(host), false, "Host composition may wire Content providers.");
+  } finally {
+    for (const file of fixtures) rmSync(resolve(root, file), { force: true });
+  }
+});
+
+test("Discussion read adapter does not import Repository concrete persistence", () => {
+  const source = readFileSync(resolve(root, "packages/discussion/src/adapters/postgres.ts"), "utf8");
+  assert.doesNotMatch(source, /@line_bot_v1\/repository\/(?:postgres|composition\/bootstrap)/);
 });
