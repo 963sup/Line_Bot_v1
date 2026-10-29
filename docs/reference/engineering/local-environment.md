@@ -42,7 +42,7 @@ Validation scope 見 [Validation and tooling entry points](validation-pipeline.m
 
 ## Codex Cloud environment
 
-安裝與啟動由 Cloud 環境設定管理。
+安裝與啟動入口為 [`codex-cloud.sh`](../../../scripts/bootstrap/codex-cloud.sh)。腳本將工具狀態放在 workspace `.cache/`，初始化 Serena trust、產出 Repomix context、登錄 MCP，最後啟動 Supabase local stack；依賴安裝成功不代表最後的 stack 或 host MCP handshake 成功。
 
 ### OpenAI Developer Docs MCP
 
@@ -52,7 +52,7 @@ OpenAI Developer Docs 另以官方 hosted MCP 提供文件查詢，不需本地�
 
 Default Cloud environment checks the image-provided Docker daemon and starts the package-owned [local stack lifecycle](../../../packages/integration-supabase/README.md). Docker endpoint/context/TLS selectors are cleared for the local-socket check; Cloud environment never installs or starts a competing daemon. Supabase uses its canonical package workdir and the official `ghcr.io` image registry by default, preserving proxy and registry credentials. Set `SUPABASE_INTERNAL_IMAGE_REGISTRY` only when the environment requires another supported registry.
 
-The default service set and local environment-file instructions live in the package README. Stack setup checks free disk before downloading, waits for CLI health checks, initializes current application SQL without migration history, and verifies PostgreSQL and Storage. `verify.sh` only probes existing services; it does not start them. CLI output may contain local credentials and stays in ignored mode-0600 files. pnpm data directories also live under the workspace, and install runs noninteractively without changing HOME.
+服務集合、環境檔與 schema checkpoint 處理由 package README 與 [`local-stack.mjs`](../../../packages/integration-supabase/scripts/local-stack.mjs) 擁有。Checkpoint 不一致時保留既有資料，依明確授權收斂。CLI 輸出可能包含本地 credentials，須保存在忽略且受限存取的檔案。
 
 ### Serena v2 MCP
 
@@ -68,11 +68,7 @@ Repository wrapper 只補固定工具路徑及 workspace cache，不安裝任何
 
 官方依據：[Serena Quick Start](https://oraios.github.io/serena/#quick-start) · [Codex client setup](https://oraios.github.io/serena/02-usage/030_clients.html#codex-cli-and-app)。
 
-Serena v2 使用 REPL interface，因此 API 開關由 `.serena/project.yml` 的 `included_apis`／`excluded_apis` 管理；傳統 `included_optional_tools`／`excluded_tools` 不控制 REPL 內的 facade。專案啟用目前 LSP backend 下所有 `cfg`、`fs`、`edit`、`mem`、`shell`、`ext`、`lsp` API，並逐項啟用 optional methods；JetBrains API 需要另一個 backend，無法與 LSP 同時使用。工具可用不代表取得額外操作授權；Git、測試與 provider 操作仍由 Codex 原生工具負責。修改後須重新載入 Serena MCP，既有 session 不會自動更新。
-
-Serena 遵守 `.gitignore`，並額外排除 architecture／docs／assets／public 靜態資產、SQL schemas、第三方 skills、Codex／GitHub／Serena metadata、依賴、build、coverage、cache 與暫存目錄。這些資料仍可由 Codex 原生工具按任務讀取；排除只避免 TypeScript LSP／Serena index 為非程式或大量 vendor 內容消耗啟動時間與 token。Tests 沒有整體排除，保留 definition／reference／rename 的回歸範圍。
-
-TypeScript LSP 直接重用 workspace 固定的 `typescript-language-server` 5.1.3 與 TypeScript 5.9.3，避免 Serena 建立第二套 npm tool cache。Monorepo 的 server-ready、indexing-start 與 indexing budget 分別設為 30／10／60 秒；timeout 後 Serena 可能回傳部分結果，因此跨 package references 仍需沿 public imports／exports 補查，不能把空結果當成沒有 consumer。
+REPL API、ignore、trusted-project 與跨 package references 限制統一見 [Serena 操作指南](../../../.serena/README.md#5-mcp-與-repl-正確用法)及 [project.yml](../../../.serena/project.yml)。Workspace LSP 的 `ls_path` 只有在 global config 信任專案時才生效；以啟動紀錄確認實際 server，references 空結果仍須交叉核對 public imports／exports。
 
 ### GitHub MCP credential
 
