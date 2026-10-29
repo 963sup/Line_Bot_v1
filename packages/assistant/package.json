@@ -11,6 +11,10 @@
     "./application/answer-question": {
       "types": "./dist/application/answer-question.d.ts",
       "default": "./dist/application/answer-question.js"
+    },
+    "./application/parse-command": {
+      "types": "./dist/application/parse-command.d.ts",
+      "default": "./dist/application/parse-command.js"
     }
   },
   "files": [
