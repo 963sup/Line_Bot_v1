@@ -11,7 +11,7 @@ import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import RepositoryPageHeader from "./repository-page-header";
 import WbsGovernancePanel from "./wbs-governance-panel";
 import styles from "./wbs-panel.module.css";
-import { wbsHistory, wbsReceipt, wbsView } from "./wbs-response";
+import { wbsHistory, wbsReceipt, wbsView } from "@line_bot_v1/wbs/contracts/parse-content-response";
 import WbsTransferPanel from "./wbs-transfer-panel";
 import { parseWbsScopeTransfer } from "./wbs-transfer-state";
 
