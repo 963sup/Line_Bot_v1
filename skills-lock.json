@@ -115,12 +115,6 @@
       "skillPath": "skills/github-actions/SKILL.md",
       "computedHash": "0407e0b1d5aa45f4d4acd4f0dc6742453b3ec964097cb3a5f0383e3bb74615ed"
     },
-    "github-actions-templates": {
-      "source": "wshobson/agents",
-      "sourceType": "github",
-      "skillPath": "plugins/cicd-automation/skills/github-actions-templates/SKILL.md",
-      "computedHash": "26d9b7d4392712d3ff500ff535c8f68c03820111e22af74fd579f58f605b2166"
-    },
     "github-issues": {
       "source": "github/awesome-copilot",
       "sourceType": "github",
@@ -354,12 +348,6 @@
       "sourceType": "github",
       "skillPath": "skills/web-perf/SKILL.md",
       "computedHash": "603b94fca24096cc1d3063c3e70eca8d0cc3eb63467bcf7ddc0a95d21133d128"
-    },
-    "webapp-testing": {
-      "source": "anthropics/skills",
-      "sourceType": "github",
-      "skillPath": "skills/webapp-testing/SKILL.md",
-      "computedHash": "ad5b1fc52807e9afa4635e59218a026b164dc58b6c3f41b0f7c644dcd6ccf572"
     },
     "writing-guidelines": {
       "source": "vercel-labs/agent-skills",
