@@ -31,6 +31,10 @@
     "./adapters/outbound/persistence/extraction-json-storage": {
       "types": "./dist/adapters/outbound/persistence/extraction-json-storage.d.ts",
       "default": "./dist/adapters/outbound/persistence/extraction-json-storage.js"
+    },
+    "./application/commands/commercial-task": {
+      "types": "./dist/application/commands/commercial-task.d.ts",
+      "default": "./dist/application/commands/commercial-task.js"
     }
   },
   "files": [

@@ -6,9 +6,12 @@ import type {
   WbsGovernanceQuery,
   WbsGovernanceView,
 } from "@line_bot_v1/wbs/contracts/dto/governance";
+import {
+  wbsGovernanceReceipt,
+  wbsGovernanceView,
+} from "@line_bot_v1/wbs/contracts/parse-governance-response";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
-import { wbsGovernanceReceipt, wbsGovernanceView } from "./wbs-governance-response";
 import styles from "./wbs-panel.module.css";
 
 type Pending = { actor: string; command: WbsGovernanceCommand };

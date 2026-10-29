@@ -39,6 +39,10 @@
     "./contracts/dto/expense-api-view": {
       "types": "./dist/contracts/dto/expense-api-view.d.ts",
       "default": "./dist/contracts/dto/expense-api-view.js"
+    },
+    "./contracts/dto/parse-expense": {
+      "types": "./dist/contracts/dto/parse-expense.d.ts",
+      "default": "./dist/contracts/dto/parse-expense.js"
     }
   },
   "files": [

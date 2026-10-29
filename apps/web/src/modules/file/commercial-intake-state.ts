@@ -1,4 +1,5 @@
-import { type FileInfo, record, stringValue } from "./files-projection";
+import { type FileInfo } from "@line_bot_v1/file/contracts/parse-files";
+import { record, stringValue } from "./files-projection";
 export type PendingCommercialIntake = {
   commandId: string;
   repositoryId: string;

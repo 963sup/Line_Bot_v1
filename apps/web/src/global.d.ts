@@ -5,6 +5,7 @@ import type {
   PostgresUserProfileStore,
   PostgresUserStore,
 } from "@line_bot_v1/account/postgres";
+import type { WebhookIdempotencyStore } from "@line_bot_v1/assistant/application/webhook-router";
 import type { createPostgresAttendanceStore } from "@line_bot_v1/attendance/composition/bootstrap/postgres-attendance-store";
 import type { createPostgresDailyCheckInStore } from "@line_bot_v1/daily-check-in/composition/bootstrap/postgres-daily-check-in-store";
 import type { createPostgresExpenseStore } from "@line_bot_v1/expense/composition/bootstrap/postgres-expense-store";
@@ -12,7 +13,6 @@ import type { PostgresOrganizationPublicStore } from "@line_bot_v1/organization/
 import type { RedisRateLimiter, RedisSessionStore } from "@line_bot_v1/platform/redis";
 import type { PostgresPublicRepositoryStore } from "@line_bot_v1/repository/postgres/public";
 import type { PostgresWalletStore } from "@line_bot_v1/wallet/postgres";
-import type { WebhookIdempotencyStore } from "./app/api/_composition/line-webhook-router.server";
 
 type DevelopmentSessions = {
   create(id: string, value: string, seconds: number): Promise<boolean>;

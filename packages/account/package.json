@@ -71,6 +71,18 @@
     "./contracts/output/achievements": {
       "types": "./dist/contracts/output/achievements.d.ts",
       "default": "./dist/contracts/output/achievements.js"
+    },
+    "./contracts/parse-profile-response": {
+      "types": "./dist/contracts/parse-profile-response.d.ts",
+      "default": "./dist/contracts/parse-profile-response.js"
+    },
+    "./contracts/parse-status-response": {
+      "types": "./dist/contracts/parse-status-response.d.ts",
+      "default": "./dist/contracts/parse-status-response.js"
+    },
+    "./contracts/parse-management-response": {
+      "types": "./dist/contracts/parse-management-response.d.ts",
+      "default": "./dist/contracts/parse-management-response.js"
     }
   },
   "files": [

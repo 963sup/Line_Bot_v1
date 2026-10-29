@@ -31,6 +31,10 @@
     "./postgres/management": {
       "types": "./dist/postgres/management.d.ts",
       "default": "./dist/postgres/management.js"
+    },
+    "./contracts/parse-response": {
+      "types": "./dist/contracts/parse-response.d.ts",
+      "default": "./dist/contracts/parse-response.js"
     }
   },
   "files": [

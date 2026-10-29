@@ -35,6 +35,10 @@
     "./contracts/repositories/wiki-pages": {
       "types": "./dist/contracts/repositories/wiki-pages.d.ts",
       "default": "./dist/contracts/repositories/wiki-pages.js"
+    },
+    "./contracts/parse-response": {
+      "types": "./dist/contracts/parse-response.d.ts",
+      "default": "./dist/contracts/parse-response.js"
     }
   },
   "files": [

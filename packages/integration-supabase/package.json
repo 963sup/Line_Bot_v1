@@ -7,6 +7,14 @@
     "./storage-client": {
       "types": "./dist/storage-client.d.ts",
       "default": "./dist/storage-client.js"
+    },
+    "./browser-auth": {
+      "types": "./dist/browser-auth.d.ts",
+      "default": "./dist/browser-auth.js"
+    },
+    "./browser-upload": {
+      "types": "./dist/browser-upload.d.ts",
+      "default": "./dist/browser-upload.js"
     }
   },
   "files": [

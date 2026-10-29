@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { WebhookIdempotencyStore } from "../src/app/api/_composition/line-webhook-router.server";
+import type { WebhookIdempotencyStore } from "@line_bot_v1/assistant/application/webhook-router";
 
 /** Test double only; production always uses Redis. Share one fixture to model two instances. */
 export function idempotencyFixture(): WebhookIdempotencyStore {

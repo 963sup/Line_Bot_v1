@@ -1,12 +1,13 @@
 "use client";
 
+import { isStarListSummary } from "@line_bot_v1/repository/contracts/parse-collection-response";
 import type { RepositoryStarListSummary } from "@line_bot_v1/repository/contracts/repositories/star-lists";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import { ActionRow } from "../../shared/ui/page-layout";
 import { repositoryStarListPath } from "./resource-navigation";
-import { errorMessage, isRecord, isStarListSummary } from "./response-validation";
+import { errorMessage, isRecord } from "./response-validation";
 
 export default function RepositoryStarListCollection({ liffId }: { liffId: string }) {
   const [items, setItems] = useState<RepositoryStarListSummary[] | null>(null);

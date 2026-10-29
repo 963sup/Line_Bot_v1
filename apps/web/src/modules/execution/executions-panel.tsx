@@ -1,4 +1,5 @@
 "use client";
+import { eligibleTasks, planTasks } from "@line_bot_v1/execution/application/task-selection";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
@@ -97,38 +98,7 @@ class StaleRequestError extends Error {}
 export function isCurrentIntent(expected: number, current: number) {
   return expected === current;
 }
-export function eligibleTasks(document: ContentDocument, line: ContractLine | undefined) {
-  if (!line?.content) return [];
-  const byId = new Map(document.nodes.map((node) => [node.id, node]));
-  const measureUnits = new Map(document.measures.map((measure) => [measure.id, measure.unit]));
-  return document.nodes
-    .filter((node) => {
-      if (node.kind !== "TASK" || node.plannedQuantity === null) return false;
-      if (line.content?.node.kind === "TASK") return node.id === line.content.node.id;
-      for (let current: Task | undefined = node; current?.parentId; ) {
-        if (current.parentId === line.content?.node.id) return true;
-        current = byId.get(current.parentId);
-      }
-      return false;
-    })
-    .map((node) => {
-      const measureUnit = node.plannedQuantity
-        ? measureUnits.get(node.plannedQuantity.measureId)
-        : undefined;
-      return { ...node, ...(measureUnit ? { measureUnit } : {}) };
-    });
-}
-export function planTasks(document: ContentDocument) {
-  const measureUnits = new Map(document.measures.map((measure) => [measure.id, measure.unit]));
-  return document.nodes
-    .filter((node) => node.kind === "TASK")
-    .map((node) => {
-      const measureUnit = node.plannedQuantity
-        ? measureUnits.get(node.plannedQuantity.measureId)
-        : undefined;
-      return { ...node, ...(measureUnit ? { measureUnit } : {}) };
-    });
-}
+
 export default function ExecutionsPanel({
   liffId,
   ownerLogin,
@@ -435,8 +405,7 @@ export default function ExecutionsPanel({
     setError("");
     try {
       const result = await request("executions", {}, saved.command);
-      if (!confirmsPendingReceipt(result, saved))
-        throw new Error(JSON.stringify(result));
+      if (!confirmsPendingReceipt(result, saved)) throw new Error(JSON.stringify(result));
       if (!removePendingCommand(sessionStorage, saved)) return;
       setPending((current) => (samePendingCommand(current, saved) ? null : current));
       if (saved.command.action === "replace-dependencies") {
@@ -493,15 +462,7 @@ export default function ExecutionsPanel({
     });
   };
   const submit = async () => {
-    if (
-      !scope ||
-      !contract ||
-      contract.state !== "ACTIVE" ||
-      !taskId ||
-      !lineId ||
-      pending
-    )
-      return;
+    if (!scope || !contract || contract.state !== "ACTIVE" || !taskId || !lineId || pending) return;
     const token = acquirePendingCommandLock(mutationLock);
     if (!token) return;
     const operationGeneration = responseGeneration.current;

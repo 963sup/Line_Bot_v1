@@ -15,6 +15,10 @@
     "./domain/error": {
       "types": "./dist/domain/error.d.ts",
       "default": "./dist/domain/error.js"
+    },
+    "./contracts/parse-claim": {
+      "types": "./dist/contracts/parse-claim.d.ts",
+      "default": "./dist/contracts/parse-claim.js"
     }
   },
   "files": [

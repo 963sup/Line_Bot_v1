@@ -1,13 +1,13 @@
 import { UserError } from "@line_bot_v1/account/domain/user";
+import {
+  type AssistantSurfaceMode,
+  isAssistantSurfaceMode,
+} from "@line_bot_v1/assistant/application/surface";
 import { isRecord } from "@line_bot_v1/platform/validation";
 import { captureHandledServerError } from "../../shared/observability/server-error";
 import { BodyTooLargeError, jsonResponse, readBodyText } from "../../shared/server/http";
 import { RequestIdentityError } from "../../shared/server/request-identity-error";
-import {
-  type AssistantSurfaceMode,
-  assistantSurfaceConfig,
-  isAssistantSurfaceMode,
-} from "./web-surface";
+import { assistantSurfaceConfig } from "./web-surface";
 
 class AssistantRequestError extends Error {
   constructor(

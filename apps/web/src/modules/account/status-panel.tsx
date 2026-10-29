@@ -1,11 +1,12 @@
 "use client";
 
-import type {
-  UserProfileStatusChange,
-  UserProfileStatusChangeResult,
-} from "@line_bot_v1/account/contracts/dto/user-profile-status";
+import type { UserProfileStatusChange } from "@line_bot_v1/account/contracts/dto/user-profile-status";
+import {
+  readChangedStatus,
+  readStatus,
+} from "@line_bot_v1/account/contracts/parse-status-response";
 import type { UserProfileStatus } from "@line_bot_v1/account/contracts/repositories/user-profile-status";
-import { isRecord, stringValue } from "@line_bot_v1/platform/validation";
+import { isRecord } from "@line_bot_v1/platform/validation";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import styles from "./status-panel.module.css";
 import { responseError } from "./wire-response";
@@ -57,42 +58,6 @@ function draftFromChange(change: UserProfileStatusChange): Draft {
     expiresAt: localDateTime(change.expiresAt),
     expectedVersion: change.expectedVersion,
   };
-}
-
-function nullableText(value: unknown) {
-  if (value === null) return null;
-  if (typeof value !== "string") throw new Error("狀態回應格式不正確。");
-  return value;
-}
-
-function number(value: unknown) {
-  if (typeof value !== "number" || !Number.isSafeInteger(value)) {
-    throw new Error("狀態回應格式不正確。");
-  }
-  return value;
-}
-
-function readStatus(value: unknown): UserProfileStatus {
-  if (!isRecord(value) || typeof value.limitedAvailability !== "boolean") {
-    throw new Error("狀態回應格式不正確。");
-  }
-  return {
-    userId: stringValue(value.userId),
-    message: nullableText(value.message),
-    emoji: nullableText(value.emoji),
-    limitedAvailability: value.limitedAvailability,
-    expiresAt: value.expiresAt === null ? null : number(value.expiresAt),
-    version: number(value.version),
-    createdAt: number(value.createdAt),
-    updatedAt: number(value.updatedAt),
-  };
-}
-
-function readChangedStatus(value: unknown): UserProfileStatusChangeResult {
-  if (!isRecord(value) || typeof value.requestId !== "string") {
-    throw new Error("狀態更新回應格式不正確。");
-  }
-  return { ...readStatus(value), requestId: value.requestId };
 }
 
 function commandFrom(draft: Draft, requestId: string): UserProfileStatusChange {

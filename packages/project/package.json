@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./application/queries/project-users": {
+      "types": "./dist/application/queries/project-users.d.ts",
+      "default": "./dist/application/queries/project-users.js"
+    },
     "./application/progress": {
       "types": "./dist/application/progress.d.ts",
       "default": "./dist/application/progress.js"

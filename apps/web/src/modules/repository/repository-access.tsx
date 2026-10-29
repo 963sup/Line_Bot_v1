@@ -6,6 +6,11 @@ import type {
   RepositoryAccessSubjectKind,
 } from "@line_bot_v1/repository/contracts/input/repository-access";
 import {
+  isAccessCommand,
+  isAccessSnapshot,
+  isPermission,
+} from "@line_bot_v1/repository/contracts/parse-access-response";
+import {
   type RepositoryPermission,
   repositoryPermissions,
 } from "@line_bot_v1/repository/domain/repository/value-objects/repository-capability";
@@ -20,57 +25,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-function isPermission(value: unknown): value is RepositoryPermission {
-  return (
-    typeof value === "string" && repositoryPermissions.some((permission) => permission === value)
-  );
-}
-
 function permissionFromForm(value: FormDataEntryValue | null): RepositoryPermission {
   return isPermission(value) ? value : "read";
-}
-
-function isAccessCommand(value: unknown): value is RepositoryAccessCommand {
-  return (
-    isRecord(value) &&
-    (value.action === "grant" || value.action === "revoke") &&
-    (value.subjectKind === "USER" || value.subjectKind === "TEAM") &&
-    typeof value.requestId === "string" &&
-    typeof value.repositoryId === "string" &&
-    typeof value.subjectId === "string" &&
-    Number.isSafeInteger(value.expectedVersion) &&
-    (value.action === "revoke" || isPermission(value.capability))
-  );
-}
-
-function isAccessSnapshot(value: unknown): value is RepositoryAccessSnapshot & { error?: string } {
-  return (
-    isRecord(value) &&
-    isRecord(value.repository) &&
-    typeof value.repository.id === "string" &&
-    typeof value.repository.ownerLogin === "string" &&
-    typeof value.repository.name === "string" &&
-    (value.repository.ownerKind === "USER" || value.repository.ownerKind === "ORGANIZATION") &&
-    Array.isArray(value.repository.actorPermissions) &&
-    value.repository.actorPermissions.every(isPermission) &&
-    Array.isArray(value.directUserGrants) &&
-    Array.isArray(value.teamGrants) &&
-    value.directUserGrants.every(
-      (grant) =>
-        isRecord(grant) &&
-        typeof grant.userId === "string" &&
-        isPermission(grant.capability) &&
-        Number.isSafeInteger(grant.version) &&
-        typeof grant.isOutsideCollaborator === "boolean",
-    ) &&
-    value.teamGrants.every(
-      (grant) =>
-        isRecord(grant) &&
-        typeof grant.teamId === "string" &&
-        isPermission(grant.capability) &&
-        Number.isSafeInteger(grant.version),
-    )
-  );
 }
 
 function responseError(value: unknown, fallback: string) {

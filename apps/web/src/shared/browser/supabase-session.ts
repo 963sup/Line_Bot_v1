@@ -1,39 +1,16 @@
 "use client";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { createBrowserSupabaseClient } from "@line_bot_v1/integration-supabase/browser-auth";
 
-let client: SupabaseClient | undefined;
+let client: ReturnType<typeof createBrowserSupabaseClient> | undefined;
 export async function supabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL,
     key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!url || !key) throw new Error("Google 登入尚未設定，請稍後再試。");
   // LINE-only requests do not need the Google authentication SDK.
-  const { createClient } = await import("@supabase/supabase-js");
-  return (client ??= createClient(url, key, {
-    auth: {
-      flowType: "pkce",
-      detectSessionInUrl: false,
-      persistSession: true,
-      autoRefreshToken: true,
-      storage: {
-        getItem: (key) => localStorage.getItem(key),
-        removeItem: (key) => localStorage.removeItem(key),
-        setItem: (key, value) => {
-          let stored = value;
-          try {
-            const data = JSON.parse(value);
-            if (data && typeof data === "object") {
-              delete data.provider_token;
-              delete data.provider_refresh_token;
-              stored = JSON.stringify(data);
-            }
-          } catch {
-            /* PKCE verifier is plain text. */
-          }
-          localStorage.setItem(key, stored);
-        },
-      },
-    },
-  }));
+  const { createBrowserSupabaseClient } = await import(
+    "@line_bot_v1/integration-supabase/browser-auth"
+  );
+  return (client ??= createBrowserSupabaseClient(url, key, localStorage));
 }
 export async function sessionToken() {
   const { data, error } = await (await supabase()).auth.getSession();

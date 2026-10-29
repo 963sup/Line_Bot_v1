@@ -15,6 +15,22 @@
     "./application/parse-command": {
       "types": "./dist/application/parse-command.d.ts",
       "default": "./dist/application/parse-command.js"
+    },
+    "./application/runtime": {
+      "types": "./dist/application/runtime.d.ts",
+      "default": "./dist/application/runtime.js"
+    },
+    "./application/surface": {
+      "types": "./dist/application/surface.d.ts",
+      "default": "./dist/application/surface.js"
+    },
+    "./application/reply": {
+      "types": "./dist/application/reply.d.ts",
+      "default": "./dist/application/reply.js"
+    },
+    "./application/webhook-router": {
+      "types": "./dist/application/webhook-router.d.ts",
+      "default": "./dist/application/webhook-router.js"
     }
   },
   "files": [

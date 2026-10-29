@@ -27,6 +27,10 @@
     "./application/commands/partner-command": {
       "types": "./dist/application/commands/partner-command.d.ts",
       "default": "./dist/application/commands/partner-command.js"
+    },
+    "./contracts/parse-view": {
+      "types": "./dist/contracts/parse-view.d.ts",
+      "default": "./dist/contracts/parse-view.js"
     }
   },
   "files": [

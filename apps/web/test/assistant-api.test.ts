@@ -1,10 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { isAssistantSurfaceMode } from "@line_bot_v1/assistant/application/surface";
 import { assistantRequest } from "../src/modules/assistant/api.server";
-import {
-  assistantSurfaceConfig,
-  isAssistantSurfaceMode,
-} from "../src/modules/assistant/web-surface";
+import { assistantSurfaceConfig } from "../src/modules/assistant/web-surface";
 
 function withOrigin(value: string | undefined, run: () => Promise<void>) {
   const previous = process.env.APP_ORIGIN;

@@ -1,9 +1,12 @@
 "use client";
 
+import {
+  type AccountView,
+  parseAccountView as readAccount,
+} from "@line_bot_v1/account/application/user";
 import { isRecord } from "@line_bot_v1/platform/validation";
 import { liffClient } from "../../shared/browser/liff-client";
 import type { AppSessionGeneration } from "../../shared/browser/line-service-session";
-import { type AccountView, readAccount } from "./wire-response";
 
 export type CurrentAccountSession = Readonly<{
   token: AppSessionGeneration;

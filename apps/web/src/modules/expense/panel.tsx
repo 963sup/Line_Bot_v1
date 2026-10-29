@@ -1,5 +1,6 @@
 "use client";
 import type { ExpenseApiView } from "@line_bot_v1/expense/contracts/dto/expense-api-view";
+import { readExpense, readReceipt } from "@line_bot_v1/expense/contracts/dto/parse-expense";
 import type { ExpenseFields } from "@line_bot_v1/expense/domain/aggregates/expense";
 import { isRecord } from "@line_bot_v1/platform/validation";
 import Link from "next/link";
@@ -8,13 +9,6 @@ import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 
 type View = ExpenseApiView;
-type ReceiptReadingView = {
-  merchant: string | null;
-  amount: string | null;
-  currency: string | null;
-  date: string | null;
-  invoiceNumber: string | null;
-};
 
 const labels = {
   merchant: "商家",
@@ -30,63 +24,6 @@ const fieldKeys: readonly (keyof Omit<ExpenseFields, "payment">)[] = [
   "date",
   "invoiceNumber",
 ];
-
-function readExpense(value: unknown): ExpenseApiView {
-  if (
-    !isRecord(value) ||
-    typeof value.id !== "string" ||
-    typeof value.number !== "number" ||
-    typeof value.merchant !== "string" ||
-    typeof value.amount !== "string" ||
-    typeof value.currency !== "string" ||
-    typeof value.date !== "string" ||
-    typeof value.invoiceNumber !== "string" ||
-    (value.payment !== "" &&
-      value.payment !== "advance" &&
-      value.payment !== "company" &&
-      value.payment !== "unpaid") ||
-    (value.status !== "pending" &&
-      value.status !== "draft" &&
-      value.status !== "confirmed" &&
-      value.status !== "cancelled") ||
-    typeof value.revision !== "number" ||
-    typeof value.createdAt !== "number"
-  )
-    throw new Error("支出回應格式不完整。");
-  return {
-    id: value.id,
-    number: value.number,
-    merchant: value.merchant,
-    amount: value.amount,
-    currency: value.currency,
-    date: value.date,
-    invoiceNumber: value.invoiceNumber,
-    payment: value.payment,
-    status: value.status,
-    revision: value.revision,
-    createdAt: value.createdAt,
-  };
-}
-
-function readReceipt(value: unknown): ReceiptReadingView {
-  if (!isRecord(value)) throw new Error("辨識回應格式不完整。");
-  const nullable = (item: unknown) => item === null || typeof item === "string";
-  if (
-    !nullable(value.merchant) ||
-    !nullable(value.amount) ||
-    !nullable(value.currency) ||
-    !nullable(value.date) ||
-    !nullable(value.invoiceNumber)
-  )
-    throw new Error("辨識回應格式不完整。");
-  return {
-    merchant: value.merchant,
-    amount: value.amount,
-    currency: value.currency,
-    date: value.date,
-    invoiceNumber: value.invoiceNumber,
-  };
-}
 
 export default function ExpensePanel({ liffId }: { liffId: string }) {
   const [expense, setExpense] = useState<View>();
@@ -110,7 +47,9 @@ export default function ExpensePanel({ liffId }: { liffId: string }) {
     });
     const data: unknown = await result.json();
     if (!result.ok)
-      throw new Error(isRecord(data) && typeof data.error === "string" ? data.error : JSON.stringify(data));
+      throw new Error(
+        isRecord(data) && typeof data.error === "string" ? data.error : JSON.stringify(data),
+      );
     setHasRecognition(false);
     setExpense(readExpense(data));
   }

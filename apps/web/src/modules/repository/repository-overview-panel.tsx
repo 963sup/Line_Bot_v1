@@ -1,6 +1,10 @@
 "use client";
 
 import type { PublicRepository } from "@line_bot_v1/repository/contracts/output/public";
+import {
+  parseRepositoryOverview,
+  type RepositoryOverview,
+} from "@line_bot_v1/repository/contracts/overview";
 import { hasRepositoryPermission } from "@line_bot_v1/repository/domain/repository/value-objects/repository-capability";
 import Link from "next/link";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
@@ -12,7 +16,6 @@ import {
 } from "../../shared/browser/line-service-session";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import { ActionRow, PageState } from "../../shared/ui/page-layout";
-import { parseRepositoryOverview, type RepositoryOverview } from "./repository-overview";
 import RepositoryPageHeader from "./repository-page-header";
 import RepositorySubscriptionControl from "./repository-subscription-control";
 import {

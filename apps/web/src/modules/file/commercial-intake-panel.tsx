@@ -1,4 +1,5 @@
 "use client";
+import { type FileInfo } from "@line_bot_v1/file/contracts/parse-files";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "../../shared/ui/button";
 import CommercialDraftReview, { CommercialIntakeSource } from "./commercial-draft-review";
@@ -11,7 +12,7 @@ import {
   type PendingCommercialIntake,
   restoreCommercialIntake,
 } from "./commercial-intake-state";
-import { errorMessage, type FileInfo, record, StaleRequest } from "./files-projection";
+import { errorMessage, record, StaleRequest } from "./files-projection";
 
 type Props = {
   actorUserId: string;

@@ -6,6 +6,7 @@ import type {
   CancelWbsScopeTransferCommand,
   WbsScopeTransfer,
 } from "@line_bot_v1/wbs/contracts/dto/transfer";
+import { parseWbsScopeTransfer } from "@line_bot_v1/wbs/contracts/parse-transfer-response";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
@@ -15,7 +16,6 @@ import type {
   WbsTransferOperation,
 } from "./wbs-transfer-state";
 import {
-  parseWbsScopeTransfer,
   parseWbsTransferCancellation,
   parseWbsTransferOperation,
   reconcileWbsTransferCancellation,

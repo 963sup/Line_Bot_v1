@@ -1,5 +1,6 @@
 "use client";
 
+import { readProfile } from "@line_bot_v1/account/contracts/parse-profile-response";
 import type {
   UserProfile,
   UserProfileVisibility,
@@ -8,7 +9,7 @@ import { isRecord } from "@line_bot_v1/platform/validation";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
-import { readProfile, responseError } from "./wire-response";
+import { responseError } from "./wire-response";
 
 type Draft = {
   displayName: string;

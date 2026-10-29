@@ -1,5 +1,11 @@
 "use client";
 
+import {
+  type ContentNodeKind,
+  contentParentKind,
+  eligibleParentNodes,
+} from "@line_bot_v1/content/domain/plan";
+
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
@@ -21,7 +27,7 @@ import { Label } from "../../shared/ui/label";
 import { NativeSelect, NativeSelectOption } from "../../shared/ui/native-select";
 import { Textarea } from "../../shared/ui/textarea";
 
-type Kind = "SUBJECT" | "OBJECT" | "SUBOBJECT" | "WORK" | "TASK";
+type Kind = ContentNodeKind;
 type Measure = { id: string; name: string; subject: string; unit: string };
 type ResourcePin = {
   nodeId: string;
@@ -63,12 +69,6 @@ type View = {
   revision: Revision | null;
 };
 const kinds: Kind[] = ["SUBJECT", "OBJECT", "SUBOBJECT", "WORK", "TASK"];
-const parentKind: Record<Exclude<Kind, "SUBJECT">, Kind> = {
-  OBJECT: "SUBJECT",
-  SUBOBJECT: "OBJECT",
-  WORK: "SUBOBJECT",
-  TASK: "WORK",
-};
 type Document = Revision["document"];
 const emptyDocument = (): Document => ({
   schemaVersion: 1,
@@ -79,9 +79,6 @@ const emptyDocument = (): Document => ({
 export class StaleRequestError extends Error {}
 export function assertCurrentRequest(ticket: number, current: number) {
   if (ticket !== current) throw new StaleRequestError();
-}
-export function eligibleParentNodes(nodes: Node[], kind: Kind) {
-  return kind === "SUBJECT" ? [] : nodes.filter((node) => node.kind === parentKind[kind]);
 }
 
 export default function ContentPanel({
@@ -211,7 +208,7 @@ export default function ContentPanel({
     const selectedParent = document.nodes.find((node) => node.id === parentId);
     if (
       !title.trim() ||
-      (kind === "SUBJECT" ? parentId !== "" : selectedParent?.kind !== parentKind[kind])
+      (kind === "SUBJECT" ? parentId !== "" : selectedParent?.kind !== contentParentKind(kind))
     )
       return;
     setDocument((current) => ({
@@ -264,8 +261,7 @@ export default function ContentPanel({
     setError("");
     try {
       const result = await request("content", saved.command);
-      if (!confirmsPendingReceipt(result, saved))
-        throw new Error(JSON.stringify(result));
+      if (!confirmsPendingReceipt(result, saved)) throw new Error(JSON.stringify(result));
       if (!removePendingCommand(sessionStorage, saved)) return;
       setPending((current) => (samePendingCommand(current, saved) ? null : current));
       const next = { ...view, revision: result.revision };

@@ -4,6 +4,10 @@ import type {
   RepositoryCreateCommand,
   RepositoryOwnerOption,
 } from "@line_bot_v1/repository/contracts/input/repository-creation";
+import {
+  isCreationResult,
+  isOwnerOption,
+} from "@line_bot_v1/repository/contracts/parse-collection-response";
 import { useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
@@ -13,7 +17,7 @@ import {
   writePendingRepositoryCreate,
 } from "./repository-create-pending-storage";
 import { repositoryPath } from "./resource-navigation";
-import { errorMessage, isCreationResult, isOwnerOption, isRecord } from "./response-validation";
+import { errorMessage, isRecord } from "./response-validation";
 
 function isVisibility(value: string): value is RepositoryCreateCommand["visibility"] {
   return value === "private" || value === "internal" || value === "public";
@@ -116,9 +120,7 @@ export default function RepositoryCreate({ liffId }: { liffId: string }) {
       setPending(null);
       window.location.assign(repositoryPath(payload.ownerLogin, payload.name));
     } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : String(cause),
-      );
+      setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       setBusy(false);
     }

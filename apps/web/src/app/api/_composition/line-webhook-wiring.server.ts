@@ -1,5 +1,7 @@
 import { UserError } from "@line_bot_v1/account/domain/user";
-import { createLineClient } from "@line_bot_v1/line/messaging-api";
+import { createAssistantReply } from "@line_bot_v1/assistant/application/reply";
+import type { ReceiptIntakeResult } from "@line_bot_v1/expense/application/receipt-intake";
+import { createLineClient, type messagingApi } from "@line_bot_v1/line/messaging-api";
 import { lineMiniApp } from "@line_bot_v1/line/mini-app";
 import {
   createUpstashRedisRestTransport,
@@ -8,8 +10,13 @@ import {
   redisUnavailableCode,
 } from "@line_bot_v1/platform/redis";
 import { membershipFailureCode } from "../../../modules/account/failure-code.server";
-import { createAssistantReply } from "../../../modules/assistant/event-router.server";
-import { membershipMessage } from "../../../modules/assistant/response-presenter.server";
+import {
+  attendanceMessage,
+  diaryMessage,
+  membershipMessage,
+  receiptMessage,
+  textMessage,
+} from "../../../modules/assistant/response-presenter.server";
 import { redisNamespace } from "../../../shared/server/runtime-environment";
 import { activeLineUser, findUser } from "./account.server";
 import { agentText, aiTestText, answer } from "./assistant.server";
@@ -80,7 +87,11 @@ export function createLineWebhookHandler(channelSecret: string) {
         replyToken: token,
         messages: [membershipMessage((await findUser(userId))?.status, miniApp.url)],
       }),
-    replyAssistant: createAssistantReply({
+    replyAssistant: createAssistantReply<ReceiptIntakeResult, messagingApi.Message>({
+      receiptMessage,
+      attendanceMessage,
+      diaryMessage,
+      textMessage,
       receiptIntake,
       activeUser: activeLineUser,
       answer,

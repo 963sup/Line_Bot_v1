@@ -1,36 +1,31 @@
+import {
+  createAssistantWebhookRouter,
+  type WebhookRouterOutcome,
+} from "@line_bot_v1/assistant/application/webhook-router";
 import type { LineWebhookEvent } from "@line_bot_v1/line/messaging-api";
-import type { RedisIdempotencyStore } from "@line_bot_v1/platform/redis";
-import type { AssistantEvent } from "../../../modules/assistant/event-router.server";
 import { captureHandledServerError } from "../../../shared/observability/server-error";
 import { classifyLineWebhookEvents } from "./line-webhook-intent.server";
 
-/**
- * 已通過 LINE transport verification 的事件路由器。
- * 本 composition 只決定 Web 互動 intent、User qualification、去重與功能 dispatch；
- * 不擁有 raw body、signature 或 Webhook destination。
- */
-export type WebhookIdempotencyStore = Pick<RedisIdempotencyStore, "claim" | "complete">;
-
-type LineWebhookRouterOutcome =
-  | "replied"
-  | "handled_silently"
-  | "reply_failed"
-  | "idempotency_unavailable"
-  | "sender_mismatch";
-
-export function createLineWebhookRouter(config: {
-  idempotency(): WebhookIdempotencyStore;
-  testUserId?: string;
-  authorize?: (userId: string) => boolean | Promise<boolean>;
-  replyMembership?: (replyToken: string, userId: string) => Promise<unknown>;
-  replyUnavailable?: (replyToken: string, error: unknown) => Promise<unknown>;
-  reply: (replyToken: string) => Promise<unknown>;
-  replyAiTest?: (replyToken: string) => Promise<unknown>;
-  replyAgent?: (replyToken: string, input: string) => Promise<unknown>;
-  replyAssistant?: (replyToken: string, event: AssistantEvent) => Promise<unknown>;
-  attendanceMenu?: (userId: string) => Promise<void>;
-  report?: (outcome: LineWebhookRouterOutcome) => void;
-}) {
+/** Decode verified LINE delivery intents; Assistant owns qualification, dispatch and replay. */
+export function createLineWebhookRouter(
+  config: Omit<
+    Parameters<typeof createAssistantWebhookRouter>[0],
+    "observeError" | "report" | "authorize"
+  > & {
+    testUserId?: string;
+    authorize?: (userId: string) => boolean | Promise<boolean>;
+    report?: (outcome: WebhookRouterOutcome | "sender_mismatch") => void;
+  },
+) {
+  const dispatch = createAssistantWebhookRouter({
+    ...config,
+    authorize: config.authorize ?? (() => true),
+    observeError: (error, context) =>
+      captureHandledServerError(error, {
+        service: "line-webhook",
+        ...context,
+      }),
+  });
   return async (events: LineWebhookEvent[], idempotencyScope: string): Promise<number> => {
     if (config.testUserId ? !/^U[a-fA-F0-9]{32}$/.test(config.testUserId) : !config.authorize)
       return 503;
@@ -44,108 +39,6 @@ export function createLineWebhookRouter(config: {
     });
     for (let index = 0; index < senderMismatches; index++) config.report?.("sender_mismatch");
     if (badRequest) return 400;
-
-    const runEvent = async ({
-      id,
-      token,
-      userId,
-      ai,
-      agentInput,
-      assistant,
-      attendanceMenu,
-    }: (typeof selected)[number]) => {
-      try {
-        const store = config.idempotency();
-        const claim = await store.claim(idempotencyScope, id);
-        if (claim.state === "completed") return claim.status;
-        if (claim.state === "pending") return 503;
-
-        let status = 200;
-        try {
-          const execute = async () => {
-            let authorized = true;
-            try {
-              authorized = config.authorize ? await config.authorize(userId) : true;
-            } catch (error) {
-              captureHandledServerError(error, {
-                service: "line-webhook",
-                operation: "user-authorization",
-                status: 503,
-              });
-              if (assistant?.imageId) return false;
-              if (config.replyUnavailable) return config.replyUnavailable(token, error);
-              throw error;
-            }
-            if (!authorized) {
-              return assistant?.imageId
-                ? false
-                : config.replyMembership
-                  ? config.replyMembership(token, userId)
-                  : false;
-            }
-            if (attendanceMenu) {
-              const handler = config.attendanceMenu;
-              if (!handler) throw new Error("Attendance menu handler is unavailable");
-              await handler(userId);
-              return false;
-            }
-            if (assistant) {
-              const handler = config.replyAssistant;
-              if (!handler) throw new Error("Assistant reply handler is unavailable");
-              return handler(token, assistant);
-            }
-            if (agentInput !== undefined) {
-              const handler = config.replyAgent;
-              if (!handler) throw new Error("Agent reply handler is unavailable");
-              return handler(token, agentInput);
-            }
-            if (ai) {
-              const handler = config.replyAiTest;
-              if (!handler) throw new Error("AI test reply handler is unavailable");
-              return handler(token);
-            }
-            return config.reply(token);
-          };
-          const result = await execute();
-          config.report?.(result === false ? "handled_silently" : "replied");
-        } catch (error) {
-          status = 502;
-          captureHandledServerError(error, {
-            service: "line-webhook",
-            operation: "reply",
-            status,
-          });
-          config.report?.("reply_failed");
-        }
-        return (await store.complete(idempotencyScope, id, claim.token, status)) ? status : 503;
-      } catch (error) {
-        captureHandledServerError(error, {
-          service: "line-webhook",
-          operation: "idempotency",
-          status: 503,
-        });
-        config.report?.("idempotency_unavailable");
-        return 503;
-      }
-    };
-
-    const results = selected.map(runEvent);
-
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    try {
-      return await Promise.race([
-        Promise.all(results).then((values) => values.find((value) => value !== 200) ?? 200),
-        new Promise<number>((resolve) => {
-          timer = setTimeout(
-            () => resolve(503),
-            selected.some((event) => event.agentInput !== undefined || event.assistant)
-              ? 20_000
-              : 10_000,
-          );
-        }),
-      ]);
-    } finally {
-      clearTimeout(timer);
-    }
+    return dispatch(selected, idempotencyScope);
   };
 }

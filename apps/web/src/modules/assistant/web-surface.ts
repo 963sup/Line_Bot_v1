@@ -1,6 +1,4 @@
-export const assistantSurfaceModes = ["ask", "generate", "review"] as const;
-
-export type AssistantSurfaceMode = (typeof assistantSurfaceModes)[number];
+import type { AssistantSurfaceMode } from "@line_bot_v1/assistant/application/surface";
 
 export const assistantSurfaceConfig = {
   ask: {
@@ -25,7 +23,3 @@ export const assistantSurfaceConfig = {
   AssistantSurfaceMode,
   { label: string; description: string; maxLength: number; submitLabel: string }
 >;
-
-export function isAssistantSurfaceMode(value: unknown): value is AssistantSurfaceMode {
-  return value === "ask" || value === "generate" || value === "review";
-}

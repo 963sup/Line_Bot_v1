@@ -1,11 +1,12 @@
 "use client";
 
+import { isStarListMutation } from "@line_bot_v1/repository/contracts/parse-collection-response";
 import type { RepositoryStarListCreateCommand } from "@line_bot_v1/repository/contracts/repositories/star-lists";
 import { useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import { repositoryStarListPath } from "./resource-navigation";
-import { errorMessage, isStarListMutation } from "./response-validation";
+import { errorMessage } from "./response-validation";
 import {
   clearPendingRepositoryStarListCreate,
   readPendingRepositoryStarListCreate,

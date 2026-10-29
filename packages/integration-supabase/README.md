@@ -9,11 +9,15 @@ Canonical provider, schema and operator content: [src/README.md](src/README.md#c
 
 This integration owns Supabase SDK bootstrap and local Docker stack tooling. File owns hashes, write/readback semantics, authority and errors. The sole application declarative schema root is [src/schemas/](src/schemas/).
 
-Public runtime entry:
+Public runtime entries:
 
 ```text
-src/storage-client.ts  # Supabase SDK bootstrap for the File-owned adapter
+src/storage-client.ts  # Server Supabase SDK bootstrap for the File-owned adapter
+src/browser-auth.ts    # Browser PKCE client with upstream provider-token redaction
+src/browser-upload.ts  # Signed Storage ticket validation and immutable browser PUT transport
 ```
+
+Web consumes the browser exports directly because SDK persistence and signed Storage protocols belong to this integration owner. Public environment selection, callback navigation, browser state and File Finalize remain in the host or their business owner; browser exports do not import the server client or credentials.
 
 Local stack lifecycle is owned by [scripts/local-stack.mjs](scripts/local-stack.mjs). The CLI reads [supabase/config.toml](supabase/config.toml) using this package as its workdir; application SQL remains in [src/schemas/](src/schemas/). There is no migration directory or replay history.
 

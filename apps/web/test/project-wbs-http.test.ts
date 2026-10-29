@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createProjectWbs } from "@line_bot_v1/wbs/application/use-cases/project-content";
-import type { ProjectWbsStore } from "@line_bot_v1/wbs/contracts/repositories/project-content";
-import { WbsError } from "@line_bot_v1/wbs/domain/document";
-import { projectWbsRequest } from "../src/modules/project/project-wbs-http.server";
 import {
   projectWbsHistory,
   projectWbsReceipt,
   projectWbsView,
-} from "../src/modules/project/project-wbs-response";
+} from "@line_bot_v1/wbs/contracts/parse-project-content-response";
+import type { ProjectWbsStore } from "@line_bot_v1/wbs/contracts/repositories/project-content";
+import { WbsError } from "@line_bot_v1/wbs/domain/document";
+import { projectWbsRequest } from "../src/modules/project/project-wbs-http.server";
 
 test("Project WBS HTTP checks origin, parses commands and keeps failure classes distinct", async (t) => {
   const previous = process.env.APP_ORIGIN;

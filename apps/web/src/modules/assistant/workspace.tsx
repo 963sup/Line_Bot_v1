@@ -1,14 +1,14 @@
 "use client";
 
+import {
+  type AssistantSurfaceMode,
+  assistantSurfaceModes,
+} from "@line_bot_v1/assistant/application/surface";
 import { isRecord } from "@line_bot_v1/platform/validation";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
-import {
-  type AssistantSurfaceMode,
-  assistantSurfaceConfig,
-  assistantSurfaceModes,
-} from "./web-surface";
+import { assistantSurfaceConfig } from "./web-surface";
 
 export default function AssistantWorkspace({ liffId }: { liffId: string }) {
   const [mode, setMode] = useState<AssistantSurfaceMode>("ask");

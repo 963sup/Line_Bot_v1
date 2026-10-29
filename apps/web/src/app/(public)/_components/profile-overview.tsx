@@ -1,13 +1,17 @@
 "use client";
 
 import type { UserAchievement } from "@line_bot_v1/account/contracts/output/achievements";
+import {
+  readAchievements,
+  readNetwork,
+  readProfile,
+} from "@line_bot_v1/account/contracts/parse-profile-response";
 import type { UserProfile } from "@line_bot_v1/account/contracts/repositories/profile";
 import { isRecord } from "@line_bot_v1/platform/validation";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import StatusPanel from "../../../modules/account/status-panel";
-import { readAchievements, readNetwork, readProfile } from "../../../modules/account/wire-response";
 import { liffClient } from "../../../shared/browser/liff-client";
 import styles from "./profile-viewer-shell.module.css";
 

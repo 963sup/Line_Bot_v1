@@ -27,6 +27,10 @@
     "./domain/file": {
       "types": "./dist/domain/file.d.ts",
       "default": "./dist/domain/file.js"
+    },
+    "./contracts/parse-files": {
+      "types": "./dist/contracts/parse-files.d.ts",
+      "default": "./dist/contracts/parse-files.js"
     }
   },
   "files": [

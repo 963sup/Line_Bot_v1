@@ -1,11 +1,12 @@
 "use client";
 
+import { parseAccountView as readAccount } from "@line_bot_v1/account/application/user";
 import { isRecord } from "@line_bot_v1/platform/validation";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import { clearCurrentAccount, ensureCurrentAccount } from "./current-account";
-import { readAccount, responseError } from "./wire-response";
+import { responseError } from "./wire-response";
 
 export default function LoginPanel({ liffId }: { liffId: string }) {
   const [login, setLogin] = useState("");

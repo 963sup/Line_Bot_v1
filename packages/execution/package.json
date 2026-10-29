@@ -31,6 +31,10 @@
     "./composition/bootstrap/task-dependencies": {
       "types": "./dist/composition/bootstrap/task-dependencies.d.ts",
       "default": "./dist/composition/bootstrap/task-dependencies.js"
+    },
+    "./application/task-selection": {
+      "types": "./dist/application/task-selection.d.ts",
+      "default": "./dist/application/task-selection.js"
     }
   },
   "files": [

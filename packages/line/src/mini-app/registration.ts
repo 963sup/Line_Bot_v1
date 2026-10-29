@@ -8,7 +8,7 @@ const urls: Record<LineMiniAppStage, string> = {
   published: "https://miniapp.line.me/2011594978-b2ktvto5",
 };
 
-function parse(url: string) {
+export function parseLineMiniAppUrl(url: string) {
   const value = new URL(url);
   const match = /^\/(\d+)-([A-Za-z0-9_-]+)$/.exec(value.pathname);
   if (
@@ -32,5 +32,5 @@ function parse(url: string) {
 }
 
 export function lineMiniApp(stage = CURRENT_LINE_MINI_APP_STAGE) {
-  return { stage, ...parse(urls[stage]) };
+  return { stage, ...parseLineMiniAppUrl(urls[stage]) };
 }

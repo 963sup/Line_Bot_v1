@@ -1,7 +1,7 @@
-import { createAnswerAssistantQuestion } from "@line_bot_v1/assistant/application/answer-question";
-import { presentAnswer } from "./answer-presenter.server";
+import { type AnswerResult, createAnswerAssistantQuestion } from "./answer-question.js";
 
 export type AssistantRuntimeDependencies = {
+  presentAnswer(result: AnswerResult): string;
   isConfigured(): boolean;
   generate(input: string): Promise<string | undefined>;
   runAgent(input: string): Promise<{ text: string; toolCalls: readonly string[] }>;
@@ -59,7 +59,7 @@ export function createAssistantRuntime(deps: AssistantRuntimeDependencies): Assi
   });
 
   const answer = async (input: string): Promise<string> => {
-    return presentAnswer(await answerQuestion(input));
+    return deps.presentAnswer(await answerQuestion(input));
   };
 
   const aiTestText = async (): Promise<string> => {

@@ -1,7 +1,7 @@
 import { isRecord } from "@line_bot_v1/platform/validation";
-import type { RepositoryVisibility } from "@line_bot_v1/repository/domain/repository/entities/repository";
-import type { RepositoryPermission } from "@line_bot_v1/repository/domain/repository/value-objects/repository-capability";
-import { repositoryPermissions } from "@line_bot_v1/repository/domain/repository/value-objects/repository-capability";
+import type { RepositoryVisibility } from "../domain/repository/entities/repository.js";
+import type { RepositoryPermission } from "../domain/repository/value-objects/repository-capability.js";
+import { repositoryPermissions } from "../domain/repository/value-objects/repository-capability.js";
 
 type LegacyWbsEntryStatus = "available" | "none" | "unavailable";
 

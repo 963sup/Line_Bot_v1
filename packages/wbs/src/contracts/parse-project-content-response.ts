@@ -1,11 +1,11 @@
 import { isRecord, literalValue, numberValue, stringValue } from "@line_bot_v1/platform/validation";
+import type { WbsRevision } from "../domain/content.js";
+import { parseWbsDocument } from "../domain/document.js";
 import type {
   ProjectWbsHistory,
   ProjectWbsReceipt,
   ProjectWbsView,
-} from "@line_bot_v1/wbs/contracts/dto/project-content";
-import type { WbsRevision } from "@line_bot_v1/wbs/domain/content";
-import { parseWbsDocument } from "@line_bot_v1/wbs/domain/document";
+} from "./dto/project-content.js";
 
 function contentImport(value: unknown): NonNullable<WbsRevision["contentImport"]> {
   if (

@@ -1,4 +1,5 @@
 import { createProjectManagement } from "@line_bot_v1/project/application/management";
+import { createProjectUsers } from "@line_bot_v1/project/application/queries/project-users";
 import {
   createPostgresProjectLifecycle,
   createPostgresProjectManagementStore,
@@ -16,16 +17,13 @@ export const projectManagement = createProjectManagement({
   now: () => Date.now(),
 });
 
-export async function projectActorUserId(subject: string) {
-  return (await activeLineUser(subject)).id;
-}
-
-export async function projectUserById(userId: string) {
-  return publicUserById(userId);
-}
-
-export async function projectUserByLogin(login: string) {
-  const account = await resolveAccountNamespace(login);
-  if (!account || account.kind !== "USER") return null;
-  return publicUserById(account.id);
-}
+export const projectUsers = createProjectUsers({
+  view: projectManagement.view,
+  actorUserId: async (subject) => (await activeLineUser(subject)).id,
+  userById: publicUserById,
+  userByLogin: async (login) => {
+    const account = await resolveAccountNamespace(login);
+    if (!account || account.kind !== "USER") return null;
+    return publicUserById(account.id);
+  },
+});

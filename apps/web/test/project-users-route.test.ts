@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { compileFunction } from "node:vm";
+import { createProjectUsers } from "@line_bot_v1/project/application/queries/project-users";
 import ts from "typescript";
 import { jsonResponse } from "../src/shared/server/http.js";
 
@@ -10,7 +11,7 @@ const actorId = "actor-1";
 const collaborators = [
   { kind: "USER", id: "collaborator-1", role: "WRITE" },
   { kind: "TEAM", id: "team-1", role: "READ" },
-];
+] as const;
 
 type ProjectView = {
   project: { creator: string | null };
@@ -49,14 +50,6 @@ function loadRoute(
     items: [{ draft: { assigneeIds: ["assignee-1"] } }],
   };
   const modules = new Map<string, unknown>();
-  modules.set("@line_bot_v1/namespace", {
-    normalizeAccountLogin(value: unknown) {
-      if (typeof value !== "string" || !/^[a-z0-9-]{1,39}$/i.test(value)) {
-        throw new Error("Invalid login");
-      }
-      return value.trim().toLowerCase();
-    },
-  });
   modules.set("@line_bot_v1/project/domain", {
     ProjectError: class ProjectError extends Error {
       constructor(
@@ -79,24 +72,24 @@ function loadRoute(
   });
   modules.set("../../../../shared/server/http", { jsonResponse });
   modules.set("../../_composition/project-management.server", {
-    projectActorUserId: async (subject: string) => {
-      calls.push(`actor:${subject}`);
-      return options.actorId ?? actorId;
-    },
-    projectManagement: {
+    projectUsers: createProjectUsers({
+      actorUserId: async (subject: string) => {
+        calls.push(`actor:${subject}`);
+        return options.actorId ?? actorId;
+      },
       view: async (subject: string, selectedProjectId: string) => {
         calls.push(`view:${subject}:${selectedProjectId}`);
         return view;
       },
-    },
-    projectUserById: async (id: string) => {
-      calls.push(`by-id:${id}`);
-      return id === "assignee-1" ? { id, login: "worker" } : { id, login: id };
-    },
-    projectUserByLogin: async (login: string) => {
-      calls.push(`by-login:${login}`);
-      return { id: "candidate-1", login };
-    },
+      userById: async (id: string) => {
+        calls.push(`by-id:${id}`);
+        return id === "assignee-1" ? { id, login: "worker" } : { id, login: id };
+      },
+      userByLogin: async (login: string) => {
+        calls.push(`by-login:${login}`);
+        return { id: "candidate-1", login };
+      },
+    }),
   });
   modules.set("../../_composition/request-identity.server", {
     requestLineIdentity: options.identity ?? (async () => "verified-subject"),

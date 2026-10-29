@@ -1,14 +1,9 @@
 import { LINE_PROVIDER_NAMESPACE } from "@line_bot_v1/line/provider";
-import { createTeamCollaboration } from "@line_bot_v1/team/application/collaboration";
-import { PostgresTeamRepository } from "@line_bot_v1/team/postgres";
 import { teamApiError, teamBody, teamQuery } from "../../../modules/team/http.server";
 import { jsonResponse } from "../../../shared/server/http";
 import { requestLineIdentity } from "../_composition/request-identity.server";
+import { teamCollaboration } from "../_composition/team.server";
 
-const teamCollaboration = createTeamCollaboration(
-  () => new PostgresTeamRepository(),
-  () => Date.now(),
-);
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
