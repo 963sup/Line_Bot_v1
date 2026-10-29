@@ -9,7 +9,7 @@ import {
   type WbsPolicy,
 } from "@line_bot_v1/wbs/domain/governance";
 import type { WbsBaseline, WbsProposal, WbsReview } from "@line_bot_v1/wbs/domain/scope-governance";
-import { wbsRevision } from "./wbs-response";
+import { wbsRevision } from "@line_bot_v1/wbs/contracts/parse-content-response";
 
 function object(value: unknown) {
   if (!isRecord(value)) throw new Error("WBS 治理回應格式不正確。");
