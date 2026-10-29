@@ -58,10 +58,10 @@
 
 ## Invariants
 
-- 開發順序固定為需求與真實 consumer → authoritative owner → 既有 public capability → 最小變更 → 行為及依賴驗證。第一性原理與奧卡姆剃刀落在責任與必要性判斷，不以行數、資料夾模板或增加規則代替。
+- MCP 分工：serena 查語義；next-devtools 查 Next.js runtime；shadcn 查元件；context7 查版本化 library 文件；github 查 repository/PR/CI；openaiDeveloperDocs 先 search 再 fetch。工具按需使用，遠端寫入限既有授權與角色權限；登錄不證明 host/runtime 可用。
 - 業務規則、用例、查詢政策、授權、交易與 recovery 內聚於 `packages/<owner>`；apps 的 page/API 只處理 delivery、操作與 public capability 呼叫，modules 只組裝 owner 提供的能力與必要的 Web 呈現接線。不得因現有檔案方便而新增 host 業務邏輯。
-- 新增 abstraction 必須指出實際 consumer 與 policy、translation、transaction、recovery 或技術隔離責任；既有能力足夠就重用。替換機制時同步刪除已失去 consumer 的舊入口與重複設定；既有不一致不是新程式的先例。
-- 第三方 skills 僅補任務需要的技術知識，不另建 glossary、plan、report、治理或固定確認流程。已有 authority 與授權就直接完成；驗證同時檢查責任歸屬、public imports 及重複實作，測試通過不代表架構合格。
+- 開發依序確認需求、consumer、owner、既有公開能力，再做最小變更與驗證。第一性原理、奧卡姆剃刀落在責任與必要性，不以行數或模板代替。
+- 新增抽象需有實際 consumer 與獨立責任；優先重用，替換時刪除失去 consumer 的實作及設定。既有不一致不是先例。
 
 - 沿 Symptom → Consumer → Contract → Dependency → Owner → Source of Truth 找根因；完整保持 [system invariants](docs/rules/system-invariants.md) 的 authority、authorization/isolation、concurrency/replay、atomicity/recovery、ownership/dependency 與 evidence integrity。
 - 跨 package 只用 public exports；每個 business responsibility 一個 authoritative owner，每個 production source 一個 primary role。維持 DDD + Hexagonal 的 Domain/Application/Port/Adapter 責任與依賴方向，不強建空 layer。
@@ -88,11 +88,11 @@
 
 ## Serena MCP usage
 
-- 共通 MCP 分工：`serena` 用於語義查證；`next-devtools` 用於已啟動 Next.js 的 runtime/route 診斷；`shadcn` 用於 registry/component 文件與範例；`context7` 用於第三方 library 的版本化文件；`github` 用於 repository/PR/CI 證據及已授權遠端操作；`openaiDeveloperDocs` 先 search 再 fetch 官方 OpenAI/Codex 文件。只選任務相關工具，保留各角色權限；登錄不代表 host 暴露或 runtime 可用。
+- Skills 只補技術知識，不另建治理、glossary、報告或確認流程。驗收包含 owner 歸屬、public imports 與重複實作。
 
-- 本節是全部巢狀 AGENTS 與 agent roles 的共通工具契約；子層只補其 owner 特有查證點，不複製工具清單或另定流程。
-- 語義查證依序縮小範圍：已知檔案的 symbols overview → exact symbol（按需讀 body）→ references/implementations → 必要的 diagnostics。跨 package 沿 public exports/imports 補查；timeout、部分索引或空 references 不證明沒有 consumer。
-- Rename/delete 前查清 references 與動態／字串 consumer，變更後跑受影響 owner 的驗證。初始化才預建 project index；日常 session 重用索引，不每輪全庫掃描。可用 API 與輸入以 session 實際能力為準，不猜 REPL 簽名。
+- 巢狀 AGENTS 與角色繼承本工具契約，只補 owner 特有查證點。
+- LSP 查證：檔案 symbols → exact symbol（按需 body）→ references/implementations → diagnostics；跨 package 補查 public imports/exports。空結果或 timeout 不證明無 consumer。
+- Rename/delete 前補查動態／字串 consumer，之後驗證 owner 行為。初始化預建 index，日常重用；API 簽名以 session 為準。
 
 - TS/JS symbols、references、diagnostics、語義重構、safe delete、LSP、memory 任務優先 Serena v2 + LSP；一般文件／設定／shell／Git／patch／驗證用 Codex 原生工具。工具未登錄、能力不足或失敗時明示原因並用原生工具繼續。
 - 每個 MCP session 只讀一次 initial_instructions；重用成功能力，CLI 成功不等於 host MCP 成功。按需讀 [Serena README](.serena/README.md) 與 [官方 Tools](https://oraios.github.io/serena/01-about/035_tools.html)。
