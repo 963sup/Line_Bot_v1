@@ -5,6 +5,7 @@ cd /workspace/Line_Bot_v1
 
 # 使用 workspace 可寫入的家目錄與快取；必須先於 uv fallback 安裝器設定。
 export PNPM_HOME="$PWD/.cache/pnpm-home"
+export COREPACK_HOME="$PWD/.cache/corepack"
 export NPM_CONFIG_CACHE="$PWD/.cache/npm-cache"
 export XDG_CACHE_HOME="$PWD/.cache/xdg-cache"
 export XDG_DATA_HOME="$PWD/.cache/xdg-data"
@@ -13,9 +14,13 @@ export XDG_STATE_HOME="$PWD/.cache/xdg-state"
 export CODEX_HOME="$PWD/.cache/codex"
 export SERENA_HOME="$PWD/.cache/serena-home"
 export HOME="$PWD/.cache/home"
+export UV_CACHE_DIR="$PWD/.cache/uv/cache"
+export UV_TOOL_DIR="$PWD/.cache/uv/tools"
+export UV_PYTHON_INSTALL_DIR="$PWD/.cache/uv/python"
 
 mkdir -p \
   "$PNPM_HOME" \
+  "$COREPACK_HOME" \
   "$NPM_CONFIG_CACHE" \
   "$XDG_CACHE_HOME" \
   "$XDG_DATA_HOME" \
@@ -23,7 +28,10 @@ mkdir -p \
   "$XDG_STATE_HOME" \
   "$CODEX_HOME" \
   "$SERENA_HOME" \
-  "$HOME"
+  "$HOME" \
+  "$UV_CACHE_DIR" \
+  "$UV_TOOL_DIR" \
+  "$UV_PYTHON_INSTALL_DIR"
 
 export PATH="$HOME/.local/bin:$PNPM_HOME:$PWD/.tools/codex/bin:$PWD/node_modules/.bin:$PATH"
 
@@ -114,7 +122,7 @@ command -v pnpm >/dev/null || {
 }
 
 pnpm --version
-pnpm install --frozen-lockfile
+pnpm install --frozen-lockfile --store-dir "$PWD/.cache/pnpm-store"
 
 test -x node_modules/.bin/typescript-language-server
 test -x node_modules/.bin/next-devtools-mcp
