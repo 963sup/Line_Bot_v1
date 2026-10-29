@@ -3,37 +3,12 @@ set -euo pipefail
 
 cd /workspace/Line_Bot_v1
 
-# 使用 workspace 可寫入的家目錄與快取；必須先於 uv fallback 安裝器設定。
-export PNPM_HOME="$PWD/.cache/pnpm-home"
-export COREPACK_HOME="$PWD/.cache/corepack"
-export NPM_CONFIG_CACHE="$PWD/.cache/npm-cache"
-export XDG_CACHE_HOME="$PWD/.cache/xdg-cache"
-export XDG_DATA_HOME="$PWD/.cache/xdg-data"
-export XDG_CONFIG_HOME="$PWD/.cache/xdg-config"
-export XDG_STATE_HOME="$PWD/.cache/xdg-state"
-export CODEX_HOME="$PWD/.cache/codex"
-export SERENA_HOME="$PWD/.cache/serena-home"
-export HOME="$PWD/.cache/home"
-export UV_CACHE_DIR="$PWD/.cache/uv/cache"
-export UV_TOOL_DIR="$PWD/.cache/uv/tools"
-export UV_PYTHON_INSTALL_DIR="$PWD/.cache/uv/python"
-
-mkdir -p \
-  "$PNPM_HOME" \
-  "$COREPACK_HOME" \
-  "$NPM_CONFIG_CACHE" \
-  "$XDG_CACHE_HOME" \
-  "$XDG_DATA_HOME" \
-  "$XDG_CONFIG_HOME" \
-  "$XDG_STATE_HOME" \
-  "$CODEX_HOME" \
-  "$SERENA_HOME" \
-  "$HOME" \
-  "$UV_CACHE_DIR" \
-  "$UV_TOOL_DIR" \
+# Shared with MCP subprocesses and later interactive shells.
+source "$PWD/scripts/bootstrap/cloud-env.sh"
+mkdir -p "$PNPM_HOME" "$COREPACK_HOME" "$NPM_CONFIG_CACHE" \
+  "$XDG_CACHE_HOME" "$XDG_DATA_HOME" "$XDG_CONFIG_HOME" "$XDG_STATE_HOME" \
+  "$SERENA_HOME" "$UV_CACHE_DIR" "$UV_TOOL_DIR" "$UV_TOOL_BIN_DIR" \
   "$UV_PYTHON_INSTALL_DIR"
-
-export PATH="$HOME/.local/bin:$PNPM_HOME:$PWD/.tools/codex/bin:$PWD/node_modules/.bin:$PATH"
 
 for tool in \
   codex \
@@ -79,7 +54,8 @@ fi
 crane version
 
 if ! command -v uv >/dev/null || ! command -v uvx >/dev/null; then
-  curl -LsSf https://astral.sh/uv/install.sh | sh
+  curl -fLsS https://astral.sh/uv/install.sh -o "$XDG_CACHE_HOME/uv-install.sh"
+  UV_UNMANAGED_INSTALL="$UV_TOOL_BIN_DIR" sh "$XDG_CACHE_HOME/uv-install.sh"
 fi
 
 uv --version
@@ -89,10 +65,6 @@ uv python install 3.13
 uv tool install --python 3.13 'serena-agent==2.1.0'
 
 SERENA_EXECUTABLE="$(uv tool dir --bin)/serena"
-
-if [[ ! -x "$SERENA_EXECUTABLE" ]]; then
-  SERENA_EXECUTABLE="$PWD/.tools/codex/bin/serena"
-fi
 
 test -x "$SERENA_EXECUTABLE"
 "$SERENA_EXECUTABLE" --version
@@ -115,6 +87,7 @@ if (process.versions.node !== expected) {
 # Cloud already provides pnpm on PATH; enabling Corepack would try to write
 # shims beside the read-only Node installation.
 corepack install
+corepack enable --install-directory "$PNPM_HOME"
 
 command -v pnpm >/dev/null || {
   echo "pnpm is unavailable after Corepack setup"
@@ -282,9 +255,7 @@ codex mcp add \
 # MCP subprocess 使用與 .codex/config.toml 相同的固定版本 uv 啟動方式。
 codex mcp add \
   serena \
-  -- env \
-  "SERENA_HOME=$SERENA_HOME" \
-  uv tool run --from serena-agent==2.1.0 serena \
+  -- bash "$PWD/scripts/bootstrap/serena-mcp.sh" \
   start-mcp-server \
   --project-from-cwd \
   --context=codex \

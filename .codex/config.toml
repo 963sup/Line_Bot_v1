@@ -31,8 +31,8 @@ startup_timeout_sec = 30
 [mcp_servers.serena]
 experimental_environment = "remote"
 env_vars = [{ name = "HTTP_PROXY", source = "remote" }, { name = "HTTPS_PROXY", source = "remote" }, { name = "NO_PROXY", source = "remote" }, { name = "SSL_CERT_FILE", source = "remote" }, { name = "REQUESTS_CA_BUNDLE", source = "remote" }, { name = "NODE_EXTRA_CA_CERTS", source = "remote" }]
-command = "uv"
-args = [ "tool", "run", "--from", "serena-agent==2.1.0", "serena", "start-mcp-server", "--project-from-cwd", "--context=codex", "--agent-interface=REPL", "--open-web-dashboard=false"]
+command = "bash"
+args = [ "/workspace/Line_Bot_v1/scripts/bootstrap/serena-mcp.sh", "start-mcp-server", "--project-from-cwd", "--context=codex", "--agent-interface=REPL", "--open-web-dashboard=false"]
 startup_timeout_sec = 60
 default_tools_approval_mode = "auto"
 

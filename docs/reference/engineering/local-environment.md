@@ -54,6 +54,8 @@ Default Cloud environment checks the image-provided Docker daemon and starts the
 
 服務集合、環境檔與 schema checkpoint 處理由 package README 與 [`local-stack.mjs`](../../../packages/integration-supabase/scripts/local-stack.mjs) 擁有。Checkpoint 不一致時保留既有資料，依明確授權收斂。CLI 輸出可能包含本地 credentials，須保存在忽略且受限存取的檔案。
 
+後續 shell 使用 `source scripts/bootstrap/cloud-env.sh` 恢復 workspace 工具與快取路徑；bootstrap 的 export 不會自動傳回父程序。保留 host 的 `HOME` 與 `CODEX_HOME`，Corepack shim、uv binary、Python 與 Serena 均安裝至 workspace。Serena MCP 透過 `scripts/bootstrap/serena-mcp.sh` 載入同一環境並直接執行已安裝工具，不在連線時解析套件。
+
 ### Serena v2 MCP
 
 Serena 依官方安裝模型由 `uv tool install` 建立隔離工具環境；目前固定 `serena-agent==2.1.0`，並使用 Serena 官方建議的 Python 3.13。這不改變專案一般 Python runtime 的 3.12.14。`uvx` 適合臨時執行，但 MCP 每次啟動不應重新解析或下載套件，因此 Cloud bootstrap 使用已安裝的 Serena executable。
