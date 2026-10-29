@@ -53,12 +53,17 @@ export default function CommercialIntakePanel(props: Props) {
       }
       try {
         const response = await props.request(
-          operation === "status" ? { commandId: command.commandId } : {},
+          operation === "status" ? { taskId: command.commandId } : {},
           operation === "status"
             ? undefined
             : operation === "start"
-              ? { operation, ...command }
-              : { operation, repositoryId: command.repositoryId, commandId: command.commandId },
+              ? {
+                  operation,
+                  taskId: command.commandId,
+                  repositoryId: command.repositoryId,
+                  source: command.source,
+                }
+              : { operation, taskId: command.commandId, repositoryId: command.repositoryId },
         );
         if (ticket !== current.current) return;
         const observed = commercialStatus(response, command);

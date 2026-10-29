@@ -51,6 +51,10 @@ test("registered agent configurations resolve locally with matching roles and in
 test("project hooks have one source and all command handlers exist", () => {
   assert.equal(config.hooks, undefined, "Do not duplicate hooks.json in inline configuration");
   const hooks = JSON.parse(readFileSync(resolve(directory, "hooks.json"), "utf8"));
+  assert.equal(config.features.hooks, true);
+  assert.ok(hooks.hooks.UserPromptSubmit.some((group) =>
+    group.hooks.some((handler) => handler.command.includes("/requirement-preflight.mjs")),
+  ));
   for (const groups of Object.values(hooks.hooks)) {
     for (const group of groups) {
       if (group.matcher) assert.doesNotThrow(() => new RegExp(group.matcher));

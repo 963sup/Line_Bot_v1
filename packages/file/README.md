@@ -1,5 +1,7 @@
 # File 模組
 
+商務文件任務的待實作流程見 [總體計畫](../../docs/superpowers/plans/2026-10-29-commercial-task-plan.md)，既有程式收斂與刪除條件見 [精簡清單](../../docs/superpowers/plans/2026-10-29-commercial-task-code-reduction.md)。目前能力仍以 source／tests 為準。
+
 File 是檔案原始內容、版本、來源資格、儲存與回收流程的唯一業務 Owner。所有 File business decision 必須集中在本 package；API、Page、Webhook 只能解析輸入、建立 command/query、呼叫公開入口並格式化輸出。
 
 ## 必須遵守的規則

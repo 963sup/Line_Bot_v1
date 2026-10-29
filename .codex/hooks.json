@@ -1,6 +1,18 @@
 {
   "description": "Scoped repository context and lightweight verification; no installation or remote effects.",
   "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/requirement-preflight.mjs\"",
+            "timeout": 10,
+            "additionalContextLimit": 450
+          }
+        ]
+      }
+    ],
     "SessionStart": [
       {
         "matcher": "^(startup|resume|clear|compact|fork)$",
