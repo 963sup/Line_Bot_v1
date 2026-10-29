@@ -1,6 +1,6 @@
 {
   "$schema": "https://repomix.com/config-schema.json",
-  "input": { "include": ["apps/**", "packages/**", "*.json", "*.jsonc", "*.js", "*.mjs", "*.ts", "*.tsx", "*.css", "*.yaml", "*.yml"] },
+  "include": ["apps/**", "packages/**", "*.json", "*.jsonc", "*.js", "*.mjs", "*.ts", "*.tsx", "*.css", "*.yaml", "*.yml"],
   "output": { "filePath": "repomix-source.xml", "style": "xml" },
   "ignore": { "customPatterns": ["repomix-*.xml", "node_modules/**", ".cache/**", ".tools/**", ".agents/**", ".codex/**", "architecture/fpt/**", "**/test/**", "**/*.test.*", "**/*.spec.*", "**/*.lock", "**/*.{png,jpg,jpeg,gif,webp,svg,ico,pdf}"] }
 }
