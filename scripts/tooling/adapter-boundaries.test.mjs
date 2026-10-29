@@ -129,3 +129,9 @@ test("Contract and Intelligence use Host-composed File ports, not foreign bootst
     for (const entry of fixtures) rmSync(resolve(root, entry), { force: true });
   }
 });
+
+test("Content composition depends on a narrow Resource port, not Resources bootstrap", () => {
+  const source = readFileSync(resolve(root, "packages/content/src/composition/bootstrap/plans.ts"), "utf8");
+  assert.doesNotMatch(source, /@line_bot_v1\/resources\/composition\/bootstrap/);
+  assert.match(source, /resourceReader/);
+});

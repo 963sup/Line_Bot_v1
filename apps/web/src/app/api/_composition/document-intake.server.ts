@@ -1,5 +1,4 @@
 import { createPostgresFileRevisionQualifier, createPostgresFileSourceReader } from "@line_bot_v1/file/composition/bootstrap/files";
-import { createPostgresFileRevisionQualifier, createPostgresFileSourceReader } from "@line_bot_v1/file/composition/bootstrap/files";
 import { createPostgresContractDocuments } from "@line_bot_v1/contract/composition/bootstrap/documents";
 import {
   purchaseOrderExtractionSchema,

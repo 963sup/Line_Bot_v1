@@ -42,6 +42,13 @@ export default {
       to: { path: "^packages/content/src/composition/bootstrap/" },
     },
     {
+      name: "content-bootstrap-does-not-compose-resources-bootstrap",
+      severity: "error",
+      comment: "Content source resource references are provided by the Host",
+      from: { path: "^packages/content/src/composition/bootstrap/" },
+      to: { path: "^packages/resources/src/composition/bootstrap/" },
+    },
+    {
       name: "contract-bootstrap-does-not-compose-file-bootstrap",
       severity: "error",
       comment: "Contract File revision qualification is injected by the application host",

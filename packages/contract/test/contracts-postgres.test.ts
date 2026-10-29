@@ -15,6 +15,7 @@ import { ContractError } from "../src/domain/error.js";
 async function seedContentPlan(db: Database, repositoryId = "repo") {
   const plans = createPostgresContentPlans({
     db,
+    resourceReader: () => ({ verifyPinned: async () => [] }),
     now: () => 50,
   });
   const ids = {
