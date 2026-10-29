@@ -5,7 +5,6 @@ import { parseAccountView } from "@line_bot_v1/account/application/user";
 import {
   DAILY_CHECK_IN_POLICY,
   type DailyCheckIn,
-  type DailyCheckInPrizeCode,
 } from "@line_bot_v1/daily-check-in/application/daily-check-in";
 import { isRecord } from "@line_bot_v1/platform/validation";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
@@ -14,6 +13,7 @@ import { errorMessage } from "../../shared/presentation/unknown-value";
 
 type AccountView = NonNullable<Awaited<ReturnType<UserUseCases["getUser"]>>>;
 type DailyCheckInView = Awaited<ReturnType<DailyCheckIn["currentView"]>>;
+type DailyCheckInPrizeCode = (typeof DAILY_CHECK_IN_POLICY.prizes)[number]["code"];
 export type CoinView = DailyCheckInView & { balance: number };
 type CoinProjection = CoinView | { unavailable: true };
 export type DailyCheckInClaim = NonNullable<Awaited<ReturnType<DailyCheckIn["readClaim"]>>>;
