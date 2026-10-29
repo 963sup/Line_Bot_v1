@@ -12,7 +12,7 @@ export function jsonResponse(data: unknown, status = 200) {
 
 export class BodyTooLargeError extends Error {}
 
-export async function readBodyBytes(request: Request, maxBytes: number): Promise<Uint8Array> {
+async function readBodyBytes(request: Request, maxBytes: number): Promise<Uint8Array> {
   const chunks: Uint8Array[] = [];
   let size = 0;
   const reader = request.body?.getReader();
