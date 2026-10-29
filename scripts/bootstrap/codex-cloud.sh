@@ -3,30 +3,7 @@ set -euo pipefail
 
 cd /workspace/Line_Bot_v1
 
-for tool in \
-  codex \
-  docker \
-  git \
-  curl \
-  tar \
-  node \
-  npm \
-  python3 \
-  corepack
-do
-  command -v "$tool" >/dev/null || {
-    echo "Missing image prerequisite: $tool"
-    exit 1
-  }
-done
-
-docker info >/dev/null
-
-if ! command -v uv >/dev/null || ! command -v uvx >/dev/null; then
-  curl -LsSf https://astral.sh/uv/install.sh | sh
-fi
-
-# 使用 workspace 可寫入的快取路徑，避免 Cloud 的 HOME 唯讀。
+# 使用 workspace 可寫入的家目錄與快取；必須先於 uv fallback 安裝器設定。
 export PNPM_HOME="$PWD/.cache/pnpm-home"
 export NPM_CONFIG_CACHE="$PWD/.cache/npm-cache"
 export XDG_CACHE_HOME="$PWD/.cache/xdg-cache"
@@ -49,6 +26,29 @@ mkdir -p \
   "$HOME"
 
 export PATH="$HOME/.local/bin:$PNPM_HOME:$PWD/.tools/codex/bin:$PWD/node_modules/.bin:$PATH"
+
+for tool in \
+  codex \
+  docker \
+  git \
+  curl \
+  tar \
+  node \
+  npm \
+  python3 \
+  corepack
+do
+  command -v "$tool" >/dev/null || {
+    echo "Missing image prerequisite: $tool"
+    exit 1
+  }
+done
+
+docker info >/dev/null
+
+if ! command -v uv >/dev/null || ! command -v uvx >/dev/null; then
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+fi
 
 uv --version
 uvx --version
