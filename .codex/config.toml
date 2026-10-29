@@ -140,6 +140,14 @@ config_file = "./agents/dependency-steward.toml"
 description = "Refresh Serena and trace apps/web business symbols to existing package owners."
 config_file = "./agents/web-owner-relocator.toml"
 
+[agents.web-owner-scout]
+description = "Find and verify apps/web business-logic relocation candidates using Serena and LSP."
+config_file = "./agents/web-owner-scout.toml"
+
+[agents.web-owner-mover]
+description = "Apply one parent-approved apps/web to packages owner relocation slice and validate it."
+config_file = "./agents/web-owner-mover.toml"
+
 [agents.lifecycle-owner]
 description = "Plan feature rollout, flags, backfills, deprecation, migration sequencing, and rollback."
 config_file = "./agents/lifecycle-owner.toml"
