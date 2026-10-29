@@ -104,6 +104,7 @@ test -x apps/web/node_modules/.bin/shadcn
 
 pnpm exec typescript-language-server --version
 pnpm exec supabase --version
+pnpm exec vercel --version
 
 # 使用 Repomix 產出固定用途的分析 context。
 npx --yes repomix --version

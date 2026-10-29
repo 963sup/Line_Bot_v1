@@ -15,3 +15,9 @@ export UV_TOOL_BIN_DIR="$CLOUD_REPO_ROOT/.cache/uv/bin"
 export UV_PYTHON_BIN_DIR="$CLOUD_REPO_ROOT/.cache/uv/python-bin"
 export UV_PYTHON_INSTALL_DIR="$CLOUD_REPO_ROOT/.cache/uv/python"
 export PATH="$PNPM_HOME:$UV_TOOL_BIN_DIR:$CLOUD_REPO_ROOT/.tools/codex/bin:$CLOUD_REPO_ROOT/node_modules/.bin:$PATH"
+
+# Provider CLIs must never fall back to read-only home directories.
+export SUPABASE_HOME="$CLOUD_REPO_ROOT/.cache/supabase"
+# Vercel selects the first existing XDG data directory before legacy ~/.now.
+mkdir -p "$SUPABASE_HOME" "$XDG_DATA_HOME/com.vercel.cli" "$XDG_CACHE_HOME/com.vercel.cli"
+chmod 700 "$SUPABASE_HOME" "$XDG_DATA_HOME/com.vercel.cli"
