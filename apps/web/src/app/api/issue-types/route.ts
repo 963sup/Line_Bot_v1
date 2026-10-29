@@ -1,8 +1,18 @@
+import { createIssueTypes } from "@line_bot_v1/issue/application/issue-types";
 import { IssueError } from "@line_bot_v1/issue/domain";
+import { PostgresIssueTypeStore } from "@line_bot_v1/issue/postgres/issue-types";
 import { issueBody, issueFailure } from "../../../modules/repository/http.server";
 import { jsonResponse } from "../../../shared/server/http";
-import { issueTypes } from "../_composition/issue-types.server";
+import { activeLineUser } from "../_composition/account.server";
 import { requestLineIdentity } from "../_composition/request-identity.server";
+
+let store: PostgresIssueTypeStore | undefined;
+
+const issueTypes = createIssueTypes({
+  activeUser: activeLineUser,
+  store: () => (store ??= new PostgresIssueTypeStore()),
+  now: () => Date.now(),
+});
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
