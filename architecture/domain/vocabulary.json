@@ -731,7 +731,10 @@
       "status": "candidate",
       "note": "Candidate semantic boundary; Team and Repository remain separate responsibility owners.",
       "evidence": {
-        "ownerContracts": ["docs/reference/domains/team.md", "docs/reference/domains/repository.md"],
+        "ownerContracts": [
+          "docs/reference/domains/team.md",
+          "docs/reference/domains/repository.md"
+        ],
         "sourcePaths": [
           "packages/team/src/domain/team.ts",
           "packages/repository/src/domain/repository/entities/repository.ts"
