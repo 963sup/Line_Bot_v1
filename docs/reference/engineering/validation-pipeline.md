@@ -23,7 +23,7 @@ Biome 同時涵蓋 `knip.jsonc` 與 `architecture/**/*.json`，React Hooks 的�
 
 依變更選取 `pnpm check [stage...]`；不傳 stage 會執行全部預設檢查，runner 不會自動依 Git diff 縮小範圍。Public contract 或 shared config 變更須涵蓋 consumers。CI 的選擇與 aggregate 條件以當前 workflow 為準。
 
-各層證據的限制由 [validation evidence](../../rules/validation-evidence.md) 擁有；測試選擇由 [testing](testing.md) 擁有。外部發布順序見 [Release](../operations/release.md)，Supabase remote readback 見 [Supabase](../platform/supabase.md)。
+各層證據的限制由 [validation evidence](../../rules/validation-evidence.md) 擁有；測試選擇由 [testing](testing.md) 擁有。外部發布順序見 [Release](../operations/release.md)，Supabase remote readback 見 [Supabase](../platform/README.md#supabase)。
 
 ## TypeScript safety
 

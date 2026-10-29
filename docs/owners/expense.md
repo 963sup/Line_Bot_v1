@@ -69,6 +69,6 @@ Business transaction 與 LINE reply 是不同 transaction：
 ## Adjacent owners
 
 - Expense state / fields：本文
-- AI cost / provider behavior：`../../../reference/platform/ai.md`
+- AI cost / provider behavior：`../../../reference/platform/README.md#ai`
 - LINE webhook：`../../line-integration.md`
 - Persistence / replay：`../../../040-data/040-transaction-and-idempotency.md`

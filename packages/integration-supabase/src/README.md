@@ -10,7 +10,7 @@
 | Private File Bucket desired state | [`config.toml`](config.toml) (`[storage.buckets.repository-files]`) |
 | Schema semantics / DDL vs data transform | [Schema model](../../../docs/reference/data/schema.md) |
 | Persisted relation ownership | [Data topology](../../../architecture/registry.json#data) |
-| Supabase provider / remote reconciliation rules | 本文件的 [Canonical Supabase rules](#canonical-supabase-rules)；跨 package 分類見 [Supabase platform](../../../docs/reference/platform/supabase.md) |
+| Supabase provider / remote reconciliation rules | 本文件的 [Canonical Supabase rules](#canonical-supabase-rules)；跨 package 分類見 [Supabase platform](../../../docs/reference/platform/README.md#supabase) |
 | Publication ordering | [Release](../../../docs/reference/operations/release.md) |
 | Backup / restore / recovery | [Recovery](../../../docs/reference/operations/recovery.md) |
 | Schema history | 不保留歷史 migration；current SQL 與 schema checks 是唯一 schema source |

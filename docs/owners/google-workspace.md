@@ -1,6 +1,6 @@
 # Google Workspace
 
-Read this file for Google provider ownership. OAuth/write/recovery details: [Google Workspace reference](../reference/platform/google-workspace.md).
+Read this file for Google provider ownership. OAuth/write/recovery details: [Google Workspace reference](../reference/platform/README.md#google-workspace).
 
 ## Responsibility
 

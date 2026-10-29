@@ -13,7 +13,7 @@ run((event) => {
     hookSpecificOutput: {
       hookEventName: "UserPromptSubmit",
       additionalContext:
-        "Before edits, apply AGENTS.md Primary agent requirement preflight. For substantial work use requirement-architect when available; otherwise perform it and disclose the limitation. Reuse one plan and working Serena sessions. Prefer native MCP tools; missing tools require checking user registration and host refresh before reinstalling or assuming incompatibility. Continue authorized execution. This reminder is not evidence review or MCP acceptance ran.",
+        "Apply AGENTS.md preflight when scope or safety is genuinely ambiguous. For explicitly authorized docs restructuring, do not repeat planning or request approval at batch boundaries; continue the complete migration with scoped verification. Reuse working Serena sessions. This reminder is not evidence review or MCP acceptance.",
     },
   };
 });

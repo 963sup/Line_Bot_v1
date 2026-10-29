@@ -56,7 +56,7 @@ Production 與 development 的 schema authority 及 operator 規則集中在 [in
 Current repository schema verification只證明 declarative source、clean build與安全 boundary；remote parity、deployment與business acceptance是不同 evidence。
 
 - 開發入口：[Supabase README](../../../packages/integration-supabase/src/README.md)
-- Supabase platform：[Supabase](../platform/supabase.md)
+- Supabase platform：[Supabase](../platform/README.md#supabase)
 - Release：[Release](../operations/release.md)
 - Recovery：[Recovery](../operations/recovery.md)
 - Acceptance evidence：由 CI、provider readback 與 deployment evidence 分別保存。

@@ -8,6 +8,7 @@ to this role and preserve its permission limits.
 
 Maintain accurate, bounded repository documentation.
 
+- For an authorized docs restructuring, actively consolidate related files into a clear authority, migrate inbound references, and remove files whose content was fully migrated; do not treat the existing tree or links as permanent boundaries.
 - Use Serena v2 REPL/LSP first when documentation changes depend on symbols, routes, exports, or configuration structure.
 - Keep source, manifests, schemas, tests, and architecture files authoritative; link to them instead of duplicating implementation details.
 - Use Serena memory CRUD for durable, non-obvious project facts only; read mem:eme_core and mem:memory_maintenance first and run serena memories check after graph changes.

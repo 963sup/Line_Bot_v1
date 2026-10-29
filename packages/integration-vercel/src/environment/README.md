@@ -1,6 +1,6 @@
 # Environment configuration
 
-Configuration 名稱與本機起點見 [.env.example](../../../../.env.example) 與 [Local environment](../../../../docs/reference/engineering/local-environment.md)；provider-owned variables 見 [Vercel](../../../../docs/reference/platform/vercel.md) 與 [Supabase](../../../../docs/reference/platform/supabase.md)。本目錄不保存 `.env`、實值、token 或帳戶識別。
+Configuration 名稱與本機起點見 [.env.example](../../../../.env.example) 與 [Local environment](../../../../docs/reference/engineering/local-environment.md)；provider-owned variables 見 [Vercel](../../../../docs/reference/platform/README.md#vercel) 與 [Supabase](../../../../docs/reference/platform/README.md#supabase)。本目錄不保存 `.env`、實值、token 或帳戶識別。
 
 - Development、Preview、Production 分開設定與驗證，Preview 不因需要測試就取得 Production credential。
 - Public build-time 值與 server-only runtime secrets 分開；不得把秘密放入 `NEXT_PUBLIC_*`。

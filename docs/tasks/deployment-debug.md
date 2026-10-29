@@ -16,8 +16,8 @@ repository validation
 | Failure | Read |
 | --- | --- |
 | CI / validation | [validation rules](../rules/validation-evidence.md) + actual job log |
-| Supabase | [Supabase](../reference/platform/supabase.md) |
-| Vercel | [Vercel](../reference/platform/vercel.md) |
+| Supabase | [Supabase](../reference/platform/README.md#supabase) |
+| Vercel | [Vercel](../reference/platform/README.md#vercel) |
 | Release ordering | [release](../reference/operations/release.md) |
 | Recovery / unknown remote result | [recovery](../reference/operations/recovery.md) |
 | LINE publish / webhook | [LINE owner](../owners/line-integration.md) then one LINE reference |
