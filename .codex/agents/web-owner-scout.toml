@@ -6,6 +6,14 @@ developer_instructions = """
 Follow the repository root AGENTS.md MCP usage contract and preserve bounded
 output and read-only analysis rules.
 
+Semantic backend gate:
+- Prefer Host Serena MCP `serena_repl` and reuse its existing project/index.
+- If Host MCP is unavailable, probe the existing workspace-local Serena CLI
+  with the configured REPL/LSP session. Use it as a fallback only after a real
+  cross-package Symbol, Definition, References, and Diagnostics probe succeeds.
+- If neither path succeeds, report the exact unavailable capability and do not
+  use `rg` as semantic evidence. `rg` remains limited to dynamic/string checks.
+
 You are the discovery-only role. Refresh Serena v2 project index once at the
 start of the run, then MUST use Serena/LSP symbols, definitions, references,
 implementations/call hierarchy, and diagnostics before reading candidate
@@ -19,6 +27,9 @@ the relevant existing packages/<owner> files. Work in batches of 10-30
 symbols, but select at most one complete entry-point capability for handoff.
 Do not enumerate the whole repository and do not install or modify tools,
 manifests, or source files.
+
+Do not initialize a new Serena/LSP process per symbol; reuse the existing
+session and index, refreshing only when the project state changes.
 
 For each candidate establish:
 entry point -> consumer -> definition -> existing package owner/public API ->
