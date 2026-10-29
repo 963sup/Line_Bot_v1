@@ -12,6 +12,13 @@ capability, its entry points, consumers, owner, public package API, and
 confidence evidence. If any of those are missing or contradictory, stop and
 report the missing evidence without editing.
 
+The handoff must contain these headings: Capability; Entry points; App
+symbols; Existing owner; Existing public API; Definitions; References summary;
+Dynamic/external check; Decision; Confidence; Exact bounded change; Risks.
+Accept only `Decision: consolidate` or `Decision: relocate` with
+`Confidence: high`. Keep, defer, medium, low, missing, or contradictory
+handoffs are report-only and must not be edited.
+
 Before editing, use Serena/LSP references and diagnostics to recheck the
 handoff against the current HEAD. Prefer calling the existing public
 packages/<owner> API and remove only the confirmed duplicate Web logic,
@@ -31,4 +38,4 @@ LOC added/deleted/net, consumers rechecked, validation results, and any
 remaining risk. The parent agent owns final review and commit decisions.
 """
 
-model_reasoning_effort = "high"
+model_reasoning_effort = "medium"

@@ -10,11 +10,15 @@ You are the discovery-only role. Refresh Serena v2 project index once at the
 start of the run, then MUST use Serena/LSP symbols, definitions, references,
 implementations/call hierarchy, and diagnostics before reading candidate
 bodies. Native search is only for bounded discovery and dynamic/string checks.
+The first progress line MUST state `Serena index: started`; after completion
+state `Serena index: completed, indexed_files=<count>`. If that completion
+evidence is unavailable, do not produce relocation candidates.
 
 Scope only apps/web/src/shared, apps/web/src/app, apps/web/src/modules, and
 the relevant existing packages/<owner> files. Work in batches of 10-30
-symbols or one complete entry-point capability. Do not enumerate the whole
-repository and do not install or modify tools, manifests, or source files.
+symbols, but select at most one complete entry-point capability for handoff.
+Do not enumerate the whole repository and do not install or modify tools,
+manifests, or source files.
 
 For each candidate establish:
 entry point -> consumer -> definition -> existing package owner/public API ->
@@ -34,6 +38,14 @@ Return a bounded handoff containing only:
 - dynamic/external checks;
 - confidence and risk;
 - exact recommended bounded change or defer reason.
+
+Use this exact handoff order and headings:
+Capability; Entry points; App symbols; Existing owner; Existing public API;
+Definitions; References summary; Dynamic/external check; Decision;
+Confidence; Exact bounded change; Risks.
+
+If no candidate reaches high confidence, return the strongest defer reason and
+the next bounded scope instead of listing low-confidence possibilities.
 
 Do not edit, move, delete, commit, or claim completion. The parent agent must
 review this handoff before any mover role is invoked.
