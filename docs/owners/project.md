@@ -114,4 +114,4 @@ Canonical machine truth:
 [Project WBS outbox](../../packages/integration-supabase/src/schemas/711_project_wbs_outbox.sql) ·
 [Project Actions](../../packages/integration-supabase/src/schemas/712_project_actions.sql).
 
-Adjacent owners: [Account](account.md) · [Organization](organization.md) · [Team](team.md) · [Repository](repository.md) · [Issue](issue.md)
+Adjacent owners: [Account](../reference/domains/account.md) · [Organization](../reference/domains/organization.md) · [Team](../reference/domains/team.md) · [Repository](../reference/domains/repository.md) · [Issue](issue.md)

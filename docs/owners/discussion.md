@@ -46,4 +46,4 @@ Runtime owner: `packages/discussion`. Repository scope/resource-definition provi
 
 Persisted relation ownership is authoritative in [data topology](../../architecture/registry.json#data); executable SQL definitions remain under `packages/integration-supabase/src/schemas/`.
 
-Adjacent owners: [Repository](repository.md) · [Issue](issue.md) · [Notifications](notifications.md)
+Adjacent owners: [Repository](../reference/domains/repository.md) · [Issue](issue.md) · [Notifications](notifications.md)

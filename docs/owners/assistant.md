@@ -18,5 +18,5 @@ Delivery adapter 先完成來源驗證；任何後續 module command 仍由該 o
 目前沒有 global workflow engine/tool registry/agent memory domain/generic approval/autonomous writer 的真實 requirement。只有 owner/authorization/recovery 明確、跨 module workflow 真的存在時才新增。
 
 - [AI platform](../reference/platform/ai.md)
-- [Repository](repository.md)
+- [Repository](../reference/domains/repository.md)
 - [Security](../rules/system-invariants.md)

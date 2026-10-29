@@ -3,7 +3,7 @@
 Routing and module overview for `@line_bot_v1/payroll`.
 
 - Semantic Owner: `payroll`
-- Authority document: [`docs/owners/payroll.md`](../../docs/owners/payroll.md)
+- Authority document: [`docs/reference/domains/payroll.md`](../../docs/reference/domains/payroll.md)
 - Machine boundaries: [`architecture/registry.json#modules`](../../architecture/registry.json#modules)
 - Persistence mapping: [`architecture/registry.json#data`](../../architecture/registry.json#data)
 

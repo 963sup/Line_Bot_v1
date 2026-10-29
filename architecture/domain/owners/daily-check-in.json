@@ -4,7 +4,7 @@
     "id": "daily-check-in",
     "kind": "business-owner",
     "lifecycle": "current",
-    "doc": "docs/owners/daily-check-in.md"
+    "doc": "docs/reference/domains/daily-check-in.md"
   },
   "boundedContexts": [
     {

@@ -4,7 +4,7 @@
     "id": "attendance",
     "kind": "business-owner",
     "lifecycle": "current",
-    "doc": "docs/owners/attendance.md"
+    "doc": "docs/reference/domains/attendance.md"
   },
   "boundedContexts": [
     {
@@ -12,7 +12,7 @@
       "owner": "attendance",
       "status": "strong-candidate",
       "evidence": {
-        "ownerContracts": ["docs/owners/attendance.md"],
+        "ownerContracts": ["docs/reference/domains/attendance.md"],
         "sourcePaths": ["packages/attendance/src/domain/aggregates/attendance-session.ts"],
         "testPaths": [
           "packages/attendance/test/attendance.test.ts",

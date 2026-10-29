@@ -11,5 +11,5 @@ are never released or reset; transaction rollback rolls back both the allocation
 The root export contains pure domain types and limits. `@line_bot_v1/numbering/postgres` is the only
 persistence entry point and exposes allocation and resolution against a caller-owned transaction.
 
-See the [Numbering owner contract](../../docs/owners/numbering.md), [package constraints](AGENTS.md)
+See the [Numbering owner contract](../../docs/reference/domains/numbering.md), [package constraints](AGENTS.md)
 and [generated semantics](SEMANTICS.md).

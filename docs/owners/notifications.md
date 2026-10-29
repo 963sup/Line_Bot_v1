@@ -10,7 +10,7 @@ Notifications owns user-facing Notification facts, recipient read state, and del
 
 ## Does not own
 
-- Issue lifecycle remains in [Issue](issue.md); discussion content remains in [Repository](repository.md).
+- Issue lifecycle remains in [Issue](issue.md); discussion content remains in [Repository](../reference/domains/repository.md).
 - Announcement publishing; a broadcast message is not silently reclassified as a notification.
 - User identity, membership, source authorization, or User→Repository Watch subscription；Repository owns Watch state.
 - Team-level `TeamNotificationSetting`; Team owns whether a Team @mention exposes an effective-member recipient population. Notifications owns recipient facts only after a source event/recipient set is provided.

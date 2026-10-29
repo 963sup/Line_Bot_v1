@@ -14,7 +14,7 @@
 
 | Subdomain | Classification | Rationale | Sources |
 | --- | --- | --- | --- |
-| identity-and-access | generic | 主體身分、名稱解析、範圍序列與存取控制是普遍存在的業務能力，採成熟模型而非作為產品差異化；分類不合併 User lifecycle、qualification、resource lifecycle、membership 與 permission。 | [docs/reference/architecture/strategic-design.md](../../docs/reference/architecture/strategic-design.md); [docs/owners/account.md](../../docs/owners/account.md); [docs/owners/namespace.md](../../docs/owners/namespace.md); [docs/owners/numbering.md](../../docs/owners/numbering.md); [docs/owners/identity-access.md](../../docs/owners/identity-access.md) |
+| identity-and-access | generic | 主體身分、名稱解析、範圍序列與存取控制是普遍存在的業務能力，採成熟模型而非作為產品差異化；分類不合併 User lifecycle、qualification、resource lifecycle、membership 與 permission。 | [docs/reference/architecture/strategic-design.md](../../docs/reference/architecture/strategic-design.md); [docs/reference/domains/account.md](../../docs/reference/domains/account.md); [docs/reference/domains/namespace.md](../../docs/reference/domains/namespace.md); [docs/reference/domains/numbering.md](../../docs/reference/domains/numbering.md); [docs/owners/identity-access.md](../../docs/owners/identity-access.md) |
 
 ## Bounded Context
 
@@ -28,7 +28,7 @@ References support the existing status; listed tests are evidence locations, not
 
 | Context | Owner contracts | Source | Tests | Rationale |
 | --- | --- | --- | --- | --- |
-| account | [docs/owners/account.md](../../docs/owners/account.md) | [packages/account/src/domain/user.ts](../../packages/account/src/domain/user.ts) | [packages/account/test/user.test.ts](../../packages/account/test/user.test.ts) | User lifecycle 與 qualification 有獨立模型和測試；與 Organization membership、Namespace login 與獎勵 owner 分開。這證明責任邊界，不自動完成 context 選定。 |
+| account | [docs/reference/domains/account.md](../../docs/reference/domains/account.md) | [packages/account/src/domain/user.ts](../../packages/account/src/domain/user.ts) | [packages/account/test/user.test.ts](../../packages/account/test/user.test.ts) | User lifecycle 與 qualification 有獨立模型和測試；與 Organization membership、Namespace login 與獎勵 owner 分開。這證明責任邊界，不自動完成 context 選定。 |
 
 ## Ubiquitous Language
 

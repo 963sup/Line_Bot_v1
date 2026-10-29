@@ -4,7 +4,7 @@
     "id": "ledger",
     "kind": "business-owner",
     "lifecycle": "current",
-    "doc": "docs/owners/ledger.md"
+    "doc": "docs/reference/domains/ledger.md"
   },
   "boundedContexts": [
     {

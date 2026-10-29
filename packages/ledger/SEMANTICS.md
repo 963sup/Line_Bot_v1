@@ -14,7 +14,7 @@
 
 | Subdomain | Classification | Rationale | Sources |
 | --- | --- | --- | --- |
-| participation-incentives | supporting | 簽到與獎勵支援協作參與；獎勵政策、資產定義、持有量與不可變價值紀錄保留既有責任與一致性邊界，不再宣稱獎勵是核心競爭定位。 | [docs/reference/architecture/strategic-design.md](../../docs/reference/architecture/strategic-design.md); [docs/owners/daily-check-in.md](../../docs/owners/daily-check-in.md); [docs/owners/asset.md](../../docs/owners/asset.md); [docs/owners/wallet.md](../../docs/owners/wallet.md); [docs/owners/ledger.md](../../docs/owners/ledger.md) |
+| participation-incentives | supporting | 簽到與獎勵支援協作參與；獎勵政策、資產定義、持有量與不可變價值紀錄保留既有責任與一致性邊界，不再宣稱獎勵是核心競爭定位。 | [docs/reference/architecture/strategic-design.md](../../docs/reference/architecture/strategic-design.md); [docs/reference/domains/daily-check-in.md](../../docs/reference/domains/daily-check-in.md); [docs/owners/asset.md](../../docs/owners/asset.md); [docs/reference/domains/wallet.md](../../docs/reference/domains/wallet.md); [docs/reference/domains/ledger.md](../../docs/reference/domains/ledger.md) |
 
 ## Bounded Context
 

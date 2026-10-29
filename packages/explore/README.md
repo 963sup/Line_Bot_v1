@@ -3,7 +3,7 @@
 Routing and module overview for `@line_bot_v1/explore`.
 
 - Semantic Owner: `repository`
-- Authority document: [`docs/owners/repository.md`](../../docs/owners/repository.md)
+- Authority document: [`docs/reference/domains/repository.md`](../../docs/reference/domains/repository.md)
 - Machine boundaries: [`architecture/registry.json#modules`](../../architecture/registry.json#modules)
 - Persistence mapping: [`architecture/registry.json#data`](../../architecture/registry.json#data)
 

@@ -14,7 +14,7 @@
 
 | Subdomain | Classification | Rationale | Sources |
 | --- | --- | --- | --- |
-| collaboration | core | Repository work definitions and plan revisions, physical shared resources, formal contract commitments and actual Task execution have distinct authority, lifecycle and immutable evidence. Project WBS remains Project-scoped. | [docs/reference/architecture/strategic-design.md](../../docs/reference/architecture/strategic-design.md); [docs/owners/repository.md](../../docs/owners/repository.md); [docs/owners/issue.md](../../docs/owners/issue.md); [docs/owners/discussion.md](../../docs/owners/discussion.md); [docs/owners/project.md](../../docs/owners/project.md); [docs/owners/contract.md](../../docs/owners/contract.md); [docs/owners/execution.md](../../docs/owners/execution.md); [docs/owners/content.md](../../docs/owners/content.md) |
+| collaboration | core | Repository work definitions and plan revisions, physical shared resources, formal contract commitments and actual Task execution have distinct authority, lifecycle and immutable evidence. Project WBS remains Project-scoped. | [docs/reference/architecture/strategic-design.md](../../docs/reference/architecture/strategic-design.md); [docs/reference/domains/repository.md](../../docs/reference/domains/repository.md); [docs/owners/issue.md](../../docs/owners/issue.md); [docs/owners/discussion.md](../../docs/owners/discussion.md); [docs/owners/project.md](../../docs/owners/project.md); [docs/owners/contract.md](../../docs/owners/contract.md); [docs/owners/execution.md](../../docs/owners/execution.md); [docs/owners/content.md](../../docs/owners/content.md) |
 
 ## Bounded Context
 
@@ -28,7 +28,7 @@ References support the existing status; listed tests are evidence locations, not
 
 | Context | Owner contracts | Source | Tests | Rationale |
 | --- | --- | --- | --- | --- |
-| work-collaboration | [docs/owners/team.md](../../docs/owners/team.md); [docs/owners/repository.md](../../docs/owners/repository.md) | [packages/team/src/domain/team.ts](../../packages/team/src/domain/team.ts); [packages/repository/src/domain/repository/entities/repository.ts](../../packages/repository/src/domain/repository/entities/repository.ts) | [packages/team/test/team-write-postgres.test.ts](../../packages/team/test/team-write-postgres.test.ts); [packages/repository/test/access.test.ts](../../packages/repository/test/access.test.ts) | Team 的 membership/maintainer 與 Repository 的存取 grant 由不同 owner 維護，透過 current membership projection 協作；GitHub 的包含關係不能證明兩者是一套模型，故保留 candidate，不合併 packages。 |
+| work-collaboration | [docs/reference/domains/team.md](../../docs/reference/domains/team.md); [docs/reference/domains/repository.md](../../docs/reference/domains/repository.md) | [packages/team/src/domain/team.ts](../../packages/team/src/domain/team.ts); [packages/repository/src/domain/repository/entities/repository.ts](../../packages/repository/src/domain/repository/entities/repository.ts) | [packages/team/test/team-write-postgres.test.ts](../../packages/team/test/team-write-postgres.test.ts); [packages/repository/test/access.test.ts](../../packages/repository/test/access.test.ts) | Team 的 membership/maintainer 與 Repository 的存取 grant 由不同 owner 維護，透過 current membership projection 協作；GitHub 的包含關係不能證明兩者是一套模型，故保留 candidate，不合併 packages。 |
 
 ## Ubiquitous Language
 

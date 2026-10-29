@@ -4,7 +4,7 @@
     "id": "numbering",
     "kind": "business-owner",
     "lifecycle": "current",
-    "doc": "docs/owners/numbering.md"
+    "doc": "docs/reference/domains/numbering.md"
   },
   "boundedContexts": [],
   "concepts": [

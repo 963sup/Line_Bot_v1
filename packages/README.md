@@ -7,7 +7,7 @@
 | 修改任何 package | [開發契約](./AGENTS.md)；完整繼承 [root contract](../AGENTS.md) |
 | 找目前 module、semantic owner 與 context status | [Generated packages semantics](./SEMANTICS.md) |
 | 理解 Owner 的語言、能力與合作關係 | 先由 `architecture/registry.json#modules` 取得 `semanticOwner`，再讀 selected module 的 `SEMANTICS.md`、README/AGENTS 與 [owner contracts](../docs/owners/README.md) |
-| 修改 scoped number 或 business name registry | [Numbering](../docs/owners/numbering.md) / [Namespace](../docs/owners/namespace.md)；resource lifecycle 與 authorization 仍查原 Owner |
+| 修改 scoped number 或 business name registry | [Numbering](../docs/reference/domains/numbering.md) / [Namespace](../docs/reference/domains/namespace.md)；resource lifecycle 與 authorization 仍查原 Owner |
 | 查 DDD/六邊形詞義與選用模式 | [共用詞彙表](../docs/facts/glossary.md#ddd-策略建模) |
 | 找修改影響與最小相關 context | bounded `rg`、package exports、source/tests；[task router](../docs/README.md) |
 | 查所有 current modules 與 selected targets | 直接讀取 `architecture/registry.json#modules` |

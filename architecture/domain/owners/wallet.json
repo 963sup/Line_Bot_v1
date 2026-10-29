@@ -4,7 +4,7 @@
     "id": "wallet",
     "kind": "business-owner",
     "lifecycle": "current",
-    "doc": "docs/owners/wallet.md"
+    "doc": "docs/reference/domains/wallet.md"
   },
   "boundedContexts": [
     {

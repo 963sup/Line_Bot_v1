@@ -4,7 +4,7 @@
     "id": "account",
     "kind": "business-owner",
     "lifecycle": "current",
-    "doc": "docs/owners/account.md"
+    "doc": "docs/reference/domains/account.md"
   },
   "boundedContexts": [
     {
@@ -12,7 +12,7 @@
       "owner": "account",
       "status": "strong-candidate",
       "evidence": {
-        "ownerContracts": ["docs/owners/account.md"],
+        "ownerContracts": ["docs/reference/domains/account.md"],
         "sourcePaths": ["packages/account/src/domain/user.ts"],
         "testPaths": ["packages/account/test/user.test.ts"],
         "rationale": "User lifecycle 與 qualification 有獨立模型和測試；與 Organization membership、Namespace login 與獎勵 owner 分開。這證明責任邊界，不自動完成 context 選定。"
