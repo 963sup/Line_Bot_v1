@@ -69,9 +69,9 @@
 
 ## Retrieval
 
-工具入口：`codex mcp list`；安裝技能先讀 `${CODEX_HOME:-$HOME/.codex}/skills/skill-installer/SKILL.md`。User/system skills 與 repository `.agents/skills` 分開管理，不手改第三方技能或 lockfile。
+工具入口：需要 MCP／Skill 時才查 `codex mcp list` 或讀 `${CODEX_HOME:-$HOME/.codex}/skills/skill-installer/SKILL.md`；一般文件、程式、測試與 Git 任務不預載這些工具說明。User/system skills 與 repository `.agents/skills` 分開管理，不手改第三方技能或 lockfile。
 
-先用 [task router](docs/README.md) 取最小 context；單一已知 Owner 直接讀 contract + nearest AGENTS。Sources of truth 見 [來源索引](docs/facts/sources-of-truth.md)，不要建立第二套 truth。
+先用 [task router](docs/README.md) 取最小 context；單一已知 Owner 直接讀 contract + nearest AGENTS。跨領域任務可彈性組合 `.codex/agents/` 中的 primary/specialist roles，但不為了清單完整而委派。`config.toml` 內的 MCP 依任務需要選用，已登錄不代表當前 host 已暴露；只有 MCP maintainer 處理 registration/refresh 診斷。Sources of truth 見 [來源索引](docs/facts/sources-of-truth.md)，不要建立第二套 truth。
 
 ## Completeness and root-cause delivery
 
@@ -95,6 +95,7 @@
 - Rename/delete 前補查動態／字串 consumer，之後驗證 owner 行為。初始化預建 index，日常重用；API 簽名以 session 為準。
 
 - TS/JS symbols、references、diagnostics、語義重構、safe delete、LSP、memory 任務優先 Serena v2 + LSP；一般文件／設定／shell／Git／patch／驗證用 Codex 原生工具。工具未登錄、能力不足或失敗時明示原因並用原生工具繼續。
+- Serena availability gate：每個 task/session 最多做一次 bounded availability check（host tool registry 或 `serena --version`）。若 executable、MCP tool 或 session 不可用，記錄失效層後本輪直接改用 `rg`、原生檔案工具與 TypeScript/package checks；不要反覆重啟、重建 index、重讀 manual 或把 CLI 成功當成 MCP 成功。只有 runtime/config 改變或使用中的 Serena call 實際失敗，才重新檢查。
 - 每個 MCP session 只讀一次 initial_instructions；重用成功能力，CLI 成功不等於 host MCP 成功。按需讀 [Serena README](.serena/README.md) 與 [官方 Tools](https://oraios.github.io/serena/01-about/035_tools.html)。
 
 ### Serena context budget
