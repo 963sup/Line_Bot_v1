@@ -7,6 +7,7 @@ import { createFiles } from "@line_bot_v1/file/application/use-cases/files";
 import {
   createPostgresFileDependencies,
   createPostgresFileSourceReader,
+  createPostgresFileRevisionQualifier,
 } from "@line_bot_v1/file/composition/bootstrap/files";
 import type { FileRevision } from "@line_bot_v1/file/domain/file";
 import { createPostgresCommercialIntake } from "@line_bot_v1/intelligence/composition/bootstrap/commercial-intake";
@@ -80,6 +81,7 @@ test("commercial intake keeps technical result after target failure and resumes 
   intake = createPostgresCommercialIntake({
     db: fixture.db,
     target: documents,
+    qualifier: createPostgresFileRevisionQualifier,
     reader: createPostgresFileSourceReader(fixture.db, {
       async readVerified(revision: FileRevision) {
         const value = objects.get(revision.id);

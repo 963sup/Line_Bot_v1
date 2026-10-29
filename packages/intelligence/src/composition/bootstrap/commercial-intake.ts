@@ -1,11 +1,8 @@
-import {
-  createPostgresFileRevisionQualifier,
-  createPostgresFileSourceReader,
-} from "@line_bot_v1/file/composition/bootstrap/files";
-import type { FileSourceReader } from "@line_bot_v1/file/contracts/output/references";
+import type { FileRevisionQualifier, FileSourceReader } from "@line_bot_v1/file/contracts/output/references";
 import { inspectOpenAIDocument } from "@line_bot_v1/integration-openai/structured-output";
-import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
+import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import { createCommercialExtractor } from "../../adapters/outbound/commercial-extractor.js";
+export { createSupabaseExtractionJsonStore } from "../../adapters/outbound/persistence/extraction-json-storage.js";
 import { createPostgresCommercialIntakeStore } from "../../adapters/outbound/persistence/commercial-intake.js";
 import { createCommercialIntake } from "../../application/use-cases/commercial-intake.js";
 import {
@@ -17,7 +14,8 @@ import type { ExtractionProfile } from "../../contracts/ports/commercial-intake.
 /** Fixed server profile; optional extraction port supports alternate runtime provider wiring. */
 export function createPostgresCommercialIntake(config: {
   db?: Database;
-  reader?: FileSourceReader;
+  reader: FileSourceReader;
+  qualifier: (sql: Sql) => FileRevisionQualifier;
   target: CommercialIntakeTarget;
   extractor?: {
     countInputTokens(input: {
@@ -49,9 +47,9 @@ export function createPostgresCommercialIntake(config: {
       if (!config.extractor && !process.env.OPENAI_API_KEY)
         throw new CommercialIntakeError("EXTRACTION_NOT_CONFIGURED", 503, "extraction.preflight");
     },
-    store: createPostgresCommercialIntakeStore(db, createPostgresFileRevisionQualifier),
+    store: createPostgresCommercialIntakeStore(db, config.qualifier),
     target: config.target,
-    reader: config.reader ?? createPostgresFileSourceReader(db),
+    reader: config.reader,
     inspect: inspectOpenAIDocument,
     extract: (input) => extractor.extract(input),
     countInputTokens: (input) => extractor.countInputTokens(input),

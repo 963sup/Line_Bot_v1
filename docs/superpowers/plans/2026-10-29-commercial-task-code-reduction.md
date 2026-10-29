@@ -11,7 +11,7 @@
 | `apps/web/src/modules/file/file-requests.ts` 的 commercialIntake/commercialDocument/commercialTask 三組入口 | 新流程統一 commercialTask；共用 session/denial/raw error 處理 | 所有 consumer 遷移；舊結果查詢仍可用 |
 | `apps/web/src/app/api/document-intakes/route.ts`、`commercial-documents/route.ts` | task route 完整後移除無 consumer 的舊 transport | 舊 pending/client 盤點與恢復完成；不能先刪 receipt 查詢 |
 | `apps/web/src/modules/document-intake/commercial-intake-http.server.ts` 的 resource 分支及重複 request 解析 | task transport 直接使用 owner public capability；單一 identity/origin/body/error boundary | 新 task 不再只是重建 Request 轉呼叫舊 handler；全部行為測試遷移 |
-| `apps/web/src/modules/document-intake/commercial-task-http.server.ts` 的 Request 重建 | 改為驗證一次後直接呼叫 application orchestration | owner commands/DTO 已收斂；移除雙重 JSON parse/HTTP 自我轉送 |
+| `apps/web/src/modules/document-intake/commercial-task-http.server.ts` 的 Request 重建 | 已移除該 wrapper；task route 透過共用的有界 HTTP handler 直接執行 Owner 能力 | 新 task identity/body/Origin 及 legacy pending 相容已加入測試；完整流程仍未驗收 |
 | 新 task 與現有 Content/WBS UI 的重複商務匯入操作 | 新商務流程由 task confirm 編排，保留一般 Content/WBS 編輯能力 | 新流程完整跑通，實際 references 證明重複入口無用途 |
 | 商務舊規格/實施計畫中的重複目標宣告 | 新計畫為本輪入口；保留必要歷史證據與 source links | 搜尋 inbound links，避免失效引用；不重建已刪 fields/functions 規格 |
 

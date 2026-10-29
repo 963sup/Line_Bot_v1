@@ -1,3 +1,4 @@
+import { createPostgresFileRevisionQualifier, createPostgresFileSourceReader } from "@line_bot_v1/file/composition/bootstrap/files";
 import { createPostgresContractDocuments } from "@line_bot_v1/contract/composition/bootstrap/documents";
 import {
   purchaseOrderExtractionSchema,
@@ -15,6 +16,8 @@ export function documentIntake(): DocumentIntakeWebRuntime {
   const target = createPostgresContractDocuments();
   const intake = createPostgresOpenAIDocumentIntake({
     target,
+    reader: createPostgresFileSourceReader(),
+    qualifier: createPostgresFileRevisionQualifier,
     schema: {
       id: purchaseOrderExtractionSchemaId,
       version: purchaseOrderExtractionSchemaVersion,
