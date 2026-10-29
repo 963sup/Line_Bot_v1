@@ -1,7 +1,7 @@
 import { isRecord, numberValue, stringValue } from "@line_bot_v1/platform/validation";
 import type { WbsHistory, WbsReceipt, WbsView } from "./dto/content.js";
-import type { WbsRevision } from "../../domain/content.js";
-import { parseWbsDocument } from "../../domain/document.js";
+import type { WbsRevision } from "../domain/content.js";
+import { parseWbsDocument } from "../domain/document.js";
 
 function metadata(value: unknown): Omit<WbsRevision, "document"> {
   if (!isRecord(value)) throw new Error("WBS 回應格式不正確。");
