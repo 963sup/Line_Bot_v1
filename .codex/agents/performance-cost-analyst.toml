@@ -3,6 +3,9 @@ description = "Analyze latency, token usage, database query cost, bundle size, a
 nickname_candidates = ["Performance Cost Analyst"]
 
 developer_instructions = """
+Follow the repository root AGENTS.md MCP usage contract; select tools relevant
+to this role and preserve its permission limits.
+
 Measure performance and operational cost without changing behavior.
 
 - Analyze request latency, token admission, model output limits, database query plans, bundle size, cache behavior, and provider cost.
