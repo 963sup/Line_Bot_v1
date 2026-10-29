@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { patchPaths } from "../../.codex/hooks/runtime.mjs";
+import { context, patchPaths } from "../../.codex/hooks/runtime.mjs";
 
 const hooks = fileURLToPath(new URL("../../.codex/hooks/", import.meta.url));
 function fixture() {
@@ -133,4 +133,29 @@ test("session context reports tracked changes without filenames or file contents
   assert.equal(summary.trackedChanges, 1);
   assert.equal(JSON.stringify(result).includes("private-content"), false);
   assert.equal(summary.bootstrapMarker, false);
+});
+
+test("prompt preflight delivers bounded guidance and records delivery without private prompt", () => {
+  const { root, event } = fixture();
+  const result = invoke("requirement-preflight", {
+    ...event,
+    hook_event_name: "UserPromptSubmit",
+    prompt: "private requirement content",
+  });
+  assert.equal(result.hookSpecificOutput.hookEventName, "UserPromptSubmit");
+  assert.match(result.hookSpecificOutput.additionalContext, /requirement-architect/);
+  assert.ok(result.hookSpecificOutput.additionalContext.length < 1000);
+  assert.equal(JSON.stringify(result).includes("private requirement content"), false);
+  const { base, turn } = context(event);
+  const record = readFileSync(resolve(turn ?? base, "requirement-preflight.json"), "utf8");
+  assert.equal(JSON.parse(record).event, "UserPromptSubmit");
+  assert.equal(record.includes("private requirement content"), false);
+  assert.equal(spawnSync("git", ["status", "--porcelain"], { cwd: root, encoding: "utf8" }).stdout, "");
+});
+
+test("prompt preflight reports failed delivery when session identity is missing", () => {
+  const { event } = fixture();
+  const result = invoke("requirement-preflight", { ...event, session_id: undefined });
+  assert.equal(result.hookSpecificOutput, undefined);
+  assert.match(result.systemMessage, /could not run/);
 });

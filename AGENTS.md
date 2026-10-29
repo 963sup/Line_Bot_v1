@@ -136,7 +136,7 @@ Source-of-truth：[facts/sources-of-truth.md](docs/facts/sources-of-truth.md)。
 - 跨 Owner、多步驟、需求歧義或批量重構時，使用 `.codex/agents/requirement-architect.toml` 的唯讀角色協助釐清；目前 host 無該角色或無法委派時，由主 agent 執行同一檢查並明示工具限制，不阻塞已授權工作。
 - 大型任務先更新唯一既有總體計畫，列出總段數、各段產物／驗收、目前狀態與完整刪碼候選；不得邊做邊自行縮小交付範圍。續作先讀計畫與實際 diff，不重建平行規格。
 - 主 agent 整合角色結果並負責執行到底；需求規畫不替代架構審查、測試或使用者驗收，也不增加已授權實作的確認輪次。
-- SessionStart hook 提供此規則的提醒，無法證明每個需求都已檢查；hook 未觸發時上述規則仍適用。
+- UserPromptSubmit hook 每個新需求提供短版提醒，SessionStart hook 在啟動／恢復時提供入口。`.artifacts/hooks/` 的 requirement-preflight.json 只證明 handler 送達，不能證明主 agent 已執行規畫或自訂角色已載入；hook 未觸發時上述規則仍適用。
 
 - 先把使用者要求轉成明確 scope、完成條件、不可改變條件與受影響檔案清單；「全部」、「完整」、「全面」表示必須處理該 scope 內的所有項目。
 - 先找根因，再處理所有由根因影響的 consumer、配置、文件、測試、驗證與部署入口；不得只修第一個失敗點或只完成代表性樣本。
