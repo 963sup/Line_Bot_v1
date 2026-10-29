@@ -77,7 +77,7 @@ test("commercial intake keeps technical result after target failure and resumes 
       if (!intake) throw new Error("Intake not composed");
       return normalizeCommercialDocument(await intake.readResult(actor, scope));
     },
-  });
+  }, createPostgresFileRevisionQualifier);
   intake = createPostgresCommercialIntake({
     db: fixture.db,
     target: documents,

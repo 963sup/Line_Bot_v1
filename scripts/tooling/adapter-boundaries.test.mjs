@@ -96,12 +96,13 @@ test("Discussion read adapter does not import Repository concrete persistence", 
   assert.doesNotMatch(source, /@line_bot_v1\/repository\/(?:postgres|composition\/bootstrap)/);
 });
 
-test("Intelligence reads File through a Host-composed source port, never foreign bootstrap", () => {
+test("Contract and Intelligence use Host-composed File ports, not foreign bootstrap", () => {
   const suffix = `__boundary_${randomUUID().replaceAll("-", "")}.mjs`;
   const file = `packages/file/src/composition/bootstrap/${suffix}`;
   const intelligence = `packages/intelligence/src/composition/bootstrap/${suffix}`;
+  const contract = `packages/contract/src/composition/bootstrap/${suffix}`;
   const host = `apps/web/src/app/api/_composition/${suffix}`;
-  const fixtures = [file, intelligence, host];
+  const fixtures = [file, intelligence, contract, host];
   const sourceImport = (from) => {
     let specifier = relative(dirname(from), file).replaceAll("\\", "/");
     if (!specifier.startsWith(".")) specifier = `./${specifier}`;
@@ -109,19 +110,21 @@ test("Intelligence reads File through a Host-composed source port, never foreign
   };
   try {
     writeFileSync(resolve(root, file), "export const fixture = true;\n");
-    for (const from of [intelligence, host]) writeFileSync(resolve(root, from), sourceImport(from));
+    for (const from of [intelligence, contract, host]) writeFileSync(resolve(root, from), sourceImport(from));
     const run = spawnSync(
       resolve(root, "node_modules/.bin/depcruise"),
-      ["--config", ".dependency-cruiser.mjs", "--output-type", "json", intelligence, host],
+      ["--config", ".dependency-cruiser.mjs", "--output-type", "json", intelligence, contract, host],
       { cwd: root, encoding: "utf8", maxBuffer: 1024 * 1024 },
     );
     assert.ok([0, 3].includes(run.status), run.stderr);
     const report = JSON.parse(run.stdout);
-    const violated = (from) => report.summary.violations.some(
-      (item) => item.from === from && item.rule.name === "intelligence-bootstrap-does-not-compose-file-bootstrap",
+    const violated = (from, rule) => report.summary.violations.some(
+      (item) => item.from === from && item.rule.name === rule,
     );
-    assert.ok(violated(intelligence));
-    assert.equal(violated(host), false);
+    assert.ok(violated(intelligence, "intelligence-bootstrap-does-not-compose-file-bootstrap"));
+    assert.ok(violated(contract, "contract-bootstrap-does-not-compose-file-bootstrap"));
+    assert.equal(violated(host, "intelligence-bootstrap-does-not-compose-file-bootstrap"), false);
+    assert.equal(violated(host, "contract-bootstrap-does-not-compose-file-bootstrap"), false);
   } finally {
     for (const entry of fixtures) rmSync(resolve(root, entry), { force: true });
   }

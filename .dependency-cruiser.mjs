@@ -42,6 +42,13 @@ export default {
       to: { path: "^packages/content/src/composition/bootstrap/" },
     },
     {
+      name: "contract-bootstrap-does-not-compose-file-bootstrap",
+      severity: "error",
+      comment: "Contract File revision qualification is injected by the application host",
+      from: { path: "^packages/contract/src/composition/bootstrap/" },
+      to: { path: "^packages/file/src/composition/bootstrap/" },
+    },
+    {
       name: "intelligence-bootstrap-does-not-compose-file-bootstrap",
       severity: "error",
       comment: "Host provides the exact File revision reader and qualifier to Intelligence",

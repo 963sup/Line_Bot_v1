@@ -1,4 +1,5 @@
 import { createPostgresFileRevisionQualifier, createPostgresFileSourceReader } from "@line_bot_v1/file/composition/bootstrap/files";
+import { createPostgresFileRevisionQualifier, createPostgresFileSourceReader } from "@line_bot_v1/file/composition/bootstrap/files";
 import { createPostgresContractDocuments } from "@line_bot_v1/contract/composition/bootstrap/documents";
 import {
   purchaseOrderExtractionSchema,
@@ -13,7 +14,7 @@ let runtime: DocumentIntakeWebRuntime | undefined;
 
 export function documentIntake(): DocumentIntakeWebRuntime {
   if (runtime) return runtime;
-  const target = createPostgresContractDocuments();
+  const target = createPostgresContractDocuments({ qualifier: createPostgresFileRevisionQualifier });
   const intake = createPostgresOpenAIDocumentIntake({
     target,
     reader: createPostgresFileSourceReader(),

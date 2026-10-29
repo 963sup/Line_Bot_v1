@@ -13,7 +13,7 @@ export function commercialIntake(): CommercialWebRuntime {
   const documents = createPostgresCommercialDocuments(db, {
     readDraftInput: async (actor, query) =>
       normalizeCommercialDocument(await intake.readResult(actor, query)),
-  });
+  }, createPostgresFileRevisionQualifier);
   const persistExtractionResult =
     process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
       ? createSupabaseExtractionJsonStore({

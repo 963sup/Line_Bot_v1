@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createHash, randomUUID } from "node:crypto";
 import test from "node:test";
 import { createFiles } from "@line_bot_v1/file/application/use-cases/files";
-import { createPostgresFileDependencies } from "@line_bot_v1/file/composition/bootstrap/files";
+import { createPostgresFileDependencies, createPostgresFileRevisionQualifier } from "@line_bot_v1/file/composition/bootstrap/files";
 import type { FileRevision } from "@line_bot_v1/file/domain/file";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
@@ -121,7 +121,7 @@ test("PostgreSQL document intake authorizes, pins source, replays exactly and ro
     fileRevisionId: upload.file.revisionId,
     fileSha256: upload.file.sha256,
   };
-  const intake = createPostgresContractDocuments(db);
+  const intake = createPostgresContractDocuments({ db, qualifier: createPostgresFileRevisionQualifier });
   const documentId = randomUUID();
   const requestId = randomUUID();
   const intentFingerprint = createHash("sha256").update("stable-intent").digest("hex");
@@ -339,7 +339,7 @@ test("independent PostgreSQL sessions serialize document intake at the expected 
     fileRevisionId: upload.file.revisionId,
     fileSha256: upload.file.sha256,
   };
-  const documents = createPostgresContractDocuments(db);
+  const documents = createPostgresContractDocuments({ db, qualifier: createPostgresFileRevisionQualifier });
   const documentId = randomUUID();
   const candidateBase = candidate();
   const initial = {
