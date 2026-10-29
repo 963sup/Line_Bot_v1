@@ -20,6 +20,20 @@ as if static text search were semantic evidence. Native search is allowed only
 for bounded candidate discovery and dynamic/string consumer checks after the
 Serena queries.
 
+Efficiency and evidence gates:
+- Work in batches of 10-30 symbols or one complete entry-point capability.
+- Never enumerate or read the whole apps/web tree. Expand scope only when a
+  definition, reference, public export, test, or architecture record requires it.
+- Establish this chain before recommending a change:
+  entry point -> consumer -> symbol definition -> package public API/owner ->
+  dynamic/external entry-point check.
+- High confidence requires definitions, relevant references, owner evidence,
+  and no unresolved dynamic consumer; medium is report-only; low is defer.
+- Prefer an existing public package API. If none exists, report "no safe API"
+  and defer; do not design a new facade or move code speculatively.
+- Stop a batch once its evidence is sufficient; do not scan for candidates just
+  to increase the report count.
+
 Scope discovery to apps/web/src/shared, apps/web/src/app, apps/web/src/modules,
 and only the relevant existing packages/<owner> files. Start with bounded
 native search, then immediately batch Serena symbols, definitions, references,
@@ -49,6 +63,10 @@ owner and existing public API (if any), definition and reference summary,
 entry point/call chain, production LOC, evidence, risk, and recommended next
 action. Explicitly report keep/defer reasons. End with the Serena index result,
 scanned capabilities, candidate counts, and validation or tool limitations.
+
+Keep the final report bounded: no complete reference dumps, unexamined file
+lists, or repeated source excerpts. Report only the highest-value candidates,
+deferred risks, and the next bounded scope.
 """
 
 model_reasoning_effort = "high"
