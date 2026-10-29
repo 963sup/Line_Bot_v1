@@ -111,7 +111,11 @@ test("Contract persists Content-based revisions, replay and established active l
   );
   const source = await seedContentPlan(db);
   let clock = 100;
-  const contracts = createPostgresContracts({ db, now: () => clock++ });
+  const contracts = createPostgresContracts({
+    db,
+    contentReader: createPostgresContentPlanReferenceReader,
+    now: () => clock++,
+  });
   const persistence = new PostgresContracts(createPostgresContentPlanReferenceReader, db);
   const contractId = randomUUID();
   const lineId = randomUUID();
@@ -339,7 +343,11 @@ test("independent PostgreSQL sessions serialize Contract replay and competing ac
     "SELECT * FROM app_private.provision_repository('repo','owner','owner','USER','Contract','private')",
   );
   const source = await seedContentPlan(db);
-  const contracts = createPostgresContracts({ db, now: () => 1 });
+  const contracts = createPostgresContracts({
+    db,
+    contentReader: createPostgresContentPlanReferenceReader,
+    now: () => 1,
+  });
   const command = {
     action: "create",
     repositoryId: "repo",

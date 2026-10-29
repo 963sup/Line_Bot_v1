@@ -35,6 +35,13 @@ export default {
   forbidden: [
     ...topologyDependencyRules(),
     {
+      name: "contract-and-wbs-do-not-compose-content-internally",
+      severity: "error",
+      comment: "Contract and WBS read Content through narrow ports wired in the application host",
+      from: { path: "^packages/(contract|wbs)/src/" },
+      to: { path: "^packages/content/src/composition/bootstrap/" },
+    },
+    {
       name: "features-do-not-import-routes",
       severity: "error",
       from: { path: "^apps/[^/]+/src/(modules|features|components|shared)/" },
