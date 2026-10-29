@@ -38,3 +38,4 @@ service-account*.json
 # Repomix outputs are derived local artifacts; regenerate from source when needed.
 repomix-*.xml
 repomix-output.xml
+.repomix/

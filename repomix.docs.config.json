@@ -1,6 +1,6 @@
 {
   "$schema": "https://repomix.com/config-schema.json",
   "include": ["docs/**", "**/README.md", "**/ARCHITECTURE.md", "**/SEMANTICS.md", "**/AGENTS.md"],
-  "output": { "filePath": "repomix-docs.xml", "style": "xml" },
-  "ignore": { "customPatterns": ["repomix-*.xml", "node_modules/**", ".cache/**", ".tools/**", ".agents/**", ".codex/**", "architecture/fpt/**", "**/*.lock", "**/*.{png,jpg,jpeg,gif,webp,svg,ico,pdf}"] }
+  "output": { "filePath": ".repomix/02-docs-full.xml", "style": "xml" },
+  "ignore": { "customPatterns": [".repomix/**", "node_modules/**", ".cache/**", ".tools/**", ".agents/**", ".codex/**", "architecture/fpt/**", "**/*.lock", "**/*.{png,jpg,jpeg,gif,webp,svg,ico,pdf}"] }
 }
