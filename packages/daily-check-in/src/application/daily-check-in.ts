@@ -5,8 +5,6 @@ import {
   parseDailyCheckInDay,
 } from "../domain/value-objects/daily-check-in-day.js";
 
-export { DAILY_CHECK_IN_POLICY } from "../domain/policies/reward-policy.js";
-
 export function createDailyCheckIn(deps: DailyCheckInDependencies) {
   return {
     checkIn: async (subject: string, expectedDay: unknown) => {
