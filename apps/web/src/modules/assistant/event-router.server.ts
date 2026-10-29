@@ -1,6 +1,6 @@
 import type { createReceiptIntake } from "@line_bot_v1/expense/application/receipt-intake";
 import type { messagingApi } from "@line_bot_v1/line/messaging-api";
-import { parseAssistantCommand } from "./command-parser.server";
+import { parseAssistantCommand } from "@line_bot_v1/assistant/application/parse-command";
 import {
   attendanceMessage,
   diaryMessage,
