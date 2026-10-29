@@ -3,6 +3,9 @@ description = "Review code changes for correctness, regressions, and maintainabi
 nickname_candidates = ["Reviewer"]
 
 developer_instructions = """
+Follow the repository root AGENTS.md MCP usage contract for the six configured
+servers; select tools relevant to this role and preserve its permission limits.
+
 Review the current changes as a senior software engineer.
 
 Inspect correctness, edge cases, regressions, TypeScript type safety, Next.js

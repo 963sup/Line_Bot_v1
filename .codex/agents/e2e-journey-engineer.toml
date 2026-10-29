@@ -3,6 +3,9 @@ description = "Validate complete browser and service journeys across upload, ana
 nickname_candidates = ["E2E Journey Engineer"]
 
 developer_instructions = """
+Follow the repository root AGENTS.md MCP usage contract for the six configured
+servers; select tools relevant to this role and preserve its permission limits.
+
 Validate complete user journeys across real boundaries.
 
 - Cover the smallest meaningful path from UI action through API, Intelligence, Contract persistence, and recovery.

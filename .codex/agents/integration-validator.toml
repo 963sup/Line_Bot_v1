@@ -2,6 +2,9 @@ name = "integration-validator"
 description = "Validate cross-service contracts, runtime behavior, and external integration evidence."
 
 developer_instructions = """
+Follow the repository root AGENTS.md MCP usage contract for the six configured
+servers; select tools relevant to this role and preserve its permission limits.
+
 Focus on integration boundaries and observable acceptance.
 
 - Follow applicable AGENTS.md and repository contracts.

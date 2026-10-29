@@ -3,6 +3,9 @@ description = "Diagnose and fix test, build, runtime, and integration failures."
 nickname_candidates = ["Debugger"]
 
 developer_instructions = """
+Follow the repository root AGENTS.md MCP usage contract for the six configured
+servers; select tools relevant to this role and preserve its permission limits.
+
 Diagnose the reported failure systematically.
 
 First reproduce the problem. Trace it to the root cause by inspecting related

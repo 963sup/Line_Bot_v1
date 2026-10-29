@@ -25,23 +25,11 @@
       "skillPath": "allocating-effort/SKILL.md",
       "computedHash": "ae0fb220bcecc473120470d758e1a57029e70c54d447f579d7739dcca0993ac6"
     },
-    "code-review": {
-      "source": "mattpocock/skills",
-      "sourceType": "github",
-      "skillPath": "skills/engineering/code-review/SKILL.md",
-      "computedHash": "57cfd4ceb011f05e58a1a4f4cad3b2e03419d371f8990f4bcb32ff0d435a039f"
-    },
     "code-simplification": {
       "source": "addyosmani/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/code-simplification/SKILL.md",
       "computedHash": "7973e746e8e2ea5004d520da970c15a106824b8d6be1bcff48908aec021f3677"
-    },
-    "codebase-design": {
-      "source": "mattpocock/skills",
-      "sourceType": "github",
-      "skillPath": "skills/engineering/codebase-design/SKILL.md",
-      "computedHash": "b2888e4f4e8c0af3bfd557575a64b905c44e6248c3101d72077816882b3a92b9"
     },
     "create-github-action-workflow-specification": {
       "source": "github/awesome-copilot",
@@ -85,12 +73,6 @@
       "skillPath": "skills/taste-skill/SKILL.md",
       "computedHash": "65049e1890f5fedf8f8e1144848f07bcda788e51c22bac78afbd073aeb486725"
     },
-    "diagnosing-bugs": {
-      "source": "mattpocock/skills",
-      "sourceType": "github",
-      "skillPath": "skills/engineering/diagnosing-bugs/SKILL.md",
-      "computedHash": "ede7254edbd22fcab97a0941511f7d440d8f9a249348fea97c50987ad5501674"
-    },
     "differential-review": {
       "source": "trailofbits/skills",
       "sourceType": "github",
@@ -103,23 +85,11 @@
       "skillPath": "skills/documentation-writer/SKILL.md",
       "computedHash": "ee53d65b163cd7eb953a930c95841cfe398cc2c0bd24c06508bbaa07c432be35"
     },
-    "domain-modeling": {
-      "source": "mattpocock/skills",
-      "sourceType": "github",
-      "skillPath": "skills/engineering/domain-modeling/SKILL.md",
-      "computedHash": "b3eb40152b81f0c98fd2095a023c019452dbdce56f7540cc67fece2972db8369"
-    },
     "env-vars": {
       "source": "vercel/vercel-plugin",
       "sourceType": "github",
       "skillPath": "skills/env-vars/SKILL.md",
       "computedHash": "1151d62bd778290a3d13f28b098558eb7480bc3c2722a7e691e91967a83b0f3f"
-    },
-    "find-skills": {
-      "source": "vercel-labs/skills",
-      "sourceType": "github",
-      "skillPath": "skills/find-skills/SKILL.md",
-      "computedHash": "913b9d37d0d54047dd65222bb8c67b2bf04e3cb87dcad1729068d7a8b2c8c396"
     },
     "first-principles-thinking": {
       "source": "RavenlionX/first-principles-thinking",
@@ -151,12 +121,6 @@
       "skillPath": "framing-decisions/SKILL.md",
       "computedHash": "997b02ec2bd135c4f122c8dbb8d1b6119f7ee73680ab6f89d3e95f4bafedbb1a"
     },
-    "frontend-design": {
-      "source": "anthropics/skills",
-      "sourceType": "github",
-      "skillPath": "skills/frontend-design/SKILL.md",
-      "computedHash": "89496d5dd00f4810205f351759594fc2742bf8eea85a2f2b2d1de59f4bd91576"
-    },
     "github-actions": {
       "source": "callstackincubator/agent-skills",
       "sourceType": "github",
@@ -174,12 +138,6 @@
       "sourceType": "github",
       "skillPath": "skills/github-issues/SKILL.md",
       "computedHash": "7c576643e9d3c622f18526a5554e8533410049dfc77e9bb10328081c4ea53d8c"
-    },
-    "improve-codebase-architecture": {
-      "source": "mattpocock/skills",
-      "sourceType": "github",
-      "skillPath": "skills/engineering/improve-codebase-architecture/SKILL.md",
-      "computedHash": "ac2c94885f34ff8492dc12aa4543182f661f32ea1722b8d6b6c2c7045af33ae3"
     },
     "learning-from-outcomes": {
       "source": "romainsimon/skills-for-decision-making",
@@ -204,12 +162,6 @@
       "sourceType": "github",
       "skillPath": "skills/line-mini-app/SKILL.md",
       "computedHash": "1d617def23a5a0eebf394cda3ec9b901e8170193686f0c6157c74ac1490d9402"
-    },
-    "mcp-builder": {
-      "source": "anthropics/skills",
-      "sourceType": "github",
-      "skillPath": "skills/mcp-builder/SKILL.md",
-      "computedHash": "826e46adf81e1372282e205c34e1a2ee876e72148007726e4a2512599d2fef7b"
     },
     "mermaid-diagrams": {
       "source": "softaworks/agent-toolkit",
@@ -240,12 +192,6 @@
       "sourceType": "github",
       "skillPath": "plugins/developer-kit-typescript/skills/nextjs-app-router/SKILL.md",
       "computedHash": "dfd2648ebdc5e4ffa0c2691133511c49ebf2ad3c1e771f4e64e3afb6c7a3f060"
-    },
-    "nextjs-app-router-patterns": {
-      "source": "wshobson/agents",
-      "sourceType": "github",
-      "skillPath": "plugins/frontend-mobile-development/skills/nextjs-app-router-patterns/SKILL.md",
-      "computedHash": "b4fea42eecf1f803155ef7fa133d5286ee8f2dbba3e616954e9e43c6f0ffc144"
     },
     "nextjs-best-practices": {
       "source": "sickn33/agentic-awesome-skills",
@@ -337,12 +283,6 @@
       "skillPath": "skills/engineering/resolving-merge-conflicts/SKILL.md",
       "computedHash": "436698459190d8e9f03dc32ada08401b56e352fb6a19bf71a2227fad8b80d98f"
     },
-    "security-and-hardening": {
-      "source": "addyosmani/agent-skills",
-      "sourceType": "github",
-      "skillPath": "skills/security-and-hardening/SKILL.md",
-      "computedHash": "32a1243d6eb45fd342c1f4e9f9ee5f1651a1e9fdccb86dcbbbee5d6f455ed362"
-    },
     "shadcn": {
       "source": "vercel/vercel-plugin",
       "sourceType": "github",
@@ -354,12 +294,6 @@
       "sourceType": "github",
       "skillPath": "plugins/sharp-edges/skills/sharp-edges/SKILL.md",
       "computedHash": "4f66a4f2edbb3e196a2a1a09393320d98eddbf2e6561754d4361a31b6286319f"
-    },
-    "skill-creator": {
-      "source": "anthropics/skills",
-      "sourceType": "github",
-      "skillPath": "skills/skill-creator/SKILL.md",
-      "computedHash": "5ea13a6d9f0d4bb694405d79acd00cadec0d21bb138c4dd10fcf3c500cb835c2"
     },
     "spec-to-code-compliance": {
       "source": "trailofbits/skills",
@@ -391,18 +325,6 @@
       "skillPath": "plugins/supply-chain-risk-auditor/skills/supply-chain-risk-auditor/SKILL.md",
       "computedHash": "e6d82cea342371dfd421021d6ef97e6cf498c12fca0430d75c350f07d7405570"
     },
-    "systematic-debugging": {
-      "source": "obra/superpowers",
-      "sourceType": "github",
-      "skillPath": "skills/systematic-debugging/SKILL.md",
-      "computedHash": "276fb0aadb002ab930cc2a56de89e16995a2e3e70b33587652bf0a5fb123148d"
-    },
-    "tdd": {
-      "source": "mattpocock/skills",
-      "sourceType": "github",
-      "skillPath": "skills/engineering/tdd/SKILL.md",
-      "computedHash": "daf55026f456af104a72fa43247f7bcec89e5127316dc5b1b8d675d6a9d8ce94"
-    },
     "tracking-beliefs": {
       "source": "romainsimon/skills-for-decision-making",
       "sourceType": "github",
@@ -427,35 +349,17 @@
       "skillPath": "valuing-information/SKILL.md",
       "computedHash": "edff62f031bb7b4b7965c4efb0293b09cc9798b81175a10b4d47b10285d42452"
     },
-    "vercel-cli-with-tokens": {
-      "source": "vercel-labs/agent-skills",
-      "sourceType": "github",
-      "skillPath": "skills/vercel-cli-with-tokens/SKILL.md",
-      "computedHash": "a2f596ac516fe8986386f9562f4c94604af9fb6a0fc417d263cbe6dc05117b72"
-    },
     "vercel-composition-patterns": {
       "source": "vercel-labs/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/composition-patterns/SKILL.md",
       "computedHash": "f98931159fa9c7fed043bcd18a891a46dcf89ababa38df13a4c5b7b30dc0ce07"
     },
-    "vercel-optimize": {
-      "source": "vercel-labs/agent-skills",
-      "sourceType": "github",
-      "skillPath": "skills/vercel-optimize/SKILL.md",
-      "computedHash": "9d4ace02972b9b1c462f097c7322eb32c9f04bba6f2fb5cf482086d402eeec33"
-    },
     "vercel-react-best-practices": {
       "source": "vercel-labs/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/react-best-practices/SKILL.md",
       "computedHash": "3219a1944e404ffc14d1d9d6aef6dd2e3855b81387ee0a044ccbfe14d34c2357"
-    },
-    "vercel-react-native-skills": {
-      "source": "vercel-labs/agent-skills",
-      "sourceType": "github",
-      "skillPath": "skills/react-native-skills/SKILL.md",
-      "computedHash": "2e9088a7333666d8c2833b8ff58bd51b955501c42b4c7244f72b4cbf22dafcc4"
     },
     "vercel-react-view-transitions": {
       "source": "vercel-labs/agent-skills",
