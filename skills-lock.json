@@ -25,12 +25,6 @@
       "skillPath": "allocating-effort/SKILL.md",
       "computedHash": "ae0fb220bcecc473120470d758e1a57029e70c54d447f579d7739dcca0993ac6"
     },
-    "code-simplification": {
-      "source": "addyosmani/agent-skills",
-      "sourceType": "github",
-      "skillPath": "skills/code-simplification/SKILL.md",
-      "computedHash": "7973e746e8e2ea5004d520da970c15a106824b8d6be1bcff48908aec021f3677"
-    },
     "create-github-action-workflow-specification": {
       "source": "github/awesome-copilot",
       "sourceType": "github",
@@ -54,12 +48,6 @@
       "sourceType": "github",
       "skillPath": "skills/ddd-best-practices/SKILL.md",
       "computedHash": "0f43da09b4fc6e3336452ad9181af5ff232b6c08d3b27ea7f7003c5a2345b6ac"
-    },
-    "deploy-to-vercel": {
-      "source": "vercel-labs/agent-skills",
-      "sourceType": "github",
-      "skillPath": "skills/deploy-to-vercel/SKILL.md",
-      "computedHash": "d2b5bcc7c09fdb649129ffc7dd7b647ec1b155736974b974292675afd588cb39"
     },
     "deployments-cicd": {
       "source": "vercel/vercel-plugin",
@@ -307,12 +295,6 @@
       "skillPath": "stress-testing-plans/SKILL.md",
       "computedHash": "1df7a7f1d3f9515908a4b99633783ac96b444f3521ac243a78a631c7708f9d1e"
     },
-    "supabase": {
-      "source": "supabase/agent-skills",
-      "sourceType": "github",
-      "skillPath": "skills/supabase/SKILL.md",
-      "computedHash": "211141fd078b4b3645803868528d54221bc7755d24d5c8af45a366785c151dba"
-    },
     "supabase-postgres-best-practices": {
       "source": "supabase/agent-skills",
       "sourceType": "github",
@@ -349,23 +331,11 @@
       "skillPath": "valuing-information/SKILL.md",
       "computedHash": "edff62f031bb7b4b7965c4efb0293b09cc9798b81175a10b4d47b10285d42452"
     },
-    "vercel-composition-patterns": {
-      "source": "vercel-labs/agent-skills",
-      "sourceType": "github",
-      "skillPath": "skills/composition-patterns/SKILL.md",
-      "computedHash": "f98931159fa9c7fed043bcd18a891a46dcf89ababa38df13a4c5b7b30dc0ce07"
-    },
     "vercel-react-best-practices": {
       "source": "vercel-labs/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/react-best-practices/SKILL.md",
       "computedHash": "3219a1944e404ffc14d1d9d6aef6dd2e3855b81387ee0a044ccbfe14d34c2357"
-    },
-    "vercel-react-view-transitions": {
-      "source": "vercel-labs/agent-skills",
-      "sourceType": "github",
-      "skillPath": "skills/react-view-transitions/SKILL.md",
-      "computedHash": "73fddafed488c308ee0799178432801fe10aa338451948ea05f4200541053040"
     },
     "verification": {
       "source": "vercel/vercel-plugin",

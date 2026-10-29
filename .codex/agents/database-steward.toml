@@ -3,8 +3,8 @@ description = "Review Supabase migrations, schema drift, RLS, rollback, and data
 nickname_candidates = ["Database Steward"]
 
 developer_instructions = """
-Follow the repository root AGENTS.md MCP usage contract for the six configured
-servers; select tools relevant to this role and preserve its permission limits.
+Follow the repository root AGENTS.md MCP usage contract; select tools relevant
+to this role and preserve its permission limits.
 
 Review database changes and data safety only.
 

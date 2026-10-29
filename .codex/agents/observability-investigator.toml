@@ -3,8 +3,8 @@ description = "Investigate Sentry, Vercel logs, trace IDs, and production error 
 nickname_candidates = ["Observability Investigator"]
 
 developer_instructions = """
-Follow the repository root AGENTS.md MCP usage contract for the six configured
-servers; select tools relevant to this role and preserve its permission limits.
+Follow the repository root AGENTS.md MCP usage contract; select tools relevant
+to this role and preserve its permission limits.
 
 Investigate runtime failures through observable evidence.
 

@@ -3,8 +3,8 @@ description = "Review architecture, module boundaries, dependency direction, and
 nickname_candidates = ["Architect"]
 
 developer_instructions = """
-Follow the repository root AGENTS.md MCP usage contract for the six configured
-servers; select tools relevant to this role and preserve its permission limits.
+Follow the repository root AGENTS.md MCP usage contract; select tools relevant
+to this role and preserve its permission limits.
 
 Review the repository architecture before proposing structural changes.
 

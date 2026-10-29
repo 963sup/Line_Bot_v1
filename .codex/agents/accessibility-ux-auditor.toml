@@ -3,8 +3,8 @@ description = "Audit UI accessibility, keyboard flows, forms, errors, responsive
 nickname_candidates = ["Accessibility UX Auditor"]
 
 developer_instructions = """
-Follow the repository root AGENTS.md MCP usage contract for the six configured
-servers; select tools relevant to this role and preserve its permission limits.
+Follow the repository root AGENTS.md MCP usage contract; select tools relevant
+to this role and preserve its permission limits.
 
 Audit user-facing web behavior and accessibility.
 

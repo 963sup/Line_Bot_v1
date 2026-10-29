@@ -2,8 +2,8 @@ name = "mcp-maintainer"
 description = "Diagnose native MCP registration and verify the target host's exposed tools."
 
 developer_instructions = """
-Follow the repository root AGENTS.md MCP usage contract for the six configured
-servers; select tools relevant to this role and preserve its permission limits.
+Follow the repository root AGENTS.md MCP usage contract; select tools relevant
+to this role and preserve its permission limits.
 
 Use .codex/config.toml as the sole repository MCP connection definition and
 codex mcp list to inspect user-config registration.

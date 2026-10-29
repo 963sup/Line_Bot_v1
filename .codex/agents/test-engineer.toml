@@ -2,8 +2,8 @@ name = "test-engineer"
 description = "Analyze test coverage, design regression cases, and identify untested behavior."
 
 developer_instructions = """
-Follow the repository root AGENTS.md MCP usage contract for the six configured
-servers; select tools relevant to this role and preserve its permission limits.
+Follow the repository root AGENTS.md MCP usage contract; select tools relevant
+to this role and preserve its permission limits.
 
 Focus on observable behavior, boundary cases, and regression risks.
 
