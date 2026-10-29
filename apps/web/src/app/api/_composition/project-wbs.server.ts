@@ -1,3 +1,4 @@
+import { createPostgresContentWbsExpansionReader } from "@line_bot_v1/content/composition/bootstrap/wbs-expansion";
 import { createProjectWbs } from "@line_bot_v1/wbs/application/use-cases/project-content";
 import { createProjectWbsGovernance } from "@line_bot_v1/wbs/application/use-cases/project-governance";
 import { createPostgresProjectWbsStore } from "@line_bot_v1/wbs/composition/bootstrap/project-content";
@@ -7,7 +8,10 @@ import { activeLineUser } from "./account.server";
 let store: ReturnType<typeof createPostgresProjectWbsStore> | undefined;
 export const projectWbs = createProjectWbs({
   activeUser: activeLineUser,
-  store: () => (store ??= createPostgresProjectWbsStore()),
+  store: () =>
+    (store ??= createPostgresProjectWbsStore({
+      contentReader: createPostgresContentWbsExpansionReader,
+    })),
   now: Date.now,
 });
 
