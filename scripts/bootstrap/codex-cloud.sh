@@ -247,14 +247,14 @@ codex mcp add \
   --url https://api.githubcopilot.com/mcp/ \
   --bearer-token-env-var GITHUB_MCP_TOKEN
 
-# MCP subprocess 使用相同的 Serena_HOME。
+# MCP subprocess 使用與 .codex/config.toml 相同的固定版本 uv 啟動方式。
 codex mcp add \
   serena \
   -- env \
   "SERENA_HOME=$SERENA_HOME" \
-  "$SERENA_EXECUTABLE" \
+  uv tool run --from serena-agent==2.1.0 serena \
   start-mcp-server \
-  --project /workspace/Line_Bot_v1 \
+  --project-from-cwd \
   --context=codex \
   --agent-interface=REPL \
   --open-web-dashboard=false
