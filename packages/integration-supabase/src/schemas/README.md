@@ -65,7 +65,7 @@ Cross-owner mechanism 只允許：
 | DDL / schema design semantics | [Schema model](../../../../docs/reference/data/schema.md) |
 | Cross-owner Data Boundary | [Data boundary](../../../../docs/reference/data/boundaries.md) |
 | Owner business semantics | [Domain owners](../../../../docs/owners/README.md) |
-| Scoped number/name authority and cutover | [Numbering](../../../../docs/owners/numbering.md) · [Namespace](../../../../docs/owners/namespace.md) |
+| Scoped number/name authority and cutover | [Numbering](../../../../docs/reference/domains/numbering.md) · [Namespace](../../../../docs/reference/domains/namespace.md) |
 | Remote Supabase operation | [Canonical Supabase rules](../README.md#canonical-supabase-rules) |
 | Local schema change constraints | [AGENTS](AGENTS.md) |
 

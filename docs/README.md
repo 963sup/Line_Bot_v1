@@ -1,6 +1,6 @@
 # Knowledge task router
 
-本頁是文件唯一入口與漸進載入規則；不複製 source、schema、tests 或 owner contract。依 [Effective context contract](../AGENTS.md#effective-context-contract) 先載入最小任務文件，再按證據需要展開。
+本頁是文件入口與漸進載入規則；不複製 source、schema、tests 或 owner contract。依 [Effective context contract](../AGENTS.md#effective-context-contract) 先載入相關入口，再按證據需要展開。入口與目錄可隨資訊架構重整而遷移。
 
 | Task | First load | Add only when needed |
 | --- | --- | --- |
@@ -20,7 +20,7 @@
 task → task guide → affected owner → one relevant rule/reference → exact source/test/schema
 ```
 
-不要預載 `docs/reference/`、整個 package 或整個 Repomix output。文件只提供路由與跨 boundary 語意；實作問題以 current source、tests、exports、schema 與 provider/CI evidence 驗證。
+不要預載整個 `docs/`、package 或 Repomix output。文件只提供路由與跨 boundary 語意；實作問題以 current source、tests、exports、schema 與 provider/CI evidence 驗證。文件合併後以章節路由取代舊檔案，不為保留舊連結而保留冗餘 Markdown。
 
 Quick routing: [owners](owners/README.md) · [system facts](facts/system.md) · [sources of truth](facts/sources-of-truth.md) · [glossary](facts/glossary.md) · [reference](reference/README.md).
 
@@ -28,4 +28,4 @@ Do not preload `reference/`. Machine current facts remain authoritative in `arch
 
 ## Canonical ownership rule
 
-`docs/` is a router and cross-system knowledge layer. Provider-specific content belongs to the owning integration package; business rules belong to the owner package; `docs/reference` keeps only cross-package semantics and indexes. Use the package README and nearest `AGENTS.md` as the first implementation source, then follow a linked reference only when the owner contract requires it.
+`docs/` is a router and cross-system knowledge layer. Provider-specific content belongs to the owning integration package; business rules belong to the owner package; documentation may combine related ownership, architecture, runtime, persistence, contract, and acceptance sections when that lowers maintenance cost without losing authority. Use the package README and nearest `AGENTS.md` as the first implementation source, then follow the relevant section or source reference.

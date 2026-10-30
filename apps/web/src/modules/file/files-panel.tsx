@@ -1,5 +1,11 @@
 "use client";
 
+import {
+  type FileInfo,
+  type PendingUpload,
+  parseFile,
+  parsePendingPage,
+} from "@line_bot_v1/file/contracts/parse-files";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
@@ -11,11 +17,7 @@ import CommercialIntakePanel from "./commercial-intake-panel";
 import { createFileRequests } from "./file-requests";
 import {
   errorMessage,
-  type FileInfo,
   type Pending,
-  type PendingUpload,
-  parseFile,
-  parsePendingPage,
   parseView,
   record,
   StaleRequest,
@@ -187,8 +189,7 @@ export default function FilesPanel({
         },
       );
       if (ticket !== epoch.current) return;
-      if (response.requestId !== next.command.requestId)
-        throw new Error(JSON.stringify(response));
+      if (response.requestId !== next.command.requestId) throw new Error(JSON.stringify(response));
       setPending(null);
       setSourceFile(null);
       if (fileInput.current) fileInput.current.value = "";

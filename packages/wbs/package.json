@@ -167,6 +167,26 @@
     "./composition/bootstrap/scope-boundary": {
       "types": "./dist/composition/bootstrap/scope-boundary.d.ts",
       "default": "./dist/composition/bootstrap/scope-boundary.js"
+    },
+    "./contracts/parse-content-response": {
+      "types": "./dist/contracts/parse-content-response.d.ts",
+      "default": "./dist/contracts/parse-content-response.js"
+    },
+    "./contracts/parse-project-content-response": {
+      "types": "./dist/contracts/parse-project-content-response.d.ts",
+      "default": "./dist/contracts/parse-project-content-response.js"
+    },
+    "./contracts/parse-project-governance-response": {
+      "types": "./dist/contracts/parse-project-governance-response.d.ts",
+      "default": "./dist/contracts/parse-project-governance-response.js"
+    },
+    "./contracts/parse-governance-response": {
+      "types": "./dist/contracts/parse-governance-response.d.ts",
+      "default": "./dist/contracts/parse-governance-response.js"
+    },
+    "./contracts/parse-transfer-response": {
+      "types": "./dist/contracts/parse-transfer-response.d.ts",
+      "default": "./dist/contracts/parse-transfer-response.js"
     }
   },
   "files": [

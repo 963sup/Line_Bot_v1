@@ -1,13 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { liffClient } from "../../shared/browser/liff-client";
 import {
-  errorMessage,
-  isRecord,
   isRepositorySummary,
   isStarredRepository,
-} from "./response-validation";
+} from "@line_bot_v1/repository/contracts/parse-collection-response";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { liffClient } from "../../shared/browser/liff-client";
+import { errorMessage, isRecord } from "./response-validation";
 
 function useCollection<T>(
   liffId: string,

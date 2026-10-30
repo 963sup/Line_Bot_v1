@@ -1,0 +1,21 @@
+{
+  "$schema": "https://repomix.com/config-schema.json",
+  "include": ["architecture/**/*.json", "**/package.json", "*.json", "*.jsonc"],
+  "output": {
+    "filePath": ".repomix/04-json-context.json",
+    "style": "json"
+  },
+  "ignore": {
+    "customPatterns": [
+      ".repomix/**",
+      ".git/**",
+      "node_modules/**",
+      ".cache/**",
+      ".tools/**",
+      ".agents/**",
+      ".codex/**",
+      "architecture/fpt/**",
+      "**/*.{env,sqlite,db,pem,key}"
+    ]
+  }
+}

@@ -10,7 +10,7 @@
 | Native deployment configuration | [apps/web/vercel.json](../../../apps/web/vercel.json) |
 | Framework / build configuration | [next.config.ts](../../../apps/web/next.config.ts)、[package.json](../../../apps/web/package.json) |
 | Deployment upload boundary | [.vercelignore](../../../.vercelignore) |
-| Platform / production readback | 本文件的 [Canonical provider boundary](#canonical-provider-boundary)；跨 package 分類見 [Vercel platform](../../../docs/reference/platform/vercel.md) |
+| Platform / production readback | 本文件的 [Canonical provider boundary](#canonical-provider-boundary)；跨 package 分類見 [Vercel platform](../../../docs/reference/platform/README.md#vercel) |
 | Publication / recovery | [Release](../../../docs/reference/operations/release.md)、[Recovery](../../../docs/reference/operations/recovery.md) |
 | Application configuration names | [.env.example](../../../.env.example)；不在本目錄保存值 |
 

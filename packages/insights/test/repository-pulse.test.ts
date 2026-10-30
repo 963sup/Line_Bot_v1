@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createRepositoryPulse } from "../src/application/use-cases/repository-pulse.js";
+import { parseRepositoryPulse } from "../src/contracts/dto/repository-pulse.js";
 
 const issues = {
   created: 1,
@@ -65,4 +66,20 @@ test("an unavailable source is not zero; authorization and not-found failures st
       }).read("owner", { repositoryId: "repo", from: 0, to: 100 }),
     );
   }
+});
+
+test("Pulse response parser preserves unavailable evidence and rejects fabricated metrics", () => {
+  const unavailable = {
+    repositoryId: "repo",
+    period: { from: 1, to: 2, timeZone: "Asia/Taipei" },
+    observedAt: 2,
+    issues: { status: "unavailable", value: null },
+  };
+  assert.deepEqual(parseRepositoryPulse(unavailable), unavailable);
+  assert.throws(() =>
+    parseRepositoryPulse({
+      ...unavailable,
+      issues: { status: "available", value: { created: 0 } },
+    }),
+  );
 });

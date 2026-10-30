@@ -1,24 +1,11 @@
-import type { RepositoryStarListCreateCommand } from "@line_bot_v1/repository/contracts/repositories/star-lists";
+import {
+  isRepositoryStarListCommandBody,
+  isRepositoryStarListCreateCommand,
+  type RepositoryStarListCommandBody,
+  type RepositoryStarListCreateCommand,
+} from "@line_bot_v1/repository/contracts/repositories/star-lists";
 
-export type RepositoryStarListCommandBody =
-  | Readonly<{
-      requestId: string;
-      action: "update";
-      expectedVersion: number;
-      name: string;
-      description: string;
-    }>
-  | Readonly<{
-      requestId: string;
-      action: "publish" | "unpublish" | "delete";
-      expectedVersion: number;
-    }>
-  | Readonly<{
-      requestId: string;
-      action: "add" | "remove";
-      expectedVersion: number;
-      repositoryId: string;
-    }>;
+export type { RepositoryStarListCommandBody } from "@line_bot_v1/repository/contracts/repositories/star-lists";
 
 const createPrefix = "repository-star-list-create-pending:v2:";
 const commandPrefix = "repository-star-list-command-pending:v2:";
@@ -36,44 +23,6 @@ function commandKey(subject: string, listId: string) {
   return `${commandPrefix}${scopedSubject(subject)}:${encodeURIComponent(listId)}`;
 }
 
-function validCreate(value: unknown): value is RepositoryStarListCreateCommand {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
-  return (
-    "requestId" in value &&
-    typeof value.requestId === "string" &&
-    "name" in value &&
-    typeof value.name === "string" &&
-    "description" in value &&
-    typeof value.description === "string"
-  );
-}
-
-function validCommand(value: unknown): value is RepositoryStarListCommandBody {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
-  if (
-    !("requestId" in value) ||
-    typeof value.requestId !== "string" ||
-    !("expectedVersion" in value) ||
-    !Number.isSafeInteger(value.expectedVersion) ||
-    Number(value.expectedVersion) < 1 ||
-    !("action" in value)
-  ) {
-    return false;
-  }
-  if (value.action === "update") {
-    return (
-      "name" in value &&
-      typeof value.name === "string" &&
-      "description" in value &&
-      typeof value.description === "string"
-    );
-  }
-  if (value.action === "add" || value.action === "remove") {
-    return "repositoryId" in value && typeof value.repositoryId === "string";
-  }
-  return value.action === "publish" || value.action === "unpublish" || value.action === "delete";
-}
-
 export function readPendingRepositoryStarListCreate(
   storage: Storage,
   subject: string,
@@ -83,7 +32,7 @@ export function readPendingRepositoryStarListCreate(
     const raw = storage.getItem(key);
     if (!raw) return null;
     const value: unknown = JSON.parse(raw);
-    if (!validCreate(value)) {
+    if (!isRepositoryStarListCreateCommand(value)) {
       storage.removeItem(key);
       return null;
     }
@@ -123,7 +72,7 @@ export function readPendingRepositoryStarListCommand(
     const raw = storage.getItem(key);
     if (!raw) return null;
     const value: unknown = JSON.parse(raw);
-    if (!validCommand(value)) {
+    if (!isRepositoryStarListCommandBody(value)) {
       storage.removeItem(key);
       return null;
     }

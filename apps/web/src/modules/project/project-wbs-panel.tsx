@@ -6,6 +6,11 @@ import type {
   ProjectWbsHistory,
   ProjectWbsView,
 } from "@line_bot_v1/wbs/contracts/dto/project-content";
+import {
+  projectWbsHistory,
+  projectWbsReceipt,
+  projectWbsView,
+} from "@line_bot_v1/wbs/contracts/parse-project-content-response";
 import type { WbsContentImportCommand, WbsEdit, WbsNode } from "@line_bot_v1/wbs/domain/document";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
@@ -13,7 +18,6 @@ import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import ProjectWbsGovernancePanel from "./project-wbs-governance-panel";
 import ProjectWbsMetrics from "./project-wbs-metrics";
 import styles from "./project-wbs-panel.module.css";
-import { projectWbsHistory, projectWbsReceipt, projectWbsView } from "./project-wbs-response";
 
 type Pending = { actor: string; command: ProjectWbsCommand };
 type NewWbsCommand =

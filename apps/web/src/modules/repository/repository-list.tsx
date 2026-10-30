@@ -1,6 +1,7 @@
 "use client";
 
 import { canIssueRepositoryOperation } from "@line_bot_v1/issue/domain";
+import { hasRepositoryPermission } from "@line_bot_v1/repository/domain/repository/value-objects/repository-capability";
 import Link from "next/link";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import styles from "./repository-list.module.css";
@@ -58,7 +59,7 @@ export default function RepositoryList({
     intent === "create-issue"
       ? items?.filter((item) => canIssueRepositoryOperation(item.permissions, "open"))
       : intent === "manage-access" || intent === "manage-settings"
-        ? items?.filter((item) => item.permissions.includes("admin"))
+        ? items?.filter((item) => hasRepositoryPermission(item.permissions, "admin"))
         : items;
 
   const targetPath = (ownerLogin: string, name: string) => {

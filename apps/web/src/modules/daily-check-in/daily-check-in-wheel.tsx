@@ -1,8 +1,9 @@
 "use client";
+import type { DailyCheckInClaim } from "@line_bot_v1/daily-check-in/contracts/parse-claim";
 import type { CSSProperties, KeyboardEvent } from "react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import styles from "./daily-check-in-wheel.module.css";
-import type { CheckInOutcome, CoinView, DailyCheckInClaim } from "./use-daily-check-in";
+import type { CheckInOutcome, CoinView } from "./use-daily-check-in";
 
 type WheelPhase =
   | "idle"

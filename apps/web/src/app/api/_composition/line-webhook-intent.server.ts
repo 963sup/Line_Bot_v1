@@ -1,19 +1,9 @@
+import type { SelectedWebhookEvent } from "@line_bot_v1/assistant/application/webhook-router";
 import {
   type LineWebhookEvent,
   parseLineMessage,
   parseLineSource,
 } from "@line_bot_v1/line/messaging-api";
-import type { AssistantEvent } from "../../../modules/assistant/event-router.server";
-
-export type SelectedLineWebhookEvent = {
-  id: string;
-  token: string;
-  userId: string;
-  ai: boolean;
-  agentInput?: string;
-  assistant?: AssistantEvent;
-  attendanceMenu?: boolean;
-};
 
 export function classifyLineWebhookEvents(
   events: LineWebhookEvent[],
@@ -25,11 +15,11 @@ export function classifyLineWebhookEvents(
     replyAssistant: boolean;
   },
 ): {
-  selected: SelectedLineWebhookEvent[];
+  selected: SelectedWebhookEvent[];
   senderMismatches: number;
   badRequest: boolean;
 } {
-  const selected: SelectedLineWebhookEvent[] = [];
+  const selected: SelectedWebhookEvent[] = [];
   let senderMismatches = 0;
 
   for (const event of events) {

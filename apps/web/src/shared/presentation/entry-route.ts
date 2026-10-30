@@ -1,4 +1,5 @@
 import { isAttendanceOperation } from "@line_bot_v1/attendance/domain/value-objects/attendance-action";
+import { parseLineMiniAppUrl } from "@line_bot_v1/line/mini-app";
 
 export const ENTRY_INTENT_KEYS = [
   "planned",
@@ -154,18 +155,7 @@ export function miniAppEntryUrl(
   intent: Exclude<EntryRoute, "pending" | "invalid">,
   value = "1",
 ) {
-  const url = new URL(miniAppUrl);
-  if (
-    url.protocol !== "https:" ||
-    url.hostname !== "miniapp.line.me" ||
-    url.port ||
-    url.username ||
-    url.password ||
-    url.search ||
-    url.hash ||
-    !/^\/\d+-[A-Za-z0-9_-]+$/.test(url.pathname)
-  )
-    throw new Error("Invalid LINE MINI App URL");
+  const url = new URL(parseLineMiniAppUrl(miniAppUrl).url);
   if (intent !== "home") url.searchParams.set(intent, value);
   return url.href;
 }

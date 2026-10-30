@@ -1,6 +1,6 @@
 # Auth 開發規格
 
-身分與權限權威見 [Account](../../../../docs/owners/account.md)、[Identity & Access](../../../../docs/owners/identity-access.md) 與 [External identity mapping](../../../../docs/reference/data/identity-mapping.md)。本目錄預置 provider integration 的驗證入口；不建立第二套 session 或 Account-owned external identity mapping。Current human identity 是 User；舊 membership route 名稱不建立 Member domain。
+身分與權限權威見 [Account](../../../../docs/reference/domains/account.md)、[Identity & Access](../../../../docs/owners/identity-access.md) 與 [External identity mapping](../../../../docs/reference/data/identity-mapping.md)。本目錄預置 provider integration 的驗證入口；不建立第二套 session 或 Account-owned external identity mapping。Current human identity 是 User；舊 membership route 名稱不建立 Member domain。
 
 ## Identity flow
 

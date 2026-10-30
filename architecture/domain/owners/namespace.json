@@ -4,7 +4,7 @@
     "id": "namespace",
     "kind": "business-owner",
     "lifecycle": "current",
-    "doc": "docs/owners/namespace.md"
+    "doc": "docs/reference/domains/namespace.md"
   },
   "boundedContexts": [],
   "concepts": [

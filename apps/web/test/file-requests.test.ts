@@ -90,10 +90,7 @@ test("unknown-result and non-JSON timeout responses preserve raw errors", async 
       error.message.includes("[object Object]"),
   );
   t.mock.method(globalThis, "fetch", async () => new Response("gateway timeout", { status: 504 }));
-  await assert.rejects(
-    requests.document({ operation: "intake" }),
-    /gateway timeout/,
-  );
+  await assert.rejects(requests.document({ operation: "intake" }), /gateway timeout/);
 });
 
 test("a session resolved after invalidation never dispatches a request", async (t) => {

@@ -14,7 +14,7 @@
 
 | Subdomain | Classification | Rationale | Sources |
 | --- | --- | --- | --- |
-| collaboration | core | Repository work definitions and plan revisions, physical shared resources, formal contract commitments and actual Task execution have distinct authority, lifecycle and immutable evidence. Project WBS remains Project-scoped. | [docs/reference/architecture/strategic-design.md](../../docs/reference/architecture/strategic-design.md); [docs/owners/repository.md](../../docs/owners/repository.md); [docs/owners/issue.md](../../docs/owners/issue.md); [docs/owners/discussion.md](../../docs/owners/discussion.md); [docs/owners/project.md](../../docs/owners/project.md); [docs/owners/contract.md](../../docs/owners/contract.md); [docs/owners/execution.md](../../docs/owners/execution.md); [docs/owners/content.md](../../docs/owners/content.md) |
+| collaboration | core | Repository work definitions and plan revisions, physical shared resources, formal contract commitments and actual Task execution have distinct authority, lifecycle and immutable evidence. Project WBS remains Project-scoped. | [docs/reference/architecture/strategic-design.md](../../docs/reference/architecture/strategic-design.md); [docs/reference/domains/repository.md](../../docs/reference/domains/repository.md); [docs/owners/issue.md](../../docs/owners/issue.md); [docs/owners/discussion.md](../../docs/owners/discussion.md); [docs/owners/project.md](../../docs/owners/project.md); [docs/owners/contract.md](../../docs/owners/contract.md); [docs/owners/execution.md](../../docs/owners/execution.md); [docs/owners/content.md](../../docs/owners/content.md) |
 
 ## Bounded Context
 

@@ -20,7 +20,7 @@ run((event) => {
         revision: git("rev-parse", "--short", "HEAD"),
         trackedChanges: status ? status.split("\n").length : 0,
         requirementPreflight:
-          "Apply AGENTS.md Primary agent requirement preflight; substantial work uses one complete plan and requirement-architect when available. Continue authorized implementation.",
+          "Before edits, apply AGENTS.md Primary agent requirement preflight for every new request or scope change. Confirm scope, owners, consumers and acceptance. Continue authorized work without repeated approval at batch boundaries.",
         serena:
           "Reuse successful session capabilities. Follow AGENTS.md Serena context budget; no routine reindex/help/health-check. Read only task-relevant symbols and memories.",
         guidance:

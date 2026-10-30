@@ -1,5 +1,6 @@
 "use client";
 
+import { hasRepositoryPermission } from "@line_bot_v1/repository/domain/repository/value-objects/repository-capability";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
@@ -168,7 +169,11 @@ export default function RepositoryResourcesPanel({
               ? "labels"
               : "milestones"
         }
-        canManage={data?.repository.permissions.includes("admin") ?? false}
+        canManage={
+          data?.repository.permissions
+            ? hasRepositoryPermission(data.repository.permissions, "admin")
+            : false
+        }
       />
       <MiniAppRuntime
         liffId={liffId}

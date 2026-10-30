@@ -14,7 +14,7 @@
 
 | Subdomain | Classification | Rationale | Sources |
 | --- | --- | --- | --- |
-| workforce-operations | supporting | 出勤、人力與支出資料支援企業協作營運；分類不啟用尚未實作的排班、薪資、審批或付款能力。 | [docs/reference/architecture/strategic-design.md](../../docs/reference/architecture/strategic-design.md); [docs/owners/workforce.md](../../docs/owners/workforce.md); [docs/owners/attendance.md](../../docs/owners/attendance.md); [docs/owners/payroll.md](../../docs/owners/payroll.md); [docs/owners/expense.md](../../docs/owners/expense.md) |
+| workforce-operations | supporting | 出勤、人力與支出資料支援企業協作營運；分類不啟用尚未實作的排班、薪資、審批或付款能力。 | [docs/reference/architecture/strategic-design.md](../../docs/reference/architecture/strategic-design.md); [docs/owners/workforce.md](../../docs/owners/workforce.md); [docs/reference/domains/attendance.md](../../docs/reference/domains/attendance.md); [docs/reference/domains/payroll.md](../../docs/reference/domains/payroll.md); [docs/owners/expense.md](../../docs/owners/expense.md) |
 
 ## Bounded Context
 
@@ -28,7 +28,7 @@ References support the existing status; listed tests are evidence locations, not
 
 | Context | Owner contracts | Source | Tests | Rationale |
 | --- | --- | --- | --- | --- |
-| attendance | [docs/owners/attendance.md](../../docs/owners/attendance.md) | [packages/attendance/src/domain/aggregates/attendance-session.ts](../../packages/attendance/src/domain/aggregates/attendance-session.ts) | [packages/attendance/test/attendance.test.ts](../../packages/attendance/test/attendance.test.ts); [packages/attendance/test/repository-attendance.test.ts](../../packages/attendance/test/repository-attendance.test.ts) | 出勤 session、時間與重播規則由 Attendance 擁有；Repository 提供當下存取與打卡點。跨 owner 原子交易不代表合併模型，保留既有 context status。 |
+| attendance | [docs/reference/domains/attendance.md](../../docs/reference/domains/attendance.md) | [packages/attendance/src/domain/aggregates/attendance-session.ts](../../packages/attendance/src/domain/aggregates/attendance-session.ts) | [packages/attendance/test/attendance.test.ts](../../packages/attendance/test/attendance.test.ts); [packages/attendance/test/repository-attendance.test.ts](../../packages/attendance/test/repository-attendance.test.ts) | 出勤 session、時間與重播規則由 Attendance 擁有；Repository 提供當下存取與打卡點。跨 owner 原子交易不代表合併模型，保留既有 context status。 |
 
 ## Ubiquitous Language
 

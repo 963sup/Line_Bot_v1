@@ -32,4 +32,4 @@ Every Production write keeps a current-main check and exact target. Credentials 
 
 Validation, schema convergence, Web deployment, LINE publication and device acceptance are distinct evidence. Artifacts record transient plans/readbacks, never migration or business authority.
 
-Contracts: [Supabase](../platform/supabase.md), [Vercel](../platform/vercel.md), [Rich Menu](../line/rich-menu.md), [Schema](../data/schema.md), [Recovery](recovery.md).
+Contracts: [Supabase](../platform/README.md#supabase), [Vercel](../platform/README.md#vercel), [Rich Menu](../line/rich-menu.md), [Schema](../data/schema.md), [Recovery](recovery.md).

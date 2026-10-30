@@ -40,7 +40,7 @@ Runtime 與 source dependency 先確認真正 owner、consumer need 與 failure 
 
 ## 8. Evidence-based cleanup
 
-Unused code / dependency finding 由 `deadcode` 等工具提供證據，但刪除前仍確認 public consumer、runtime entry、script 與 external use。Formatting、lint、typecheck、test、build 各自只證明自己的範圍。
+Unused code / dependency finding 由 `knip` stage 提供證據，但刪除前仍確認 public consumer、runtime entry、script 與 external use。Formatting、lint、typecheck、test、build 各自只證明自己的範圍。
 
 ## Review questions
 

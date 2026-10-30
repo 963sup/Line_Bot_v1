@@ -1,7 +1,7 @@
 import { RepositoryError } from "@line_bot_v1/repository/contracts/errors/repository-error";
+import type { RepositoryOverview } from "@line_bot_v1/repository/contracts/overview";
 import { jsonResponse } from "../../shared/server/http";
 import { repositoryFailure, repositoryPathSelector } from "./http.server";
-import type { RepositoryOverview } from "./repository-overview";
 
 type Identity = (request: Request) => Promise<string>;
 type ReadRepositoryOverview = (

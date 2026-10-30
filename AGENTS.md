@@ -52,7 +52,7 @@
 ## Source-first documentation contract
 
 - 先確認 Owner、contract、consumers 與 source 結構，再同步文件；architecture 定邊界，source/manifest/schema/tests 證明實際狀態，衝突時找根因。
-- [README 結構導覽](README.md#source-與文件結構) 負責導航。Root AGENTS 擁有共通規則，nested 只補 local constraints；package SEMANTICS 只留公開契約術語與來源，docs/owners 只路由，不複述實作。
+- [README 結構導覽](README.md#source-與文件結構) 負責導航。Root AGENTS 擁有共通規則，nested 只補 local constraints；package SEMANTICS 只留公開契約術語與來源，docs/owners 只路由，不複述實作。Docs may be reorganized.
 - 型別、exports、狀態、依賴、SQL 留在 source；registry 只登錄 ID/路徑/schemaVersion，不維護聚合模型、人工依賴清單、重複 agent prompt 或 Markdown review database。不建空 package/layer/SQL placeholder 或無內容文件。
 - 搬移／刪除同步 registry、consumers、tests、CI、格式範圍及連結，重搜舊路徑。修改 architecture、manifest/exports、文件邊界或其 consumers 執行 `pnpm check:repository`；快速入口不加入編譯、外部服務、FPT 全文或全庫 AST 掃描。
 

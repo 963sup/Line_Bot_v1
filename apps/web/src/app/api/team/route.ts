@@ -3,6 +3,7 @@ import { teamApiError, teamBody, teamQuery } from "../../../modules/team/http.se
 import { jsonResponse } from "../../../shared/server/http";
 import { requestLineIdentity } from "../_composition/request-identity.server";
 import { teamCollaboration } from "../_composition/team.server";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export async function GET(request: Request) {

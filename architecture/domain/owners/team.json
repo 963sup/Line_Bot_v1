@@ -4,7 +4,7 @@
     "id": "team",
     "kind": "business-owner",
     "lifecycle": "current",
-    "doc": "docs/owners/team.md"
+    "doc": "docs/reference/domains/team.md"
   },
   "boundedContexts": [],
   "concepts": [

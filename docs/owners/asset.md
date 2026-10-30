@@ -24,6 +24,6 @@ Only Coin is modeled. The existence of Asset does not pre-create currencies, poi
 
 ## Adjacent owners
 
-- Holding / balance projection: [Wallet](wallet.md)
-- Append-only value history: [Ledger](ledger.md)
+- Holding / balance projection: [Wallet](../reference/domains/wallet.md)
+- Append-only value history: [Ledger](../reference/domains/ledger.md)
 - Data schema: [Core business data](../reference/data/boundaries.md)

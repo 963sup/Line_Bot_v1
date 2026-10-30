@@ -3,7 +3,7 @@
 Routing and module overview for `@line_bot_v1/attendance`.
 
 - Semantic owner: `attendance`
-- Authority document: [`docs/owners/attendance.md`](../../docs/owners/attendance.md)
+- Authority document: [`docs/reference/domains/attendance.md`](../../docs/reference/domains/attendance.md)
 - Machine boundaries: [`architecture/registry.json#modules`](../../architecture/registry.json#modules)
 - Persistence mapping: [`architecture/registry.json#data`](../../architecture/registry.json#data)
 

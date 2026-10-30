@@ -1,5 +1,5 @@
 # Assistant
-Assistant 擁有產品內問答與草稿 orchestration，不擁有其他 module authorization、formal state 或 persistence write。AI provider/quota/SDK 由 [AI platform](../reference/platform/ai.md) 擁有。
+Assistant 擁有產品內問答與草稿 orchestration，不擁有其他 module authorization、formal state 或 persistence write。AI provider/quota/SDK 由 [AI platform](../reference/platform/README.md#ai) 擁有。
 ## Implementation
 `createAnswerAssistantQuestion` 與 `AnswerDependencies` 由 `@line_bot_v1/assistant` owner；Web 只用 public application surface。Horizontal application package 不再擁有 Assistant implementation。
 
@@ -17,6 +17,6 @@ Delivery adapter 先完成來源驗證；任何後續 module command 仍由該 o
 ## No premature agent domain
 目前沒有 global workflow engine/tool registry/agent memory domain/generic approval/autonomous writer 的真實 requirement。只有 owner/authorization/recovery 明確、跨 module workflow 真的存在時才新增。
 
-- [AI platform](../reference/platform/ai.md)
-- [Repository](repository.md)
+- [AI platform](../reference/platform/README.md#ai)
+- [Repository](../reference/domains/repository.md)
 - [Security](../rules/system-invariants.md)

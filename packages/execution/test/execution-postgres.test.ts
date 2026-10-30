@@ -3,9 +3,9 @@ import { randomUUID } from "node:crypto";
 import test from "node:test";
 import { createPostgresContentPlanReferenceReader } from "@line_bot_v1/content/composition/bootstrap/plan-references";
 import { createPostgresContentPlans } from "@line_bot_v1/content/composition/bootstrap/plans";
-import { createPostgresResourceReferenceReader } from "@line_bot_v1/resources/composition/bootstrap/resource-references";
 import { createPostgresContracts } from "@line_bot_v1/contract/composition/bootstrap/contracts";
 import { postgresSessions } from "@line_bot_v1/platform/testing/postgres-sessions";
+import { createPostgresResourceReferenceReader } from "@line_bot_v1/resources/composition/bootstrap/resource-references";
 import { createExecutions } from "../src/application/use-cases/executions.js";
 import { createPostgresExecutionDependencies } from "../src/composition/bootstrap/executions.js";
 

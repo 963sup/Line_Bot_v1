@@ -1,6 +1,7 @@
 import { createRepositoryPulse } from "@line_bot_v1/insights/application/use-cases/repository-pulse";
 import { createPostgresIssueMetrics } from "@line_bot_v1/issue/composition/bootstrap/metrics";
 import { businessDatabase } from "@line_bot_v1/platform/postgres";
+import { hasRepositoryPermission } from "@line_bot_v1/repository/domain/repository/value-objects/repository-capability";
 import { repositoryContentScope } from "@line_bot_v1/repository/postgres/content-scope";
 import { activeLineUser } from "./account.server";
 
@@ -21,6 +22,6 @@ export async function readRepositoryPulse(
   });
   return {
     ...(await pulse.read(actor.id, { repositoryId: scope.repository.id, ...period })),
-    canManageRepository: scope.repository.permissions.includes("admin"),
+    canManageRepository: hasRepositoryPermission(scope.repository.permissions, "admin"),
   };
 }

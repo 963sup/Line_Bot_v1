@@ -1,17 +1,17 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import type { FileInfo, Pending, View } from "./files-projection";
-import { errorMessage, record, StaleRequest } from "./files-projection";
 import {
-  candidateLines,
   type DocumentIntakeCommand,
   type DocumentIntakeReceipt,
   type DocumentIntakeRevision,
   parseDocumentIntakeReceipt,
   parseDocumentIntakeRevision,
-  sourceReviewPages,
-} from "./purchase-order-intake-view";
+} from "@line_bot_v1/contract/contracts/output/parse-document-intake";
+import type { FileInfo } from "@line_bot_v1/file/contracts/parse-files";
+import { useCallback, useState } from "react";
+import type { Pending, View } from "./files-projection";
+import { errorMessage, record, StaleRequest } from "./files-projection";
+import { candidateLines, sourceReviewPages } from "./purchase-order-intake-view";
 
 /** ContractDocument UI lifecycle is separate from File's source and upload ownership. */
 export function usePurchaseOrderIntake({

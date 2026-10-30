@@ -3,6 +3,13 @@ set -euo pipefail
 
 cd /workspace/Line_Bot_v1
 
+# Shared with MCP subprocesses and later interactive shells.
+source "$PWD/scripts/bootstrap/cloud-env.sh"
+mkdir -p "$PNPM_HOME" "$COREPACK_HOME" "$NPM_CONFIG_CACHE" \
+  "$XDG_CACHE_HOME" "$XDG_DATA_HOME" "$XDG_CONFIG_HOME" "$XDG_STATE_HOME" \
+  "$SERENA_HOME" "$UV_CACHE_DIR" "$UV_TOOL_DIR" "$UV_TOOL_BIN_DIR" \
+  "$UV_PYTHON_INSTALL_DIR"
+
 for tool in \
   codex \
   docker \
@@ -22,33 +29,34 @@ done
 
 docker info >/dev/null
 
-if ! command -v uv >/dev/null || ! command -v uvx >/dev/null; then
-  curl -LsSf https://astral.sh/uv/install.sh | sh
+# Docker vfs 的 Supabase 映像準備需要 crane；使用固定版本的官方 binary。
+if ! command -v crane >/dev/null; then
+  CRANE_VERSION="0.20.3"
+  case "$(uname -m)" in
+    x86_64) CRANE_ARCH="x86_64" ;;
+    aarch64 | arm64) CRANE_ARCH="arm64" ;;
+    *) echo "Unsupported crane architecture: $(uname -m)" >&2; exit 1 ;;
+  esac
+  CRANE_ASSET="go-containerregistry_Linux_${CRANE_ARCH}.tar.gz"
+  CRANE_CACHE="$PWD/.cache/crane/$CRANE_VERSION"
+  CRANE_RELEASE="https://github.com/google/go-containerregistry/releases/download/v${CRANE_VERSION}"
+  mkdir -p "$CRANE_CACHE" "$PWD/.tools/codex/bin"
+  curl -fLsS "$CRANE_RELEASE/$CRANE_ASSET" -o "$CRANE_CACHE/$CRANE_ASSET"
+  curl -fLsS "$CRANE_RELEASE/checksums.txt" -o "$CRANE_CACHE/checksums.txt"
+  (
+    cd "$CRANE_CACHE"
+    awk -v asset="$CRANE_ASSET" '$2 == asset { print; found = 1 } END { if (!found) exit 1 }' checksums.txt > crane.sha256
+    sha256sum --check crane.sha256
+  )
+  tar -xzf "$CRANE_CACHE/$CRANE_ASSET" -C "$PWD/.tools/codex/bin" crane
 fi
 
-# 使用 workspace 可寫入的快取路徑，避免 Cloud 的 HOME 唯讀。
-export PNPM_HOME="$PWD/.cache/pnpm-home"
-export NPM_CONFIG_CACHE="$PWD/.cache/npm-cache"
-export XDG_CACHE_HOME="$PWD/.cache/xdg-cache"
-export XDG_DATA_HOME="$PWD/.cache/xdg-data"
-export XDG_CONFIG_HOME="$PWD/.cache/xdg-config"
-export XDG_STATE_HOME="$PWD/.cache/xdg-state"
-export CODEX_HOME="$PWD/.cache/codex"
-export SERENA_HOME="$PWD/.cache/serena-home"
-export HOME="$PWD/.cache/home"
+crane version
 
-mkdir -p \
-  "$PNPM_HOME" \
-  "$NPM_CONFIG_CACHE" \
-  "$XDG_CACHE_HOME" \
-  "$XDG_DATA_HOME" \
-  "$XDG_CONFIG_HOME" \
-  "$XDG_STATE_HOME" \
-  "$CODEX_HOME" \
-  "$SERENA_HOME" \
-  "$HOME"
-
-export PATH="$HOME/.local/bin:$PNPM_HOME:$PWD/.tools/codex/bin:$PWD/node_modules/.bin:$PATH"
+if ! command -v uv >/dev/null || ! command -v uvx >/dev/null; then
+  curl -fLsS https://astral.sh/uv/install.sh -o "$XDG_CACHE_HOME/uv-install.sh"
+  UV_UNMANAGED_INSTALL="$UV_TOOL_BIN_DIR" sh "$XDG_CACHE_HOME/uv-install.sh"
+fi
 
 uv --version
 uvx --version
@@ -57,10 +65,6 @@ uv python install 3.13
 uv tool install --python 3.13 'serena-agent==2.1.0'
 
 SERENA_EXECUTABLE="$(uv tool dir --bin)/serena"
-
-if [[ ! -x "$SERENA_EXECUTABLE" ]]; then
-  SERENA_EXECUTABLE="$PWD/.tools/codex/bin/serena"
-fi
 
 test -x "$SERENA_EXECUTABLE"
 "$SERENA_EXECUTABLE" --version
@@ -83,6 +87,7 @@ if (process.versions.node !== expected) {
 # Cloud already provides pnpm on PATH; enabling Corepack would try to write
 # shims beside the read-only Node installation.
 corepack install
+corepack enable --install-directory "$PNPM_HOME"
 
 command -v pnpm >/dev/null || {
   echo "pnpm is unavailable after Corepack setup"
@@ -90,7 +95,7 @@ command -v pnpm >/dev/null || {
 }
 
 pnpm --version
-pnpm install --frozen-lockfile
+pnpm install --frozen-lockfile --store-dir "$PWD/.cache/pnpm-store"
 
 test -x node_modules/.bin/typescript-language-server
 test -x node_modules/.bin/next-devtools-mcp
@@ -99,18 +104,29 @@ test -x apps/web/node_modules/.bin/shadcn
 
 pnpm exec typescript-language-server --version
 pnpm exec supabase --version
+pnpm exec vercel --version
 
-# 使用 Repomix 產出三份固定用途的分析 context。
+# 使用 Repomix 產出固定用途的分析 context。
 npx --yes repomix --version
 mkdir -p .repomix
 npx --yes repomix --config repomix.overview.config.json
 npx --yes repomix --config repomix.docs.config.json
 npx --yes repomix --config repomix.source.config.json
+npx --yes repomix --config repomix.json.config.json
+npx --yes repomix --config repomix.sql.config.json
+npx --yes repomix --config repomix.tests.config.json
+npx --yes repomix --config repomix.mjs.config.json
+npx --yes repomix --config repomix.sh.config.json
 
 for output in \
   .repomix/01-repository-overview.xml \
   .repomix/02-docs-full.xml \
-  .repomix/03-source-context.xml
+  .repomix/03-source-context.xml \
+  .repomix/04-json-context.json \
+  .repomix/05-sql-context.sql \
+  repomix-tests.xml \
+  .repomix/06-mjs-context.xml \
+  .repomix/07-shell-context.xml
 do
   test -s "$output"
 done
@@ -237,17 +253,14 @@ codex mcp add \
   --url https://api.githubcopilot.com/mcp/ \
   --bearer-token-env-var GITHUB_MCP_TOKEN
 
-# MCP subprocess 使用相同的 Serena_HOME。
-codex mcp add \
-  serena \
-  -- env \
-  "SERENA_HOME=$SERENA_HOME" \
-  "$SERENA_EXECUTABLE" \
-  start-mcp-server \
-  --project /workspace/Line_Bot_v1 \
-  --context=codex \
-  --agent-interface=REPL \
-  --open-web-dashboard=false
+# Match the project Serena command; explicitly pass writable runtime paths.
+codex mcp add serena \
+  --env "PATH=$PATH" \
+  --env "SERENA_HOME=$SERENA_HOME" \
+  --env "XDG_CACHE_HOME=$XDG_CACHE_HOME" \
+  --env "XDG_DATA_HOME=$XDG_DATA_HOME" \
+  --env "XDG_CONFIG_HOME=$XDG_CONFIG_HOME" \
+  -- serena start-mcp-server --project-from-cwd --context=codex
 
 # MCP subprocess 明確沿用 workspace npm cache。
 codex mcp add \

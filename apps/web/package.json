@@ -44,7 +44,6 @@
     "@line_bot_v1/wiki": "workspace:*",
     "@sentry/nextjs": "catalog:",
     "@shadcn/react": "0.3.1",
-    "@supabase/supabase-js": "catalog:",
     "@vercel/analytics": "catalog:",
     "@vercel/speed-insights": "catalog:",
     "class-variance-authority": "0.7.1",
@@ -68,7 +67,8 @@
     "@line_bot_v1/content": "workspace:*",
     "@line_bot_v1/contract": "workspace:*",
     "@line_bot_v1/execution": "workspace:*",
-    "@line_bot_v1/integration-vercel": "workspace:*"
+    "@line_bot_v1/integration-vercel": "workspace:*",
+    "@line_bot_v1/integration-supabase": "workspace:*"
   },
   "devDependencies": {
     "@line/liff-mock": "catalog:",

@@ -27,6 +27,10 @@
     "./composition/bootstrap/commercial-intake": {
       "types": "./dist/composition/bootstrap/commercial-intake.d.ts",
       "default": "./dist/composition/bootstrap/commercial-intake.js"
+    },
+    "./application/commands/commercial-task": {
+      "types": "./dist/application/commands/commercial-task.d.ts",
+      "default": "./dist/application/commands/commercial-task.js"
     }
   },
   "files": [

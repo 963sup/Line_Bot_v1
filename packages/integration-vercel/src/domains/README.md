@@ -1,6 +1,6 @@
 # Domains / TLS
 
-本入口預留 DNS、HTTPS、deployment alias 與 callback origin 的開發說明；不建立網域、修改 DNS 或切換流量。現行 alias readback 權威見 [Vercel](../../../../docs/reference/platform/vercel.md)。
+本入口預留 DNS、HTTPS、deployment alias 與 callback origin 的開發說明；不建立網域、修改 DNS 或切換流量。現行 alias readback 權威見 [Vercel](../../../../docs/reference/platform/README.md#vercel)。
 
 - Domain ownership、DNS propagation、TLS 狀態、Production alias 與實際 Git SHA 分別驗證。
 - Application origin、LINE／OAuth callback allowlist 與 Preview origin 的修改需沿實際 consumer 契約同步。

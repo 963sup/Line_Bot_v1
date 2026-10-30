@@ -55,6 +55,10 @@
     "./contracts/output/commercial-documents": {
       "types": "./dist/contracts/output/commercial-documents.d.ts",
       "default": "./dist/contracts/output/commercial-documents.js"
+    },
+    "./contracts/output/parse-document-intake": {
+      "types": "./dist/contracts/output/parse-document-intake.d.ts",
+      "default": "./dist/contracts/output/parse-document-intake.js"
     }
   },
   "files": [

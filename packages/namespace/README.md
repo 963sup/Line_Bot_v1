@@ -3,7 +3,7 @@
 Routing and module overview for `@line_bot_v1/namespace`.
 
 - Semantic Owner: `namespace`
-- Authority document: [`docs/owners/namespace.md`](../../docs/owners/namespace.md)
+- Authority document: [`docs/reference/domains/namespace.md`](../../docs/reference/domains/namespace.md)
 - Machine boundaries: [`architecture/registry.json#modules`](../../architecture/registry.json#modules)
 - Persistence mapping: [`architecture/registry.json#data`](../../architecture/registry.json#data)
 

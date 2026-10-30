@@ -1,12 +1,13 @@
 "use client";
 
 import type { RepositoryStarListDiscovery } from "@line_bot_v1/repository/contracts/discovery";
+import { isStarListDiscovery } from "@line_bot_v1/repository/contracts/parse-collection-response";
 import Link from "next/link";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import { repositoryPath, repositoryStarListPath } from "./resource-navigation";
-import { errorMessage, isRecord, isStarListDiscovery } from "./response-validation";
+import { errorMessage, isRecord } from "./response-validation";
 
 export default function AwesomeLists({ liffId }: { liffId: string }) {
   const [items, setItems] = useState<RepositoryStarListDiscovery[] | null>(null);

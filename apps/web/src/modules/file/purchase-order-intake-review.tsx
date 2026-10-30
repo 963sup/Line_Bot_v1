@@ -1,14 +1,11 @@
 "use client";
 
+import { type DocumentIntakeRevision } from "@line_bot_v1/contract/contracts/output/parse-document-intake";
 import { useEffect, useRef } from "react";
 import { Button } from "../../shared/ui/button";
 import { Input } from "../../shared/ui/input";
 import { Label } from "../../shared/ui/label";
-import {
-  candidateLines,
-  type DocumentIntakeRevision,
-  diagnosticLabels,
-} from "./purchase-order-intake-view";
+import { candidateLines, diagnosticLabels } from "./purchase-order-intake-view";
 import PurchaseOrderReview from "./purchase-order-review";
 
 /** ContractDocument review UI owns only review presentation and local focus, not File facts. */

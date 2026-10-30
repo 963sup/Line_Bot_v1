@@ -1,13 +1,14 @@
 "use client";
 
 import type { FollowItem } from "@line_bot_v1/account/contracts/output/follows";
+import { readNetwork } from "@line_bot_v1/account/contracts/parse-profile-response";
 import { buildNamespacePath } from "@line_bot_v1/namespace";
 import { isRecord } from "@line_bot_v1/platform/validation";
 import Link from "next/link";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
-import { readNetwork, responseError } from "./wire-response";
+import { responseError } from "./wire-response";
 
 type NetworkItem = FollowItem & { login: string | null };
 type NetworkData = {

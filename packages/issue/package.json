@@ -71,6 +71,18 @@
     "./composition/bootstrap/metrics": {
       "types": "./dist/composition/bootstrap/metrics.d.ts",
       "default": "./dist/composition/bootstrap/metrics.js"
+    },
+    "./contracts/parse-activity-response": {
+      "types": "./dist/contracts/parse-activity-response.d.ts",
+      "default": "./dist/contracts/parse-activity-response.js"
+    },
+    "./contracts/parse-response": {
+      "types": "./dist/contracts/parse-response.d.ts",
+      "default": "./dist/contracts/parse-response.js"
+    },
+    "./contracts/parse-stored-command": {
+      "types": "./dist/contracts/parse-stored-command.d.ts",
+      "default": "./dist/contracts/parse-stored-command.js"
     }
   },
   "files": [

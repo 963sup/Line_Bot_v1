@@ -1,4 +1,5 @@
 "use client";
+import { type FileInfo } from "@line_bot_v1/file/contracts/parse-files";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "../../shared/ui/button";
 import CommercialDraftReview, { CommercialIntakeSource } from "./commercial-draft-review";
@@ -12,7 +13,7 @@ import {
   type PendingCommercialIntake,
   restoreCommercialIntake,
 } from "./commercial-intake-state";
-import { errorMessage, type FileInfo, record, StaleRequest } from "./files-projection";
+import { errorMessage, record, StaleRequest } from "./files-projection";
 
 type Props = {
   actorUserId: string;
@@ -26,7 +27,7 @@ type Props = {
 };
 export default function CommercialIntakePanel(props: Props) {
   const [pending, setPending] = useState<PendingCommercialIntake | null>(null),
-    [state, setState] = useState(""),
+    [state, setState] = useState<ReturnType<typeof commercialStatus> | "">(""),
     [revision, setRevision] = useState<unknown>(null),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
@@ -54,23 +55,33 @@ export default function CommercialIntakePanel(props: Props) {
         setState("OUTCOME_UNKNOWN");
       }
       try {
-        const response = "taskId" in command
-          ? await props.request(
-              operation === "status" ? { taskId: command.taskId } : {},
-              operation === "status"
-                ? undefined
-                : operation === "start"
-                  ? { operation, taskId: command.taskId, repositoryId: command.repositoryId, source: command.source }
-                  : { operation, taskId: command.taskId, repositoryId: command.repositoryId },
-            )
-          : await props.legacyRequest(
-              operation === "status" ? { commandId: command.commandId } : {},
-              operation === "status"
-                ? undefined
-                : operation === "start"
-                  ? { operation, ...command }
-                  : { operation, repositoryId: command.repositoryId, commandId: command.commandId },
-            );
+        const response =
+          "taskId" in command
+            ? await props.request(
+                operation === "status" ? { taskId: command.taskId } : {},
+                operation === "status"
+                  ? undefined
+                  : operation === "start"
+                    ? {
+                        operation,
+                        taskId: command.taskId,
+                        repositoryId: command.repositoryId,
+                        source: command.source,
+                      }
+                    : { operation, taskId: command.taskId, repositoryId: command.repositoryId },
+              )
+            : await props.legacyRequest(
+                operation === "status" ? { commandId: command.commandId } : {},
+                operation === "status"
+                  ? undefined
+                  : operation === "start"
+                    ? { operation, ...command }
+                    : {
+                        operation,
+                        repositoryId: command.repositoryId,
+                        commandId: command.commandId,
+                      },
+              );
         if (ticket !== current.current) return;
         const observed = commercialStatus(response, command);
         setState(observed);
@@ -82,10 +93,12 @@ export default function CommercialIntakePanel(props: Props) {
           if (!draftResponse.revision) throw new Error("草稿讀取尚未完成，請以原命令查詢狀態。");
           const draft = record(draftResponse.revision);
           const source = record(draft.source);
-          if (draft.documentId !== documentId ||
-              source.fileId !== command.source.fileId ||
-              source.fileRevisionId !== command.source.fileRevisionId ||
-              source.sha256 !== command.source.sha256)
+          if (
+            draft.documentId !== documentId ||
+            source.fileId !== command.source.fileId ||
+            source.fileRevisionId !== command.source.fileRevisionId ||
+            source.sha256 !== command.source.sha256
+          )
             throw new Error("已保存商務草稿與原始來源不符。");
           setRevision(draftResponse.revision);
         }
@@ -220,7 +233,9 @@ export default function CommercialIntakePanel(props: Props) {
             selected={props.selected}
           />
           <p role="status">{labels[state] ?? state}</p>
-          <p className="break-all text-xs">任務：{"taskId" in pending ? pending.taskId : pending.commandId}</p>
+          <p className="break-all text-xs">
+            任務：{"taskId" in pending ? pending.taskId : pending.commandId}
+          </p>
           <Button
             variant="outline"
             disabled={busy || props.blocked}

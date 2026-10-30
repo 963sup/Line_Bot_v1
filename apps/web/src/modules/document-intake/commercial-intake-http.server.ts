@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { UserError } from "@line_bot_v1/account/domain/user";
 import type {
   CommercialDocumentReceipt,
@@ -6,6 +6,7 @@ import type {
 } from "@line_bot_v1/contract/contracts/output/commercial-documents";
 import { ContractError } from "@line_bot_v1/contract/domain/error";
 import { FileError } from "@line_bot_v1/file/domain/error";
+import { commercialTaskIdentity } from "@line_bot_v1/intelligence/application/commands/commercial-task";
 import {
   type CommercialIntake,
   CommercialIntakeError,
@@ -68,19 +69,14 @@ function taskId(value: unknown): string {
   if (!uuid.test(valueAsString)) invalid("Invalid commercial task ID.");
   return valueAsString.toLowerCase();
 }
-function taskStageId(task: string, stage: string): string {
-  const hex = createHash("sha256").update(`commercial-task/1:${task}:${stage}`).digest("hex").split("");
-  hex[12] = "5";
-  hex[16] = ((Number.parseInt(hex[16] ?? "0", 16) & 3) | 8).toString(16);
-  const value = hex.join("");
-  return `${value.slice(0, 8)}-${value.slice(8, 12)}-${value.slice(12, 16)}-${value.slice(16, 20)}-${value.slice(20, 32)}`;
-}
 function publicTaskStatus(task: string, result: CommercialIntakeStatus) {
+  const expected = commercialTaskIdentity(task);
   if (
-    result.commandId !== taskStageId(task, "intelligence") ||
-    result.documentId !== taskStageId(task, "contract-document") ||
+    result.commandId !== expected.commandId ||
+    result.documentId !== expected.documentId ||
     (result.receipt !== null && result.receipt.documentId !== result.documentId)
-  ) throw new ContractError(503, "Commercial task result identity mismatch.", "UNAVAILABLE");
+  )
+    throw new ContractError(503, "Commercial task result identity mismatch.", "UNAVAILABLE");
   return { ...result, taskId: task };
 }
 async function body(request: Request) {
@@ -156,10 +152,15 @@ export async function commercialIntakeRequest(
       if (request.method === "GET") {
         operation = "status";
         const task = taskId(query.get("taskId"));
-        return jsonResponse(publicTaskStatus(task, await runtime.intake.status(ctx, {
-          repositoryId: scope.repository.id,
-          commandId: taskStageId(task, "intelligence"),
-        })));
+        return jsonResponse(
+          publicTaskStatus(
+            task,
+            await runtime.intake.status(ctx, {
+              repositoryId: scope.repository.id,
+              commandId: commercialTaskIdentity(task).commandId,
+            }),
+          ),
+        );
       }
       if (!scope.canEdit || scope.archived)
         throw new ContractError(403, "目前沒有文件寫入權限。", "FORBIDDEN");
@@ -167,12 +168,18 @@ export async function commercialIntakeRequest(
       operation = string(input.operation);
       if (input.repositoryId !== scope.repository.id) invalid("Repository scope mismatch.");
       const task = taskId(input.taskId);
-      const commandId = taskStageId(task, "intelligence");
+      const { commandId, documentId, draftCommandId } = commercialTaskIdentity(task);
       if (operation === "resume") {
         exactFields(input, ["operation", "taskId", "repositoryId"]);
-        return jsonResponse(publicTaskStatus(task, await runtime.intake.resume(ctx, {
-          repositoryId: scope.repository.id, commandId,
-        })));
+        return jsonResponse(
+          publicTaskStatus(
+            task,
+            await runtime.intake.resume(ctx, {
+              repositoryId: scope.repository.id,
+              commandId,
+            }),
+          ),
+        );
       }
       if (operation !== "start") invalid("Unknown commercial task operation.");
       exactFields(input, ["operation", "taskId", "repositoryId", "source"]);
@@ -182,15 +189,21 @@ export async function commercialIntakeRequest(
       const fileRevisionId = taskId(source.fileRevisionId);
       const sha256 = string(source.sha256);
       if (!/^[0-9a-f]{64}$/.test(sha256)) invalid("Invalid File SHA-256.");
-      return jsonResponse(publicTaskStatus(task, await runtime.intake.start(ctx, {
-        commandId, repositoryId: scope.repository.id,
-        source: { fileId, fileRevisionId, sha256 },
-        target: {
-          documentId: taskStageId(task, "contract-document"),
-          draftCommandId: taskStageId(task, "contract-draft"),
-          expectedDocumentVersion: 0,
-        },
-      })));
+      return jsonResponse(
+        publicTaskStatus(
+          task,
+          await runtime.intake.start(ctx, {
+            commandId,
+            repositoryId: scope.repository.id,
+            source: { fileId, fileRevisionId, sha256 },
+            target: {
+              documentId,
+              draftCommandId,
+              expectedDocumentVersion: 0,
+            },
+          }),
+        ),
+      );
     }
     const ctx = { actorUserId: scope.actorUserId, traceId };
     if (request.method === "GET") {
@@ -254,7 +267,12 @@ export async function commercialIntakeRequest(
     const status = known ? error.status : 500;
     const code = known && "code" in error ? String(error.code) : undefined;
     logServerError(error, {
-      service: resource === "task" ? "commercial-tasks-api" : resource === "intake" ? "document-intakes-api" : "commercial-documents-api",
+      service:
+        resource === "task"
+          ? "commercial-tasks-api"
+          : resource === "intake"
+            ? "document-intakes-api"
+            : "commercial-documents-api",
       operation: stage,
       status,
       ...(code ? { code } : {}),

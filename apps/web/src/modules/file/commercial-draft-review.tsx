@@ -1,6 +1,7 @@
+import { type FileInfo } from "@line_bot_v1/file/contracts/parse-files";
 import React from "react";
 import type { PendingCommercialIntake } from "./commercial-intake-state";
-import { type FileInfo, record } from "./files-projection";
+import { record } from "./files-projection";
 
 const labels: Record<string, string> = {
   PURCHASE_ORDER: "採購單",

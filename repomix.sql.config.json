@@ -1,0 +1,20 @@
+{
+  "$schema": "https://repomix.com/config-schema.json",
+  "include": ["packages/integration-supabase/src/**/*.sql", "**/migrations/**/*.sql"],
+  "output": {
+    "filePath": ".repomix/05-sql-context.sql",
+    "style": "plain"
+  },
+  "ignore": {
+    "customPatterns": [
+      ".repomix/**",
+      ".git/**",
+      "node_modules/**",
+      ".cache/**",
+      ".tools/**",
+      ".agents/**",
+      ".codex/**",
+      "**/*.{env,sqlite,db,pem,key}"
+    ]
+  }
+}

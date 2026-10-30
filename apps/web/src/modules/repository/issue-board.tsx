@@ -8,6 +8,7 @@ import {
   type IssueClosedStateReason,
   type IssueWorkflowStatus,
 } from "@line_bot_v1/issue/domain";
+import { hasRepositoryPermission } from "@line_bot_v1/repository/domain/repository/value-objects/repository-capability";
 import Link from "next/link";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
@@ -275,7 +276,11 @@ export default function IssueBoard({
           ownerLogin={ownerLogin}
           repositoryName={repositoryName}
           active="issues"
-          canManage={currentRepository?.permissions.includes("admin") ?? false}
+          canManage={
+            currentRepository?.permissions
+              ? hasRepositoryPermission(currentRepository.permissions, "admin")
+              : false
+          }
           {...(detailMode ? { title: "Issue" } : {})}
         />
       ) : (

@@ -1,19 +1,16 @@
 "use client";
 
 import type { IssueActivityItem } from "@line_bot_v1/issue/contracts/activity";
+import { isIssueActivity } from "@line_bot_v1/issue/contracts/parse-activity-response";
 import type { TrendingRepository } from "@line_bot_v1/repository/contracts/discovery";
+import { isTrendingRepository } from "@line_bot_v1/repository/contracts/parse-collection-response";
 import Link from "next/link";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import { SectionHeading } from "../../shared/ui/page-layout";
 import { repositoryIssuePath, repositoryPath } from "./resource-navigation";
-import {
-  errorMessage,
-  isIssueActivity,
-  isRecord,
-  isTrendingRepository,
-} from "./response-validation";
+import { errorMessage, isRecord } from "./response-validation";
 
 type DiscoverySnapshot = {
   items: TrendingRepository[];

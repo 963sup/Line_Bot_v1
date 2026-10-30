@@ -2,6 +2,12 @@
 import { record } from "@line_bot_v1/platform/validation";
 import { parseWikiCommand, type WikiCommand } from "@line_bot_v1/wiki/application/commands/pages";
 import type { WikiPageSummary } from "@line_bot_v1/wiki/contracts/dto/wiki";
+import {
+  wikiComparison,
+  wikiHistory,
+  wikiPages,
+  wikiRevision,
+} from "@line_bot_v1/wiki/contracts/parse-response";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
@@ -10,7 +16,7 @@ import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import RepositoryPageHeader from "./repository-page-header";
 import { repositoryPath } from "./resource-navigation";
 import styles from "./wiki-panel.module.css";
-import { wikiComparison, wikiHistory, wikiPages, wikiRevision, wikiScope } from "./wiki-response";
+import { wikiScope } from "./wiki-response";
 
 type Pending = { actor: string; command: WikiCommand };
 export default function WikiPanel({

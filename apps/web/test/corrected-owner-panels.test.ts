@@ -1,16 +1,10 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import {
-  assertCurrentRequest,
-  eligibleParentNodes,
-  StaleRequestError,
-} from "../src/modules/content/content-panel";
-import {
-  eligibleTasks,
-  isCurrentIntent,
-  planTasks,
-} from "../src/modules/execution/executions-panel";
+import { eligibleParentNodes } from "@line_bot_v1/content/domain/plan";
+import { eligibleTasks, planTasks } from "@line_bot_v1/execution/application/task-selection";
+import { assertCurrentRequest, StaleRequestError } from "../src/modules/content/content-panel";
+import { isCurrentIntent } from "../src/modules/execution/executions-panel";
 
 test("a rejected request from a cleared session cannot restore pending or error state", async () => {
   let rejectRequest: ((reason: Error) => void) | undefined;
@@ -168,7 +162,7 @@ test("corrected owner panels preserve closed history and legal review actions wi
     executionSource,
     /\.filter\(\(item\) => item\.state === "ACTIVE" \|\| item\.state === "CLOSED"\)/,
   );
-  assert.equal(executionSource.match(/!executionSubmissionAllowed\(contract\.state\)/g)?.length, 2);
+  assert.equal(executionSource.match(/contract\.state !== "ACTIVE"/g)?.length, 2);
   assert.match(executionSource, /selected\.state !== "ACCEPTED"/);
   assert.doesNotMatch(contractSource, /legacyReplacementStarted|hasLegacyLines/);
   assert.match(

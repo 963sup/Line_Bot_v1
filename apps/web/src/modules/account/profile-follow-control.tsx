@@ -1,7 +1,8 @@
 "use client";
 
+import { readNetwork } from "@line_bot_v1/account/contracts/parse-profile-response";
 import { useEffect, useRef, useState } from "react";
-import { readNetwork, responseError } from "./wire-response";
+import { responseError } from "./wire-response";
 
 type FollowState = "loading" | "following" | "not-following" | "error";
 

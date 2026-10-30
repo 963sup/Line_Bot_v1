@@ -1,6 +1,6 @@
 # Deployments
 
-本入口整理 build、Preview、Production 與 recovery 的位置；未新增部署流程。Canonical authority：[Vercel](../../../../docs/reference/platform/vercel.md)、[Release](../../../../docs/reference/operations/release.md)。
+本入口整理 build、Preview、Production 與 recovery 的位置；未新增部署流程。Canonical authority：[Vercel](../../../../docs/reference/platform/README.md#vercel)、[Release](../../../../docs/reference/operations/release.md)。
 
 - Build configuration 留在 [Web manifest](../../../../apps/web/package.json)、[next.config.ts](../../../../apps/web/next.config.ts) 與 [vercel.json](../../../../apps/web/vercel.json)。
 - Preview branch routing 以 `vercel.json` 的實際 Git 設定為準；不是任意非 main push 都會建立 Preview。

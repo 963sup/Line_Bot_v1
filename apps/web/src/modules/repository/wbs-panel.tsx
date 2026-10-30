@@ -3,6 +3,8 @@
 import { parseWbsCommand } from "@line_bot_v1/wbs/application/commands/content";
 import type { WbsCommand, WbsHistory, WbsView } from "@line_bot_v1/wbs/contracts/dto/content";
 import type { WbsScopeTransfer } from "@line_bot_v1/wbs/contracts/dto/transfer";
+import { wbsHistory, wbsReceipt, wbsView } from "@line_bot_v1/wbs/contracts/parse-content-response";
+import { parseWbsScopeTransfer } from "@line_bot_v1/wbs/contracts/parse-transfer-response";
 import type { WbsEdit, WbsNode } from "@line_bot_v1/wbs/domain/document";
 import Link from "next/link";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
@@ -11,9 +13,7 @@ import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import RepositoryPageHeader from "./repository-page-header";
 import WbsGovernancePanel from "./wbs-governance-panel";
 import styles from "./wbs-panel.module.css";
-import { wbsHistory, wbsReceipt, wbsView } from "./wbs-response";
 import WbsTransferPanel from "./wbs-transfer-panel";
-import { parseWbsScopeTransfer } from "./wbs-transfer-state";
 
 type Pending = { actor: string; command: WbsCommand };
 export default function WbsPanel({

@@ -4,7 +4,7 @@
     "id": "payroll",
     "kind": "business-owner",
     "lifecycle": "current-foundation",
-    "doc": "docs/owners/payroll.md"
+    "doc": "docs/reference/domains/payroll.md"
   },
   "boundedContexts": [],
   "concepts": [

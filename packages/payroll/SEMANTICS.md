@@ -14,7 +14,7 @@
 
 | Subdomain | Classification | Rationale | Sources |
 | --- | --- | --- | --- |
-| workforce-operations | supporting | 出勤、人力與支出資料支援企業協作營運；分類不啟用尚未實作的排班、薪資、審批或付款能力。 | [docs/reference/architecture/strategic-design.md](../../docs/reference/architecture/strategic-design.md); [docs/owners/workforce.md](../../docs/owners/workforce.md); [docs/owners/attendance.md](../../docs/owners/attendance.md); [docs/owners/payroll.md](../../docs/owners/payroll.md); [docs/owners/expense.md](../../docs/owners/expense.md) |
+| workforce-operations | supporting | 出勤、人力與支出資料支援企業協作營運；分類不啟用尚未實作的排班、薪資、審批或付款能力。 | [docs/reference/architecture/strategic-design.md](../../docs/reference/architecture/strategic-design.md); [docs/owners/workforce.md](../../docs/owners/workforce.md); [docs/reference/domains/attendance.md](../../docs/reference/domains/attendance.md); [docs/reference/domains/payroll.md](../../docs/reference/domains/payroll.md); [docs/owners/expense.md](../../docs/owners/expense.md) |
 
 ## Bounded Context
 

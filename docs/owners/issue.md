@@ -92,7 +92,7 @@ Runtime owner: `packages/issue`. Repository scope provider: `packages/repository
 
 Persisted relation ownership is authoritative in [data topology](../../architecture/registry.json#data); SQL definitions remain under `packages/integration-supabase/src/schemas/`.
 
-Adjacent owners: [Repository](repository.md) · [Project](project.md) · [Notifications](notifications.md)
+Adjacent owners: [Repository](../reference/domains/repository.md) · [Project](project.md) · [Notifications](notifications.md)
 
 
 ## Collaboration parity

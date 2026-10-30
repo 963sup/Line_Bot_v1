@@ -63,7 +63,7 @@ Current schema publication不以 migration history作 rollback機制，也不改
 3. 已產生新資料或已完成不可逆 business transform時，優先停止 writer並向前修復；只有在明確停機、備份與授權下才執行受控 restore。
 4. Recovery完成後重新由 current declarative schemas驗證 desired/current parity；不得以重播舊 migration history取代 current reconciliation。
 
-Schema publication ordering見 [Release](release.md)；Supabase recovery/readback mechanism見 [Supabase](../platform/supabase.md)。
+Schema publication ordering見 [Release](release.md)；Supabase recovery/readback mechanism見 [Supabase](../platform/README.md#supabase)。
 
 ## File orphan recovery
 

@@ -43,6 +43,10 @@
     "./domain/plan-reference": {
       "types": "./dist/domain/plan-reference.d.ts",
       "default": "./dist/domain/plan-reference.js"
+    },
+    "./domain/plan": {
+      "types": "./dist/domain/plan.d.ts",
+      "default": "./dist/domain/plan.js"
     }
   },
   "files": [

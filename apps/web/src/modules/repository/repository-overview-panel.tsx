@@ -1,6 +1,11 @@
 "use client";
 
 import type { PublicRepository } from "@line_bot_v1/repository/contracts/output/public";
+import {
+  parseRepositoryOverview,
+  type RepositoryOverview,
+} from "@line_bot_v1/repository/contracts/overview";
+import { hasRepositoryPermission } from "@line_bot_v1/repository/domain/repository/value-objects/repository-capability";
 import Link from "next/link";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
@@ -11,7 +16,6 @@ import {
 } from "../../shared/browser/line-service-session";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import { ActionRow, PageState } from "../../shared/ui/page-layout";
-import { parseRepositoryOverview, type RepositoryOverview } from "./repository-overview";
 import RepositoryPageHeader from "./repository-page-header";
 import RepositorySubscriptionControl from "./repository-subscription-control";
 import {
@@ -61,7 +65,9 @@ export default function RepositoryOverviewPanel({
   const canonicalOwner =
     overview?.repository.ownerLogin ?? publicRepository?.ownerLogin ?? ownerLogin;
   const canonicalName = overview?.repository.name ?? publicRepository?.name ?? repositoryName;
-  const canManage = overview?.repository.permissions.includes("admin") ?? false;
+  const canManage = overview?.repository.permissions
+    ? hasRepositoryPermission(overview.repository.permissions, "admin")
+    : false;
 
   const clear = useCallback(() => {
     generation.current += 1;

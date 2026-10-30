@@ -31,20 +31,20 @@ Module registration, semantic-owner lifecycle, Bounded Context status and runtim
 
 | Package | Module kind | Semantic owner | Owner lifecycle | Context / status |
 | --- | --- | --- | --- | --- |
-| [packages/account](./account/SEMANTICS.md) | domain-module | [account](../docs/owners/account.md) | current | account / strong-candidate |
+| [packages/account](./account/SEMANTICS.md) | domain-module | [account](../docs/reference/domains/account.md) | current | account / strong-candidate |
 | [packages/actions](./actions/SEMANTICS.md) | domain-module | [actions](../docs/owners/actions.md) | current | Not declared |
 | [packages/asset](./asset/SEMANTICS.md) | domain-module | [asset](../docs/owners/asset.md) | current | asset / selected |
 | [packages/assistant](./assistant/SEMANTICS.md) | application-module | [assistant](../docs/owners/assistant.md) | current | Not declared |
-| [packages/attendance](./attendance/SEMANTICS.md) | domain-module | [attendance](../docs/owners/attendance.md) | current | attendance / strong-candidate |
+| [packages/attendance](./attendance/SEMANTICS.md) | domain-module | [attendance](../docs/reference/domains/attendance.md) | current | attendance / strong-candidate |
 | [packages/audit](./audit/SEMANTICS.md) | domain-module | [audit](../docs/owners/audit.md) | current | Not declared |
 | [packages/content](./content/src/) | domain-module | [content](../docs/owners/content.md) | current | content / selected |
 | [packages/contract](./contract/src/) | domain-module | [contract](../docs/owners/contract.md) | current | contract / selected |
-| [packages/daily-check-in](./daily-check-in/SEMANTICS.md) | domain-module | [daily-check-in](../docs/owners/daily-check-in.md) | current | daily-check-in / selected |
+| [packages/daily-check-in](./daily-check-in/SEMANTICS.md) | domain-module | [daily-check-in](../docs/reference/domains/daily-check-in.md) | current | daily-check-in / selected |
 | [packages/discussion](./discussion/SEMANTICS.md) | domain-module | [discussion](../docs/owners/discussion.md) | current | Not declared |
-| [packages/enterprise](./enterprise/SEMANTICS.md) | domain-module | [enterprise](../docs/owners/enterprise.md) | current | Not declared |
+| [packages/enterprise](./enterprise/SEMANTICS.md) | domain-module | [enterprise](../docs/reference/domains/enterprise.md) | current | Not declared |
 | [packages/execution](./execution/SEMANTICS.md) | domain-module | [execution](../docs/owners/execution.md) | current | execution / selected |
 | [packages/expense](./expense/SEMANTICS.md) | domain-module | [expense](../docs/owners/expense.md) | current | expense / strong-candidate |
-| [packages/explore](./explore/SEMANTICS.md) | application-module | [repository](../docs/owners/repository.md) | current | work-collaboration / candidate |
+| [packages/explore](./explore/SEMANTICS.md) | application-module | [repository](../docs/reference/domains/repository.md) | current | work-collaboration / candidate |
 | [packages/file](./file/src/) | domain-module | [file](../docs/owners/file.md) | current | file / selected |
 | [packages/google-workspace](./google-workspace/SEMANTICS.md) | integration-adapter | [google-workspace](../docs/owners/google-workspace.md) | current | Not declared |
 | [packages/identity-access](./identity-access/SEMANTICS.md) | domain-module | [identity-access](../docs/owners/identity-access.md) | current | Not declared |
@@ -53,20 +53,20 @@ Module registration, semantic-owner lifecycle, Bounded Context status and runtim
 | [packages/integration-vercel](./integration-vercel/SEMANTICS.md) | integration-adapter | [vercel-integration](../docs/owners/vercel-integration.md) | current | Not declared |
 | [packages/intelligence](./intelligence/src/) | application-module | [intelligence](../docs/owners/intelligence.md) | current | Not declared |
 | [packages/issue](./issue/SEMANTICS.md) | domain-module | [issue](../docs/owners/issue.md) | current | Not declared |
-| [packages/ledger](./ledger/SEMANTICS.md) | domain-module | [ledger](../docs/owners/ledger.md) | current | ledger / selected |
+| [packages/ledger](./ledger/SEMANTICS.md) | domain-module | [ledger](../docs/reference/domains/ledger.md) | current | ledger / selected |
 | [packages/line](./line/SEMANTICS.md) | integration-adapter | [line-integration](../docs/owners/line-integration.md) | current | Not declared |
-| [packages/namespace](./namespace/SEMANTICS.md) | domain-module | [namespace](../docs/owners/namespace.md) | current | Not declared |
+| [packages/namespace](./namespace/SEMANTICS.md) | domain-module | [namespace](../docs/reference/domains/namespace.md) | current | Not declared |
 | [packages/notifications](./notifications/SEMANTICS.md) | domain-module | [notifications](../docs/owners/notifications.md) | current | notifications / strong-candidate |
-| [packages/numbering](./numbering/SEMANTICS.md) | domain-module | [numbering](../docs/owners/numbering.md) | current | Not declared |
-| [packages/organization](./organization/SEMANTICS.md) | domain-module | [organization](../docs/owners/organization.md) | current | Not declared |
+| [packages/numbering](./numbering/SEMANTICS.md) | domain-module | [numbering](../docs/reference/domains/numbering.md) | current | Not declared |
+| [packages/organization](./organization/SEMANTICS.md) | domain-module | [organization](../docs/reference/domains/organization.md) | current | Not declared |
 | [packages/partners](./partners/SEMANTICS.md) | domain-module | [partner-directory](../docs/owners/partners.md) | current | partner-directory / strong-candidate |
-| [packages/payroll](./payroll/SEMANTICS.md) | domain-module | [payroll](../docs/owners/payroll.md) | current-foundation | Not declared |
+| [packages/payroll](./payroll/SEMANTICS.md) | domain-module | [payroll](../docs/reference/domains/payroll.md) | current-foundation | Not declared |
 | [packages/platform](./platform/SEMANTICS.md) | support-module | [platform](../docs/owners/platform.md) | current | Not declared |
 | [packages/project](./project/SEMANTICS.md) | domain-module | [project](../docs/owners/project.md) | current | Not declared |
-| [packages/repository](./repository/SEMANTICS.md) | domain-module | [repository](../docs/owners/repository.md) | current | work-collaboration / candidate |
+| [packages/repository](./repository/SEMANTICS.md) | domain-module | [repository](../docs/reference/domains/repository.md) | current | work-collaboration / candidate |
 | [packages/resources](./resources/SEMANTICS.md) | domain-module | [resources](../docs/owners/resources.md) | current | resources / selected |
-| [packages/team](./team/SEMANTICS.md) | domain-module | [team](../docs/owners/team.md) | current | work-collaboration / candidate |
-| [packages/wallet](./wallet/SEMANTICS.md) | domain-module | [wallet](../docs/owners/wallet.md) | current | wallet / selected |
+| [packages/team](./team/SEMANTICS.md) | domain-module | [team](../docs/reference/domains/team.md) | current | work-collaboration / candidate |
+| [packages/wallet](./wallet/SEMANTICS.md) | domain-module | [wallet](../docs/reference/domains/wallet.md) | current | wallet / selected |
 | [packages/wbs](./wbs/src/) | domain-module | [wbs](../docs/owners/wbs.md) | current | wbs / selected |
 | [packages/wiki](./wiki/SEMANTICS.md) | domain-module | [wiki](../docs/owners/wiki.md) | current | Not declared |
 | [packages/workforce](./workforce/SEMANTICS.md) | domain-module | [workforce](../docs/owners/workforce.md) | current-foundation | Not declared |

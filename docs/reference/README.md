@@ -14,4 +14,4 @@ Cold-path detail. Do not preload for ordinary tasks.
 
 Current owner contracts are under [owners](../owners/README.md). Unresolved work belongs to the owning package, issue or PR; this directory does not maintain a historical change archive.
 
-Provider details are indexed here but owned by packages: [Supabase](platform/supabase.md), [OpenAI / AI](platform/ai.md), [Vercel](platform/vercel.md), [Google Workspace](platform/google-workspace.md), [Redis](platform/redis.md), and [LINE](line/). Follow the linked package README before reading cold-path detail.
+Provider details are indexed here but owned by packages: [Supabase](platform/README.md#supabase), [OpenAI / AI](platform/README.md#ai), [Vercel](platform/README.md#vercel), [Google Workspace](platform/README.md#google-workspace), [Redis](platform/README.md#redis), and [LINE](line/). Follow the linked package README before reading cold-path detail.

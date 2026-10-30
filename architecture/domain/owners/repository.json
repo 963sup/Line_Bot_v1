@@ -4,7 +4,7 @@
     "id": "repository",
     "kind": "business-owner",
     "lifecycle": "current",
-    "doc": "docs/owners/repository.md"
+    "doc": "docs/reference/domains/repository.md"
   },
   "boundedContexts": [],
   "concepts": [

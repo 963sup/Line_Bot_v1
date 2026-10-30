@@ -2,7 +2,12 @@
 
 import type { UserUseCases } from "@line_bot_v1/account/application/user";
 import { parseAccountView } from "@line_bot_v1/account/application/user";
-import type { DailyCheckIn } from "@line_bot_v1/daily-check-in/application/daily-check-in";
+import { type DailyCheckIn } from "@line_bot_v1/daily-check-in/application/daily-check-in";
+import {
+  type DailyCheckInClaim,
+  readClaim,
+  readDailyCheckInView,
+} from "@line_bot_v1/daily-check-in/contracts/parse-claim";
 import { isRecord } from "@line_bot_v1/platform/validation";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
@@ -10,18 +15,9 @@ import { errorMessage } from "../../shared/presentation/unknown-value";
 
 type AccountView = NonNullable<Awaited<ReturnType<UserUseCases["getUser"]>>>;
 type DailyCheckInView = Awaited<ReturnType<DailyCheckIn["currentView"]>>;
-const DAILY_CHECK_IN_POLICY: DailyCheckInView["policy"] = {
-  version: "wheel-v1",
-  totalWeight: 100,
-  prizes: [
-    { code: "coin-half", amount: 0.5, weight: 60 },
-    { code: "coin-one", amount: 1, weight: 30 },
-    { code: "coin-four", amount: 4, weight: 10 },
-  ],
-};
 export type CoinView = DailyCheckInView & { balance: number };
 type CoinProjection = CoinView | { unavailable: true };
-export type DailyCheckInClaim = NonNullable<Awaited<ReturnType<DailyCheckIn["readClaim"]>>>;
+
 type View = AccountView & { coins: CoinProjection };
 type MembershipWireResponse = { member: View | null };
 type CheckInWireOutcome = Awaited<ReturnType<DailyCheckIn["checkIn"]>> & {
@@ -50,45 +46,11 @@ class MembershipRequestError extends Error {
   }
 }
 
-function readClaim(value: unknown): DailyCheckInClaim | null {
-  if (value === null) return null;
-  if (
-    !isRecord(value) ||
-    typeof value.day !== "string" ||
-    (value.prizeCode !== "coin-half" &&
-      value.prizeCode !== "coin-one" &&
-      value.prizeCode !== "coin-four") ||
-    typeof value.reward !== "number" ||
-    value.policyVersion !== "wheel-v1" ||
-    typeof value.decidedAt !== "number"
-  )
-    throw new Error("簽到回應格式不完整。");
-  return {
-    day: value.day,
-    prizeCode: value.prizeCode,
-    reward: value.reward,
-    policyVersion: value.policyVersion,
-    decidedAt: value.decidedAt,
-  };
-}
-
 function readCoins(value: unknown): CoinProjection {
   if (isRecord(value) && value.unavailable === true) return { unavailable: true };
-  if (
-    !isRecord(value) ||
-    typeof value.day !== "string" ||
-    typeof value.claimedToday !== "boolean" ||
-    typeof value.balance !== "number" ||
-    JSON.stringify(value.policy) !== JSON.stringify(DAILY_CHECK_IN_POLICY)
-  )
+  if (!isRecord(value) || typeof value.balance !== "number")
     throw new Error("簽到回應格式不完整。");
-  return {
-    day: value.day,
-    claimedToday: value.claimedToday,
-    claim: readClaim(value.claim),
-    policy: DAILY_CHECK_IN_POLICY,
-    balance: value.balance,
-  };
+  return { ...readDailyCheckInView(value), balance: value.balance };
 }
 
 function readMembership(value: unknown): MembershipWireResponse {
@@ -187,8 +149,7 @@ export function useDailyCheckIn(liffId: string) {
       setInClient(liffClient.inClient());
       await load(access, signal);
     } catch (cause) {
-      if (!signal.aborted)
-        setError(cause instanceof Error ? cause.message : String(cause));
+      if (!signal.aborted) setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       if (!signal.aborted) setBusy(false);
     }
@@ -200,8 +161,7 @@ export function useDailyCheckIn(liffId: string) {
     try {
       await load(token, signal);
     } catch (cause) {
-      if (!signal.aborted)
-        setError(cause instanceof Error ? cause.message : String(cause));
+      if (!signal.aborted) setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       if (!signal.aborted) setBusy(false);
     }
@@ -281,8 +241,7 @@ export function useDailyCheckIn(liffId: string) {
       try {
         return await readPending(pendingDay, signal);
       } catch (cause) {
-        if (!signal.aborted)
-          setError(cause instanceof Error ? cause.message : String(cause));
+        if (!signal.aborted) setError(cause instanceof Error ? cause.message : String(cause));
         return null;
       } finally {
         if (!signal.aborted) setBusy(false);
@@ -329,7 +288,7 @@ export function useDailyCheckIn(liffId: string) {
       };
     } catch (cause) {
       if (signal.aborted) return null;
-        setError(cause instanceof Error ? cause.message : String(cause));
+      setError(cause instanceof Error ? cause.message : String(cause));
       if (cause instanceof MembershipRequestError && [400, 403, 409].includes(cause.status)) {
         clearUnknownResult();
         return {

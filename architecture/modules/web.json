@@ -38,6 +38,7 @@
     "@line_bot_v1/contract",
     "@line_bot_v1/execution",
     "@line_bot_v1/file",
-    "@line_bot_v1/integration-vercel"
+    "@line_bot_v1/integration-vercel",
+    "@line_bot_v1/integration-supabase"
   ]
 }

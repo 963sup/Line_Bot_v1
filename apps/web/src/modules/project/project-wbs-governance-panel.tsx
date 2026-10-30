@@ -6,12 +6,12 @@ import type {
   ProjectWbsGovernanceQuery,
   ProjectWbsGovernanceView,
 } from "@line_bot_v1/wbs/contracts/dto/project-governance";
-import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
-import { liffClient } from "../../shared/browser/liff-client";
 import {
   projectWbsGovernanceReceipt,
   projectWbsGovernanceView,
-} from "./project-wbs-governance-response";
+} from "@line_bot_v1/wbs/contracts/parse-project-governance-response";
+import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
+import { liffClient } from "../../shared/browser/liff-client";
 import styles from "./project-wbs-panel.module.css";
 
 type Pending = { actor: string; command: ProjectWbsGovernanceCommand };

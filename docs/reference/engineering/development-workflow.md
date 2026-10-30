@@ -71,19 +71,13 @@ AGENTS 約束代理行為，CLI 檢查輸入／前置條件，CI 驗證提交結
 
 | 證據 | 可以證明 |
 | --- | --- |
-| `docs:check`、CLI regression tests、CI | canonical command／instruction wiring 與可執行前置條件、結果契約。 |
+| repository checks、CLI regression tests、CI | canonical command／instruction wiring 與可執行前置條件、結果契約。 |
 | 新 session 的指引讀回 | 該次 session 能讀取目前指引；不代表已主動選工具或委派。 |
 | 未提示工具／角色名稱的新 session 任務與實際工具紀錄 | 該次案例是否自行選對工具、保持單一 writer、按需要委派及如實回報 evidence。 |
 
 修改接線後至少用代表案例觀察行為：單檔文件修正應保持簡單；Owner 未知且有獨立查證面時應定位並適當委派；批次符號／結構變更應產生預覽、經 patch preflight 並重查；公開或跨 project 結果不能被宣稱為完整改名。案例不把工具名稱寫進 prompt，不以重述流程當作實際採用證據。這些是受目前 host、工具與 live instructions 限制的行為驗收，不保證所有未來 session。
 
-## Validation
-
-修改 repository instructions 或 MCP wiring 時，使用適用的 canonical checks 與 `docs:check`。
-
-靜態檔存在或 test case 通過不證明新的 ChatGPT/Codex session 已實際載入；需要時在新 session 讀回當前 config/agents/skills。
-
-一般程式與文件驗證入口見 [Validation](validation-pipeline.md)。
+修改 instructions 或 MCP wiring 時，執行適用的 [Validation](validation-pipeline.md) checks；需要證明新 session 載入時，再讀回當前 config/agents/skills。
 
 ## Next.js and shadcn agent workflow
 

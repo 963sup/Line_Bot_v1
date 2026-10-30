@@ -1,15 +1,17 @@
 import { runIntakeAgent } from "@line_bot_v1/assistant/agents/intake";
-import { createVercelAiGateway } from "@line_bot_v1/integration-vercel/gateway";
-import { gatewayConfiguration } from "@line_bot_v1/integration-vercel/gateway-config";
 import {
   type AssistantRuntimeDependencies,
   createAssistantRuntime,
-} from "../../../modules/assistant/answer.server";
-import type { AssistantSurfaceMode } from "../../../modules/assistant/web-surface";
-import { runAssistantSurface } from "../../../modules/assistant/web-surface.server";
+} from "@line_bot_v1/assistant/application/runtime";
+import type { AssistantSurfaceMode } from "@line_bot_v1/assistant/application/surface";
+import { runAssistantSurface } from "@line_bot_v1/assistant/application/surface";
+import { createVercelAiGateway } from "@line_bot_v1/integration-vercel/gateway";
+import { gatewayConfiguration } from "@line_bot_v1/integration-vercel/gateway-config";
+import { presentAnswer } from "../../../modules/assistant/answer-presenter.server";
 import { activeLineUser } from "./account.server";
 
 const assistantRuntime = createAssistantRuntime({
+  presentAnswer,
   isConfigured: () => Boolean(gatewayConfiguration()),
   generate: async (input) => {
     const gateway = gatewayConfiguration();

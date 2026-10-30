@@ -4,6 +4,19 @@ import { normalizeQuantity, normalizeQuantityUnit, type QuantityUnit } from "./q
 
 const contentNodeKinds = ["SUBJECT", "OBJECT", "SUBOBJECT", "WORK", "TASK"] as const;
 export type ContentNodeKind = (typeof contentNodeKinds)[number];
+
+export function contentParentKind(kind: ContentNodeKind): ContentNodeKind | null {
+  return kind === "SUBJECT" ? null : (contentNodeKinds[contentNodeKinds.indexOf(kind) - 1] ?? null);
+}
+
+export function eligibleParentNodes<T extends { kind: ContentNodeKind }>(
+  nodes: T[],
+  kind: ContentNodeKind,
+): T[] {
+  const parent = contentParentKind(kind);
+  return parent === null ? [] : nodes.filter((node) => node.kind === parent);
+}
+
 export type ContentResourceKind = "LOCATION" | "EQUIPMENT" | "MATERIAL";
 
 export type ContentMeasure = Readonly<{
@@ -189,8 +202,7 @@ export function normalizeContentPlanDocument(
   const groups = new Map<string, ContentPlanNode[]>();
   const normalizedNodes: ContentPlanNode[] = [];
   for (const node of nodes) {
-    const expectedParentKind =
-      node.kind === "SUBJECT" ? null : contentNodeKinds[contentNodeKinds.indexOf(node.kind) - 1];
+    const expectedParentKind = contentParentKind(node.kind);
     const parent = node.parentId === null ? null : byId.get(node.parentId);
     if (
       (expectedParentKind === null && node.parentId !== null) ||

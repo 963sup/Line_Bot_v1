@@ -1,5 +1,9 @@
-import { type FileInfo, record, stringValue } from "./files-projection";
-
+import { type FileInfo } from "@line_bot_v1/file/contracts/parse-files";
+import {
+  type CommercialIntakeStatus,
+  parseCommercialIntakeStatusIdentity,
+} from "@line_bot_v1/intelligence/contracts/output/commercial-intake";
+import { record, stringValue } from "./files-projection";
 export type PendingCommercialTask = {
   taskId: string;
   repositoryId: string;
@@ -41,7 +45,9 @@ export function restoreCommercialIntake(
     const sha256 = stringValue(source.sha256);
     if (!/^[a-f0-9]{64}$/.test(sha256)) return null;
     const pins = {
-      fileId: id(source.fileId), fileRevisionId: id(source.fileRevisionId), sha256,
+      fileId: id(source.fileId),
+      fileRevisionId: id(source.fileRevisionId),
+      sha256,
     };
     if ("taskId" in pending) {
       if (Object.keys(pending).sort().join(",") !== "repositoryId,source,taskId") return null;
@@ -50,7 +56,9 @@ export function restoreCommercialIntake(
     const target = record(pending.target);
     if (target.expectedDocumentVersion !== 0) return null;
     return {
-      commandId: id(pending.commandId), repositoryId, source: pins,
+      commandId: id(pending.commandId),
+      repositoryId,
+      source: pins,
       target: {
         documentId: id(target.documentId),
         draftCommandId: id(target.draftCommandId),
@@ -63,16 +71,12 @@ export function restoreCommercialIntake(
 }
 
 export function commercialStatus(value: unknown, command: PendingCommercialIntake) {
-  const status = record(value);
-  const state = stringValue(status.state);
-  if (!["WAITING", "ANALYZING", "RESULT_READY", "DRAFT_SAVED", "FAILED", "OUTCOME_UNKNOWN"].includes(state))
-    throw new Error("Unknown commercial intake state.");
-  if ("taskId" in command) {
-    if (status.taskId !== command.taskId || typeof status.documentId !== "string" || !uuid.test(status.documentId))
-      throw new Error("Commercial task response does not match the pending task.");
-  } else if (status.commandId !== command.commandId || status.documentId !== command.target.documentId)
-    throw new Error("Commercial intake response does not match the original command.");
-  return state;
+  return parseCommercialIntakeStatusIdentity(
+    value,
+    "taskId" in command
+      ? { taskId: command.taskId }
+      : { commandId: command.commandId, documentId: command.target.documentId },
+  );
 }
 
 export function commercialDocumentId(value: unknown, command: PendingCommercialIntake) {
@@ -90,7 +94,10 @@ export function isMissingCommercialIntake(error: unknown): boolean {
 }
 
 /** Recovery controls express user intent; they never cancel or dispatch work themselves. */
-export function commercialRecoveryActions(state: string, missingIntake: boolean) {
+export function commercialRecoveryActions(
+  state: CommercialIntakeStatus["state"] | "",
+  missingIntake: boolean,
+) {
   return {
     resumeLabel:
       !missingIntake &&

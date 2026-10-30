@@ -6,14 +6,14 @@ import { repositoryContentScope } from "@line_bot_v1/repository/postgres/content
 import { createWikiHistory } from "@line_bot_v1/wiki/application/use-cases/history";
 import { createWiki } from "@line_bot_v1/wiki/application/use-cases/pages";
 import { createPostgresWikiDependencies } from "@line_bot_v1/wiki/composition/bootstrap/wiki-pages";
-import { canEditWiki } from "@line_bot_v1/wiki/domain/policies/wiki-access";
-import { type WikiWebRuntime, wikiRequest } from "../src/modules/repository/wiki-http.server";
 import {
   wikiComparison,
   wikiHistory,
   wikiPages,
   wikiRevision,
-} from "../src/modules/repository/wiki-response";
+} from "@line_bot_v1/wiki/contracts/parse-response";
+import { canEditWiki } from "@line_bot_v1/wiki/domain/policies/wiki-access";
+import { type WikiWebRuntime, wikiRequest } from "../src/modules/repository/wiki-http.server";
 import { RequestIdentityError } from "../src/shared/server/request-identity-error";
 
 test("Wiki HTTP preserves URL scope, immutable history, exact retry, restore and current authorization", async (t) => {

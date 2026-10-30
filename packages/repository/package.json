@@ -179,6 +179,42 @@
     "./contracts/input/repository-subscription": {
       "types": "./dist/contracts/input/repository-subscription.d.ts",
       "default": "./dist/contracts/input/repository-subscription.js"
+    },
+    "./contracts/parse-collection-response": {
+      "types": "./dist/contracts/parse-collection-response.d.ts",
+      "default": "./dist/contracts/parse-collection-response.js"
+    },
+    "./contracts/parse-resource-response": {
+      "types": "./dist/contracts/parse-resource-response.d.ts",
+      "default": "./dist/contracts/parse-resource-response.js"
+    },
+    "./contracts/parse-access-response": {
+      "types": "./dist/contracts/parse-access-response.d.ts",
+      "default": "./dist/contracts/parse-access-response.js"
+    },
+    "./contracts/parse-management-response": {
+      "types": "./dist/contracts/parse-management-response.d.ts",
+      "default": "./dist/contracts/parse-management-response.js"
+    },
+    "./contracts/parse-address-response": {
+      "types": "./dist/contracts/parse-address-response.d.ts",
+      "default": "./dist/contracts/parse-address-response.js"
+    },
+    "./contracts/parse-subscription-response": {
+      "types": "./dist/contracts/parse-subscription-response.d.ts",
+      "default": "./dist/contracts/parse-subscription-response.js"
+    },
+    "./application/overview": {
+      "types": "./dist/application/overview.d.ts",
+      "default": "./dist/application/overview.js"
+    },
+    "./contracts/overview": {
+      "types": "./dist/contracts/overview.d.ts",
+      "default": "./dist/contracts/overview.js"
+    },
+    "./application/owner-scope": {
+      "types": "./dist/application/owner-scope.d.ts",
+      "default": "./dist/application/owner-scope.js"
     }
   },
   "files": [

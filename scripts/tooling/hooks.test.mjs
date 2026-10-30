@@ -131,6 +131,7 @@ test("session context reports tracked changes without filenames or file contents
   const result = invoke("session-context", event);
   const summary = JSON.parse(result.hookSpecificOutput.additionalContext);
   assert.equal(summary.trackedChanges, 1);
+  assert.match(summary.requirementPreflight, /Before edits.*every new request or scope change/);
   assert.equal(JSON.stringify(result).includes("private-content"), false);
 });
 
@@ -142,7 +143,10 @@ test("prompt preflight delivers bounded guidance and records delivery without pr
     prompt: "private requirement content",
   });
   assert.equal(result.hookSpecificOutput.hookEventName, "UserPromptSubmit");
-  assert.match(result.hookSpecificOutput.additionalContext, /requirement-architect/);
+  assert.match(
+    result.hookSpecificOutput.additionalContext,
+    /Before edits.*AGENTS\.md Primary agent requirement preflight.*every new request or scope change/,
+  );
   assert.ok(result.hookSpecificOutput.additionalContext.length < 1000);
   assert.equal(JSON.stringify(result).includes("private requirement content"), false);
   const { base, turn } = context(event);

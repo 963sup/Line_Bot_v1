@@ -1,6 +1,6 @@
 # Commercial task：完整實施計畫
 
-狀態：實作中；以下是待交付範圍，不代表能力已完成。簡化清單見 [程式碼收斂計畫](2026-10-29-commercial-task-code-reduction.md)。本計畫承接新的單一任務流程；舊商務計畫已移除，歷史由 Git 保存。
+狀態：實作中；以下是待交付範圍，不代表能力已完成。本計畫承接新的單一任務流程；舊商務計畫已移除，歷史由 Git 保存。
 
 ## 目標與操作
 
@@ -54,3 +54,19 @@ sequenceDiagram
 3. 整合覆蓋：一次 dispatch、拒絕/不完整輸出、來源不符、過期核對、重複 confirm、Content rollback、WBS 失敗恢復、權限撤銷、reload/舊 pending。
 4. canonical SQL 經本地 Docker stack 驗證後按專案 reconciliation 規則部署，讀回 catalog/RLS/grants；保留歷史 result/revision/receipt。
 5. 推送後檢查 PR required checks、review、部署與 merge 結果；只有可實際從 File 走到 WBS draft 才算完成。
+
+## 程式碼收斂與刪除門檻
+
+以下候選屬於本計畫的執行清單；實作前須以 Serena v2/LSP references 與 bounded text search 核對所有 production、test、export、route consumer。
+
+| 目前位置 | 收斂方式 | 刪除前置條件 |
+| --- | --- | --- |
+| `apps/web/src/modules/file/commercial-intake-state.ts` 的隨機 analysis/document/draft IDs 與 target persistence | 新 task 只保存 taskId、來源及必要恢復資訊；子命令由 server 推導 | 舊 localStorage pending 有明確讀回/恢復路徑；回應校驗同步 |
+| `apps/web/src/modules/file/commercial-intake-panel.tsx` 的 status 後額外 document read、分散恢復編排 | task 回應提供授權後的 stage、receipt 與兩份 draft views；UI 只呈現及送使用者意圖 | task read 重驗來源權限，stale response/session clearing 測試通過 |
+| `apps/web/src/modules/file/file-requests.ts` 的三組商務入口 | 新流程統一 commercialTask；共用 session/denial/raw error 處理 | 所有 consumer 遷移；舊結果查詢仍可用 |
+| `apps/web/src/app/api/document-intakes/route.ts`、`commercial-documents/route.ts` | task route 完整後移除無 consumer 的舊 transport | 舊 pending/client 盤點與恢復完成；不能先刪 receipt 查詢 |
+| `apps/web/src/modules/document-intake/commercial-intake-http.server.ts` 的 resource 分支及重複 request 解析 | task transport 直接使用 owner public capability | 新 task 不再重建 Request 轉呼叫舊 handler；全部行為測試遷移 |
+| `apps/web/src/modules/document-intake/commercial-task-http.server.ts` 的 Request 重建 | 驗證一次後直接呼叫 application orchestration | owner commands/DTO 已收斂；移除雙重 JSON parse/HTTP 自我轉送 |
+| 新 task 與現有 Content/WBS UI 的重複商務匯入操作 | 新商務流程由 task confirm 編排，保留一般 Content/WBS 編輯能力 | 新流程完整跑通，實際 references 證明重複入口無用途 |
+
+保留 Intelligence dispatch/result、Contract 商務事實、Content planning overlay、WBS provenance、舊 pending/history 讀回，以及各 owner 的授權、版本、CAS、receipt 與 failure recovery。不得以行數減少取代 owner 責任或刪除 immutable history、來源 pin、版本與恢復資料。

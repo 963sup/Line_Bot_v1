@@ -5,6 +5,10 @@ import type {
   RepositorySubscriptionSnapshot,
   RepositorySubscriptionState,
 } from "@line_bot_v1/repository/contracts/input/repository-subscription";
+import {
+  isSubscriptionSnapshot,
+  isSubscriptionState,
+} from "@line_bot_v1/repository/contracts/parse-subscription-response";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
@@ -19,10 +23,6 @@ function storageKey(ownerLogin: string, repositoryName: string) {
   return "repository-subscription:" + ownerLogin.toLowerCase() + "/" + repositoryName.toLowerCase();
 }
 
-function isSubscriptionState(value: unknown): value is RepositorySubscriptionState {
-  return value === "SUBSCRIBED" || value === "UNSUBSCRIBED" || value === "IGNORED";
-}
-
 function isPendingSubscription(value: unknown): value is PendingSubscription {
   return (
     isRecord(value) &&
@@ -33,19 +33,6 @@ function isPendingSubscription(value: unknown): value is PendingSubscription {
     typeof value.command.repositoryId === "string" &&
     Number.isSafeInteger(value.command.expectedVersion) &&
     isSubscriptionState(value.command.state)
-  );
-}
-
-function isSubscriptionSnapshot(value: unknown): value is RepositorySubscriptionSnapshot {
-  return (
-    isRecord(value) &&
-    isRecord(value.repository) &&
-    typeof value.repository.id === "string" &&
-    typeof value.repository.actorUserId === "string" &&
-    typeof value.repository.ownerLogin === "string" &&
-    typeof value.repository.name === "string" &&
-    isSubscriptionState(value.state) &&
-    Number.isSafeInteger(value.version)
   );
 }
 

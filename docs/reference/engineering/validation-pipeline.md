@@ -1,41 +1,30 @@
 # Validation
 Repository validation 使用既有 scripts 作單一入口；不要把 typecheck、test、build、deployment、API probe 或手機驗收混成同一種證據。
-`docs:check` 只檢查專案自有內容。`.agents/skills/` 是由 `npx skills` 與 `skills-lock.json` 管理的第三方套件，其編碼、metadata、範例與內部文件連結不套用專案內容規則；`.agents/AGENTS.md` 等專案治理文件仍須通過檢查。此邊界不代表外部技能已通過安全審查或可正常執行。
+Stage 與執行順序以 [`scripts/check.mjs`](../../../scripts/check.mjs) 為準；用 `pnpm check --help` 查看目前入口。Repository 沒有獨立的 `docs:check` 或 `validate` 指令；文件變更須另驗本地連結。
 
 ## Main commands
 | Command | Responsibility |
 | --- | --- |
-| `docs:check` | Markdown structure、frontmatter/conflict markers 與 local file links 的機械檢查；不驗 remote URL、runtime behavior 或手機 |
+| `check:repository` | repository contracts、文件邊界與相關 tooling tests；不等於完整 Markdown／連結驗證 |
 | `schema:check` | `@line_bot_v1/platform` 執行 declarative schema source tests 與 PGlite clean-build / runtime-role / RLS contract tests；不代表 remote catalog 一致 |
 | `lint` | `biome check .` 的 read-only static gate；驗 formatter、lint 與 assist/import ordering，不修改檔案 |
 | `format` | `biome check --write .` 的 canonical local mutation；一次套用 formatter、safe lint fixes 與 assist/import ordering，之後再跑 read-only validation |
-| `architecture` / `architecture:test` | dependency graph、runtime boundary、合法/違規反例 |
-| `deadcode` | `knip` 的 repository reachability gate；檢查 dead file、unused export／dependency。finding 必須回到 owner／consumer／entry point 判讀，禁止用 broad `ignore` 消音 |
+| `dependencies` | adapter boundary tests 與 Dependency Cruiser dependency graph |
+| `knip` | repository reachability；finding 回到 owner／consumer／entry point 判讀，禁止用 broad `ignore` 消音 |
 | `typecheck` | TypeScript contract |
 | `test` | 適用 unit/integration/runtime tests |
 | `build` | production build / framework compile |
-| `check` | 日常 fast feedback，含 lint、architecture 與 affected type/test |
-| `validate` | 明確要求時的完整 tooling/docs/lint/architecture/deadcode/type/test/build |
+| `check [stage...]` | 依序執行指定 stages；未指定時執行 runner 定義的全部預設 stages，`format` 須明確指定 |
 
-實際順序由 `scripts/governance/tooling/validate.mjs` 與 package scripts 擁有；文件不複製 implementation 細節作 second source。VS Code workspace 使用 `.vscode/settings.json` 在 save 時套用同一 Biome formatter / organize imports；Agent／CLI 產出使用 `pnpm format`，CI 仍只做 read-only `pnpm lint`。
+額外工具參數只可傳給單一 stage，例如 `pnpm check lint -- path/to/file.ts`。VS Code save 設定見 `.vscode/settings.json`；Agent／CLI 格式修正使用 `pnpm format`，CI 使用 read-only `pnpm lint`。
 
 Biome 同時涵蓋 `knip.jsonc` 與 `architecture/**/*.json`，React Hooks 的呼叫位置與 effect dependencies 也納入 correctness gate。Knip 對 private workspace package 的 entry exports 檢查實際 repository consumer；未使用 export 應先區分內部宣告、必要公開契約與真正死碼，再收斂 public surface。
-## Fast vs full validation
-`check` 先依 Git 變更責任分流：純 Markdown 只跑 `docs:check`，純 declarative schema 只跑 `schema:check`；產品／runtime source 進 Biome lint、architecture、Knip deadcode 與 Turbo affected type/test。無法可靠判斷範圍時保守退回完整 fast gates。root config / shared dependency 改動可擴張到整個 workspace；手動 filter 必須涵蓋所有 consumer，不以縮小 filter 隱藏跨 package failure。
+## Validation scope
 
-GitHub Draft pull request 代表 active iteration，validation jobs 會 skip，避免每次 checkpoint push 都配置 hosted runner。PR 不是 Draft 時，`opened`、`synchronize`、`reopened`、`ready_for_review` 事件都會對該事件的 exact head，以 PR base SHA 做比較，選擇受影響 Owner 的 groups 與 Turbo transitive consumers；不重複跑無關 Owner。push 到 `main` 也使用前一個 main SHA 的同一選擇器，而不是切換成全量 matrix。差異基準遺失、無法讀取或不可信時，選擇器保守回退所有 groups。Merge candidate 必須以目前 head 的 affected package checks 成功為證據；head 或 base 改變後，舊證據不再適用。checkout 保留完整 Git history 供 Turbo 判斷 changed packages 與 transitive consumers；不在 workflow 手工維護 package path matrix。Aggregate gate 只接受所有已選 group success，planner 或 group 失敗、取消或跳過均不得發布。同 branch 被取代的驗證可取消，外部發布不取消。需要全庫稽核時，完整 lint/typecheck/test/build 依序執行，避免同目錄 Next.js 產物競爭。
+依變更選取 `pnpm check [stage...]`；不傳 stage 會執行全部預設檢查，runner 不會自動依 Git diff 縮小範圍。Public contract 或 shared config 變更須涵蓋 consumers。CI 的選擇與 aggregate 條件以當前 workflow 為準。
 
-Affected package lint/typecheck/test/build 證明 exact revision 的必要責任範圍與 consumers 通過，並不代表 deploy、migration、LINE API、Supabase remote project 或真機驗收。兩者不得互相冒充。
+各層證據的限制由 [validation evidence](../../rules/validation-evidence.md) 擁有；測試選擇由 [testing](testing.md) 擁有。外部發布順序見 [Release](../operations/release.md)，Supabase remote readback 見 [Supabase](../platform/README.md#supabase)。
 
-Validation subprocesses 完整執行，但預設不把高量 stdout/stderr 串流到 caller。成功只輸出 stage summary，diagnostic 必為空字串；原始輸出保存在 ignored artifact，machine-readable result 會包含 artifact path 與 byte count。失敗只回傳最多 8 KiB／80 行的 diagnostic tail 與 artifact path，caller 再針對單一 stage 局部讀取。此輸出邊界不改變 stage selection、exit status、CI aggregate 或 merge/release gate。
-
-Full `validate` 可以驗 remote tooling contract tests，但不會 mutation Production，也不證明指定 remote 已收斂。External release 是另一層 evidence；publication trigger與 ordering由 [Release](../operations/release.md) 擁有，Supabase remote reconciliation semantics由 [Supabase](../platform/supabase.md) 擁有。
-
-因此：
-
-- `schema:check` 證明 schema／reconciliation code contract，不證明 remote current state。
-- Supabase workflow success才證明該 revision的 database contract已完成對應 remote readback。
-- Vercel／LINE／provider／device evidence各自只證明自己的 external boundary。
 ## TypeScript safety
 
 TypeScript 的共用編譯契約由 `tsconfig.base.json` 擁有，workspace source 與 test config 必須繼承五項安全設定。此共用檔也納入 Turbo `globalDependencies`，避免設定改變後仍重播舊的成功快取。
@@ -71,7 +60,8 @@ CI 的 validation 與 Copilot setup 共用 pnpm store、Turbo cache 與 Next cac
 
 Type generation、test/build artifact 與 dependency install 在同一 checkout 可能競爭。驗證流程預設按 repository runner 順序執行；不要同時手動跑另一套會寫相同產物的 command。
 
-`check`／`validate` 的 typecheck、test-unit 與 test-database 在 CI 分成獨立 validation groups，可平行執行並分別定位失敗。typecheck 使用 4 個 Turbo tasks；兩個測試 groups 各自最多 2 個 Turbo tasks。test-database 才啟動 PostgreSQL 17，test-unit 不啟動資料庫。單一 package 的 Node test runner 仍最多兩個 workers，避免跨套件並行相乘而同時初始化過多 PGlite／WASM instances。這是 aggregate resource budget，不縮小 package、test 或 schema coverage，也不修改 `CI`：真 PostgreSQL service 的 CI 必填檢查與本地條件維持原契約。保留 Node 24 的 `--no-wasm-code-gc` 保護；PGlite 的 native／WASM 記憶體不能靠提高 JS heap 上限當作根因修復。直接執行其他 Turbo test 命令時也須設定適當的 `--concurrency`，不要假設 package 內的 worker 上限會限制跨套件總量。
+Typecheck 與 test 的 Turbo concurrency 由 runner 固定為 2；package 內部 worker 設定另由各 manifest 擁有。跨 package 與 package 內的 fan-out 會相乘，直接執行 Turbo 時也須限制總量。PGlite 的 WASM 保護與 PostgreSQL 多連線驗證見 [Testing](testing.md#repository-baseline)。
+
 ## External-effect tools
 以下可能需要明確環境／授權，不屬一般 offline validate：
 

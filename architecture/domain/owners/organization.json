@@ -4,7 +4,7 @@
     "id": "organization",
     "kind": "business-owner",
     "lifecycle": "current",
-    "doc": "docs/owners/organization.md"
+    "doc": "docs/reference/domains/organization.md"
   },
   "boundedContexts": [],
   "concepts": [

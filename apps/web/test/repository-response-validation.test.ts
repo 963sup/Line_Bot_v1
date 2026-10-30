@@ -3,7 +3,7 @@ import { test } from "node:test";
 import {
   isStarListDiscovery,
   isTrendingRepository,
-} from "../src/modules/repository/response-validation";
+} from "@line_bot_v1/repository/contracts/parse-collection-response";
 
 test("repository response validators accept current discovery contracts", () => {
   assert.equal(

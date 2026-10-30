@@ -1,5 +1,9 @@
 "use client";
 
+import {
+  isStarListDetail,
+  isStarredRepository,
+} from "@line_bot_v1/repository/contracts/parse-collection-response";
 import type { RepositoryStarListDetail as RepositoryStarListDetailValue } from "@line_bot_v1/repository/contracts/repositories/star-lists";
 import type { StarredRepository } from "@line_bot_v1/repository/contracts/repositories/stars";
 import Link from "next/link";
@@ -7,12 +11,7 @@ import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
 import MiniAppRuntime from "../../shared/browser/mini-app-runtime";
 import { repositoryPath, repositoryStarListsPath } from "./resource-navigation";
-import {
-  errorMessage,
-  isRecord,
-  isStarListDetail,
-  isStarredRepository,
-} from "./response-validation";
+import { errorMessage, isRecord } from "./response-validation";
 import {
   clearPendingRepositoryStarListCommand,
   type RepositoryStarListCommandBody,
