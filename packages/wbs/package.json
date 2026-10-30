@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./application/transfer-recovery": {
+      "types": "./dist/application/transfer-recovery.d.ts",
+      "default": "./dist/application/transfer-recovery.js"
+    },
     "./domain/document": {
       "types": "./dist/domain/document.d.ts",
       "default": "./dist/domain/document.js"
