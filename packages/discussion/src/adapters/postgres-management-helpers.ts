@@ -9,8 +9,8 @@ import {
   stringValue,
 } from "@line_bot_v1/platform/validation";
 import { RepositoryError } from "@line_bot_v1/repository/contracts/errors/repository-error";
-import { type RepositoryPermission } from "@line_bot_v1/repository/domain/repository/value-objects/repository-capability";
 import type { RepositorySummary } from "@line_bot_v1/repository/domain/repository/entities/repository";
+import { type RepositoryPermission } from "@line_bot_v1/repository/domain/repository/value-objects/repository-capability";
 import type {
   DiscussionCategory,
   DiscussionManagementCommand,
@@ -250,10 +250,12 @@ export type DiscussionRepositoryAccess = Readonly<{
     sql: Sql,
     identity: DiscussionManagementIdentity,
     repositoryId: string,
-  ): Promise<Readonly<{
-    repository: RepositorySummary;
-    participants: readonly Readonly<{ userId: string; name: string }>[];
-  }>>;
+  ): Promise<
+    Readonly<{
+      repository: RepositorySummary;
+      participants: readonly Readonly<{ userId: string; name: string }>[];
+    }>
+  >;
   archived(sql: Sql, repositoryId: string): Promise<boolean>;
   labelIdsExist(sql: Sql, repositoryId: string, labelIds: readonly string[]): Promise<boolean>;
 }>;

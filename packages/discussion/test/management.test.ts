@@ -388,7 +388,6 @@ test("Discussion category releases its scoped slug only after a valid delete", a
   assert.notEqual(replacement.categoryId, created.categoryId);
 });
 
-
 test("Discussion management takes Repository authorization from the host without bypassing errors", async (t) => {
   const { pg, db } = await setup();
   t.after(() => pg.close());
@@ -407,4 +406,48 @@ test("Discussion management takes Repository authorization from the host without
   );
   const present = new PostgresDiscussionManagementStore(repositoryAccess, db);
   assert.equal((await present.view({ userId: "writer" }, "repo")).repository.id, "repo");
+});
+
+test("Discussion writes recheck access before replay and preserve archive restrictions", async (t) => {
+  const { pg, db } = await setup();
+  t.after(() => pg.close());
+  const store = new PostgresDiscussionManagementStore(repositoryAccess, db);
+  const writer = { userId: "writer" };
+  const command = {
+    action: "create-category" as const,
+    requestId: randomUUID(),
+    repositoryId: "repo",
+    expectedVersion: 0 as const,
+    name: "General",
+    slug: "general",
+    description: "",
+    emoji: "",
+    isAnswerable: false,
+  };
+  await assert.rejects(
+    store.execute({ userId: "reader" }, command, 10),
+    (error) => error instanceof DiscussionError && error.status === 403,
+  );
+  const receipt = await store.execute(writer, command, 11);
+  await pg.query("UPDATE repositories SET is_archived=true WHERE id='repo'");
+  assert.deepEqual(await store.execute(writer, command, 12), receipt);
+  await assert.rejects(
+    store.execute(writer, { ...command, requestId: randomUUID(), slug: "new", name: "New" }, 13),
+    (error) => error instanceof DiscussionError && error.status === 409,
+  );
+  await pg.query(
+    "DELETE FROM repository_access WHERE repository_id='repo' AND principal_id='writer'",
+  );
+  await assert.rejects(
+    store.execute(writer, command, 14),
+    (error) => error instanceof DiscussionError && error.status === 403,
+  );
+  assert.deepEqual(
+    (await pg.query("SELECT count(*)::int AS count FROM discussion_categories")).rows,
+    [{ count: 1 }],
+  );
+  assert.deepEqual(
+    (await pg.query("SELECT count(*)::int AS count FROM discussion_commands")).rows,
+    [{ count: 1 }],
+  );
 });

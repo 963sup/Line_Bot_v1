@@ -31,6 +31,7 @@ import {
   currentCategory,
   currentComment,
   currentDiscussion,
+  type DiscussionRepositoryAccess,
   type DiscussionRow,
   decodeCategoryRow,
   decodeCommentRow,
@@ -39,7 +40,6 @@ import {
   discussion,
   discussionEvent,
   discussionScope,
-  type DiscussionRepositoryAccess,
   labelsExist,
   readableCategory,
   readReceipt,
@@ -341,7 +341,12 @@ export class PostgresDiscussionManagementStore implements DiscussionManagementSt
   ): Promise<DiscussionManagementReceipt> {
     const fingerprint = commandFingerprint(command);
     return this.db.transaction(async (sql) => {
-      const selected = await discussionScope(this.repositoryAccess, sql, identity, command.repositoryId);
+      const selected = await discussionScope(
+        this.repositoryAccess,
+        sql,
+        identity,
+        command.repositoryId,
+      );
       requireOperation(selected.repository.permissions, operationFor(command));
 
       await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
@@ -811,7 +816,9 @@ export class PostgresDiscussionManagementStore implements DiscussionManagementSt
           command.action === "clear-labels"
         ) {
           if (command.action === "add-labels") {
-            if (!(await labelsExist(this.repositoryAccess, sql, row.repository_id, command.labelIds))) {
+            if (
+              !(await labelsExist(this.repositoryAccess, sql, row.repository_id, command.labelIds))
+            ) {
               throw new DiscussionError(409, "Label 必須存在於同一 Repository。");
             }
             const added = (

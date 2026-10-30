@@ -7,6 +7,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
+const depcruise = resolve(root, "node_modules/dependency-cruiser/bin/dependency-cruise.mjs");
 test("canonical adapter boundary permits own composition but rejects foreign packages and apps", () => {
   const suffix = `__boundary_${randomUUID().replaceAll("-", "")}.mjs`;
   const adapter = `packages/contract/src/adapters/${suffix}`;
@@ -25,8 +26,17 @@ test("canonical adapter boundary permits own composition but rejects foreign pac
       );
     }
     const result = spawnSync(
-      resolve(root, "node_modules/.bin/depcruise"),
-      ["--config", ".dependency-cruiser.mjs", "--output-type", "json", own, foreign, app],
+      process.execPath,
+      [
+        depcruise,
+        "--config",
+        ".dependency-cruiser.mjs",
+        "--output-type",
+        "json",
+        own,
+        foreign,
+        app,
+      ],
       { cwd: root, encoding: "utf8", maxBuffer: 1024 * 1024 },
     );
     assert.ok([0, 3].includes(result.status), result.stderr);
@@ -71,8 +81,17 @@ test("Contract and WBS cannot import Content bootstrap outside host composition"
     for (const from of [contract, wbs, host])
       writeFileSync(resolve(root, from), sourceImport(from));
     const result = spawnSync(
-      resolve(root, "node_modules/.bin/depcruise"),
-      ["--config", ".dependency-cruiser.mjs", "--output-type", "json", contract, wbs, host],
+      process.execPath,
+      [
+        depcruise,
+        "--config",
+        ".dependency-cruiser.mjs",
+        "--output-type",
+        "json",
+        contract,
+        wbs,
+        host,
+      ],
       { cwd: root, encoding: "utf8", maxBuffer: 1024 * 1024 },
     );
     assert.ok([0, 3].includes(result.status), result.stderr);
@@ -92,7 +111,10 @@ test("Contract and WBS cannot import Content bootstrap outside host composition"
 });
 
 test("Discussion read adapter does not import Repository concrete persistence", () => {
-  const source = readFileSync(resolve(root, "packages/discussion/src/adapters/postgres.ts"), "utf8");
+  const source = readFileSync(
+    resolve(root, "packages/discussion/src/adapters/postgres.ts"),
+    "utf8",
+  );
   assert.doesNotMatch(source, /@line_bot_v1\/repository\/(?:postgres|composition\/bootstrap)/);
 });
 
@@ -110,17 +132,26 @@ test("Contract and Intelligence use Host-composed File ports, not foreign bootst
   };
   try {
     writeFileSync(resolve(root, file), "export const fixture = true;\n");
-    for (const from of [intelligence, contract, host]) writeFileSync(resolve(root, from), sourceImport(from));
+    for (const from of [intelligence, contract, host])
+      writeFileSync(resolve(root, from), sourceImport(from));
     const run = spawnSync(
-      resolve(root, "node_modules/.bin/depcruise"),
-      ["--config", ".dependency-cruiser.mjs", "--output-type", "json", intelligence, contract, host],
+      process.execPath,
+      [
+        depcruise,
+        "--config",
+        ".dependency-cruiser.mjs",
+        "--output-type",
+        "json",
+        intelligence,
+        contract,
+        host,
+      ],
       { cwd: root, encoding: "utf8", maxBuffer: 1024 * 1024 },
     );
     assert.ok([0, 3].includes(run.status), run.stderr);
     const report = JSON.parse(run.stdout);
-    const violated = (from, rule) => report.summary.violations.some(
-      (item) => item.from === from && item.rule.name === rule,
-    );
+    const violated = (from, rule) =>
+      report.summary.violations.some((item) => item.from === from && item.rule.name === rule);
     assert.ok(violated(intelligence, "intelligence-bootstrap-does-not-compose-file-bootstrap"));
     assert.ok(violated(contract, "contract-bootstrap-does-not-compose-file-bootstrap"));
     assert.equal(violated(host, "intelligence-bootstrap-does-not-compose-file-bootstrap"), false);
@@ -131,7 +162,10 @@ test("Contract and Intelligence use Host-composed File ports, not foreign bootst
 });
 
 test("Content composition depends on a narrow Resource port, not Resources bootstrap", () => {
-  const source = readFileSync(resolve(root, "packages/content/src/composition/bootstrap/plans.ts"), "utf8");
+  const source = readFileSync(
+    resolve(root, "packages/content/src/composition/bootstrap/plans.ts"),
+    "utf8",
+  );
   assert.doesNotMatch(source, /@line_bot_v1\/resources\/composition\/bootstrap/);
   assert.match(source, /resourceReader/);
 });
