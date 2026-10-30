@@ -1,7 +1,7 @@
-# the name by which the project can be referenced within Serena/when chatting with the LLM.
+# 在 Serena 中或與 LLM 對話時，用來指稱此專案的名稱。
 project_name: line-bot-v1
 
-# list of language servers to start when using the LSP backend; choose from:
+# 使用 LSP 後端時要啟動的語言伺服器清單；可選值如下：
 #   ada                    al                     angular                ansible                astro
 #   bash                   bsl                    clojure                cpp                    cpp_ccls
 #   crystal                csharp                 csharp_omnisharp       cue                    dart
@@ -18,43 +18,43 @@ project_name: line-bot-v1
 #   solidity               svelte                 swift                  systemverilog          terraform
 #   toml                   typescript             typescript_tsgo        typescript_vts         vue
 #   vbnet                  wolfram                yaml                   zig
-#   (This list may be outdated; generated with scripts/print_language_list.py;
-#   For the current list, see values of the LanguageServerId enum here:
+#   （此清單由 scripts/print_language_list.py 產生，可能已過時；
+#   最新清單請參閱下列位置的 LanguageServerId 列舉值：
 #   https://github.com/oraios/serena/blob/main/src/solidlsp/ls_config.py)
-# For some languages, there are several alternative language servers, e.g. csharp_omnisharp, ruby_solargraph.)
-# Note:
-#   - For C, use cpp
-#   - For JavaScript, use typescript
-#   - For Angular projects, use angular (subsumes typescript+html; requires `npm install` in the project root)
-#   - For Astro projects, use astro (subsumes typescript/javascript for .astro projects; requires npm)
-#   - For Svelte projects, use svelte (subsumes typescript/javascript for .svelte projects; requires npm)
-#   - For Deno projects, use deno (serves the same .ts/.js files as typescript; requires the deno CLI on PATH)
-#   - For SCSS / Sass / plain CSS, use scss (some-sass-language-server handles all three)
-#   - For Free Pascal/Lazarus, use pascal
-#   - External Python adapters may add further registered IDs; install the adapter package first
-#     and then use its ID here, for example: example
-# Special requirements:
-#   Some language servers require additional setup/installations.
-#   See here for details: https://oraios.github.io/serena/01-about/020_programming-languages.html#language-servers
-# When using multiple language servers, the first language server that supports a given file will be used for that file.
-# The first language server is the default language and the respective language server will be used as a fallback.
-# Note that when using the JetBrains backend, language servers are not used and this list is correspondingly ignored.
+# 部分語言有多種語言伺服器可選，例如 csharp_omnisharp、ruby_solargraph。
+# 注意：
+#   - C 使用 cpp。
+#   - JavaScript 使用 typescript。
+#   - Angular 專案使用 angular（涵蓋 typescript+html；須在專案根目錄執行 `npm install`）。
+#   - Astro 專案使用 astro（涵蓋 .astro 專案的 typescript/javascript；需要 npm）。
+#   - Svelte 專案使用 svelte（涵蓋 .svelte 專案的 typescript/javascript；需要 npm）。
+#   - Deno 專案使用 deno（處理與 typescript 相同的 .ts/.js 檔案；PATH 中須有 deno CLI）。
+#   - SCSS、Sass 與純 CSS 使用 scss（some-sass-language-server 支援這三者）。
+#   - Free Pascal/Lazarus 使用 pascal。
+#   - 外部 Python 配接器可能註冊其他 ID；請先安裝配接器套件，
+#     再於此處使用其 ID，例如 example。
+# 特殊需求：
+#   部分語言伺服器需要額外設定或安裝。
+#   詳見：https://oraios.github.io/serena/01-about/020_programming-languages.html#language-servers
+# 使用多個語言伺服器時，會以清單中第一個支援該檔案的伺服器處理該檔案。
+# 第一個語言伺服器代表預設語言，對應的語言伺服器也會作為備援。
+# 使用 JetBrains 後端時不會使用語言伺服器，因此會忽略此清單。
 language_servers:
 - typescript
 
-# whether to use project's .gitignore files to ignore files
+# 是否依照專案的 .gitignore 規則忽略檔案。
 ignore_all_files_in_gitignore: true
 
-# list of additional paths to ignore in this project.
-# Same syntax as gitignore, so you can use * and **.
-# Important: quote patterns that start with `*`, otherwise YAML treats them as aliases.
-# Example:
+# 此專案額外忽略的路徑清單。
+# 語法與 gitignore 相同，可使用 * 與 **。
+# 重要：以 `*` 開頭的模式必須加上引號，否則 YAML 會將其視為別名。
+# 範例：
 #   ignored_paths:
 #     - "examples/**"
 #     - ".worktrees/**"
 #     - "**/bin/**"
 #     - "**/obj/**"
-# Note: global ignored_paths from serena_config.yml are also applied additively.
+# 注意：serena_config.yml 中的全域 ignored_paths 也會合併套用。
 ignored_paths:
 - ".git/**"
 - "node_modules/**"
@@ -85,31 +85,30 @@ ignored_paths:
 - "apps/web/public/**"
 - "packages/integration-supabase/src/schemas/**"
 
-# whether the project is in read-only mode
-# If set to true, all editing tools will be disabled and attempts to use them will result in an error
-# Added on 2025-04-18
+# 專案是否處於唯讀模式。
+# 設為 true 時，所有編輯工具都會停用，嘗試使用時會回報錯誤。
+# 於 2025-04-18 新增。
 read_only: false
 
-# list of mode names that are to be activated by default, overriding the setting in the global configuration.
-# The full set of modes to be activated is base_modes (from global config) + default_modes + added_modes.
-# If the setting is undefined/empty, the default_modes from the global configuration (serena_config.yml) apply.
-# Otherwise, this overrides the setting from the global configuration (serena_config.yml).
-# Therefore, you can set this to [] if you do not want the default modes defined in the global config to apply
-# for this project.
-# This setting can, in turn, be overridden by CLI parameters (--mode).
-# See https://oraios.github.io/serena/02-usage/050_configuration.html#modes
+# 預設啟用的模式名稱清單，會覆寫全域設定。
+# 實際啟用的模式為 base_modes（來自全域設定）+ default_modes + added_modes。
+# 未定義或留空時，使用全域設定（serena_config.yml）的 default_modes。
+# 否則會覆寫全域設定（serena_config.yml）中的對應值。
+# 若不希望此專案套用全域設定的預設模式，可將此值設為 []。
+# CLI 參數（--mode）可進一步覆寫此設定。
+# 詳見：https://oraios.github.io/serena/02-usage/050_configuration.html#modes
 default_modes:
 - interactive
 - editing
 
-# list of mode names to be activated additionally for this project, e.g. ["query-projects"]
-# The full set of modes to be activated is base_modes (from global config) + default_modes + added_modes.
-# See https://oraios.github.io/serena/02-usage/050_configuration.html#modes
+# 此專案額外啟用的模式名稱清單，例如 ["query-projects"]。
+# 實際啟用的模式為 base_modes（來自全域設定）+ default_modes + added_modes。
+# 詳見：https://oraios.github.io/serena/02-usage/050_configuration.html#modes
 added_modes:
 
-# list of APIs (facades or facade methods, e.g. "lsp" or "lsp.get_diagnostics_for_symbol") to include in the REPL
-# that would otherwise be disabled (particularly optional methods, which are disabled by default).
-# This extends the existing inclusions (e.g. from the global configuration).
+# 在 REPL 中額外啟用原本停用的 API（尤其是預設停用的選配方法）。
+# 可指定 facade 或其方法，例如 "lsp" 或 "lsp.get_diagnostics_for_symbol"。
+# 此清單會擴充既有的啟用清單（例如全域設定中的清單）。
 included_apis:
 - cfg
 - fs
@@ -124,9 +123,8 @@ included_apis:
 - lsp.get_diagnostics_for_symbol
 - lsp.restart_language_server
 - ext.project_context
-# Explicitly keep every v2 REPL capability enabled.  The facade names above
-# alone do not document which optional symbol/edit/memory operations are part
-# of this project's contract.
+# 明確保持所有 v2 REPL 能力啟用；僅列出上述 facade 名稱，
+# 無法說明哪些選配的符號、編輯與記憶操作屬於此專案的契約。
 - cfg.get_current_config
 - fs.create_text_file
 - fs.delete_lines
@@ -158,125 +156,116 @@ included_apis:
 - mem.rename_memory
 - mem.write_memory
 
-# list of APIs (facades or facade methods, e.g. "lsp" or "lsp.find_symbol") to exclude from the REPL.
-# This extends the existing exclusions (e.g. from the global configuration).
+# 從 REPL 排除的 API 清單，可指定 facade 或其方法，例如 "lsp" 或 "lsp.find_symbol"。
+# 此清單會擴充既有的排除清單（例如全域設定中的清單）。
 excluded_apis: []
 
-# list of tool names to exclude.
-# This extends the existing exclusions (e.g. from the global configuration)
-# Find the list of tools here: https://oraios.github.io/serena/01-about/035_tools.html
+# 要排除的工具名稱清單。
+# 此清單會擴充既有的排除清單（例如全域設定中的清單）。
+# 工具清單：https://oraios.github.io/serena/01-about/035_tools.html
 excluded_tools: []
 
-# list of tools to include that would otherwise be disabled (particularly optional tools that are disabled by default).
-# This extends the existing inclusions (e.g. from the global configuration).
-# Find the list of tools here: https://oraios.github.io/serena/01-about/035_tools.html
+# 額外啟用原本停用的工具清單（尤其是預設停用的選配工具）。
+# 此清單會擴充既有的啟用清單（例如全域設定中的清單）。
+# 工具清單：https://oraios.github.io/serena/01-about/035_tools.html
 included_optional_tools: []
 
-# time budget (seconds) per tool call for the retrieval of additional symbol information
-# such as docstrings or parameter information.
-# This overrides the corresponding setting in the global configuration; see the documentation there.
-# If null or missing, use the setting from the global configuration.
+# 每次工具呼叫取得額外符號資訊（如文件字串或參數資訊）的時間預算，單位為秒。
+# 此值會覆寫全域設定中的對應值；詳見全域設定的說明。
+# 設為 null 或未指定時，使用全域設定。
 symbol_info_budget: 5.0
 
-# The language backend to use for this project.
-# If not set, the global setting from serena_config.yml is used.
-# Valid values: LSP, JetBrains
-# Note: the backend is fixed at startup. If a project with a different backend
-# is activated post-init, an error will be returned.
+# 此專案使用的語言後端。
+# 未設定時，使用 serena_config.yml 中的全域設定。
+# 有效值：LSP、JetBrains。
+# 注意：後端在啟動時即固定；初始化後若啟用使用不同後端的專案，會回報錯誤。
 language_backend: LSP
 
-# The interface through which the agent (LLM) accesses Serena's functionality (overrides the global setting).
-# Valid values: tools, REPL (see the global configuration for details); leave empty to use the global setting.
-# Note: the interface is fixed at startup. If a project is activated post-init, its setting is not applied.
+# agent（LLM）存取 Serena 功能的介面，會覆寫全域設定。
+# 有效值：tools、REPL（詳見全域設定）；留空則使用全域設定。
+# 注意：介面在啟動時即固定；初始化後才啟用的專案，其介面設定不會套用。
 agent_interface: REPL
 
-# line ending convention to use when writing source files.
-# Possible values: unset (use global setting), "lf", "crlf", or "native" (platform default)
-# This does not affect Serena's own files (e.g. memories and configuration files), which always use native line endings.
+# 寫入原始碼檔案時使用的換行格式。
+# 可不設定（使用全域設定），或設為 "lf"、"crlf"、"native"（平台預設格式）。
+# 此設定不影響 Serena 自身的檔案（如記憶與設定檔），它們一律使用平台原生換行格式。
 line_ending: lf
 
-# list of regex patterns which, when matched, mark a memory entry as read‑only.
-# Extends the list from the global configuration, merging the two lists.
+# 符合這些正規表示式的記憶項目會標記為唯讀。
+# 此清單會與全域設定中的清單合併。
 read_only_memory_patterns: []
 
-# list of regex patterns for memories to completely ignore.
-# Matching memories will not appear in list_memories or activate_project output
-# and cannot be accessed via read_memory or write_memory.
-# To access ignored memory files, use the read_file tool on the raw file path.
-# Extends the list from the global configuration, merging the two lists.
-# Example: ["_archive/.*", "_episodes/.*"]
+# 要完全忽略的記憶項目之正規表示式清單。
+# 符合的記憶不會出現在 list_memories 或 activate_project 的輸出中，
+# 也無法透過 read_memory 或 write_memory 存取。
+# 如需存取被忽略的記憶檔案，請使用 read_file 工具讀取原始檔案路徑。
+# 此清單會與全域設定中的清單合併。
+# 範例：["_archive/.*", "_episodes/.*"]
 ignored_memory_patterns: []
 
-# list of workspace folder paths (LSP backend only).
-# These folders will be used to build up Serena's symbol index.
-# Paths must be within the project root and should thus be relative to the project root.
-# Furthermore, the paths should not be filtered by ignore settings.
-# Default setting: The entire project root folder (".") is considered.
-# In (large) monorepos, this can be used to index only subfolders of the project root, e.g.
+# 工作區資料夾路徑清單（僅適用於 LSP 後端）。
+# Serena 會使用這些資料夾建立符號索引。
+# 路徑必須位於專案根目錄內，因此應使用相對於專案根目錄的路徑。
+# 這些路徑也不應被忽略規則排除。
+# 預設會納入整個專案根目錄（"."）。
+# 在大型 monorepo 中，可用此設定僅索引專案根目錄下的部分子目錄，例如：
 #   ls_workspace_folders:
 #     - "./subproject1"
 #     - "./subproject2"
 ls_workspace_folders:
 - .
 
-# list of additional workspace folder paths for cross-package reference support.
-# Paths can be absolute or relative to the project root.
-# Each folder is registered as an LSP workspace folder, enabling language servers to discover
-# symbols and references across package boundaries, but these folders are not indexed by Serena,
-# i.e. the respective symbols will not be found using Serena's symbol search tools.
-# Example:
+# 為支援跨套件引用而加入的額外工作區資料夾路徑清單。
+# 可使用絕對路徑或相對於專案根目錄的路徑。
+# 每個資料夾都會註冊為 LSP 工作區資料夾，讓語言伺服器探索跨套件的符號與引用。
+# 但 Serena 不會為這些資料夾建立索引，因此其符號無法透過 Serena 的符號搜尋工具找到。
+# 範例：
 #   additional_workspace_folders:
 #     - ../sibling-package
 #     - ../shared-lib
 ls_additional_workspace_folders: []
 
-# initial prompt for the project. It will always be given to the LLM upon activating the project
-# (contrary to the memories, which are loaded on demand).
+# 專案的初始提示；每次啟用專案時都會提供給 LLM（記憶則是按需載入）。
 initial_prompt: >-
-  Work on the currently activated worktree and follow the repository AGENTS.md
-  and governing contracts. Use Serena for semantic symbol navigation,
-  references, diagnostics, refactoring, project activation, onboarding, and
-  project memories. At the beginning of a new project session, inspect the
-  current config and memory list; run onboarding only when project memories do
-  not exist yet. Do not open the web dashboard automatically. Use Codex-native
-  file editing, shell, Git, tests, and validation for operations Serena does
-  not uniquely improve. Serena output is exploration or operation evidence,
-  not a replacement for repository source of truth or acceptance validation.
-  Run any potentially high-volume shell validation or polling command through
-  `pnpm tool:bounded -- --label <scope> -- <command>`; give polling a stable
-  `--dedupe-key` and consume only its JSON summary rather than raw logs.
+  在目前啟用的 worktree 中工作，遵守儲存庫的 AGENTS.md 與治理契約。
+  使用 Serena 進行語義符號導覽、引用查詢、診斷、重構、專案啟用、onboarding 與專案記憶操作。
+  新專案 session 開始時，檢查目前設定與記憶清單；只有專案記憶尚不存在時才執行 onboarding。
+  不要自動開啟網頁儀表板。對於 Serena 無法提供獨特助益的操作，
+  使用 Codex 原生的檔案編輯、shell、Git、測試與驗證工具。
+  Serena 的輸出是探索或操作證據，不能取代儲存庫的權威來源或驗收驗證。
+  任何可能產生大量輸出的 shell 驗證或輪詢命令，都應保留有界的結構化摘要；
+  輪詢須使用穩定的去重鍵，並只讀取摘要，不讀取原始日誌。
 
-# the encoding used by text files in the project
-# For a list of possible encodings, see https://docs.python.org/3.11/library/codecs.html#standard-encodings
+# 專案文字檔案使用的編碼。
+# 可用編碼清單：https://docs.python.org/3.11/library/codecs.html#standard-encodings
 encoding: utf-8
 
-# optional shell command to run before the language backend (LSP or JetBrains) is initialised.
-# the command runs in the project root directory and is only executed if the project is trusted
-# (see trusted_project_path_patterns in the global configuration).
-# serena waits for the command to exit: a non-zero exit code is logged as an error but does not
-# abort activation. a per-project timeout (activation_command_timeout, default 180s) is the safety
-# backstop for non-terminating commands; on expiry the process is killed and activation continues.
-# example: activation_command: "npx nx run-many -t build"
+# 語言後端（LSP 或 JetBrains）初始化前可選擇執行的 shell 命令。
+# 命令在專案根目錄執行，且僅在專案受信任時執行
+# （請參閱全域設定中的 trusted_project_path_patterns）。
+# Serena 會等待命令結束；非零結束碼會記錄為錯誤，但不會中止專案啟用。
+# 專案層級的逾時設定（activation_command_timeout，預設 180 秒）
+# 用於處理未結束的命令；逾時後會終止該程序並繼續啟用專案。
+# 範例：activation_command: "npx nx run-many -t build"
 activation_command:
 
-# maximum time in seconds to wait for activation_command to complete before killing it (default 180s).
-# must be a positive number.
+# 等待 activation_command 完成的最長秒數，超時即終止命令（預設 180 秒）。
+# 必須為正數。
 activation_command_timeout: 180.0
 
-# advanced configuration option allowing to configure language server-specific options.
-# Maps the language key to the options.
-# The settings are considered only if the project is trusted (see global configuration to define trusted projects).
-# See https://oraios.github.io/serena/02-usage/050_configuration.html#language-server-specific-settings
+# 語言伺服器專屬選項的進階設定，以語言鍵對應各項選項。
+# 只有專案受信任時才會採用這些設定（受信任專案的定義方式請參閱全域設定）。
+# 詳見：https://oraios.github.io/serena/02-usage/050_configuration.html#language-server-specific-settings
 ls_specific_settings:
   typescript:
-    # Reuse the repository-pinned 5.1.3 server and TypeScript 5.9.3 instead of
-    # creating a second Serena-managed npm installation.
+    # 重用儲存庫固定的 5.1.3 版語言伺服器與 TypeScript 5.9.3，
+    # 避免另外建立一份由 Serena 管理的 npm 安裝。
     ls_path: node_modules/.bin/typescript-language-server
     server_ready_timeout: 30.0
     indexing_start_grace: 10.0
     indexing_timeout: 60.0
 
-# fixed set of tools to use as the base tool set (if non-empty), replacing Serena's default set of tools.
-# This cannot be combined with non-empty excluded_tools or included_optional_tools.
-# Find the list of tools here: https://oraios.github.io/serena/01-about/035_tools.html
+# 固定的基礎工具集合；非空時會取代 Serena 的預設工具集合。
+# 不可與非空的 excluded_tools 或 included_optional_tools 同時使用。
+# 工具清單：https://oraios.github.io/serena/01-about/035_tools.html
 fixed_tools: []
