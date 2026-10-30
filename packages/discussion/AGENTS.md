@@ -9,8 +9,6 @@ Local constraints for `@line_bot_v1/discussion`. Parent rules: [`packages/AGENTS
 - Protected reads re-check current effective Repository access through the Repository public contract.
 - The current opaque Discussion ID is a local implementation locator and must not redefine GitHub FPT `Discussion.number`.
 - Current runtime management includes the implemented `manage-discussions` write lifecycle; public write routes must stay aligned with current Repository access, expected-version/replay, and immutable Discussion event rules.
-- Public API surface is defined exclusively in `package.json#exports`.
-- Private implementations in `src/adapters/**` must not be imported outside this package.
 
 ## Discussion writer and reader authority
 

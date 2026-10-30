@@ -1,4 +1,7 @@
 # Web enterprise module
+
+繼承 [上層規則](../AGENTS.md)；本檔僅補充當地約束。
+
 ## 現行 surface 與 invariant
 URLs：`/enterprises`、`/enterprises/{slug}`、`/enterprises/{slug}/teams/{teamSlug}`；API `/api/enterprise`。
 

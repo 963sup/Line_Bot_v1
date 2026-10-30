@@ -129,28 +129,23 @@ included_apis:
 # of this project's contract.
 - cfg.get_current_config
 - fs.create_text_file
-- fs.delete_lines
 - fs.find_file
 - fs.list_dir
 - fs.read_file
-- fs.replace_content
+- edit.replace_content
 - fs.search_for_pattern
 - edit.insert_after_symbol
 - edit.insert_before_symbol
 - edit.replace_symbol_body
 - edit.replace_in_files
-- edit.rename_symbol
-- edit.safe_delete_symbol
 - lsp.find_declaration
 - lsp.find_implementations
 - lsp.find_referencing_symbols
 - lsp.find_symbol
 - lsp.get_diagnostics_for_file
-- lsp.get_diagnostics_for_symbol
 - lsp.get_symbols_overview
 - lsp.rename_symbol
 - lsp.safe_delete_symbol
-- lsp.restart_language_server
 - mem.delete_memory
 - mem.edit_memory
 - mem.list_memories
@@ -242,9 +237,9 @@ initial_prompt: >-
   file editing, shell, Git, tests, and validation for operations Serena does
   not uniquely improve. Serena output is exploration or operation evidence,
   not a replacement for repository source of truth or acceptance validation.
-  Run any potentially high-volume shell validation or polling command through
-  `pnpm tool:bounded -- --label <scope> -- <command>`; give polling a stable
-  `--dedupe-key` and consume only its JSON summary rather than raw logs.
+  Follow the root AGENTS.md bounded-output contract: save high-volume validation
+  and polling output to ignored artifacts, preserve the actual exit status,
+  and inspect only a relevant summary or bounded failure excerpt.
 
 # the encoding used by text files in the project
 # For a list of possible encodings, see https://docs.python.org/3.11/library/codecs.html#standard-encodings

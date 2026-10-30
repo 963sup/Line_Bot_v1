@@ -1,0 +1,125 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "./apps/web"
+    },
+    {
+      "path": "./packages/account"
+    },
+    {
+      "path": "./packages/actions"
+    },
+    {
+      "path": "./packages/asset"
+    },
+    {
+      "path": "./packages/assistant"
+    },
+    {
+      "path": "./packages/attendance"
+    },
+    {
+      "path": "./packages/audit"
+    },
+    {
+      "path": "./packages/content"
+    },
+    {
+      "path": "./packages/contract"
+    },
+    {
+      "path": "./packages/daily-check-in"
+    },
+    {
+      "path": "./packages/discussion"
+    },
+    {
+      "path": "./packages/enterprise"
+    },
+    {
+      "path": "./packages/execution"
+    },
+    {
+      "path": "./packages/expense"
+    },
+    {
+      "path": "./packages/explore"
+    },
+    {
+      "path": "./packages/file"
+    },
+    {
+      "path": "./packages/google-workspace"
+    },
+    {
+      "path": "./packages/identity-access"
+    },
+    {
+      "path": "./packages/insights"
+    },
+    {
+      "path": "./packages/integration-openai"
+    },
+    {
+      "path": "./packages/integration-supabase"
+    },
+    {
+      "path": "./packages/integration-vercel"
+    },
+    {
+      "path": "./packages/intelligence"
+    },
+    {
+      "path": "./packages/issue"
+    },
+    {
+      "path": "./packages/ledger"
+    },
+    {
+      "path": "./packages/line"
+    },
+    {
+      "path": "./packages/namespace"
+    },
+    {
+      "path": "./packages/notifications"
+    },
+    {
+      "path": "./packages/numbering"
+    },
+    {
+      "path": "./packages/organization"
+    },
+    {
+      "path": "./packages/partners"
+    },
+    {
+      "path": "./packages/payroll"
+    },
+    {
+      "path": "./packages/platform"
+    },
+    {
+      "path": "./packages/project"
+    },
+    {
+      "path": "./packages/repository"
+    },
+    {
+      "path": "./packages/resources"
+    },
+    {
+      "path": "./packages/team"
+    },
+    {
+      "path": "./packages/wallet"
+    },
+    {
+      "path": "./packages/wbs"
+    },
+    {
+      "path": "./packages/wiki"
+    }
+  ]
+}

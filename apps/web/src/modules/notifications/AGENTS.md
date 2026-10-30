@@ -1,4 +1,7 @@
 # Web Notifications module
+
+繼承 [上層規則](../AGENTS.md)；本檔僅補充當地約束。
+
 ## 現行 surface 與 invariant
 Current presentation name：Inbox。Current published URL：`/notifications`、`/notifications/{notificationId}`；API `/api/notifications`。URL/API 是 transport contract，不把 Inbox 升格成 Domain owner。
 

@@ -1,5 +1,7 @@
 # Resource route group
 
+繼承 [上層規則](../AGENTS.md)；本檔僅補充當地約束。
+
 `/{login}/{repository}/wiki` lists authorized Wiki pages; `/wiki/{pageId}` uses stable page identity across rename and revision restore. Historical content rechecks current source access; Markdown stays escaped raw text. URLs never grant access.
 
 `/{login}/{repository}/insights` is the authenticated read-only Repository Pulse entry. The locator is resolved under current Repository access; no public metrics are server-rendered.
@@ -7,7 +9,6 @@
 `/{login}/{repository}/content` presents Content work plans; `/files` presents Repository-scoped protected File originals and explicit ProcessingRuns; `/resources` presents physical Resources. Their distinct owner contracts recheck current Repository scope.
 
 `/{login}/{repository}/wbs` retains existing Repository-WBS content, exact retries and controlled migration. New WBS starts in Project. Overview conditionally links to legacy recovery from WBS-owned eligibility; shared navigation has no WBS tab. After cutover, current source-owner authorization resolves the Project destination without requiring the retired content API to succeed.
-
 
 ## 現行 URL 與 invariant
 

@@ -1,10 +1,6 @@
 # Current schema source
 
-## Governing files
-
-完整 authority 與讀取條件繼承 [root context contract](../../../AGENTS.md#effective-context-contract)；本檔只增加 local constraints，不另存 governing 清單。
-
-Local code、workflow、schema 或 guard 不得繞過、弱化或重定義這些 governing inputs；若發生 violation，先修真正 Owner / Truth / Boundary / Dependency。
+繼承 [上層規則](../AGENTS.md)；本檔僅補充當地約束。
 
 - 本目錄只擁有 current declarative PostgreSQL structure；每個 `.sql` 必須含 current executable SQL。歷史／migration／proposal／future filename reservation 不得回流成第二套 current state。
 - 物件切分以 [README](README.md) 的 Object / Relationship tree 為導航；真正 owner 由 `architecture/registry.json#data` 機械判定。

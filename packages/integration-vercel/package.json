@@ -22,7 +22,7 @@
   ],
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit --tsBuildInfoFile .cache/typecheck.tsbuildinfo",
     "test": "node --import tsx --test \"test/**/*.test.ts\""
   },
   "dependencies": {

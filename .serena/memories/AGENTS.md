@@ -1,5 +1,7 @@
 # Serena memory graph contract
 
+Inherits the [Serena project contract](../AGENTS.md).
+
 ## Purpose
 
 These files let an AI with zero repository context load only the minimum durable knowledge needed for its task. They are a directed retrieval graph, not a duplicate wiki, task log, or prompt dump.

@@ -26,7 +26,7 @@
   ],
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit --tsBuildInfoFile .cache/typecheck.tsbuildinfo"
   },
   "devDependencies": {
     "typescript": "catalog:"

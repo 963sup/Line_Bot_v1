@@ -1,4 +1,7 @@
 # Web DailyCheckIn module
+
+繼承 [上層規則](../AGENTS.md)；本檔僅補充當地約束。
+
 ## Owner
 This module owns the DailyCheckIn Web presentation lifecycle: current-view loading, explicit claim intent, unknown-result readback, wheel/result presentation, reduced-motion and mobile interaction states.
 

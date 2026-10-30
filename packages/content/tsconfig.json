@@ -7,7 +7,20 @@
     "declarationMap": true,
     "sourceMap": true,
     "module": "ESNext",
-    "moduleResolution": "Bundler"
+    "moduleResolution": "Bundler",
+    "composite": true,
+    "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo"
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts"],
+  "references": [
+    {
+      "path": "../platform"
+    },
+    {
+      "path": "../repository"
+    },
+    {
+      "path": "../resources"
+    }
+  ]
 }

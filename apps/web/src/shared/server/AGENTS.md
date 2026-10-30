@@ -1,9 +1,10 @@
 # Server shared boundary
 
+繼承 [上層規則](../AGENTS.md)；本檔僅補充當地約束。
 
 ## 現行機制與 invariant
 
-沒有自己的產品 URL；被 [API](../../app/api/AGENTS.md) 與 Server Component 使用。HTTP 大小限制、response 機制、runtime environment 可共用；owner error/permission/transaction 應留在 module/package。
+沒有自己的產品 URL；被 [API](../../app/api/AGENTS.md) 與 Server Component 使用。HTTP 大小限制、response 機制、runtime environment 可共用；owner error/permission/transaction 決策留在 package；module 只投影 transport 結果。
 
 `line-mini-app` 只提供 runtime configuration，`request-identity-error` 不得成為 Account lifecycle 判斷；修改要核對 caller 與秘密隔離。FPT meta 不授權新增 universal service/authorization facade。
 

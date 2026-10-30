@@ -5,7 +5,5 @@ Local constraints for `@line_bot_v1/google-workspace`. Parent rules: [`packages/
 ## Local Invariants
 
 - Integration adapter owns external protocol mapping only; holds no internal business truth.
-- OAuth tokens must be passed client-side via Bearer headers; no client secrets in code.
+- OAuth requests pass the caller-supplied access token in the Authorization Bearer header; this transport rule does not require moving credentials into browser code.
 - API failures are translated into structured, recoverable domain error representations.
-- Public API surface is defined exclusively in `package.json#exports`.
-- Private implementations in `src/` must not be imported via relative paths by external packages.

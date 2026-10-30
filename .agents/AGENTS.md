@@ -1,6 +1,6 @@
 # `.agents/` scope
 
-This directory follows the official Codex Skills and Plugins layout. It is a
+Inherits the [root contract](../AGENTS.md). This directory follows the official Codex Skills and Plugins layout. It is a
 repository integration surface, not a second application runtime or product
 governance layer.
 

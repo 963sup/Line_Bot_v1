@@ -1,5 +1,7 @@
 # Web assistant module
 
+繼承 [上層規則](../AGENTS.md)；本檔僅補充當地約束。
+
 ## Current Web surface
 
 - Bottom Navigation 的 AI 目的地是 `/assistant`；`assistant` 已加入 Account login reserved set，避免與 public `/{login}` locator 空間產生歧義。

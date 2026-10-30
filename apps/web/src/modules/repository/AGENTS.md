@@ -1,5 +1,7 @@
 # Web repository module
 
+繼承 [上層規則](../AGENTS.md)；本檔僅補充當地約束。
+
 Repository Files navigation uses the canonical `/{login}/{repository}/files` route. File owns file operations; Intelligence owns processing. Repository only authorizes current scope, and Web preserves one request identity per explicit operation without browser-side ownership of saved facts.
 
 Wiki at `/{login}/{repository}/wiki` and `/wiki/{pageId}` consumes Wiki owner use cases. Stable page identity, immutable history, comparison/restore and exact replay remain owner contracts. Web binds pending commands to verified User/Repository/page, preserves unknown-result original content, clears private state on identity loss/hidden views, and renders Markdown only as escaped text. No second writer or page-specific ACL.

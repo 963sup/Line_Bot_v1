@@ -5,7 +5,30 @@
     "outDir": "dist",
     "declaration": true,
     "module": "ESNext",
-    "moduleResolution": "Bundler"
+    "moduleResolution": "Bundler",
+    "composite": true,
+    "declarationMap": true,
+    "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo"
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts"],
+  "references": [
+    {
+      "path": "../account"
+    },
+    {
+      "path": "../notifications"
+    },
+    {
+      "path": "../platform"
+    },
+    {
+      "path": "../project"
+    },
+    {
+      "path": "../repository"
+    },
+    {
+      "path": "../wbs"
+    }
+  ]
 }

@@ -1,5 +1,7 @@
 # Mobile application route group
 
+繼承 [上層規則](../AGENTS.md)；本檔僅補充當地約束。
+
 `(mobile)` 擁有 authenticated Mobile / LINE MINI App delivery：mobile shell、primary navigation、page composition，以及 direct-entry / refresh / back 的 presentation continuity。它不擁有 business truth、authorization、resource identity、package boundary 或 persistence。
 
 ## Invariants

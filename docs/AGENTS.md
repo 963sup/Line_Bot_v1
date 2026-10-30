@@ -1,6 +1,6 @@
 # Documentation retrieval contract
 
-Optimize for relevant information per loaded context.
+Inherits the [root contract](../AGENTS.md). Optimize for relevant information per loaded context.
 
 - A document may contain multiple closely related retrieval sections when that reduces duplicate maintenance. `README` routes only; `AGENTS.md` holds behavior-changing constraints only.
 - One fact/rule has one canonical owner; other locations reference it.
@@ -9,7 +9,6 @@ Optimize for relevant information per loaded context.
 - Machine semantic/module/data truth lives in `architecture/*.json`; SQL truth in `packages/integration-supabase/src/schemas/`; do not recopy it into prose.
 - Git owns review/change history; use ordinary review, without a review-state manifest.
 - Moves/deletes update inbound references in the same change; no redirect Markdown.
-- Documentation changes preserve authorization, transaction, replay/version, isolation, recovery, privacy, and evidence semantics.
 
 After docs changes, verify local links and run the applicable static checks; this repository has no dedicated `docs:check` script.
 
@@ -19,9 +18,9 @@ When restructuring documentation, do not default to preserving the existing file
 
 Different owners, domains, or maintenance responsibilities may be represented as explicit sections in one authoritative guide. Choose independent files based on information completeness, findability, lifecycle, and long-term maintenance cost—not on directory labels, existing links, or historical classification.
 
-For an authorized docs restructuring, execute safe migrations directly without requesting approval at every batch boundary. Preserve necessary authorization, transaction, replay/version, isolation, recovery, privacy, evidence, and source-of-truth semantics; update inbound references in the same change and verify links and applicable repository checks.
+Authorized restructuring follows the root autonomy and validation contract; preserve all inherited invariants and verify every affected inbound reference.
 
 ## Naming
 
 - 文件與資料夾名稱應協助查找，但名稱相近的規則、事實、reference 與 change 文件可以在確認資訊完整後合併；合併後保留清楚的章節與 README routing。
-- 移動或改名必須同一變更更新 inbound references；不建立 redirect Markdown 或平行命名版本。文件命名不重述 machine truth。
+- 文件命名不重述 machine truth，也不建立平行命名版本。

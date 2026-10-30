@@ -260,7 +260,7 @@ codex mcp add serena \
   --env "XDG_CACHE_HOME=$XDG_CACHE_HOME" \
   --env "XDG_DATA_HOME=$XDG_DATA_HOME" \
   --env "XDG_CONFIG_HOME=$XDG_CONFIG_HOME" \
-  -- serena start-mcp-server --project-from-cwd --context=codex
+  -- serena start-mcp-server --project-from-cwd --context=codex --agent-interface=REPL
 
 # MCP subprocess 明確沿用 workspace npm cache。
 codex mcp add \

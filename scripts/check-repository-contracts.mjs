@@ -81,6 +81,7 @@ if (errors.length) {
       "--test",
       "scripts/tooling/documentation-boundary.test.mjs",
       "scripts/tooling/repository-contracts.test.mjs",
+      "scripts/tooling/typescript-projects.test.mjs",
     ],
     {
       cwd: root,
