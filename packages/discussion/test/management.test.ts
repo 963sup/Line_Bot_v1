@@ -3,8 +3,17 @@ import { randomUUID } from "node:crypto";
 import { test } from "node:test";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
+import { RepositoryError } from "@line_bot_v1/repository/contracts/errors/repository-error";
+import { repositoryArchived, repositoryScope } from "@line_bot_v1/repository/postgres/access";
+import { repositoryLabelIdsExist } from "@line_bot_v1/repository/postgres/resource-management";
 import { PostgresDiscussionManagementStore } from "../src/adapters/postgres-management.js";
 import { DiscussionError } from "../src/domain.js";
+
+const repositoryAccess = {
+  scope: repositoryScope,
+  archived: repositoryArchived,
+  labelIdsExist: repositoryLabelIdsExist,
+};
 
 async function activeUser(db: Database, id: string) {
   await db.transaction(async (sql) => {
@@ -37,7 +46,7 @@ async function setup() {
 test("Discussion management composes lifecycle, replies, answer, labels, votes, poll and lock", async (t) => {
   const { pg, db } = await setup();
   t.after(() => pg.close());
-  const store = new PostgresDiscussionManagementStore(db);
+  const store = new PostgresDiscussionManagementStore(repositoryAccess, db);
   const writer = { userId: "writer" };
 
   const category = await store.execute(
@@ -275,7 +284,7 @@ test("Legacy Discussion adoption is explicit and allocates stable repository num
        id,repository_id,author,title,body,category,version,created_at,updated_at
      ) values('legacy','repo','writer','Legacy','Body','General',1,1,1)`,
   );
-  const store = new PostgresDiscussionManagementStore(db);
+  const store = new PostgresDiscussionManagementStore(repositoryAccess, db);
   const category = await store.execute(
     { userId: "writer" },
     {
@@ -330,7 +339,7 @@ test("Legacy Discussion adoption is explicit and allocates stable repository num
 test("Discussion category releases its scoped slug only after a valid delete", async (t) => {
   const { pg, db } = await setup();
   t.after(() => pg.close());
-  const store = new PostgresDiscussionManagementStore(db);
+  const store = new PostgresDiscussionManagementStore(repositoryAccess, db);
   const writer = { userId: "writer" };
 
   const created = await store.execute(
@@ -377,4 +386,25 @@ test("Discussion category releases its scoped slug only after a valid delete", a
   );
   assert.ok(replacement.categoryId);
   assert.notEqual(replacement.categoryId, created.categoryId);
+});
+
+
+test("Discussion management takes Repository authorization from the host without bypassing errors", async (t) => {
+  const { pg, db } = await setup();
+  t.after(() => pg.close());
+  const denied = new PostgresDiscussionManagementStore(
+    {
+      ...repositoryAccess,
+      scope: async () => {
+        throw new RepositoryError(403, "Access denied.");
+      },
+    },
+    db,
+  );
+  await assert.rejects(
+    denied.view({ userId: "writer" }, "repo"),
+    (error) => error instanceof DiscussionError && error.status === 403,
+  );
+  const present = new PostgresDiscussionManagementStore(repositoryAccess, db);
+  assert.equal((await present.view({ userId: "writer" }, "repo")).repository.id, "repo");
 });

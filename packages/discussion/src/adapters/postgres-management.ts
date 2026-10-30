@@ -39,6 +39,7 @@ import {
   discussion,
   discussionEvent,
   discussionScope,
+  type DiscussionRepositoryAccess,
   labelsExist,
   readableCategory,
   readReceipt,
@@ -214,7 +215,10 @@ async function pollView(
 }
 
 export class PostgresDiscussionManagementStore implements DiscussionManagementStore {
-  constructor(private readonly db: Database = businessDatabase()) {}
+  constructor(
+    private readonly repositoryAccess: DiscussionRepositoryAccess,
+    private readonly db: Database = businessDatabase(),
+  ) {}
 
   view(
     identity: DiscussionManagementIdentity,
@@ -222,7 +226,7 @@ export class PostgresDiscussionManagementStore implements DiscussionManagementSt
     discussionId?: string,
   ): Promise<DiscussionManagementView> {
     return this.db.transaction(async (sql) => {
-      const selected = await discussionScope(sql, identity, repositoryId);
+      const selected = await discussionScope(this.repositoryAccess, sql, identity, repositoryId);
       const categoryRows = (
         await sql.query(
           "SELECT * FROM discussion_categories WHERE repository_id=$1 ORDER BY lower(name),id",
@@ -337,7 +341,7 @@ export class PostgresDiscussionManagementStore implements DiscussionManagementSt
   ): Promise<DiscussionManagementReceipt> {
     const fingerprint = commandFingerprint(command);
     return this.db.transaction(async (sql) => {
-      const selected = await discussionScope(sql, identity, command.repositoryId);
+      const selected = await discussionScope(this.repositoryAccess, sql, identity, command.repositoryId);
       requireOperation(selected.repository.permissions, operationFor(command));
 
       await sql.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
@@ -353,7 +357,7 @@ export class PostgresDiscussionManagementStore implements DiscussionManagementSt
       const replay = readReceipt(previous, fingerprint);
       if (replay) return replay;
 
-      await requireWritableRepository(sql, command.repositoryId);
+      await requireWritableRepository(this.repositoryAccess, sql, command.repositoryId);
       let result: DiscussionManagementReceipt;
 
       if (command.action === "create-category") {
@@ -807,7 +811,7 @@ export class PostgresDiscussionManagementStore implements DiscussionManagementSt
           command.action === "clear-labels"
         ) {
           if (command.action === "add-labels") {
-            if (!(await labelsExist(sql, row.repository_id, command.labelIds))) {
+            if (!(await labelsExist(this.repositoryAccess, sql, row.repository_id, command.labelIds))) {
               throw new DiscussionError(409, "Label 必須存在於同一 Repository。");
             }
             const added = (

@@ -10,8 +10,7 @@ import {
 } from "@line_bot_v1/platform/validation";
 import { RepositoryError } from "@line_bot_v1/repository/contracts/errors/repository-error";
 import { type RepositoryPermission } from "@line_bot_v1/repository/domain/repository/value-objects/repository-capability";
-import { repositoryArchived, repositoryScope } from "@line_bot_v1/repository/postgres/access";
-import { repositoryLabelIdsExist } from "@line_bot_v1/repository/postgres/resource-management";
+import type { RepositorySummary } from "@line_bot_v1/repository/domain/repository/entities/repository";
 import type {
   DiscussionCategory,
   DiscussionManagementCommand,
@@ -245,16 +244,35 @@ async function repositoryOperation<T>(operation: () => Promise<T>): Promise<T> {
   }
 }
 
+/** Repository owns these reads; the Host wires them into the same Discussion transaction. */
+export type DiscussionRepositoryAccess = Readonly<{
+  scope(
+    sql: Sql,
+    identity: DiscussionManagementIdentity,
+    repositoryId: string,
+  ): Promise<Readonly<{
+    repository: RepositorySummary;
+    participants: readonly Readonly<{ userId: string; name: string }>[];
+  }>>;
+  archived(sql: Sql, repositoryId: string): Promise<boolean>;
+  labelIdsExist(sql: Sql, repositoryId: string, labelIds: readonly string[]): Promise<boolean>;
+}>;
+
 export async function discussionScope(
+  access: DiscussionRepositoryAccess,
   sql: Sql,
   identity: DiscussionManagementIdentity,
   repositoryId: string,
 ) {
-  return repositoryOperation(() => repositoryScope(sql, identity, repositoryId));
+  return repositoryOperation(() => access.scope(sql, identity, repositoryId));
 }
 
-export async function requireWritableRepository(sql: Sql, repositoryId: string) {
-  if (await repositoryOperation(() => repositoryArchived(sql, repositoryId))) {
+export async function requireWritableRepository(
+  access: DiscussionRepositoryAccess,
+  sql: Sql,
+  repositoryId: string,
+) {
+  if (await repositoryOperation(() => access.archived(sql, repositoryId))) {
     throw new DiscussionError(409, "Repository 已封存，Discussion 目前為唯讀。");
   }
 }
@@ -515,14 +533,10 @@ export async function storeReceipt(
 }
 
 export async function labelsExist(
+  access: DiscussionRepositoryAccess,
   sql: Sql,
   repositoryId: string,
   labelIds: readonly string[],
 ): Promise<boolean> {
-  try {
-    return await repositoryLabelIdsExist(sql, repositoryId, labelIds);
-  } catch (error) {
-    if (error instanceof RepositoryError) throw new DiscussionError(error.status, error.message);
-    throw error;
-  }
+  return repositoryOperation(() => access.labelIdsExist(sql, repositoryId, labelIds));
 }

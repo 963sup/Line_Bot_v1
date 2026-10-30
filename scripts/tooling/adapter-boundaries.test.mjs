@@ -135,3 +135,13 @@ test("Content composition depends on a narrow Resource port, not Resources boots
   assert.doesNotMatch(source, /@line_bot_v1\/resources\/composition\/bootstrap/);
   assert.match(source, /resourceReader/);
 });
+
+test("Discussion management cannot import Repository concrete persistence", () => {
+  for (const path of [
+    "packages/discussion/src/adapters/postgres-management.ts",
+    "packages/discussion/src/adapters/postgres-management-helpers.ts",
+  ]) {
+    const source = readFileSync(resolve(root, path), "utf8");
+    assert.doesNotMatch(source, /@line_bot_v1\/repository\/(?:postgres|composition\/bootstrap)/);
+  }
+});

@@ -70,6 +70,13 @@ export default {
       to: { path: "^packages/repository/src/postgres/" },
     },
     {
+      name: "discussion-management-does-not-import-repository-postgres",
+      severity: "error",
+      comment: "Discussion management receives Repository transaction-scoped authorization from the Host",
+      from: { path: "^packages/discussion/src/adapters/postgres-management(?:-helpers)?\\.ts$" },
+      to: { path: "^packages/repository/src/postgres/" },
+    },
+    {
       name: "features-do-not-import-routes",
       severity: "error",
       from: { path: "^apps/[^/]+/src/(modules|features|components|shared)/" },

@@ -16,5 +16,5 @@ Local constraints for `@line_bot_v1/discussion`. Parent rules: [`packages/AGENTS
 
 - Discussion alone changes its discussions, categories, comments, answer/review status, events and receipts. Repository owns scope/access; Issue is an independent sibling Owner.
 - Read access uses current Repository authorization injected into the Discussion read adapter by Host composition. Do not reintroduce a direct `repository/postgres/*` import in that reader.
-- Existing write-side Repository Postgres integrations retain current locks, archive checks and replay until their transaction-safe replacement is proven. They do not grant permission to update Repository private tables.
+- Discussion management receives transaction-scoped Repository scope, archive status and label validation from Host composition. Preserve the existing transaction, authorization error translation, archive policy and exact replay; never reintroduce direct Repository Postgres imports in its adapters.
 - No Discussion command implicitly creates an Issue or changes Contract/Content/WBS; invoke those Owners' public commands for real cross-Owner actions.
