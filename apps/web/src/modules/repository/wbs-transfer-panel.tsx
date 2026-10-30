@@ -3,6 +3,16 @@
 import { isRecord } from "@line_bot_v1/platform/validation";
 import { parseProjectManagementReceipt } from "@line_bot_v1/project/application/management";
 import type {
+  CreateTransferProjectCommand,
+  WbsTransferCancellation,
+  WbsTransferOperation,
+} from "@line_bot_v1/wbs/application/transfer-recovery";
+import {
+  parseWbsTransferCancellation,
+  parseWbsTransferOperation,
+  reconcileWbsTransferCancellation,
+} from "@line_bot_v1/wbs/application/transfer-recovery";
+import type {
   CancelWbsScopeTransferCommand,
   WbsScopeTransfer,
 } from "@line_bot_v1/wbs/contracts/dto/transfer";
@@ -10,16 +20,6 @@ import { parseWbsScopeTransfer } from "@line_bot_v1/wbs/contracts/parse-transfer
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { liffClient } from "../../shared/browser/liff-client";
-import type {
-  CreateTransferProjectCommand,
-  WbsTransferCancellation,
-  WbsTransferOperation,
-} from "./wbs-transfer-state";
-import {
-  parseWbsTransferCancellation,
-  parseWbsTransferOperation,
-  reconcileWbsTransferCancellation,
-} from "./wbs-transfer-state";
 
 class TransferRequestError extends Error {
   constructor(
