@@ -1,6 +1,8 @@
 import { isRecord } from "@line_bot_v1/platform/validation";
-import { parseProjectManagementCommand } from "@line_bot_v1/project/application/management";
-import type { ProjectManagementCommand } from "@line_bot_v1/project/contracts/management";
+import {
+  type ProjectManagementCommand,
+  parseProjectManagementCommand,
+} from "@line_bot_v1/project/contracts/management";
 import {
   parseCancelWbsScopeTransferCommand,
   parseRequestWbsScopeTransferCommand,

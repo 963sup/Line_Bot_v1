@@ -1,13 +1,13 @@
 import type { ProjectLifecycleAction } from "../domain/project-lifecycle.js";
 import type {
   ProjectAccessRole,
-  ProjectCollaboratorRole,
   ProjectFieldDataType,
   ProjectOptionColor,
   ProjectOwnerKind,
   ProjectStatusUpdateStatus,
   ProjectViewLayout,
 } from "../domain.js";
+import type { ProjectFieldValue, ProjectManagementCommand } from "./management-command.js";
 
 export type ProjectRoot = Readonly<{
   id: string;
@@ -94,14 +94,6 @@ export type ProjectField = Readonly<{
   updatedAt: number;
 }>;
 
-export type ProjectFieldValue =
-  | Readonly<{ type: "DATE"; date: string }>
-  | Readonly<{ type: "ITERATION"; iterationId: string }>
-  | Readonly<{ type: "MULTI_SELECT"; optionIds: readonly string[] }>
-  | Readonly<{ type: "NUMBER"; number: number }>
-  | Readonly<{ type: "SINGLE_SELECT"; optionId: string }>
-  | Readonly<{ type: "TEXT"; text: string }>;
-
 export type ProjectItemFieldValue = Readonly<{
   itemId: string;
   fieldId: string;
@@ -153,203 +145,6 @@ export type ProjectManagementView = Readonly<{
   statusUpdates: readonly ProjectStatusUpdate[];
 }>;
 
-type CommandBase = Readonly<{
-  requestId: string;
-}>;
-
-type ExistingProjectBase = CommandBase &
-  Readonly<{
-    projectId: string;
-    expectedVersion: number;
-  }>;
-
-export type ProjectFieldOptionInput = Readonly<{
-  id?: string;
-  name: string;
-  color: ProjectOptionColor;
-  description: string;
-}>;
-
-export type ProjectIterationInput = Readonly<{
-  id?: string;
-  title: string;
-  startDate: string;
-  duration: number;
-}>;
-
-export type ProjectCollaboratorInput = Readonly<{
-  role: ProjectCollaboratorRole;
-  userId?: string;
-  teamId?: string;
-}>;
-
-export type ProjectManagementCommand =
-  | (CommandBase &
-      Readonly<{
-        action: "create-project";
-        ownerAccountId: string;
-        ownerKind: ProjectOwnerKind;
-        expectedVersion: 0;
-        title: string;
-        public: boolean;
-        repositoryId: string | null;
-        importIssues?: "OPEN" | "CLOSED" | "ALL";
-        teamId: string | null;
-      }>)
-  | (ExistingProjectBase & Readonly<{ action: "adopt-project" }>)
-  | (ExistingProjectBase &
-      Readonly<{
-        action: "set-repository-import";
-        repositoryId: string;
-        importIssues: "OPEN" | "CLOSED" | "ALL" | null;
-      }>)
-  | (ExistingProjectBase &
-      Readonly<{
-        action: "update-project";
-        title?: string;
-        shortDescription?: string;
-        readme?: string;
-        public?: boolean;
-      }>)
-  | (ExistingProjectBase & Readonly<{ action: "close-project" }>)
-  | (ExistingProjectBase & Readonly<{ action: "reopen-project" }>)
-  | (ExistingProjectBase & Readonly<{ action: "delete-project" }>)
-  | (CommandBase &
-      Readonly<{
-        action: "copy-project";
-        sourceProjectId: string;
-        sourceExpectedVersion: number;
-        ownerAccountId: string;
-        ownerKind: ProjectOwnerKind;
-        expectedVersion: 0;
-        title: string;
-        includeDraftIssues: boolean;
-      }>)
-  | (ExistingProjectBase &
-      Readonly<{
-        action: "update-collaborators";
-        collaborators: readonly ProjectCollaboratorInput[];
-      }>)
-  | (ExistingProjectBase & Readonly<{ action: "add-issue-item"; issueId: string }>)
-  | (ExistingProjectBase &
-      Readonly<{
-        action: "add-draft-item";
-        title: string;
-        body: string;
-        assigneeIds: readonly string[];
-      }>)
-  | (ExistingProjectBase &
-      Readonly<{
-        action: "update-draft-item";
-        itemId: string;
-        draftVersion: number;
-        title?: string;
-        body?: string;
-        assigneeIds?: readonly string[];
-      }>)
-  | (ExistingProjectBase &
-      Readonly<{
-        action: "archive-item" | "unarchive-item" | "delete-item";
-        itemId: string;
-        itemVersion: number;
-      }>)
-  | (ExistingProjectBase &
-      Readonly<{
-        action: "move-item";
-        itemId: string;
-        itemVersion: number;
-        beforeItemId: string | null;
-      }>)
-  | (ExistingProjectBase &
-      Readonly<{
-        action: "convert-draft-item";
-        itemId: string;
-        itemVersion: number;
-        repositoryId: string;
-      }>)
-  | (ExistingProjectBase &
-      Readonly<{
-        action: "create-field";
-        name: string;
-        dataType: ProjectFieldDataType;
-        options: readonly ProjectFieldOptionInput[];
-        iterations: readonly ProjectIterationInput[];
-      }>)
-  | (ExistingProjectBase &
-      Readonly<{
-        action: "update-field";
-        fieldId: string;
-        fieldVersion: number;
-        name?: string;
-        options?: readonly ProjectFieldOptionInput[];
-        iterations?: readonly ProjectIterationInput[];
-      }>)
-  | (ExistingProjectBase &
-      Readonly<{
-        action: "delete-field";
-        fieldId: string;
-        fieldVersion: number;
-      }>)
-  | (ExistingProjectBase &
-      Readonly<{
-        action: "set-field-value";
-        itemId: string;
-        fieldId: string;
-        value: ProjectFieldValue;
-      }>)
-  | (ExistingProjectBase &
-      Readonly<{
-        action: "clear-field-value";
-        itemId: string;
-        fieldId: string;
-      }>)
-  | (ExistingProjectBase &
-      Readonly<{
-        action: "create-view";
-        name: string;
-        layout: ProjectViewLayout;
-        visibleFieldIds: readonly string[];
-      }>)
-  | (ExistingProjectBase &
-      Readonly<{
-        action: "update-view";
-        viewId: string;
-        viewVersion: number;
-        name?: string;
-        layout?: ProjectViewLayout;
-        visibleFieldIds?: readonly string[];
-      }>)
-  | (ExistingProjectBase &
-      Readonly<{
-        action: "delete-view";
-        viewId: string;
-        viewVersion: number;
-      }>)
-  | (ExistingProjectBase &
-      Readonly<{
-        action: "create-status-update";
-        body: string | null;
-        status: ProjectStatusUpdateStatus | null;
-        startDate: string | null;
-        targetDate: string | null;
-      }>)
-  | (ExistingProjectBase &
-      Readonly<{
-        action: "update-status-update";
-        statusUpdateId: string;
-        statusUpdateVersion: number;
-        body?: string | null;
-        status?: ProjectStatusUpdateStatus | null;
-        startDate?: string | null;
-        targetDate?: string | null;
-      }>)
-  | (ExistingProjectBase &
-      Readonly<{
-        action: "delete-status-update";
-        statusUpdateId: string;
-        statusUpdateVersion: number;
-      }>);
-
 export type ProjectManagementReceipt = Readonly<{
   requestId: string;
   action: ProjectManagementCommand["action"];
@@ -375,3 +170,12 @@ export interface ProjectManagementStore {
     now: number,
   ): Promise<ProjectManagementReceipt>;
 }
+
+export {
+  type ProjectCollaboratorInput,
+  type ProjectFieldOptionInput,
+  type ProjectFieldValue,
+  type ProjectIterationInput,
+  type ProjectManagementCommand,
+  parseProjectManagementCommand,
+} from "./management-command.js";
