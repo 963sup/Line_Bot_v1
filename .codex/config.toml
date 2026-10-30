@@ -124,6 +124,10 @@ config_file = "./agents/accessibility-ux-auditor.toml"
 description = "Maintain repository documentation, AGENTS guidance, Serena README, and durable memory routing."
 config_file = "./agents/documentation-curator.toml"
 
+[agents.agents-md-author]
+description = "Write and audit concise AGENTS.md instructions with clear authority, Owner/API boundaries and verifiable rules."
+config_file = "./agents/agents-md-author.toml"
+
 [agents.contract-steward]
 description = "Maintain public API, event, HTTP, provider, and package contract compatibility."
 config_file = "./agents/contract-steward.toml"
