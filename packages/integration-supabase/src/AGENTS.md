@@ -2,11 +2,7 @@
 
 Current schema semantics 見 [Schema model](../../../docs/reference/data/schema.md)；integration-specific provider／reconciliation 規則見 [Canonical Supabase rules](README.md#canonical-supabase-rules)。
 
-## Governing files
-
-完整 authority 與讀取條件繼承 [root context contract](../../AGENTS.md#effective-context-contract)；本檔只增加 local constraints，不另存 governing 清單。
-
-Local code、workflow、schema 或 guard 不得繞過、弱化或重定義這些 governing inputs；若發生 violation，先修真正 Owner / Truth / Boundary / Dependency。
+繼承 [上層規則](../AGENTS.md)；本檔僅補充當地約束。
 
 - `packages/integration-supabase/src/schemas/` 的可執行 SQL 是 application-owned PostgreSQL current structure 的唯一 Source of Truth；`architecture/registry.json#data` 只擁有 persisted relation → semantic owner / role / physical file mapping。
 - Schema authority unit 是 Object / Relationship relation，不是檔案。Authoritative relation 恰好一個 semantic owner；同一 authoritative SQL file 不得混合不同 owner。

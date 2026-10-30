@@ -4,8 +4,6 @@ Local constraints for `@line_bot_v1/payroll`. Parent rules: [`packages/AGENTS.md
 
 ## Local Invariants
 
-- Module remains inactive until explicit payroll consumer contracts and calculation engines are deployed.
-- Payroll readiness consumes Attendance and Expense approved facts via query.
-- Settlement entries require dual authorization and emit atomic Ledger records.
-- Public API surface is defined exclusively in `package.json#exports`.
-- Private implementations in `src/` must not be imported via relative paths by external packages.
+- Current capability is readiness validation over injected Workforce, Attendance-period and rule-version sources; readiness is not calculation, approval or settlement.
+- Formal calculation and settlement remain inactive. Activation requires explicit consumer/input contracts and the [Payroll calculation gate](../../docs/reference/domains/payroll.md#calculation-activation-gate); do not infer approved Expense inputs or Ledger posting from this foundation.
+- Any future settlement must preserve dual authorization and atomic Ledger posting through Ledger's public contract; this is an activation constraint, not a deployed capability.

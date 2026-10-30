@@ -7,7 +7,7 @@
 - 命令先界定問題、目標路徑與預期答案；優先 exact file/package/symbol/revision，不預設掃描整庫。大型檔案先定位 section，HTTPS JSON 先投影必要欄位／數量。
 - 高量 test/build/CI/provider 完整輸出留 ignored `.artifacts/` 並保留真實 exit status；context 只讀摘要、第一個可行動錯誤與有界片段。資訊不足才局部擴展，輪詢只報狀態變化。輸出上限不取代相關性判斷。
 - 不載入完整環境、DB dump、credential、無關檔案或完整 provider response；不能以 context 截斷縮小實際驗證範圍。限定輸入的 rg/sed/Git pathspec 直接使用，不強制新增 wrapper。
-- Root 保留共通約束，nested 只補本地規則，操作手冊按需讀；project instruction chain 保持預設 32 KiB 內，不以提高配置上限代替精簡。
+- Root 保留共通約束；沿目標路徑繼承全部祖先 AGENTS，nested 只補本地規則，兄弟 scope 不互相繼承。操作手冊按需讀；project instruction chain 保持預設 32 KiB 內，不以提高配置上限代替精簡。
 
 ## Mandatory governing set
 
@@ -29,7 +29,7 @@
 - 若任務本身就是修改 governing file，先證明 authority / contract 為何真的需要改，再同步所有受影響 consumer、guard、tests、docs 與 validation evidence；不得從 symptom 反推規則應放寬。
 - `architecture/fpt/*.json` 是從 pinned `github/docs/src/graphql/data/fpt` 原樣 vendoring 的 GitHub GraphQL domain truth；不得手改、轉寫或由產品 domain 分片覆蓋。`domain/vocabulary.json` 與 `domain/owners/*.json` 只補本產品 owner、invariant、relationship、capability 與 implementation expectation。
 - Nested `AGENTS.md` 只能增加 local constraint，不能削弱或覆寫本 governing set。
-- 所有 nested scope 完整繼承 [system invariants](docs/rules/system-invariants.md)，包括 bounded tool output；不得以 local validation、debug 或 verbose 慣例恢復無界 stdout／stderr。需要完整原始證據時寫入 ignored artifact，Agent context 只載入摘要與有界片段。
+- 所有 nested scope 完整繼承 [system invariants](docs/rules/system-invariants.md)，包括上方 Context hygiene 的輸出預算；local validation/debug 不構成例外。
 
 ## Effective context contract
 
@@ -90,17 +90,16 @@
 
 - Skills 只補技術知識，不另建治理、glossary、報告或確認流程。驗收包含 owner 歸屬、public imports 與重複實作。
 
-- 巢狀 AGENTS 與角色繼承本工具契約，只補 owner 特有查證點。
 - LSP 查證：檔案 symbols → exact symbol（按需 body）→ references/implementations → diagnostics；跨 package 補查 public imports/exports。空結果或 timeout 不證明無 consumer。
 - Rename/delete 前補查動態／字串 consumer，之後驗證 owner 行為。初始化預建 index，日常重用；API 簽名以 session 為準。
 
 - TS/JS symbols、references、diagnostics、語義重構、safe delete、LSP、memory 任務優先 Serena v2 + LSP；一般文件／設定／shell／Git／patch／驗證用 Codex 原生工具。工具未登錄、能力不足或失敗時明示原因並用原生工具繼續。
 - Serena availability gate：每個 task/session 最多做一次 bounded availability check（host tool registry 或 `serena --version`）。若 executable、MCP tool 或 session 不可用，記錄失效層後本輪直接改用 `rg`、原生檔案工具與 TypeScript/package checks；不要反覆重啟、重建 index、重讀 manual 或把 CLI 成功當成 MCP 成功。只有 runtime/config 改變或使用中的 Serena call 實際失敗，才重新檢查。
-- 每個 MCP session 只讀一次 initial_instructions；重用成功能力，CLI 成功不等於 host MCP 成功。按需讀 [Serena README](.serena/README.md) 與 [官方 Tools](https://oraios.github.io/serena/01-about/035_tools.html)。
+- 每個 MCP session 只讀一次 initial_instructions；操作、index 觸發與失敗處置按需讀 [Serena README](.serena/README.md) 與 [官方 Tools](https://oraios.github.io/serena/01-about/035_tools.html)。
 
 ### Serena context budget
 
-- 不每輪重讀 manual/help、列工具、health-check 或 index；只有 runtime/config 改變或實際失敗才重驗失效層。Index 觸發、ignore、REPL 簽名、跨 package 引用及信任判斷見 Serena README，單檔問題先 index-file。
+- 重用已成功能力；不每輪重讀 manual/help、列工具、health-check 或 index。單檔問題先 index-file，不因任務開始重建全庫 index。
 - Memory 只是檢索入口；持久知識改變才 mutation。首次 mutation 前讀 mem:eme_core 與 mem:memory_maintenance，沿用 owner，完成後 serena memories check。不記錄 credential、branch 狀態、聊天、原始 log 或一次性進度。
 
 ## Change / validation

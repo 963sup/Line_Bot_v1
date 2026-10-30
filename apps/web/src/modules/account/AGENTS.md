@@ -1,4 +1,7 @@
 # Web account module
+
+繼承 [上層規則](../AGENTS.md)；本檔僅補充當地約束。
+
 ## 現行 surface 與 invariant
 Module-owned surfaces：`/{login}` 的 User projection、`/settings`、`/settings/profile`、`/settings/network`、`/settings/users`、`/membership/register`、`/membership/restore`、`/login`、`/google-link`；HTTP families 為 `/api/membership/*`、`/api/profile`、`/api/profile/achievements`、`/api/profile/status`、`/api/follows`。`/profile` 只解析本人入口到 `/{login}`；本 module 提供 Account projection/API，不取得跨 owner composition responsibility。
 

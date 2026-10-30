@@ -12,7 +12,6 @@ Local code、workflow、schema 或 guard 不得繞過、弱化或重定義這些
 
 - 業務實作的目標位置是 `packages/<owner>`。page/API 保留 framework transport、操作與呼叫；modules 只組裝公開能力與 Web 呈現接線，不承接用例、查詢政策、業務授權、交易或 recovery。呈現互動不構成業務 owner。
 
-- 正式 route / HTTP entry 只做 transport、layout、presentation 與最外層 dependency composition；不複製 owner use case。
 - Web feature module 可以呈現 owner capability，但不得取得另一 owner 的 private model、table 或 authorization。
 - `shared` 只保存真正跨 feature 且無 business authority 的 Web mechanism；多處引用本身不是 shared evidence。
 - Browser state、URL、query、layout 與 navigation intent 不授權；protected operation 由 server 重新建立可信 Principal / qualification / scope。

@@ -37,6 +37,39 @@ serena start-mcp-server --project-from-cwd --context=codex --agent-interface=REP
 
 Use `serena <command> --help` when a command is actually needed; do not preload the full CLI manual. Index only the affected file or project when required. A successful index/health-check does not prove host MCP connectivity; verify one known symbol in the live session.
 
+## TypeScript project graph and refactoring
+
+The root `tsconfig.json` discovers the current TypeScript projects. Library
+configs use `composite`, declaration maps and references to their real workspace
+dependencies; Web references its library dependencies. Keep these references
+aligned with manifests when adding or removing a dependency. Public imports
+continue to use package exports, never private source aliases.
+
+Turbo remains the build scheduler. Build metadata stays in `dist/`; source and
+test typechecks write separate ignored `.cache/` metadata so concurrent tasks
+cannot overwrite the build state. After changing the project graph, build the
+affected dependencies and restart the LSP before checking cross-package results.
+Indexing pre-caches symbols; it does not create missing TypeScript project edges.
+
+Before a cross-package rename/delete, confirm both source declaration resolution
+and at least one known external consumer. Inspect dynamic/string consumers
+separately, preview/review the affected files, and run affected typechecks/tests.
+No-reference results alone do not authorize deleting a public API.
+
+## Host connection and memory validation
+
+With stdio, the Host must launch and connect Serena. A CLI process or direct
+Python API probe does not expose tools in an existing chat. Where the Host
+provides them, inspect `mcpServerStatus/list` for the current thread and use
+`config/mcpServer/reload` after a configuration change; otherwise report the
+missing Host capability. Do not start a parallel gateway as a substitute.
+
+When MCP is unavailable, `serena memories` provides the official read/write/
+edit/rename/delete CLI within the same task authorization. After mutation,
+inspect `serena memories check` output: it always exits zero, even with stale
+references, and skips the `memory_maintenance` template. Check that template's
+references and local naming conventions separately.
+
 ## Failure routing
 
 | Symptom | Bounded response |

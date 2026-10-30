@@ -4,16 +4,15 @@
 
 - Core principle: progressive discovery through references, building a graph of memories.
 - Initially, agents are provided with the list of all memories (names only).
-- Agents should read `mem:core` as the top-level entry point (graph root).
+- Agents should read `mem:eme_core` as the top-level entry point (graph root).
   This memory should contain references to other memories covering major project domains.
   The referenced memories shall, in turn, shall contain references to even more specific memories, and so on.
   The depth of the graph shall depend on the project complexity.
-- Use topics/folders to group related memories in order to make the content structure explicit.
-  Folders can mirror project structure (e.g. modules like frontend/backend) or topics like debugging, architecture, etc.
-- Memory references must use a mem: prefix inside backticks, e.g. `mem:frontend/core`.
+- This project uses flat `eme_<area>_<topic>.md` files under the local AGENTS contract; do not create topic folders.
+- Memory references must use a mem: prefix inside backticks, e.g. `mem:eme_engineering_commands`.
   The surrounding text should clearly indicate when to read the memory/which content to expect.
   The text should provide more precise guidance than the memory name alone,
-  i.e. avoid a reference like "frontend debugging: `mem:frontend/debugging` and instead make clear which aspects of frontend debugging are covered.
+  State the relevant question or trigger rather than merely repeating the memory name.
 - Memories themselves should not contain information about when to read them; this is the responsibility of the referring memory.
 
 ## Style
@@ -30,4 +29,4 @@ Do not add: quick-read facts; generic language/framework knowledge; one-off task
 ## Maintenance Actions
 
 - Renaming memories: References are updated automatically if handled via Serena's memory rename tool.
-- Checking for stale memories (e.g. after deletion): Call `serena memories check` for a report.
+- Checking for stale memories (e.g. after deletion): Call `serena memories check` and inspect the report; its exit code is always zero. The checker skips this maintenance template, so verify its references and conventions separately.

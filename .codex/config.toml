@@ -31,7 +31,7 @@ startup_timeout_sec = 30
 [mcp_servers.serena]
 startup_timeout_sec = 15
 command = "serena"
-args = ["start-mcp-server", "--project-from-cwd", "--context=codex"]
+args = ["start-mcp-server", "--project-from-cwd", "--context=codex", "--agent-interface=REPL"]
 cwd = "/workspace/Line_Bot_v1"
 experimental_environment = "remote"
 default_tools_approval_mode = "auto"

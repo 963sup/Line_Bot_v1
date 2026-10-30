@@ -1,5 +1,7 @@
 # Rich Menu route group
 
+繼承 [上層規則](../AGENTS.md)；本檔僅補充當地約束。
+
 `(rich-menu)` owns authenticated LINE Rich Menu navigation composition at the
 Web route-group boundary. It maps Rich Menu actions to existing canonical
 application surfaces and preserves direct-entry and authentication continuity.
@@ -13,8 +15,8 @@ application surfaces and preserves direct-entry and authentication continuity.
   destination, adapter, writer, or business abstraction.
 - Presentation labels and query parameters express navigation intent only;
   they never authorize or create a new source of truth.
-- LINE Rich Menu definition, publication, rollback, and provider readback stay
-  with `packages/line` and the canonical LINE operations.
+- LINE protocol/client behavior stays with `packages/line`; product definition,
+  publication and readback use the existing [Rich Menu operator composition](../../modules/assistant/rich-menu/AGENTS.md).
 
 ## Navigation invariants
 

@@ -7,5 +7,3 @@ Local constraints for `@line_bot_v1/daily-check-in`. Parent rules: [`packages/AG
 - Exactly one check-in claim per user per UTC/timezone business day.
 - DailyCheckIn claim retry uses the existing `(user_id, business_day)` natural key: an existing claim replays its persisted result without another Ledger credit. The current claim API has no requestId/fingerprint command; do not invent one.
 - Reward distribution triggers atomic credit entries via Ledger/Wallet.
-- Public API surface is defined exclusively in `package.json#exports`.
-- Private implementations in `src/` must not be imported via relative paths by external packages.

@@ -10,4 +10,3 @@ Local constraints for `@line_bot_v1/numbering`. Parent rules: [`packages/AGENTS.
 - Numbering decides sequence integrity only. Resource authorization, lifecycle, replay receipts, and
   the decision to allocate stay with the consuming Owner.
 - Numbering does not depend on Namespace and never queries a consumer's private tables.
-- Public API surface is defined exclusively in `package.json#exports`.

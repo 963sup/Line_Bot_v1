@@ -1,5 +1,6 @@
 # Public route group
 
+繼承 [上層規則](../AGENTS.md)；本檔僅補充當地約束。
 
 ## 現行 URL 與 invariant
 

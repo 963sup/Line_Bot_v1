@@ -10,5 +10,3 @@ Local constraints for `@line_bot_v1/account`. Parent rules: [`packages/AGENTS.md
 - Authored User profile status is Account-owned, public-only in the current MVP, and distinct from
   both User lifecycle `status` and LINE provider profile/status data. Organization-scoped status is
   unsupported until Organization qualification and audience reads have an explicit contract.
-- Public API surface is defined exclusively in `package.json#exports`.
-- Private implementations in `src/` must not be imported via relative paths by external packages.

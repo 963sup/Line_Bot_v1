@@ -1,5 +1,7 @@
 # Presentation shared boundary
 
+繼承 [上層規則](../AGENTS.md)；本檔僅補充當地約束。
+
 ## 現行機制與 invariant
 
 URL helpers 只擁有白名單 parsing/normalization：`entry-route`、`entry-destination`、`entry-navigation`、`view-route`；路徑清單以 [app](../../app/AGENTS.md) 的 local 契約核對，不建立自動掃描即授權的 route registry。

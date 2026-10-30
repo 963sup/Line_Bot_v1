@@ -1,14 +1,13 @@
 # Serena project contract
 
-This directory owns Serena's project-local configuration and durable memory graph. It is not product source, architecture authority, or a substitute for repository `AGENTS.md` rules.
+Inherits the [root tool contract](../AGENTS.md#serena-mcp-usage). This directory owns Serena's project-local configuration and durable memory graph. It is not product source, architecture authority, or a substitute for repository `AGENTS.md` rules.
 
 ## Serena MCP usage
 
 - 操作速查與 LSP／REPL 範例見 [Serena README](README.md)；該文件是使用入口，當前 CLI `--help` 與實際 session 能力優先於速查表中的版本化示例。
 
-- This project uses Serena v2's **REPL** interface as the primary semantic interface. API exposure is configured by `project.yml` together with the global configuration, client context, and active modes; classic tool inclusion lists do not control REPL APIs.
-- Normal operation enables all APIs available with the LSP backend: `cfg`, `fs`, `edit`, `mem`, `shell`, `ext`, and `lsp`, including optional methods. JetBrains APIs require the separate JetBrains backend and are not available in this LSP session. Prefer Serena for semantic navigation, symbol edits, safe deletion, and composed ignore-aware reads; Codex-native operations remain available for ordinary file, shell, Git, test, and validation work.
-- `initial_instructions` is the session manual. If it is exposed, call it once at session start; do not repeatedly inject its full output into context.
+- The configured Serena v2 semantic interface is **REPL**. `project.yml`, global configuration, client context and active modes determine API exposure; configuration is not proof of host/session availability. Classic tool inclusion lists do not control REPL APIs.
+- The configured policy enables LSP-backend APIs: `cfg`, `fs`, `edit`, `mem`, `shell`, `ext`, and `lsp`, including optional methods. Verify actual availability in the live session. JetBrains APIs require the separate JetBrains backend; do not infer them from an LSP configuration.
 - `no-memories` disables memory tools and onboarding. `no-onboarding` retains memory operations but skips onboarding. A temporary onboarding session requires explicit authorization because onboarding and memory writes are edit-capable.
 - Memory operations are: `list_memories`, `read_memory`, `write_memory`, `edit_memory`, `rename_memory`, and `delete_memory`. Prefer `rename_memory` for a rename because it updates marked `mem:` references. Use `delete_memory` only with explicit user authorization.
 

@@ -5,7 +5,24 @@
     "outDir": "dist",
     "declaration": true,
     "module": "ESNext",
-    "moduleResolution": "Bundler"
+    "moduleResolution": "Bundler",
+    "composite": true,
+    "declarationMap": true,
+    "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo"
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts"],
+  "references": [
+    {
+      "path": "../integration-supabase"
+    },
+    {
+      "path": "../namespace"
+    },
+    {
+      "path": "../platform"
+    },
+    {
+      "path": "../repository"
+    }
+  ]
 }

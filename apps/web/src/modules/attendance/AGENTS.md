@@ -1,5 +1,7 @@
 # Web attendance delivery
 
+繼承 [上層規則](../AGENTS.md)；本檔僅補充當地約束。
+
 ## Boundary
 
 URLs：`/attendance`、`/attendance/clock-in`、`/attendance/clock-out`；API 為 `/api/attendance`、其 clock-in/clock-out 子路徑、`/api/attendance/supplements`、`/api/attendance/supplements/review`、`/api/internal/attendance-maintenance`。

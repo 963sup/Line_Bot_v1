@@ -1,5 +1,6 @@
 # Web shared 約束
 
+繼承 [上層規則](../../AGENTS.md)；本檔僅補充當地約束。
 
 ## FPT 對照與 URL 邊界
 

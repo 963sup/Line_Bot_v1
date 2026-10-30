@@ -1,5 +1,7 @@
 # Project Web Surface
 
+繼承 [上層規則](../AGENTS.md)；本檔僅補充當地約束。
+
 `ProjectList`, `ProjectCreate` and `ProjectDetail` own the Web presentation for `/projects`, `/projects/new` and `/projects/[projectId]`. Project identity in the URL locates a resource; `@line_bot_v1/project` rechecks current access on every read and command.
 
 ## Ownership and boundaries
