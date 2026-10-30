@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { test } from "node:test";
-import { createPostgresContentWbsExpansionReader } from "@line_bot_v1/content/composition/bootstrap/wbs-expansion";
 import type { Database } from "@line_bot_v1/platform/postgres";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { createProjectWbs } from "../src/application/use-cases/project-content.js";
@@ -34,11 +33,7 @@ test("Project WBS preserves role, replay, review, publication and scope isolatio
 
   const content = createProjectWbs({
     activeUser: async (subject) => ({ id: subject }),
-    store: () =>
-      createPostgresProjectWbsStore({
-        db,
-        contentReader: createPostgresContentWbsExpansionReader,
-      }),
+    store: () => createPostgresProjectWbsStore(db),
     now: () => 10,
   });
   const governance = createProjectWbsGovernance({
@@ -53,6 +48,35 @@ test("Project WBS preserves role, replay, review, publication and scope isolatio
     expectedVersion: 0,
   });
   assert.equal(initialized.projectId, "project-a");
+
+  const importCommand = {
+    action: "import-content-document" as const,
+    projectId: "project-a",
+    requestId: randomUUID(),
+    expectedVersion: 1,
+    repositoryId: "repo",
+    contentRevisionId: randomUUID(),
+    confirmedDisclosure: true as const,
+  };
+  await assert.rejects(
+    content.execute("owner", importCommand),
+    (error) => error instanceof WbsError && error.status === 503,
+  );
+  const wiredContent = createProjectWbs({
+    activeUser: async (subject) => ({ id: subject }),
+    store: () =>
+      createPostgresProjectWbsStore(db, () => ({
+        read: async () => {
+          throw new WbsError(404, "Source revision unavailable.");
+        },
+      })),
+    now: () => 10,
+  });
+  await assert.rejects(
+    wiredContent.execute("owner", { ...importCommand, requestId: randomUUID() }),
+    (error) => error instanceof WbsError && error.status === 404,
+  );
+  assert.equal((await content.read("owner", { projectId: "project-a" })).version, 1);
   assert.equal((await content.read("reader", { projectId: "project-a" })).canEdit, false);
   await assert.rejects(
     content.execute("reader", {

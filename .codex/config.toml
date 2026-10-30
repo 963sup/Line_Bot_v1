@@ -137,7 +137,7 @@ description = "Maintain workspace dependencies, lockfile integrity, upgrades, an
 config_file = "./agents/dependency-steward.toml"
 
 [agents.web-owner-relocator]
-description = "Refresh Serena and trace apps/web business symbols to existing package owners."
+description = "Trace apps/web business symbols to existing package owners using available evidence."
 config_file = "./agents/web-owner-relocator.toml"
 
 [agents.web-owner-scout]

@@ -18,15 +18,7 @@ test("ACTIVE transfer avoids every retired Actions table after those tables are 
   );
   const projectWbs = createProjectWbs({
     activeUser: async () => ({ id: "owner" }),
-    store: () =>
-      createPostgresProjectWbsStore({
-        db,
-        contentReader: () => ({
-          read: async () => {
-            throw new Error("Unexpected Content import in Actions test.");
-          },
-        }),
-      }),
+    store: () => createPostgresProjectWbsStore(db),
     now: () => 10,
   });
   await projectWbs.execute("owner", {

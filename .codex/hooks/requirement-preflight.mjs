@@ -13,7 +13,7 @@ run((event) => {
     hookSpecificOutput: {
       hookEventName: "UserPromptSubmit",
       additionalContext:
-        "Apply AGENTS.md preflight when scope or safety is genuinely ambiguous. For explicitly authorized docs restructuring, do not repeat planning or request approval at batch boundaries; continue the complete migration with scoped verification. Reuse working Serena sessions. This reminder is not evidence review or MCP acceptance.",
+        "Before edits, apply AGENTS.md Primary agent requirement preflight for every new request or scope change. Confirm scope, owners, consumers and acceptance. Continue authorized work without repeated approval at batch boundaries. Reuse working Serena sessions. This reminder is not evidence review or MCP acceptance ran.",
     },
   };
 });

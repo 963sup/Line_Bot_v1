@@ -17,3 +17,10 @@ Local constraints for `@line_bot_v1/repository`. Parent rules: [`packages/AGENTS
 - Only a current effective Repository ADMIN can set or remove its attendance point. Point commands preserve expected-version checks, exact replay and the shared governance/access transaction lock.
 - Public API surface is defined exclusively in `package.json#exports`.
 - Private implementations in `src/` must not be imported via relative paths by external packages.
+
+## Container authority
+
+- Repository owns the workspace container: stable identity/scope, resource associations, effective access and visibility, archive lifecycle and its own Repository resources. It never owns File, Intelligence, Contract, Content, WBS, Issue or Discussion domain state.
+- Other Owners may retain Repository IDs and authorized references; they may not persist business state or cross-Owner workflow decisions in Repository tables. Repository must not become a God Object or process coordinator.
+- Expose narrow current-scope/permission queries. Legacy `repository/postgres/*` exports are transaction-level Host wiring, not a general business API; do not add new cross-Owner direct consumers.
+- Protected operations re-evaluate current effective access and archive state in the correct transaction and existing governance lock. Consumers must not copy Repository permission policy.

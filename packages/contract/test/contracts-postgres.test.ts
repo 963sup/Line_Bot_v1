@@ -15,6 +15,7 @@ import { ContractError } from "../src/domain/error.js";
 async function seedContentPlan(db: Database, repositoryId = "repo") {
   const plans = createPostgresContentPlans({
     db,
+    resourceReader: () => ({ verifyPinned: async () => [] }),
     now: () => 50,
   });
   const ids = {
@@ -113,8 +114,8 @@ test("Contract persists Content-based revisions, replay and established active l
   let clock = 100;
   const contracts = createPostgresContracts({
     db,
-    now: () => clock++,
     contentReader: createPostgresContentPlanReferenceReader,
+    now: () => clock++,
   });
   const persistence = new PostgresContracts(createPostgresContentPlanReferenceReader, db);
   const contractId = randomUUID();
@@ -345,8 +346,8 @@ test("independent PostgreSQL sessions serialize Contract replay and competing ac
   const source = await seedContentPlan(db);
   const contracts = createPostgresContracts({
     db,
-    now: () => 1,
     contentReader: createPostgresContentPlanReferenceReader,
+    now: () => 1,
   });
   const command = {
     action: "create",

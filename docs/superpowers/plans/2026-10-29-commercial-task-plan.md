@@ -30,7 +30,7 @@ sequenceDiagram
 
 | 段落 | 範圍與主要來源 | 驗收條件 | 盤點狀態 |
 | --- | --- | --- | --- |
-| 1 單一任務契約 | Web commercial-task transport、File pending state；統一 taskId、start/status/resume/confirm、來源與目標 Project | 前端只管理 task identity；回應 identity 一致；舊 pending 可恢復；body budget、origin、identity、錯誤及 Sentry exclusion 完整 | 部分實作，尚未驗收 |
+| 1 單一任務契約 | Web commercial-task transport、File pending state；統一 taskId、start/status/resume/confirm、來源與目標 Project | 前端只管理 task identity；回應 identity 一致；舊 pending 可恢復；body budget、origin、identity、錯誤及 Sentry exclusion 完整 | 已移除 Request 轉送、對齊新 taskId 與舊 pending 恢復；confirm/status 彙整及端到端仍未完成 |
 | 2 一次解析、兩份草稿 | Intelligence profile/decoder/result、Contract normalization、File review | 一次模型呼叫；商務資料完整；WBS references 指向已存在來源列；兩份草稿實際可讀；舊 result 讀回正確 | 技術 payload 已有 WBS references，Contract/UI 未接完 |
 | 3 Contract 核對確認 | Commercial documents use case、store、review validator、canonical SQL | exact draft version 核對；必要修正；verification evidence；CAS、receipt、併發及 rollback；可讀回 verified revision | 未完成 |
 | 4 Content 規劃 | Content command、source port、expansion、persistence、host composition | 每個來源 row 明確處置；數量/measure/理由有效；只保存 planning overlay、source revision/hash 與自己的工作樹；不複製完整商務 JSON | 新 Commercial 路徑未完成 |
@@ -43,8 +43,8 @@ sequenceDiagram
 - Web host 組裝跨 owner 流程；各 owner 執行自己的授權、交易、CAS、receipt。Intelligence job 不擴充成跨 owner 工作表。
 - 單一完整商務 JSON 由 Contract 擁有；Content 保存規劃決策，WBS 保存工作樹。三者以 immutable revision、hash、row identity 串接。
 - verification 狀態如何保存，須先對照現有 immutable revision/SQL 契約收斂；不得為省一份 JSON 原地覆寫已被引用的歷史事實。
-- 目前 task transport 推導新 command/document IDs，但 File panel 仍按舊 IDs 驗回應；第 1 段先修正此不一致，再宣稱接線成功。
-- 新 route 尚須補 bounded body、結構化原始錯誤、strict input、Sentry exclusion 與授權前置檢查；typecheck 不等於此段完成。
+- 新 task transport 目前從 taskId 推導固定 command/document IDs，File panel 驗證 taskId 並讀取回傳的 documentId；歷史 pending 仍走原始 commandId 入口。後續確認流程仍不得混用這兩種 identity。
+- 新 route 已共用有界 body、Origin、結構化錯誤與當下 scope 驗證；Sentry exclusion、confirm/status 彙整與端到端恢復尚待驗收。Typecheck 本身不等於段落完成。
 - 新 provider schema 目前仍是 observations、semanticHints、wbsDraft，尚非 commercialDraft/wbsDraft 完整輸出；prompt、decoder、normalizer 與 UI 必須共同驗收。
 
 ## 驗證與完成門檻

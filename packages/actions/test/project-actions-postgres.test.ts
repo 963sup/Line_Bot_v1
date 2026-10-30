@@ -38,15 +38,7 @@ test("Project action persistence dedupes commands, fences leases and revokes Inb
 
   const content = createProjectWbs({
     activeUser: async (subject) => ({ id: subject }),
-    store: () =>
-      createPostgresProjectWbsStore({
-        db,
-        contentReader: () => ({
-          read: async () => {
-            throw new Error("Unexpected Content import in Actions test.");
-          },
-        }),
-      }),
+    store: () => createPostgresProjectWbsStore(db),
     now: () => 10,
   });
   const initialized = await content.execute("owner", {

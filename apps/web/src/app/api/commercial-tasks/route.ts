@@ -1,12 +1,12 @@
-import { commercialTaskRequest } from "../../../modules/document-intake/commercial-task-http.server";
+import { commercialIntakeRequest } from "../../../modules/document-intake/commercial-intake-http.server";
 import { commercialIntake } from "../_composition/commercial-intake.server";
 import { requestLineIdentity } from "../_composition/request-identity.server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
 export function GET(request: Request) {
-  return commercialTaskRequest(request, commercialIntake(), requestLineIdentity);
+  return commercialIntakeRequest(request, commercialIntake(), requestLineIdentity, "task");
 }
 export function POST(request: Request) {
-  return commercialTaskRequest(request, commercialIntake(), requestLineIdentity);
+  return commercialIntakeRequest(request, commercialIntake(), requestLineIdentity, "task");
 }

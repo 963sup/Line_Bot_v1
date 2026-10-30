@@ -298,10 +298,7 @@ test("PGlite transfers exact history and receipts, then enforces the one-way aut
     /repository_wbs_transferred|row-level security/,
   );
 
-  const projectContent = createPostgresProjectWbsStore({
-    db,
-    contentReader: createPostgresContentWbsExpansionReader,
-  });
+  const projectContent = createPostgresProjectWbsStore(db, createPostgresContentWbsExpansionReader);
   await assert.rejects(
     executeProjectWbsCommand(
       projectContent,

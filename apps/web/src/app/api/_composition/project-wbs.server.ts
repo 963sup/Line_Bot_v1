@@ -9,9 +9,10 @@ let store: ReturnType<typeof createPostgresProjectWbsStore> | undefined;
 export const projectWbs = createProjectWbs({
   activeUser: activeLineUser,
   store: () =>
-    (store ??= createPostgresProjectWbsStore({
-      contentReader: createPostgresContentWbsExpansionReader,
-    })),
+    (store ??= createPostgresProjectWbsStore(
+      undefined,
+      createPostgresContentWbsExpansionReader,
+    )),
   now: Date.now,
 });
 

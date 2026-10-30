@@ -5,6 +5,7 @@ import { createPostgresContentPlanReferenceReader } from "@line_bot_v1/content/c
 import { createPostgresContentPlans } from "@line_bot_v1/content/composition/bootstrap/plans";
 import { createPostgresContracts } from "@line_bot_v1/contract/composition/bootstrap/contracts";
 import { postgresSessions } from "@line_bot_v1/platform/testing/postgres-sessions";
+import { createPostgresResourceReferenceReader } from "@line_bot_v1/resources/composition/bootstrap/resource-references";
 import { createExecutions } from "../src/application/use-cases/executions.js";
 import { createPostgresExecutionDependencies } from "../src/composition/bootstrap/executions.js";
 
@@ -35,6 +36,7 @@ test("independent PostgreSQL sessions serialize replay, competing reviews and Co
   };
   const plans = createPostgresContentPlans({
     db,
+    resourceReader: createPostgresResourceReferenceReader,
     now: () => 1,
   });
   const plan = await plans.execute("owner", {
@@ -97,8 +99,8 @@ test("independent PostgreSQL sessions serialize replay, competing reviews and Co
   });
   const contracts = createPostgresContracts({
     db,
-    now: () => 2,
     contentReader: createPostgresContentPlanReferenceReader,
+    now: () => 2,
   });
   const contractId = randomUUID();
   const lineId = randomUUID();

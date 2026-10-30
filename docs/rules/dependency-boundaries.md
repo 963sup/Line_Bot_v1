@@ -13,6 +13,14 @@
 - `platform` / shared只放無 business authority、修改原因真正相同的 mechanism。
 - Browser-reachable graph不得包含 secrets、database adapters、Node-only/server composition。
 
+## Public / Bootstrap / Internal
+
+- **Public API**: other business Packages consume the minimum needed DTOs, commands, queries, and ports through `package.json#exports`. A type-only import still counts as a dependency.
+- **Bootstrap API**: the Application Host wires cross-owner concrete reader factories, database transactions, and runtime providers; each Owner bootstrap only builds its own implementation.
+- **Internal implementation**: adapters, SQL, and private domain implementation stay behind the owning Package boundary. Do not add public exports to make cross-owner wiring convenient.
+- Operations using another Owner’s immutable snapshot retain the exact source revision and mapping version. Wiring never confers write authority over another Owner’s tables.
+- Existing cross-owner composition imports are migration debt; change them at the consumer boundary rather than adding shared frameworks or rewriting all legacy code at once.
+
 ## Cross-owner choice
 
 ```text

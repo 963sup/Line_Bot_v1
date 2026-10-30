@@ -1,8 +1,5 @@
-import {
-  createPostgresFileRevisionQualifier,
-  createPostgresFileSourceReader,
-} from "@line_bot_v1/file/composition/bootstrap/files";
-import type { Database } from "@line_bot_v1/platform/postgres";
+import type { FileRevisionQualifier, FileSourceReader } from "@line_bot_v1/file/contracts/output/references";
+import type { Database, Sql } from "@line_bot_v1/platform/postgres";
 import { createOpenAIDocumentExtractor } from "../../adapters/outbound/openai-document-extractor.js";
 import { createPostgresDocumentAttempts } from "../../adapters/outbound/persistence/document-attempts.js";
 import { createDocumentIntake } from "../../application/use-cases/intake-document.js";
@@ -18,13 +15,15 @@ export function createPostgresOpenAIDocumentIntake(config: {
   target: IntakeTarget<IntakeReceipt>;
   schema: IntakeSchema;
   db?: Database;
+  reader: FileSourceReader;
+  qualifier: (sql: Sql) => FileRevisionQualifier;
   onTargetSubmit?: () => void;
 }) {
   if (!process.env.OPENAI_API_KEY) return undefined;
   return createDocumentIntake({
-    reader: createPostgresFileSourceReader(config.db),
+    reader: config.reader,
     target: config.target,
-    attempts: createPostgresDocumentAttempts(createPostgresFileRevisionQualifier, config.db),
+    attempts: createPostgresDocumentAttempts(config.qualifier, config.db),
     extractor: createOpenAIDocumentExtractor("gpt-4.1"),
     schema: config.schema,
     maxSourceBytes: maxOpenAIDocumentBytes,

@@ -8,15 +8,14 @@ permission, ownership, and validation rules.
 
 Semantic backend gate:
 - Prefer Host Serena MCP `serena_repl` and reuse its existing project/index.
-- If Host MCP is unavailable, use the workspace-local Serena CLI only when a
-  real cross-package Symbol, Definition, References, and Diagnostics probe has
-  already succeeded in the same session. Otherwise stop without editing.
-- Never replace semantic evidence with `rg`; use it only for dynamic strings.
+- Make at most one bounded availability check per task/session. If unavailable,
+  record the unavailable layer and continue with bounded `rg`, native source
+  inspection, public exports, and TypeScript/package checks. Label static
+  evidence accurately; do not claim LSP evidence from text search.
 
-Tool gate (must be executed, never inferred): verify Serena v2/LSP,
-TypeScript LSP, Knip, ast-grep/sg, ts-morph, and dependency-cruiser before
-editing. Record command results and stop with an explicit blocker when the
-required symbol-editing or validation tool is unavailable.
+Use only tools needed for the selected change and required validation. Reuse
+successful capabilities without routine health checks or indexing. Report
+actual validation failures; optional tool availability is not an editing gate.
 
 You are an execution-only role. Do not discover a new broad scope. Accept work
 only when the parent agent supplies a Scout handoff identifying one bounded
@@ -35,11 +34,10 @@ Accept only parent-approved `Decision: merge`, `Decision: relocate`, or
 `Confidence: high`. Keep, defer, medium, low, missing, or contradictory
 handoffs are report-only and must not be edited.
 
-Before editing, use Serena/LSP Definition, References, Call Hierarchy, and
-type information to recheck the handoff against the current HEAD. Use bounded
-`rg` only for dynamic strings; use ts-morph for type/export checks and
-dependency-cruiser for dependency direction/cycle checks when needed. Never
-substitute text search for unavailable semantic evidence.
+Before editing, recheck the handoff against the current HEAD using available
+Serena/LSP capabilities or the native fallback above. Inspect public exports
+and dynamic/string consumers, then use TypeScript/package checks and
+dependency-cruiser for the applicable type and dependency evidence.
 Trace the selected symbol through app `_composition`, API, modules, shared
 consumers, and the owner package as needed; prefer calling the existing public
 packages/<owner> API and remove only the confirmed duplicate Web logic,
@@ -55,7 +53,8 @@ to another capability or owner in the same batch. If the existing package has
 no suitable public API, accept only a `needs-api` handoff with a minimal,
 owner-aligned API plan; otherwise stop and return "no safe API".
 
-Perform symbol-level edits through Serena/LSP or another verified AST operation.
+Prefer verified symbol operations when available; otherwise use precise native
+patches after confirming definitions and consumers.
 After the smallest viable edit, run git diff --check, affected TypeScript
 typecheck, scoped tests, scoped lint, relevant architecture checks, and
 post-edit semantic/reference checks across all affected app roots and the owner

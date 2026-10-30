@@ -5,3 +5,11 @@
 變更採購單與工程合約時，分別核對各自用例及 consumer；候選資料儲存與人工確認須保留明確區別。
 
 實際公開入口以 [package.json](./package.json) 為準，行為以 [source](./src/) 與 [tests](./test/) 確認。
+
+## Contract source and confirmation authority
+
+- **Commercial document** (source File revision, normalized candidate, explicit review/confirmation) and **Engineering Contract** (pinned Content plan line basis) are distinct existing use cases. Do not merge their models or assume a single static dependency direction covers both.
+- Contract alone persists Contract heads, immutable revisions, candidate diagnostics, explicit confirmations and command receipts. Intelligence output never bypasses Contract validation; candidate does not become CONFIRMED merely because extraction succeeded.
+- Commercial source retains exact File ID, FileRevision ID and SHA-256. Do not modify source File/Intelligence state or Content revisions; downstream Content reads only the exact confirmed Contract revision.
+- Engineering Contract's Content reference verification uses the Content public port. A concrete Content Postgres reader is injected by Host into Contract bootstrap; never add a direct foreign-bootstrap import.
+- Revision changes create new immutable snapshots with expected-version and exact replay semantics, not in-place edits of old confirmations.
