@@ -42,9 +42,18 @@ test("WBS transfer recovery keeps the original Project and transfer identities",
   assert.deepEqual(parsed.transferCommand, operation.transferCommand);
 });
 
-test("WBS transfer recovery rejects actor, source version and destination drift", () => {
+test("WBS transfer recovery rejects actor, repository, source and destination drift", () => {
   assert.throws(() => parseWbsTransferOperation(operation, { ...expected, actorUserId: "other" }));
+  assert.throws(() => parseWbsTransferOperation({ ...operation, repositoryId: "other" }, expected));
   assert.throws(() => parseWbsTransferOperation(operation, { ...expected, sourceVersion: 3 }));
+  assert.throws(
+    () =>
+      parseWbsTransferOperation(operation, {
+        ...expected,
+        sourceHeadRevisionId: "55555555-5555-4555-8555-555555555555",
+      }),
+    { message: "WBS 移轉重試來源已變更。" },
+  );
   assert.throws(() =>
     parseWbsTransferOperation(
       {
@@ -81,6 +90,21 @@ test("accepted durable transfer preserves its immutable source snapshot after so
   );
   assert.equal(parsed.sourceVersion, 2);
   assert.deepEqual(parsed.accepted, accepted);
+  for (const mismatch of [
+    { id: "66666666-6666-4666-8666-666666666666" },
+    { requestId: "66666666-6666-4666-8666-666666666666" },
+    { sourceVersion: 3 },
+    { sourceHeadRevisionId: "55555555-5555-4555-8555-555555555555" },
+  ]) {
+    assert.throws(
+      () =>
+        parseWbsTransferOperation(
+          { ...operation, accepted: { ...accepted, ...mismatch } },
+          expected,
+        ),
+      { message: "WBS 移轉回執不一致。" },
+    );
+  }
 });
 
 test("WBS transfer cancellation recovery preserves the exact request identity", () => {
@@ -99,6 +123,17 @@ test("WBS transfer cancellation recovery preserves the exact request identity", 
   );
   assert.throws(() =>
     parseWbsTransferCancellation(value, { actorUserId: "other", repositoryId: "repository" }),
+  );
+  assert.throws(() => parseWbsTransferCancellation({ ...value, repositoryId: "other" }, expected), {
+    message: "WBS 移轉撤回重試範圍不正確。",
+  });
+  assert.throws(
+    () =>
+      parseWbsTransferCancellation(
+        { ...value, command: { ...value.command, repositoryId: "other" } },
+        expected,
+      ),
+    { message: "WBS 移轉撤回重試範圍不正確。" },
   );
 });
 
