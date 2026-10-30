@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
 import { createFiles } from "@line_bot_v1/file/application/use-cases/files";
-import { createPostgresFileDependencies } from "@line_bot_v1/file/composition/bootstrap/files";
+import { createPostgresFileDependencies, createPostgresFileRevisionQualifier } from "@line_bot_v1/file/composition/bootstrap/files";
 import type { FileRevision } from "@line_bot_v1/file/domain/file";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { postgresSessions } from "@line_bot_v1/platform/testing/postgres-sessions";
@@ -70,7 +70,7 @@ test("commercial draft transactions persist fields, replay receipts and roll bac
       return { content: draft(), evidenceContext };
     },
   };
-  const docs = createPostgresCommercialDocuments(db, source);
+  const docs = createPostgresCommercialDocuments(db, source, createPostgresFileRevisionQualifier);
   const command = {
     commandId: randomUUID(),
     repositoryId: "repo",

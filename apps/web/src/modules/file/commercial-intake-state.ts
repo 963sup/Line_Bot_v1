@@ -4,49 +4,64 @@ import {
   parseCommercialIntakeStatusIdentity,
 } from "@line_bot_v1/intelligence/contracts/output/commercial-intake";
 import { record, stringValue } from "./files-projection";
-export type PendingCommercialIntake = {
-  commandId: string;
+export type PendingCommercialTask = {
+  taskId: string;
   repositoryId: string;
   source: { fileId: string; fileRevisionId: string; sha256: string };
+};
+/** Historical browser pending commands retain their original target identity for exact replay. */
+export type LegacyCommercialIntake = {
+  commandId: string;
+  repositoryId: string;
+  source: PendingCommercialTask["source"];
   target: { documentId: string; draftCommandId: string; expectedDocumentVersion: number };
 };
-export function newCommercialIntake(file: FileInfo): PendingCommercialIntake {
+export type PendingCommercialIntake = PendingCommercialTask | LegacyCommercialIntake;
+
+const uuid = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
+export function newCommercialIntake(file: FileInfo): PendingCommercialTask {
   return {
-    commandId: crypto.randomUUID(),
+    taskId: crypto.randomUUID(),
     repositoryId: file.repositoryId,
     source: { fileId: file.fileId, fileRevisionId: file.revisionId, sha256: file.sha256 },
-    target: {
-      documentId: crypto.randomUUID(),
-      draftCommandId: crypto.randomUUID(),
-      expectedDocumentVersion: 0,
-    },
   };
 }
-/** Only technical identity is recoverable; private extracted content is never persisted in browser storage. */
+
+/** Only immutable source pins and an operation identity are saved in browser storage. */
 export function restoreCommercialIntake(
   raw: string | null,
   repositoryId: string,
 ): PendingCommercialIntake | null {
   if (!raw || raw.length > 2048) return null;
   try {
-    const p = record(JSON.parse(raw)),
-      s = record(p.source),
-      t = record(p.target);
-    if (p.repositoryId !== repositoryId || t.expectedDocumentVersion !== 0) return null;
+    const pending = record(JSON.parse(raw));
+    if (pending.repositoryId !== repositoryId) return null;
+    const source = record(pending.source);
     const id = (value: unknown) => {
-      const v = stringValue(value);
-      if (!/^[a-f0-9-]{36}$/.test(v)) throw new Error();
-      return v;
+      const valueAsString = stringValue(value);
+      if (!uuid.test(valueAsString)) throw new Error("Invalid pending identifier");
+      return valueAsString.toLowerCase();
     };
-    const sha256 = stringValue(s.sha256);
+    const sha256 = stringValue(source.sha256);
     if (!/^[a-f0-9]{64}$/.test(sha256)) return null;
+    const pins = {
+      fileId: id(source.fileId),
+      fileRevisionId: id(source.fileRevisionId),
+      sha256,
+    };
+    if ("taskId" in pending) {
+      if (Object.keys(pending).sort().join(",") !== "repositoryId,source,taskId") return null;
+      return { taskId: id(pending.taskId), repositoryId, source: pins };
+    }
+    const target = record(pending.target);
+    if (target.expectedDocumentVersion !== 0) return null;
     return {
-      commandId: id(p.commandId),
+      commandId: id(pending.commandId),
       repositoryId,
-      source: { fileId: id(s.fileId), fileRevisionId: id(s.fileRevisionId), sha256 },
+      source: pins,
       target: {
-        documentId: id(t.documentId),
-        draftCommandId: id(t.draftCommandId),
+        documentId: id(target.documentId),
+        draftCommandId: id(target.draftCommandId),
         expectedDocumentVersion: 0,
       },
     };
@@ -54,13 +69,20 @@ export function restoreCommercialIntake(
     return null;
   }
 }
+
 export function commercialStatus(value: unknown, command: PendingCommercialIntake) {
-  return parseCommercialIntakeStatusIdentity(value, {
-    commandId: command.commandId,
-    documentId: command.target.documentId,
-  });
+  return parseCommercialIntakeStatusIdentity(
+    value,
+    "taskId" in command
+      ? { taskId: command.taskId }
+      : { commandId: command.commandId, documentId: command.target.documentId },
+  );
 }
 
+export function commercialDocumentId(value: unknown, command: PendingCommercialIntake) {
+  commercialStatus(value, command);
+  return "taskId" in command ? stringValue(record(value).documentId) : command.target.documentId;
+}
 /** Only the owner's explicit absent-command response makes the original start safe to offer again. */
 export function isMissingCommercialIntake(error: unknown): boolean {
   return (

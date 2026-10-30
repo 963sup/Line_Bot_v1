@@ -72,12 +72,20 @@ export type CommercialIntakeStatus = Readonly<{
 /** Validate the owner status identity before a caller may treat it as the requested command. */
 export function parseCommercialIntakeStatusIdentity(
   value: unknown,
-  expected: Pick<CommercialIntakeCommand, "commandId"> & { documentId: string },
+  expected: { commandId: string; documentId: string } | { taskId: string },
 ): CommercialIntakeStatus["state"] {
   if (value === null || typeof value !== "object" || Array.isArray(value)) {
     throw new Error("商務文件回應不符合原命令。");
   }
   const state = Reflect.get(value, "state");
+  const documentId = Reflect.get(value, "documentId");
+  const matchesIdentity =
+    "taskId" in expected
+      ? Reflect.get(value, "taskId") === expected.taskId &&
+        typeof documentId === "string" &&
+        /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(documentId)
+      : Reflect.get(value, "commandId") === expected.commandId &&
+        documentId === expected.documentId;
   if (
     (state !== "WAITING" &&
       state !== "ANALYZING" &&
@@ -85,8 +93,7 @@ export function parseCommercialIntakeStatusIdentity(
       state !== "DRAFT_SAVED" &&
       state !== "FAILED" &&
       state !== "OUTCOME_UNKNOWN") ||
-    Reflect.get(value, "commandId") !== expected.commandId ||
-    Reflect.get(value, "documentId") !== expected.documentId
+    !matchesIdentity
   ) {
     throw new Error("商務文件回應不符合原命令。");
   }

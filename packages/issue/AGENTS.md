@@ -15,3 +15,10 @@ Local constraints for `@line_bot_v1/issue`. Parent rules: [`packages/AGENTS.md`]
 - Pre-parity `issues.assignee/status` are rollout-only compatibility storage. New commands must not write them; a locked legacy row may only clear them while atomically materializing canonical Issue fields/assignment. Do not infer historical CLOSED state, body, stateReason or assignment time from missing pre-parity facts.
 - Public API surface is defined exclusively in `package.json#exports`.
 - Private implementations in `src/` must not be imported by external packages.
+
+## Issue writer authority
+
+- Issue alone changes Issue state/reason, workflow, assignments, comments, relations, events and replay receipts. Repository owns scope/access and label/milestone definitions; Issue may link those definitions, not edit them.
+- Protected operations recheck effective Repository access and archive state and retain expected-version, stable request identity and the existing numbering/transaction protocol.
+- Repository and Discussion must not change Issue private tables or Domain transitions directly. Cross-Owner consumers use Issue commands and narrow public ports.
+- Existing `repository/postgres/*` imports in Issue adapters are migration debt. Do not add new imports or weaken authorization, locking or replay while replacing them with Host-composed access.

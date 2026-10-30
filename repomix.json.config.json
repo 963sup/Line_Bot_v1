@@ -1,11 +1,6 @@
 {
   "$schema": "https://repomix.com/config-schema.json",
-  "include": [
-    "architecture/**/*.json",
-    "**/package.json",
-    "*.json",
-    "*.jsonc"
-  ],
+  "include": ["architecture/**/*.json", "**/package.json", "*.json", "*.jsonc"],
   "output": {
     "filePath": ".repomix/04-json-context.json",
     "style": "json"

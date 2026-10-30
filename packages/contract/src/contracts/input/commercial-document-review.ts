@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { evidenceReferenceSchema } from "./commercial-document-values.js";
+
 const documentCoverageReviewSchema = z.strictObject({
   confirmedAgainstOriginal: z.literal(true),
   reviewedPageNumbers: z.array(z.number().int().positive()).max(24),

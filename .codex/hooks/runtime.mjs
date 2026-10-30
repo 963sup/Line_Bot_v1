@@ -31,7 +31,7 @@ export function patchPaths(command, cwd, root) {
   for (const match of command.matchAll(
     /^\*\*\* (?:Add File|Update File|Delete File|Move to): (.+)$/gm,
   )) {
-    const path = relative(root, resolve(cwd, match[1]));
+    const path = relative(root, resolve(cwd, match[1])).replaceAll("\\", "/");
     if (!path || path === ".." || path.startsWith("../") || isAbsolute(path)) continue;
     if (/^(?:\.git|\.artifacts|\.tools|\.cache|node_modules)(?:\/|$)/.test(path)) continue;
     paths.add(path);

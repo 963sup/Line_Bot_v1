@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { wbsHistory, wbsReceipt, wbsRevision, wbsView } from "../src/contracts/parse-content-response.js";
+import {
+  wbsHistory,
+  wbsReceipt,
+  wbsRevision,
+  wbsView,
+} from "../src/contracts/parse-content-response.js";
 
 const revision = {
   id: "revision-1",

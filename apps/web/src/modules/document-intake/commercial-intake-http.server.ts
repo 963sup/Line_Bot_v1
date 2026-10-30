@@ -6,9 +6,11 @@ import type {
 } from "@line_bot_v1/contract/contracts/output/commercial-documents";
 import { ContractError } from "@line_bot_v1/contract/domain/error";
 import { FileError } from "@line_bot_v1/file/domain/error";
+import { commercialTaskIdentity } from "@line_bot_v1/intelligence/application/commands/commercial-task";
 import {
   type CommercialIntake,
   CommercialIntakeError,
+  type CommercialIntakeStatus,
 } from "@line_bot_v1/intelligence/contracts/output/commercial-intake";
 import { normalizeAccountLogin } from "@line_bot_v1/namespace";
 import { RepositoryError } from "@line_bot_v1/repository/contracts/errors/repository-error";
@@ -61,6 +63,22 @@ function string(value: unknown): string {
   if (typeof value !== "string" || !value || value.length > 128) invalid();
   return value;
 }
+const uuid = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
+function taskId(value: unknown): string {
+  const valueAsString = string(value);
+  if (!uuid.test(valueAsString)) invalid("Invalid commercial task ID.");
+  return valueAsString.toLowerCase();
+}
+function publicTaskStatus(task: string, result: CommercialIntakeStatus) {
+  const expected = commercialTaskIdentity(task);
+  if (
+    result.commandId !== expected.commandId ||
+    result.documentId !== expected.documentId ||
+    (result.receipt !== null && result.receipt.documentId !== result.documentId)
+  )
+    throw new ContractError(503, "Commercial task result identity mismatch.", "UNAVAILABLE");
+  return { ...result, taskId: task };
+}
 async function body(request: Request) {
   const origin = process.env.APP_ORIGIN;
   if (!origin || !origin.startsWith("https://") || new URL(origin).origin !== origin)
@@ -84,7 +102,7 @@ export async function commercialIntakeRequest(
   request: Request,
   runtime: CommercialWebRuntime,
   identity: (request: Request) => Promise<string>,
-  resource: "intake" | "document" = "intake",
+  resource: "intake" | "document" | "task" = "intake",
 ) {
   const traceId = randomUUID();
   let operation = "request";
@@ -128,6 +146,64 @@ export async function commercialIntakeRequest(
           documentId: string(query.get("documentId")),
         }),
       });
+    }
+    if (resource === "task") {
+      const ctx = { actorUserId: scope.actorUserId, traceId };
+      if (request.method === "GET") {
+        operation = "status";
+        const task = taskId(query.get("taskId"));
+        return jsonResponse(
+          publicTaskStatus(
+            task,
+            await runtime.intake.status(ctx, {
+              repositoryId: scope.repository.id,
+              commandId: commercialTaskIdentity(task).commandId,
+            }),
+          ),
+        );
+      }
+      if (!scope.canEdit || scope.archived)
+        throw new ContractError(403, "目前沒有文件寫入權限。", "FORBIDDEN");
+      const input = await body(request);
+      operation = string(input.operation);
+      if (input.repositoryId !== scope.repository.id) invalid("Repository scope mismatch.");
+      const task = taskId(input.taskId);
+      const { commandId, documentId, draftCommandId } = commercialTaskIdentity(task);
+      if (operation === "resume") {
+        exactFields(input, ["operation", "taskId", "repositoryId"]);
+        return jsonResponse(
+          publicTaskStatus(
+            task,
+            await runtime.intake.resume(ctx, {
+              repositoryId: scope.repository.id,
+              commandId,
+            }),
+          ),
+        );
+      }
+      if (operation !== "start") invalid("Unknown commercial task operation.");
+      exactFields(input, ["operation", "taskId", "repositoryId", "source"]);
+      const source = record(input.source);
+      exactFields(source, ["fileId", "fileRevisionId", "sha256"]);
+      const fileId = taskId(source.fileId);
+      const fileRevisionId = taskId(source.fileRevisionId);
+      const sha256 = string(source.sha256);
+      if (!/^[0-9a-f]{64}$/.test(sha256)) invalid("Invalid File SHA-256.");
+      return jsonResponse(
+        publicTaskStatus(
+          task,
+          await runtime.intake.start(ctx, {
+            commandId,
+            repositoryId: scope.repository.id,
+            source: { fileId, fileRevisionId, sha256 },
+            target: {
+              documentId,
+              draftCommandId,
+              expectedDocumentVersion: 0,
+            },
+          }),
+        ),
+      );
     }
     const ctx = { actorUserId: scope.actorUserId, traceId };
     if (request.method === "GET") {
@@ -191,7 +267,12 @@ export async function commercialIntakeRequest(
     const status = known ? error.status : 500;
     const code = known && "code" in error ? String(error.code) : undefined;
     logServerError(error, {
-      service: resource === "intake" ? "document-intakes-api" : "commercial-documents-api",
+      service:
+        resource === "task"
+          ? "commercial-tasks-api"
+          : resource === "intake"
+            ? "document-intakes-api"
+            : "commercial-documents-api",
       operation: stage,
       status,
       ...(code ? { code } : {}),

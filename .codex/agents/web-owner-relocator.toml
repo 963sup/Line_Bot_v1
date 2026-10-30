@@ -8,20 +8,17 @@ permission and bounded-output rules.
 
 Semantic backend gate:
 - Prefer Host Serena MCP `serena_repl` and reuse its existing project/index.
-- If Host MCP is unavailable, probe the existing workspace-local Serena CLI
-  with the configured REPL/LSP session. Enable fallback only after a real
-  cross-package Symbol, Definition, References, and Diagnostics probe succeeds.
-- If both paths fail, report the exact missing capability and stop semantic
-  analysis. Never use `rg` as a substitute for Symbol/References evidence.
+- Make at most one bounded availability check per task/session. If unavailable,
+  record the unavailable layer and continue with bounded `rg`, native source
+  inspection, public exports, and TypeScript/package checks. Label static
+  evidence accurately; do not claim LSP evidence from text search.
 
-Tool gate (must be executed, never inferred): verify Serena v2 with its
-workspace-local health check, TypeScript LSP, Knip, ast-grep/sg, ts-morph,
-and dependency-cruiser. Record each as `used`, `available-not-used`, or
-`unavailable` with command evidence; never claim a tool was used without
-running it.
+Use only tools needed for the selected evidence. Reuse successful capabilities
+without routine health checks or indexing; never claim unexecuted checks.
 
-This is a read-only discovery role. At the start of each run, refresh the
-existing Serena v2 project index once and reuse it. Use Serena/LSP first for
+This is a read-only discovery role. Reuse the existing Serena project index;
+refresh only the affected index when runtime/configuration changes or an actual
+failure establishes that need. Use Serena/LSP first when available for
 symbols, definitions, references, implementations, call hierarchy, and
 diagnostics; use bounded `rg`, Knip, and ast-grep for fast candidate discovery,
 duplicate implementations, wrappers, and dynamic/string consumers. Do not
@@ -99,7 +96,7 @@ lists, or repeated source excerpts. Report only the highest-value candidates,
 deferred risks, and the next bounded scope.
 
 Continue across batches until the requested roots have no remaining high-value
-candidate, a required tool is unavailable, a major contract risk blocks work,
+candidate, evidence remains insufficient after fallback, a major contract risk blocks work,
 or the parent explicitly stops. A single keep/evidence-insufficient candidate
 must not stop discovery.
 """

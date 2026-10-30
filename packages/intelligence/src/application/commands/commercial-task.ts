@@ -18,34 +18,11 @@ function taskId(value: unknown): string {
 }
 
 /** Stable identities preserve exact retries across task transports and process restarts. */
-export function commercialTaskCommandId(value: unknown): string {
-  return derivedUuid(taskId(value), "intelligence");
-}
-
-export function commercialTaskCommand(input: unknown) {
-  if (!input || typeof input !== "object" || Array.isArray(input))
-    throw new Error("Commercial task is invalid.");
-  const task = taskId(Reflect.get(input, "taskId"));
-  const operation: unknown = Reflect.get(input, "operation");
-  const repositoryId: unknown = Reflect.get(input, "repositoryId");
-  const source: unknown = Reflect.get(input, "source");
-  if (operation === "resume") {
-    return {
-      operation: "resume" as const,
-      repositoryId,
-      commandId: derivedUuid(task, "intelligence"),
-    };
-  }
-  if (operation !== "start") throw new Error("Commercial task operation is invalid.");
+export function commercialTaskIdentity(value: unknown) {
+  const task = taskId(value);
   return {
-    operation: "start" as const,
     commandId: derivedUuid(task, "intelligence"),
-    repositoryId,
-    source,
-    target: {
-      documentId: derivedUuid(task, "contract-document"),
-      draftCommandId: derivedUuid(task, "contract-draft"),
-      expectedDocumentVersion: 0,
-    },
+    documentId: derivedUuid(task, "contract-document"),
+    draftCommandId: derivedUuid(task, "contract-draft"),
   };
 }

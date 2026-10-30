@@ -20,7 +20,7 @@ run((event) => {
         revision: git("rev-parse", "--short", "HEAD"),
         trackedChanges: status ? status.split("\n").length : 0,
         requirementPreflight:
-          "Use preflight for ambiguous scope or safety only. Authorized docs restructuring may proceed through all migration batches without repeated planning or approval requests.",
+          "Before edits, apply AGENTS.md Primary agent requirement preflight for every new request or scope change. Confirm scope, owners, consumers and acceptance. Continue authorized work without repeated approval at batch boundaries.",
         serena:
           "Reuse successful session capabilities. Follow AGENTS.md Serena context budget; no routine reindex/help/health-check. Read only task-relevant symbols and memories.",
         guidance:

@@ -94,6 +94,7 @@ export default function FilesPanel({
     file: request,
     document: requestDocumentIntake,
     commercialTask: requestCommercialIntake,
+    commercialIntake: requestLegacyCommercialIntake,
     commercialDocument: requestCommercialDocument,
   } = useMemo(
     () =>
@@ -442,6 +443,7 @@ export default function FilesPanel({
               canEdit={view.canEdit}
               blocked={blocked}
               request={requestCommercialIntake}
+              legacyRequest={requestLegacyCommercialIntake}
               read={requestCommercialDocument}
             />
           )}

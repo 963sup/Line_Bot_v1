@@ -62,9 +62,10 @@ if (requested.includes("--help")) {
       }
       const [command, ...commandArgs] = commands[stage];
       if ((stage === "lint" || stage === "format") && forwarded.length === 0) commandArgs.push(".");
+      const pnpmEntry = command === "pnpm" ? process.env.npm_execpath : undefined;
       const result = spawnSync(
-        command === "node" ? process.execPath : command,
-        [...commandArgs, ...forwarded],
+        command === "node" || pnpmEntry ? process.execPath : command,
+        [...(pnpmEntry ? [pnpmEntry] : []), ...commandArgs, ...forwarded],
         { cwd, stdio: "inherit" },
       );
       if (result.error) console.error(result.error.message);

@@ -1,18 +1,22 @@
-import { createPostgresFileRevisionQualifier } from "@line_bot_v1/file/composition/bootstrap/files";
-import { businessDatabase, type Database } from "@line_bot_v1/platform/postgres";
+import type { FileRevisionQualifier } from "@line_bot_v1/file/contracts/output/references";
+import { businessDatabase, type Database, type Sql } from "@line_bot_v1/platform/postgres";
 import {
   contractDocumentReader,
   PostgresContractDocuments,
 } from "../../adapters/outbound/persistence/documents.js";
 import { createContractDocuments } from "../../application/use-cases/documents.js";
 
-export function createPostgresContractDocuments(db: Database = businessDatabase()) {
-  const transactions = new PostgresContractDocuments(createPostgresFileRevisionQualifier, db);
+export function createPostgresContractDocuments(config: Readonly<{
+  qualifier: (sql: Sql) => FileRevisionQualifier;
+  db?: Database;
+}>) {
+  const transactions = new PostgresContractDocuments(config.qualifier, config.db ?? businessDatabase());
   return createContractDocuments({ transactions, now: Date.now });
 }
 
 export function createPostgresContractDocumentReader(
-  sql: import("@line_bot_v1/platform/postgres").Sql,
+  sql: Sql,
+  qualifier: (sql: Sql) => FileRevisionQualifier,
 ) {
-  return contractDocumentReader(sql, createPostgresFileRevisionQualifier);
+  return contractDocumentReader(sql, qualifier);
 }

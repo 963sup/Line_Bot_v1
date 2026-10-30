@@ -1,9 +1,6 @@
 {
   "$schema": "https://repomix.com/config-schema.json",
-  "include": [
-    "packages/integration-supabase/src/**/*.sql",
-    "**/migrations/**/*.sql"
-  ],
+  "include": ["packages/integration-supabase/src/**/*.sql", "**/migrations/**/*.sql"],
   "output": {
     "filePath": ".repomix/05-sql-context.sql",
     "style": "plain"

@@ -70,3 +70,11 @@ Each child Owner scope `packages/<Owner>/AGENTS.md` should contain only:
 
 Do not copy the common boundary, DDD, naming, or validation rules into child
 files.
+
+## Non-negotiable cross-Owner boundaries
+
+- **Public API** (`contracts/**` and appropriate application entrypoints): business Packages import only stable commands, queries, DTOs and ports needed by a real consumer. Type-only imports still count as dependencies.
+- **Bootstrap API** (`composition/bootstrap/**` and legacy `postgres/**` exports): only application hosts wire concrete factories and transaction-scoped readers. Do not add business-Package-to-foreign-bootstrap imports; existing cases are migration debt.
+- **Internal** (`domain` implementations, `adapters/**`, private SQL): only the owning Package implements or changes authoritative facts. A shared SQL connection or access check never grants write authority over another Owner's private tables.
+- Cross-Owner conversions consume a pinned, authorized source revision and persist mapping version, provenance and exact replay identity. Never mutate the upstream revision to repair a downstream result.
+- Business policy and recovery stay in owner use cases; the Host only composes and invokes them. Do not add a generic workflow manager, duplicate authority or façade solely for architectural symmetry.

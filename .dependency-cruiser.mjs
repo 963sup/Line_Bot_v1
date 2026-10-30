@@ -35,6 +35,41 @@ export default {
   forbidden: [
     ...topologyDependencyRules(),
     {
+      name: "contract-and-wbs-do-not-compose-content-internally",
+      severity: "error",
+      comment: "Contract and WBS read Content through narrow ports wired in the application host",
+      from: { path: "^packages/(contract|wbs)/src/" },
+      to: { path: "^packages/content/src/composition/bootstrap/" },
+    },
+    {
+      name: "content-bootstrap-does-not-compose-resources-bootstrap",
+      severity: "error",
+      comment: "Content source resource references are provided by the Host",
+      from: { path: "^packages/content/src/composition/bootstrap/" },
+      to: { path: "^packages/resources/src/composition/bootstrap/" },
+    },
+    {
+      name: "contract-bootstrap-does-not-compose-file-bootstrap",
+      severity: "error",
+      comment: "Contract File revision qualification is injected by the application host",
+      from: { path: "^packages/contract/src/composition/bootstrap/" },
+      to: { path: "^packages/file/src/composition/bootstrap/" },
+    },
+    {
+      name: "intelligence-bootstrap-does-not-compose-file-bootstrap",
+      severity: "error",
+      comment: "Host provides the exact File revision reader and qualifier to Intelligence",
+      from: { path: "^packages/intelligence/src/composition/bootstrap/" },
+      to: { path: "^packages/file/src/composition/bootstrap/" },
+    },
+    {
+      name: "discussion-read-does-not-compose-repository-postgres",
+      severity: "error",
+      comment: "Discussion read access is injected by the application host",
+      from: { path: "^packages/discussion/src/adapters/postgres\\.ts$" },
+      to: { path: "^packages/repository/src/postgres/" },
+    },
+    {
       name: "features-do-not-import-routes",
       severity: "error",
       from: { path: "^apps/[^/]+/src/(modules|features|components|shared)/" },
