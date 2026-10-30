@@ -302,3 +302,96 @@ test("commercial POST rejects unknown fields before any owner operation", async 
   );
   assert.deepEqual(calls, []);
 });
+
+const fixedTask = "12345678-1234-4234-8234-123456789012";
+const fixedSource = {
+  fileId: "11111111-1111-4111-8111-111111111111",
+  fileRevisionId: "22222222-2222-4222-8222-222222222222",
+  sha256: "a".repeat(64),
+};
+function taskRequest(operation?: "start" | "resume", body?: object) {
+  return new Request(
+    `https://app.example/api/commercial-tasks?owner=owner&name=repo&taskId=${fixedTask}`,
+    operation
+      ? {
+          method: "POST",
+          headers: { origin: "https://app.example", "content-type": "application/json" },
+          body: JSON.stringify({
+            operation, taskId: fixedTask, repositoryId: "repo-1",
+            ...(operation === "start" ? { source: fixedSource } : {}),
+            ...body,
+          }),
+        }
+      : undefined,
+  );
+}
+
+test("Commercial Task start, status and resume reuse one validated transport and pinned identities", async () => {
+  const rt = runtime();
+  const seen: { commandId: string; documentId: string; draftId: string; source: unknown }[] = [];
+  let saved: CommercialIntakeStatus | null = null;
+  rt.intake.start = async (_ctx, command) => {
+    seen.push({
+      commandId: command.commandId, documentId: command.target.documentId,
+      draftId: command.target.draftCommandId, source: command.source,
+    });
+    saved = { ...result, commandId: command.commandId, documentId: command.target.documentId };
+    return saved;
+  };
+  rt.intake.status = async (_ctx, query) => {
+    assert.equal(query.repositoryId, "repo-1");
+    assert.equal(query.commandId, seen[0]?.commandId);
+    if (!saved) throw new Error("not started");
+    return saved;
+  };
+  rt.intake.resume = rt.intake.status;
+  const start = await commercialIntakeRequest(taskRequest("start"), rt, async () => "subject", "task");
+  assert.equal(start.status, 200);
+  const startBody = await start.json();
+  assert.equal(startBody.taskId, fixedTask);
+  assert.equal(startBody.commandId, seen[0]?.commandId);
+  assert.equal(startBody.documentId, seen[0]?.documentId);
+  assert.deepEqual(seen[0]?.source, fixedSource);
+  assert.ok(seen[0]?.draftId !== seen[0]?.documentId);
+  assert.ok(seen[0]?.draftId !== seen[0]?.commandId);
+  for (const req of [taskRequest(), taskRequest("resume")]) {
+    const answer = await commercialIntakeRequest(req, rt, async () => "subject", "task");
+    assert.equal(answer.status, 200);
+    assert.equal((await answer.json()).taskId, fixedTask);
+  }
+  assert.equal(seen.length, 1, "Status/resume must not re-dispatch the extraction");
+});
+
+test("Commercial Task rejects untrusted identity, unknown fields and unbounded requests before owner calls", async () => {
+  const rt = runtime();
+  calls.length = 0;
+  for (const req of [
+    taskRequest("start", { extra: "unsafe" }),
+    taskRequest("start", { source: { ...fixedSource, publicUrl: "https://evil.example" } }),
+    taskRequest("start", { source: { ...fixedSource, sha256: "wrong" } }),
+    taskRequest("resume", { documentId: fixedTask }),
+    taskRequest("start", { taskId: "invalid" }),
+    taskRequest("resume", { repositoryId: "other-repo" }),
+  ]) {
+    const response = await commercialIntakeRequest(req, rt, async () => "subject", "task");
+    assert.equal(response.status, 400);
+  }
+  const tooLarge = taskRequest("resume", { extra: "x".repeat(9000) });
+  assert.equal((await commercialIntakeRequest(tooLarge, rt, async () => "subject", "task")).status, 413);
+  const wrongOrigin = taskRequest("start");
+  wrongOrigin.headers.set("origin", "https://evil.example");
+  assert.equal((await commercialIntakeRequest(wrongOrigin, rt, async () => "subject", "task")).status, 403);
+  assert.equal((await commercialIntakeRequest(taskRequest(), rt, async () => { throw new RequestIdentityError(401, "Login required."); }, "task")).status, 401);
+  assert.equal((await commercialIntakeRequest(new Request("https://app.example/api/commercial-tasks?owner=owner&name=repo&taskId=bad"), rt, async () => "subject", "task")).status, 400);
+  assert.deepEqual(calls, [], "Invalid requests must not invoke owner commands");
+});
+
+test("Commercial Task fails closed on a result with a different internal command identity", async () => {
+  const rt = runtime();
+  rt.intake.status = async () => result;
+  const mismatch = await commercialIntakeRequest(taskRequest(), rt, async () => "subject", "task");
+  assert.equal(mismatch.status, 503);
+  const value = await mismatch.json();
+  assert.equal(value.code, "UNAVAILABLE");
+  assert.equal(value.stage, "status");
+});

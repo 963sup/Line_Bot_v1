@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
+import { createPostgresContentPlanReferenceReader } from "@line_bot_v1/content/composition/bootstrap/plan-references";
 import { createPostgresContentPlans } from "@line_bot_v1/content/composition/bootstrap/plans";
+import { createPostgresResourceReferenceReader } from "@line_bot_v1/resources/composition/bootstrap/resource-references";
 import { createPostgresContracts } from "@line_bot_v1/contract/composition/bootstrap/contracts";
 import { postgresSessions } from "@line_bot_v1/platform/testing/postgres-sessions";
 import { createExecutions } from "../src/application/use-cases/executions.js";
@@ -34,6 +36,7 @@ test("independent PostgreSQL sessions serialize replay, competing reviews and Co
   };
   const plans = createPostgresContentPlans({
     db,
+    resourceReader: createPostgresResourceReferenceReader,
     now: () => 1,
   });
   const plan = await plans.execute("owner", {
@@ -96,6 +99,7 @@ test("independent PostgreSQL sessions serialize replay, competing reviews and Co
   });
   const contracts = createPostgresContracts({
     db,
+    contentReader: createPostgresContentPlanReferenceReader,
     now: () => 2,
   });
   const contractId = randomUUID();

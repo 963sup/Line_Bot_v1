@@ -4,6 +4,7 @@ import {
   commercialStatus,
   newCommercialIntake,
   restoreCommercialIntake,
+  type LegacyCommercialIntake,
 } from "../src/modules/file/commercial-intake-state";
 import { createFileRequests } from "../src/modules/file/file-requests";
 import { StaleRequest } from "../src/modules/file/files-projection";
@@ -18,33 +19,33 @@ const file = {
   byteLength: 100,
   version: 1,
 };
-test("pending command reload preserves exact source and both mutation identities without private content", () => {
-  const pending = newCommercialIntake(file),
-    serialized = JSON.stringify(pending);
-  assert.doesNotMatch(serialized, /private source name|application\/pdf/);
+function legacyPending(): LegacyCommercialIntake {
+  return {
+    commandId: crypto.randomUUID(), repositoryId: file.repositoryId,
+    source: { fileId: file.fileId, fileRevisionId: file.revisionId, sha256: file.sha256 },
+    target: { documentId: crypto.randomUUID(), draftCommandId: crypto.randomUUID(), expectedDocumentVersion: 0 },
+  };
+}
+
+test("task reload keeps exact File pins and historical commands still restore", () => {
+  const pending = newCommercialIntake(file);
+  const serialized = JSON.stringify(pending);
+  assert.deepEqual(Object.keys(pending).sort(), ["repositoryId", "source", "taskId"]);
+  assert.doesNotMatch(serialized, /private source name|application\/pdf|draftCommandId|documentId/);
   assert.deepEqual(restoreCommercialIntake(serialized, file.repositoryId), pending);
   assert.equal(restoreCommercialIntake(serialized, crypto.randomUUID()), null);
   assert.equal(restoreCommercialIntake("broken", file.repositoryId), null);
-  assert.equal(
-    commercialStatus(
-      {
-        state: "OUTCOME_UNKNOWN",
-        commandId: pending.commandId,
-        documentId: pending.target.documentId,
-      },
-      pending,
-    ),
-    "OUTCOME_UNKNOWN",
-  );
-  assert.throws(() =>
-    commercialStatus(
-      { state: "DRAFT_SAVED", commandId: "other", documentId: pending.target.documentId },
-      pending,
-    ),
-  );
+  const documentId = crypto.randomUUID();
+  assert.equal(commercialStatus({ state: "RESULT_READY", taskId: pending.taskId, documentId }, pending), "RESULT_READY");
+  assert.throws(() => commercialStatus({ state: "DRAFT_SAVED", taskId: crypto.randomUUID(), documentId }, pending));
+  const legacy = legacyPending();
+  assert.deepEqual(restoreCommercialIntake(JSON.stringify(legacy), file.repositoryId), legacy);
+  assert.equal(commercialStatus({ state: "OUTCOME_UNKNOWN", commandId: legacy.commandId, documentId: legacy.target.documentId }, legacy), "OUTCOME_UNKNOWN");
+  assert.throws(() => commercialStatus({ state: "DRAFT_SAVED", commandId: "other", documentId: legacy.target.documentId }, legacy));
 });
+
 test("browser status is GET and explicit resume uses original identity on the new endpoint", async (t) => {
-  const pending = newCommercialIntake(file);
+  const pending = legacyPending();
   const calls: { url: URL; init: RequestInit }[] = [];
   t.mock.method(globalThis, "fetch", async (input: string, init: RequestInit) => {
     calls.push({ url: new URL(input, "https://app.example"), init });
@@ -81,6 +82,33 @@ test("browser status is GET and explicit resume uses original identity on the ne
     repositoryId: pending.repositoryId,
     commandId: pending.commandId,
   });
+});
+test("new Commercial Task transport keeps taskId as its only business operation identity", async (t) => {
+  const pending = newCommercialIntake(file);
+  const calls: { path: string; method: string; query: string; body: unknown }[] = [];
+  t.mock.method(globalThis, "fetch", async (input: string, init: RequestInit) => {
+    const url = new URL(input, "https://app.example");
+    calls.push({
+      path: url.pathname, method: String(init.method),
+      query: url.searchParams.get("taskId") ?? "",
+      body: init.body ? JSON.parse(String(init.body)) : null,
+    });
+    return Response.json({ taskId: pending.taskId, state: "RESULT_READY", documentId: crypto.randomUUID() });
+  });
+  const client = createFileRequests({
+    ownerLogin: "owner", repositoryName: "repo", epoch: { current: 0 },
+    session: async () => "session", onDenied() {},
+  });
+  await client.commercialTask({ taskId: pending.taskId });
+  await client.commercialTask({}, { operation: "resume", taskId: pending.taskId, repositoryId: pending.repositoryId });
+  await client.commercialTask({}, { operation: "start", taskId: pending.taskId, repositoryId: pending.repositoryId, source: pending.source });
+  assert.deepEqual(calls.map((c) => [c.path, c.method]), [
+    ["/api/commercial-tasks", "GET"], ["/api/commercial-tasks", "POST"], ["/api/commercial-tasks", "POST"],
+  ]);
+  assert.equal(calls[0]?.query, pending.taskId);
+  assert.equal(calls[0]?.body, null);
+  assert.deepEqual(calls[1]?.body, { operation: "resume", taskId: pending.taskId, repositoryId: pending.repositoryId });
+  assert.deepEqual(calls[2]?.body, { operation: "start", taskId: pending.taskId, repositoryId: pending.repositoryId, source: pending.source });
 });
 test("commercial responses from an invalidated session cannot reinstate private draft state", async (t) => {
   const epoch = { current: 0 };
@@ -144,7 +172,7 @@ test("saved commercial draft renders generic document kind, readable header and 
 
 test("known missing intake permits only an explicit same-command start; unknown failures do not imply absence", async (t) => {
   const { isMissingCommercialIntake } = await import("../src/modules/file/commercial-intake-state");
-  const pending = newCommercialIntake(file),
+  const pending = legacyPending(),
     saved = JSON.stringify(pending);
   const calls: RequestInit[] = [];
   t.mock.method(globalThis, "fetch", async (_input: string, init: RequestInit) => {
@@ -289,7 +317,7 @@ test("pending source remains pinned when selection changes to another file or re
   const { createElement } = await import("react"),
     { renderToStaticMarkup } = await import("react-dom/server");
   const { CommercialIntakeSource } = await import("../src/modules/file/commercial-draft-review");
-  const pending = newCommercialIntake(file),
+  const pending = legacyPending(),
     before = JSON.stringify(pending);
   for (const selected of [
     { ...file, fileId: crypto.randomUUID(), name: "Other file B" },

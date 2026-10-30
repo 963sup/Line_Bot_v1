@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
+import { createPostgresContentPlanReferenceReader } from "@line_bot_v1/content/composition/bootstrap/plan-references";
 import { createPostgresContentPlans } from "@line_bot_v1/content/composition/bootstrap/plans";
+import { createPostgresResourceReferenceReader } from "@line_bot_v1/resources/composition/bootstrap/resource-references";
 import { createPostgresContracts } from "@line_bot_v1/contract/composition/bootstrap/contracts";
 import { postgresFixture } from "@line_bot_v1/platform/testing/postgres";
 import { createResources } from "@line_bot_v1/resources/application/use-cases/resources";
@@ -50,6 +52,7 @@ test("public Content, Resource, Contract, dependency and Execution compositions 
   const taskId = randomUUID();
   const plans = createPostgresContentPlans({
     db,
+    resourceReader: createPostgresResourceReferenceReader,
     now: () => 20,
   });
   const plan = await plans.execute("owner", {
@@ -139,6 +142,7 @@ test("public Content, Resource, Contract, dependency and Execution compositions 
 
   const contracts = createPostgresContracts({
     db,
+    contentReader: createPostgresContentPlanReferenceReader,
     now: () => 30,
   });
   const contractId = randomUUID();

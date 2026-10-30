@@ -3,7 +3,6 @@ import { nullableString } from "@line_bot_v1/platform/validation";
 import { RepositoryError } from "@line_bot_v1/repository/contracts/errors/repository-error";
 import type { RepositorySelector } from "@line_bot_v1/repository/contracts/selectors";
 import { type RepositorySummary } from "@line_bot_v1/repository/domain/repository/entities/repository";
-import { authorizedRepository } from "@line_bot_v1/repository/postgres/access";
 import type {
   DiscussionCursor,
   DiscussionIdentity,
@@ -52,13 +51,20 @@ function next(items: { id: string; createdAt: number }[], hasMore: boolean) {
   return hasMore && last ? JSON.stringify({ at: last.createdAt, id: last.id }) : null;
 }
 
+type RepositoryAuthorization = (
+  sql: Sql,
+  who: DiscussionIdentity,
+  selector: RepositorySelector,
+) => Promise<RepositorySummary>;
+
 async function repository(
+  authorize: RepositoryAuthorization,
   sql: Sql,
   who: DiscussionIdentity,
   selector: RepositorySelector,
 ): Promise<RepositorySummary> {
   try {
-    return await authorizedRepository(sql, who, selector);
+    return await authorize(sql, who, selector);
   } catch (error) {
     if (error instanceof RepositoryError) {
       if (error.status === 403 || error.status === 404) {
@@ -114,7 +120,10 @@ async function detailRows(
 }
 
 export class PostgresDiscussionReadStore implements DiscussionReadStore {
-  constructor(private readonly db: Database = businessDatabase()) {}
+  constructor(
+    private readonly authorizeRepository: RepositoryAuthorization,
+    private readonly db: Database = businessDatabase(),
+  ) {}
 
   list(
     who: DiscussionIdentity,
@@ -122,7 +131,7 @@ export class PostgresDiscussionReadStore implements DiscussionReadStore {
     after?: DiscussionCursor,
   ): Promise<DiscussionsResult> {
     return this.db.transaction(async (sql) => {
-      const selected = await repository(sql, who, selector);
+      const selected = await repository(this.authorizeRepository, sql, who, selector);
       const rows = (
         await sql.query(
           `SELECT d.*,c.name AS category_name
@@ -151,7 +160,7 @@ export class PostgresDiscussionReadStore implements DiscussionReadStore {
     commentsAfter?: DiscussionCursor,
   ): Promise<DiscussionResult> {
     return this.db.transaction(async (sql) => {
-      const selected = await repository(sql, who, selector);
+      const selected = await repository(this.authorizeRepository, sql, who, selector);
       const values = await detailRows(sql, selected.id, "id", discussionId, commentsAfter);
       return {
         repository: selected,
@@ -169,7 +178,7 @@ export class PostgresDiscussionReadStore implements DiscussionReadStore {
     commentsAfter?: DiscussionCursor,
   ): Promise<DiscussionResult> {
     return this.db.transaction(async (sql) => {
-      const selected = await repository(sql, who, selector);
+      const selected = await repository(this.authorizeRepository, sql, who, selector);
       const values = await detailRows(sql, selected.id, "number", discussionNumber, commentsAfter);
       return {
         repository: selected,
